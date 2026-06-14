@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.5] — 2026-06-14
+
+> **Release notes**
+> Drag-and-drop window targeting reliability update.
+
+### Changed
+- **Native window hit testing** — internal drop fallback now uses AppKit's frontmost-window hit-test instead of manually inspecting the Core Graphics window list.
+- **Build metadata** — marketing version updated to `0.9.9.5.5`; build number remains `123`.
+
 ### Fixed
-- **Cloud short-link creation** — fit branded aliases within spoo.me's 16-character maximum by using `mimiNavi` plus 8 random Base62 characters.
-- **Shortener error reporting** — decode the service's `error` response field and retry only real HTTP 409 alias conflicts instead of misreporting validation failures as collisions.
+- **Overlapping-window drag release** — dropping a file into a browser or another app no longer opens MiMiNavigator's internal Move or Copy dialog when that app overlaps a file panel.
+- **List and Thumbnail parity** — both drag implementations reject internal transfer fallback unless MiMiNavigator is the actual frontmost window at the release point.
+- **Stale drop highlighting** — directory highlighting clears when the pointer moves over an overlapping external window.
 
 ## [0.9.9.5.4] — 2026-06-12
 
@@ -17,13 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > Cloud Share+Link alias privacy and collision-resistance update.
 
 ### Changed
-- **Branded cloud aliases** — Google Drive and Dropbox links now use the shorter `mimiNavi_` prefix followed by 14 random Base62 characters.
-- **Alias entropy** — the previous two-character UUID prefix was replaced with roughly 83 bits of URL-safe random space, preventing predictable sequences and making collisions impractical.
+- **Branded cloud aliases** — Google Drive and Dropbox links use `mimiNavi` followed by 8 random Base62 characters, exactly fitting spoo.me's 16-character alias limit.
+- **Alias entropy** — the previous short UUID fragment was replaced with roughly 48 bits of URL-safe random space, preventing predictable sequences while preserving collision retries.
 - **Developer documentation** — cloud publishing architecture, provider flows, OAuth storage, alias constraints, retry behavior, and regression coverage are documented for contributors.
 - **Build metadata** — marketing version updated to `0.9.9.5.4`; build number remains `123`.
 
 ### Added
 - **Cloud alias regression test** — generates 1,000 aliases and verifies the prefix, length, URL-safe alphabet, and uniqueness.
+
+### Fixed
+- **Cloud short-link creation** — branded aliases now fit the service's maximum accepted length.
+- **Shortener error reporting** — service error responses are decoded and only real HTTP 409 alias conflicts trigger collision retries.
 
 ## [0.9.9.5.3] — 2026-06-11
 
@@ -907,7 +921,10 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.2...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...HEAD
+[0.9.9.5.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.4...v0.9.9.5.5
+[0.9.9.5.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.3...v0.9.9.5.4
+[0.9.9.5.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.2...v0.9.9.5.3
 [0.9.9.5.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.1...v0.9.9.5.2
 [0.9.9.5.1]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5...v0.9.9.5.1
 [0.9.9.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.4...v0.9.9.5

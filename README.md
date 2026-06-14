@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.2"><img src="https://img.shields.io/badge/release-v0.9.9.5.2-orange" alt="Release v0.9.9.5.2" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.5"><img src="https://img.shields.io/badge/release-v0.9.9.5.5-orange" alt="Release v0.9.9.5.5" /></a>
 </p>
 
 <p align="center">
@@ -37,19 +37,20 @@
 
 
 
-## Recent Changes (v0.9.9.5.2 - June 2026)
+## Recent Changes (v0.9.9.5.5 - June 2026)
 
-- **Bottom panel tabs** — tabs now share the status strip with wider glass styling, restored paths, distinct active-state colors, and compact hover details.
-- **Parent navigation** — the parent-directory strip is a full-width glass control with reliable hover tracking, animated feedback, and a dedicated navigation cursor.
-- **Selection fallback** — archive and directory navigation preserves a valid selection or selects the first real row when no saved match exists.
-- **Finder-style Option menus** — context menus reveal native alternate file and folder operations live while Option is held.
-- **Get Info coverage** — Get Info is available for files, directories, and multiple selections.
-- **Progress feedback** — fast atomic operations no longer display or reuse stale archive progress panels.
-- **Table headers** — column labels have corrected height and vertical alignment.
-- **Build metadata** — release version is `0.9.9.5.2`, build `123`.
+- **Reliable external drag-and-drop** — browser uploads no longer trigger MiMiNavigator's Move or Copy dialog when another window overlaps a panel.
+- **Native window targeting** — internal drop fallback uses AppKit frontmost-window hit testing and works consistently in List and Thumbnail views.
+- **Live directory updates** — FSEvents refresh handling was split into focused scanner components with safer timeout, cache, and recovery behavior.
+- **Command bars** — top and bottom bars share configurable background color and moire settings.
+- **Bundled defaults** — missing `~/.mimi` configuration files are installed from sanitized bundled defaults without replacing user data.
+- **Narrow-window layout** — the panel divider remains between the left and right panels when the main window is compressed.
+- **Build metadata** — release version is `0.9.9.5.5`, build `123`.
 
 ## Previous Changes
 
+- **v0.9.9.5.4** — cloud short-link alias validation, URL-safe random aliases, and provider documentation.
+- **v0.9.9.5.2** — bottom panel tabs, native Option menu alternatives, selection fallback, Get Info coverage, and progress feedback.
 - **v0.9.9.5.1** — breadcrumb hover lens clarity and sharper enlarged path text.
 - **v0.9.9.5** — drag-and-drop file operation stability, breadcrumb truncation polish, managed mount cleanup, progress panel hardening, and file context menu cleanup.
 - **v0.9.9.4** — media conversion presets, External Tool Doctor, FFmpeg/gifski checks, IntelliJ IDEA diff detection, and shared repair flow for archive tools.
@@ -193,7 +194,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.2)**
+**[Download MiMiNavigator v0.9.9.5.5 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.5)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

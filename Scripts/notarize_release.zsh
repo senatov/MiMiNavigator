@@ -295,6 +295,14 @@ sleep 1
 hdiutil convert "${DMG_RW}" -format UDZO -o "${DMG}"
 rm -f "${DMG_RW}"
 echo "   DMG: ${DMG} ($(du -sh "${DMG}" | cut -f1))"
+echo "   Signing DMG container..."
+codesign \
+    --force \
+    --sign "${SIGN_IDENTITY}" \
+    --timestamp \
+    --identifier "Senatov.MiMiNavigator.dmg" \
+    "${DMG}"
+codesign --verify --verbose=2 "${DMG}"
 
 # ── Step 9: Notarize ─────────────────────────────────────────────────────────
 echo "[9/10] Ensuring keychain credentials..."
@@ -324,6 +332,10 @@ fi
 echo "   ✅ Notarization accepted!"
 echo "   Stapling ticket to DMG..."
 xcrun stapler staple "${DMG}"
+echo "   Validating stapled ticket..."
+xcrun stapler validate "${DMG}"
+echo "   Running Gatekeeper assessment..."
+spctl --assess --type open --context context:primary-signature --verbose=2 "${DMG}"
 
 # ── Step 10: Upload to GitHub ─────────────────────────────────────────────────
 echo "[10/10] Uploading to GitHub release ${TAG}..."
