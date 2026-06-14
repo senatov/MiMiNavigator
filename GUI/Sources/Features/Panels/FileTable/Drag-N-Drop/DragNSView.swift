@@ -147,6 +147,11 @@ final class DragNSView: NSView, NSDraggingSource {
 
     func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
         guard let dragDropManager, let appState, let window else { return }
+        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
+        guard DragDestinationWindowResolver.isWindowTopmost(window, at: cursorScreenPoint) else {
+            dragDropManager.setDropTarget(nil)
+            return
+        }
 
         let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
         let hoverSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
@@ -281,6 +286,12 @@ final class DragNSView: NSView, NSDraggingSource {
         guard let dragDropManager, let appState, let panelSide, let window else {
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended op=0, no window context")
+            return
+        }
+        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
+        guard DragDestinationWindowResolver.isWindowTopmost(window, at: cursorScreenPoint) else {
+            dragDropManager.endDrag()
+            log.info("[DragNSView] internal drop ignored: MiMiNavigator is obscured at release point")
             return
         }
 

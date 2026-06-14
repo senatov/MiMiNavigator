@@ -152,6 +152,9 @@ final class DragDropManager {
         guard let window = NSApp.windows.first(where: { window in
             !(window is NSPanel) && window.isVisible && window.frame.contains(mouseScreenPoint)
         }) else { return nil }
+        guard DragDestinationWindowResolver.isWindowTopmost(window, at: mouseScreenPoint) else {
+            return nil
+        }
         let windowPoint = window.convertPoint(fromScreen: mouseScreenPoint)
         let width = window.contentView?.bounds.width ?? window.frame.width
         let side: FavPanelSide = windowPoint.x < width / 2 ? .left : .right
