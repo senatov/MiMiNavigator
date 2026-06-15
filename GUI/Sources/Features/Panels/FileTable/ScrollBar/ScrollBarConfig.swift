@@ -14,19 +14,17 @@ import SwiftUI
 enum ScrollBarConfig {
 
     /// Width of the scrollbar track area (used for jump button column alignment).
-    /// macOS system default ~15pt; increase to give more breathing room.
-    static let trackWidth: CGFloat = 15
+    /// Wider than the macOS default for easier targeting and clearer separation.
+    static let trackWidth: CGFloat = 23
 
-    /// Right-side padding of the file panel content area.
-    /// Controls how close the scrollbar sits to the panel edge.
-    /// 0 = flush, 1 = 1pt gap (default), negative = overlap.
-    static let trailingPadding: CGFloat = 1
+    /// Compensates the outer grid inset while keeping the track clear of the border stroke.
+    static let trailingPadding: CGFloat = 4 - DesignTokens.grid
 
     /// Whether inactive (unfocused) panels hide their scroll indicators entirely.
     static let hideScrollersOnInactivePanel: Bool = true
 
-    /// NSScrollView: auto-hide scrollers when not scrolling.
-    static let autohidesScrollers: Bool = true
+    /// Keep the panel scrollbar visible so its position is always discoverable.
+    static let autohidesScrollers: Bool = false
 
     /// NSScrollView: show vertical scroller.
     static let hasVerticalScroller: Bool = true

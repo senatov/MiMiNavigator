@@ -24,6 +24,9 @@ extension FileTableView {
                 VStack(spacing: 0) {
                     FileTableScrollViewCapture { scrollView in
                         nativeScrollView = scrollView
+                        if let scrollView {
+                            ScrollBarSetup.apply(to: scrollView)
+                        }
                     }
                     .frame(width: 0, height: 0)
 

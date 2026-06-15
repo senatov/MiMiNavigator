@@ -139,7 +139,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             classification.directChildren,
             childCounts: &classification.childCountUpdates
         )
-        log.info("[FSEvents] \(classification.directChildren.count) item(s) changed in '\(watched)'")
+        //log.info("[FSEvents] \(classification.directChildren.count) item(s) changed in '\(watched)'")
         onPatch(DirectoryPatch(
             childCountUpdates: classification.childCountUpdates,
             addedOrModified: changes.added,
