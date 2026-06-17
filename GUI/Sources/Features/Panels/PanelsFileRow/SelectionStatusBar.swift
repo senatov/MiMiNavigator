@@ -30,10 +30,6 @@ struct SelectionStatusBar: View {
         currentURL.path
     }
 
-    private var hasMultipleTabs: Bool {
-        appState.tabManager(for: panelSide).tabs.count > 1
-    }
-
     // MARK: - State
 
     @State private var colorStore = ColorThemeStore.shared
@@ -208,9 +204,6 @@ struct SelectionStatusBar: View {
             leftInfoSection
             remoteBadgeSection
             filterSection
-            if hasMultipleTabs {
-                tabStripSection
-            }
             Spacer()
             thumbnailSliderSection
             positionIndicator
@@ -304,11 +297,6 @@ extension SelectionStatusBar {
 
         PanelFilterBar(query: filterQuery, panelSide: panelSide)
             .frame(minWidth: 140, maxWidth: 220)
-    }
-
-    private var tabStripSection: some View {
-        TabBarView(panelSide: panelSide)
-            .frame(minWidth: 0, maxWidth: 360)
     }
 
     private var thumbnailSliderSection: some View {

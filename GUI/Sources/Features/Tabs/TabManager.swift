@@ -44,6 +44,7 @@
 
         /// Currently active tab
         var activeTab: TabItem {
+            ensureActiveTabIndex()
             tabs[activeTabIndex]
         }
 
@@ -123,12 +124,13 @@
             let wasActive = (tabID == activeTabID)
             tabs.remove(at: index)
 
-            // If closed tab was active, select adjacent tab
             if wasActive {
                 let newIndex = min(index, tabs.count - 1)
                 activeTabIndex = newIndex
                 activeTabID = tabs[newIndex].id
                 log.debug("[TabManager] closeTab: was active, selected index=\(newIndex)")
+            } else {
+                ensureActiveTabIndex()
             }
 
             log.info("[TabManager] closeTab panel=\(panelSide) path='\(closedURL.path)' remaining=\(tabs.count)")
@@ -211,6 +213,7 @@
 
         /// Update the path of the currently active tab (directory navigation)
         func updateActiveTabPath(_ newURL: URL) {
+            ensureActiveTabIndex()
             tabs[activeTabIndex].url = newURL.standardizedFileURL
             tabs[activeTabIndex].archiveURL = nil
             log.debug("[TabManager] updateActiveTabPath panel=\(panelSide) → '\(newURL.path)'")
@@ -218,9 +221,30 @@
 
         /// Mark active tab as inside an archive
         func updateActiveTabForArchive(extractedURL: URL, archiveURL: URL) {
+            ensureActiveTabIndex()
             tabs[activeTabIndex].url = extractedURL.standardizedFileURL
             tabs[activeTabIndex].archiveURL = archiveURL
             log.debug("[TabManager] updateActiveTabForArchive panel=\(panelSide) archive='\(archiveURL.lastPathComponent)'")
+        }
+
+        // MARK: - Active Tab Integrity
+
+        /// Keep the active tab id and index aligned after tab list mutations.
+        private func ensureActiveTabIndex() {
+            guard !tabs.isEmpty else {
+                return
+            }
+            if tabs.indices.contains(activeTabIndex), tabs[activeTabIndex].id == activeTabID {
+                return
+            }
+            if let index = tabs.firstIndex(where: { $0.id == activeTabID }) {
+                activeTabIndex = index
+                return
+            }
+            let clampedIndex = min(max(activeTabIndex, 0), tabs.count - 1)
+            log.warning("[TabManager] repaired active tab index panel=\(panelSide) oldIndex=\(activeTabIndex) newIndex=\(clampedIndex) count=\(tabs.count)")
+            activeTabIndex = clampedIndex
+            activeTabID = tabs[clampedIndex].id
         }
 
         // MARK: - Persistence

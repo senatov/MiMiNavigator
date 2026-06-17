@@ -30,7 +30,6 @@ struct DuoFilePanelView: View {
         static let finderSidebarHiddenOffset: CGFloat = -18
         static let finderSidebarAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.92, blendDuration: 0)
     }
-
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
@@ -90,16 +89,25 @@ struct DuoFilePanelView: View {
     private var geometrySection: some View {
         GeometryReader { geometry in
             let panelWidth = panelsContainerWidth(for: geometry.size.width)
+            let panelsHeight = max(geometry.size.height - (shouldShowDetachedTabs ? DuoPanelTabsSection.height : 0), 0)
             ZStack(alignment: .leading) {
                 HStack(spacing: 0) {
                     finderSidebar(height: geometry.size.height)
                     if leftPanelWidth > 0, panelWidth > 0 {
-                        DuoPanelFilePanelsSection(
-                            leftPanelWidth: $leftPanelWidth,
-                            containerWidth: panelWidth,
-                            containerHeight: geometry.size.height,
-                            fetchFiles: fetchFiles
-                        )
+                        VStack(spacing: 0) {
+                            DuoPanelFilePanelsSection(
+                                leftPanelWidth: $leftPanelWidth,
+                                containerWidth: panelWidth,
+                                containerHeight: panelsHeight,
+                                fetchFiles: fetchFiles
+                            )
+                            if shouldShowDetachedTabs {
+                                DuoPanelTabsSection(
+                                    leftPanelWidth: leftPanelWidth,
+                                    containerWidth: panelWidth
+                                )
+                            }
+                        }
                         .frame(width: panelWidth, height: geometry.size.height)
                     }
                 }
@@ -137,6 +145,10 @@ struct DuoFilePanelView: View {
     private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
         let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
         return max(totalWidth - sidebarWidth, 0)
+    }
+
+    private var shouldShowDetachedTabs: Bool {
+        appState.leftTabManager.tabs.count > 1 || appState.rightTabManager.tabs.count > 1
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {
