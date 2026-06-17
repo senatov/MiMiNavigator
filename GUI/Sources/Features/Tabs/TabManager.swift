@@ -45,7 +45,7 @@
         /// Currently active tab
         var activeTab: TabItem {
             ensureActiveTabIndex()
-            tabs[activeTabIndex]
+            return tabs[activeTabIndex]
         }
 
         // MARK: - Tab Selection
