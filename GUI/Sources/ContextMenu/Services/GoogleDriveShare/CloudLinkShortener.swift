@@ -5,11 +5,13 @@
 // Description: Creates branded short aliases for generated cloud share links.
 
 import Foundation
+import FileModelKit
 
 // MARK: - CloudLinkShortener
 
 enum CloudLinkShortener {
-    private static let endpoint = "https://spoo.me/api/v1/shorten"
+    private static let endpoint = "https://api.tinyurl.com/create"
+    private static let shortURLPrefix = "https://tinyurl.com/"
     private static let aliasPrefix = "mimiNavi"
     private static let aliasSuffixLength = 8
     private static let aliasCharacters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -18,10 +20,11 @@ enum CloudLinkShortener {
     // MARK: - Shorten
 
     static func shorten(_ link: String) async throws -> String {
+        let token = try tinyURLAPIToken()
         var lastError: Error?
         for attempt in 0..<maximumAttempts {
             do {
-                return try await requestShortLink(link, alias: makeAlias())
+                return try await requestShortLink(link, alias: makeAlias(), token: token)
             } catch let error as CloudLinkShortenerError where error.isRetryable {
                 lastError = error
                 if attempt < maximumAttempts - 1 {
@@ -34,36 +37,65 @@ enum CloudLinkShortener {
         throw lastError ?? CloudLinkShortenerError.invalidResponse
     }
 
+    // MARK: - TinyURL API Token
+
+    private static func tinyURLAPIToken() throws -> String {
+        if let token = try TinyURLTokenStore.loadAPIToken(), !token.isEmpty {
+            return token
+        }
+        let bundledToken = CloudShortLinkTokenProvider.tinyURLAPIToken
+        guard !bundledToken.isEmpty else {
+            throw CloudLinkShortenerError.missingAPIToken
+        }
+        return bundledToken
+    }
+
     // MARK: - Request Short Link
 
-    private static func requestShortLink(_ link: String, alias: String) async throws -> String {
+    private static func requestShortLink(_ link: String, alias: String, token: String) async throws -> String {
         guard let url = URL(string: endpoint) else {
             throw CloudLinkShortenerError.invalidResponse
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["long_url": link, "alias": alias])
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try JSONEncoder().encode(TinyURLCreateRequest(url: link, alias: alias))
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw CloudLinkShortenerError.requestFailed
         }
-        if http.statusCode == 201 {
-            let result = try JSONDecoder().decode(CloudLinkShortenerResponse.self, from: data)
-            guard result.shortURL.hasPrefix("https://spoo.me/") else {
-                throw CloudLinkShortenerError.invalidResponse
-            }
-            return result.shortURL
+        if http.statusCode == 200 || http.statusCode == 201 {
+            return try decodeShortURL(from: data)
         }
-        let serviceError = try? JSONDecoder().decode(CloudLinkShortenerServiceError.self, from: data)
+        throw serviceError(from: data, statusCode: http.statusCode)
+    }
+
+    // MARK: - Decode Short URL
+
+    private static func decodeShortURL(from data: Data) throws -> String {
+        let result = try JSONDecoder().decode(TinyURLCreateResponse.self, from: data)
+        guard let shortURL = result.shortURL, shortURL.hasPrefix(shortURLPrefix) else {
+            throw CloudLinkShortenerError.invalidResponse
+        }
+        return shortURL
+    }
+
+    // MARK: - Service Error
+
+    private static func serviceError(from data: Data, statusCode: Int) -> CloudLinkShortenerError {
+        let serviceError = try? JSONDecoder().decode(TinyURLServiceError.self, from: data)
         let message = serviceError?.detail ?? String(data: data, encoding: .utf8) ?? "Unknown error"
-        if http.statusCode == 409 {
-            throw CloudLinkShortenerError.aliasUnavailable
+        if statusCode == 409 || message.localizedCaseInsensitiveContains("alias") {
+            return .aliasUnavailable
         }
-        if http.statusCode == 429 || http.statusCode >= 500 {
-            throw CloudLinkShortenerError.serviceUnavailable(message)
+        if statusCode == 401 || statusCode == 403 {
+            return .unauthorized
         }
-        throw CloudLinkShortenerError.service(message)
+        if statusCode == 429 || statusCode >= 500 {
+            return .serviceUnavailable(message)
+        }
+        return .service(message)
     }
 
     // MARK: - Alias
@@ -75,24 +107,43 @@ enum CloudLinkShortener {
     }
 }
 
-// MARK: - CloudLinkShortenerResponse
+// MARK: - TinyURLCreateRequest
 
-private struct CloudLinkShortenerResponse: Decodable {
-    let shortURL: String
+private struct TinyURLCreateRequest: Encodable {
+    let url: String
+    let domain = "tinyurl.com"
+    let alias: String
+}
 
-    enum CodingKeys: String, CodingKey {
-        case shortURL = "short_url"
+// MARK: - TinyURLCreateResponse
+
+private struct TinyURLCreateResponse: Decodable {
+    let data: TinyURLResponseData?
+
+    var shortURL: String? {
+        data?.tinyURL
     }
 }
 
-// MARK: - CloudLinkShortenerServiceError
+// MARK: - TinyURLResponseData
 
-private struct CloudLinkShortenerServiceError: Decodable {
+private struct TinyURLResponseData: Decodable {
+    let tinyURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case tinyURL = "tiny_url"
+    }
+}
+
+// MARK: - TinyURLServiceError
+
+private struct TinyURLServiceError: Decodable {
+    let errors: [String]?
     let message: String?
     let error: String?
 
     var detail: String? {
-        error ?? message
+        errors?.joined(separator: ", ") ?? error ?? message
     }
 }
 
@@ -101,9 +152,11 @@ private struct CloudLinkShortenerServiceError: Decodable {
 private enum CloudLinkShortenerError: LocalizedError {
     case aliasUnavailable
     case invalidResponse
+    case missingAPIToken
     case requestFailed
     case service(String)
     case serviceUnavailable(String)
+    case unauthorized
 
     var isRetryable: Bool {
         switch self {
@@ -120,12 +173,16 @@ private enum CloudLinkShortenerError: LocalizedError {
             return "The generated short link alias is already in use."
         case .invalidResponse:
             return "The link shortener returned an invalid response."
+        case .missingAPIToken:
+            return "TinyURL API token is missing from Keychain."
         case .requestFailed:
             return "The link shortener request failed."
         case .service(let message):
             return "The link shortener rejected the request: \(message)"
         case .serviceUnavailable(let message):
             return "The link shortener is temporarily unavailable: \(message)"
+        case .unauthorized:
+            return "TinyURL API token was rejected."
         }
     }
 }
