@@ -431,13 +431,13 @@ When a cloud desktop client syncs the `Public` folder locally, MiMiNavigator exp
 - [ ] Scroll-to-selection after rename/create operations
 
 ### Planned 🎯
-- [ ] Three-panel layout option
+- [ ] ~~Three-panel layout option~~  for why?
 - [x] FTP/SFTP connectivity (Citadel SFTP + curl-based FTP)
 - [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
-- [ ] More cloud provider share-link APIs beyond Google Drive and Dropbox
-- [ ] Advanced file comparison
-- [ ] Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)
-- [ ] App Store release
+- [x] More cloud provider share-link APIs beyond Google Drive and Dropbox
+- [x ] Advanced file comparison 
+- [ ] ~~Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)~~ no need more
+- [ ] ~~App Store release~~ not need
 
 ### Competitive Feature Gaps
 
