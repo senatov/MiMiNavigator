@@ -74,21 +74,30 @@ extension MediaConversionService {
     func decompressTGS(source: URL, destination: URL) throws {
         let gzipPath = ExternalToolCatalog.gzip.resolvedPath ?? "/usr/bin/gzip"
         let process = Process()
-        let output = Pipe()
         let errorOutput = Pipe()
+        FileManager.default.createFile(atPath: destination.path, contents: nil)
+        let output = try FileHandle(forWritingTo: destination)
+        defer { try? output.close() }
         process.executableURL = URL(fileURLWithPath: gzipPath)
         process.arguments = ["-dc", source.path]
         process.standardOutput = output
         process.standardError = errorOutput
         try process.run()
         process.waitUntilExit()
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        if process.terminationStatus != 0 || data.isEmpty {
+        if process.terminationStatus != 0 || isEmptyFile(destination) {
             let errorData = errorOutput.fileHandleForReading.readDataToEndOfFile()
             let message = String(data: errorData, encoding: .utf8) ?? source.lastPathComponent
             throw ConversionError.readFailed(message)
         }
-        try data.write(to: destination)
+    }
+
+    func isEmptyFile(_ url: URL) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let size = attributes[.size] as? UInt64
+        else {
+            return true
+        }
+        return size == 0
     }
 
     func runLottieConvertCLI(

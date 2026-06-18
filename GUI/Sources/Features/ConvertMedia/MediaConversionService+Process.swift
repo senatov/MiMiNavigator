@@ -22,13 +22,24 @@ extension MediaConversionService {
             let stdout = Pipe()
             configureProcess(process, stderr: stderr, stdout: stdout)
             installReadabilityHandler(for: stderr.fileHandleForReading, panel: panel)
-            installTerminationHandler(for: process, handle: stderr.fileHandleForReading, continuation: continuation)
+            installReadabilityHandler(for: stdout.fileHandleForReading, panel: panel)
+            installTerminationHandler(
+                for: process,
+                stderrHandle: stderr.fileHandleForReading,
+                stdoutHandle: stdout.fileHandleForReading,
+                continuation: continuation
+            )
             do {
                 activeProcess = process
                 try process.run()
                 appendLaunchCommand(executablePath: executablePath, arguments: arguments, panel: panel)
             } catch {
-                cleanupAfterLaunchFailure(handle: stderr.fileHandleForReading, error: error, continuation: continuation)
+                cleanupAfterLaunchFailure(
+                    stderrHandle: stderr.fileHandleForReading,
+                    stdoutHandle: stdout.fileHandleForReading,
+                    error: error,
+                    continuation: continuation
+                )
             }
         }
     }
@@ -68,11 +79,13 @@ extension MediaConversionService {
 
     func installTerminationHandler(
         for process: Process,
-        handle: FileHandle,
+        stderrHandle: FileHandle,
+        stdoutHandle: FileHandle,
         continuation: CheckedContinuation<Void, Error>
     ) {
         process.terminationHandler = { process in
-            handle.readabilityHandler = nil
+            stderrHandle.readabilityHandler = nil
+            stdoutHandle.readabilityHandler = nil
             Task { @MainActor in
                 self.activeProcess = nil
                 if process.terminationReason == .uncaughtSignal,
@@ -102,11 +115,13 @@ extension MediaConversionService {
     }
 
     func cleanupAfterLaunchFailure(
-        handle: FileHandle,
+        stderrHandle: FileHandle,
+        stdoutHandle: FileHandle,
         error: Error,
         continuation: CheckedContinuation<Void, Error>
     ) {
-        handle.readabilityHandler = nil
+        stderrHandle.readabilityHandler = nil
+        stdoutHandle.readabilityHandler = nil
         activeProcess = nil
         continuation.resume(throwing: error)
     }
