@@ -33,6 +33,8 @@ enum GifSizeGuard {
 
     static let finalDurationSeconds: Int = 6
 
+    static let paletteMaxColors: Int = 256
+
     static let minFPS: Int = 3
 
     static let minWidth: Int = 200
@@ -96,6 +98,24 @@ enum GifSizeGuard {
         }
         args += ["-loop", "0", target.path]
         return args
+    }
+
+    static func ffmpegReduceExistingGifArguments(
+        source: URL,
+        target: URL,
+        maxDuration: Int,
+        fps: Int,
+        maxWidth: Int
+    ) -> [String] {
+        let filter = "fps=\(fps),scale='min(\(maxWidth),iw)':-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=\(paletteMaxColors)[p];[s1][p]paletteuse"
+        return [
+            "-hide_banner", "-y",
+            "-t", "\(maxDuration)",
+            "-i", source.path,
+            "-filter_complex", filter,
+            "-loop", "0",
+            target.path,
+        ]
     }
 
 

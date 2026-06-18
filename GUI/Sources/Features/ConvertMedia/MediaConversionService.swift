@@ -23,6 +23,7 @@ final class MediaConversionService {
     static let lottieFramePattern = "f_%04d.png"
 
     var activeProcess: Process?
+    var approvedOversizedGIFTargets: Set<String> = []
 
     private init() {}
 
@@ -41,6 +42,8 @@ final class MediaConversionService {
         let conversionPreset = preset ?? MediaConversionPreset.defaultPreset(for: sourceFormat, target: targetFormat)
         let tool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
         logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: tool)
+        approvedOversizedGIFTargets.remove(target.path)
+        defer { approvedOversizedGIFTargets.remove(target.path) }
 
         let toolReady = await ExternalToolDoctor.shared.ensureReady(
             conversionTool: tool,
@@ -72,6 +75,9 @@ final class MediaConversionService {
                 preset: conversionPreset,
                 panel: panel
             )
+            if targetFormat == .gif {
+                try await enforceGIFLimit(target: target, panel: panel)
+            }
             finishSuccess(panel: panel, target: target)
         } catch {
             finishFailure(panel: panel, error: error)

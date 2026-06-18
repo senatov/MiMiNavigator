@@ -170,6 +170,7 @@ extension MediaConversionService {
         panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
         switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
             case .keep:
+                approvedOversizedGIFTargets.insert(target.path)
                 panel.appendLine("Keeping GIF above 19.5 MB by user choice")
                 return
             case .cancel:
