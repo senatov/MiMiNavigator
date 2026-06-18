@@ -22,6 +22,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case tabs           = "Tabs"
     case archives       = "Archives"
     case network        = "Network"
+    case cloudLink      = "Cloud Share+Link"
     case diffTool       = "Diff Tool"
     case progress       = "Progress Panel"
     case externalTools  = "External Tools"
@@ -38,6 +39,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .colorsPanels:   return "Colors"
         case .panels:         return "Layout"
+        case .cloudLink:      return "Services"
         default:              return nil
         }
     }
@@ -61,6 +63,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .tabs:              return "rectangle.on.rectangle"
         case .archives:          return "archivebox"
         case .network:           return "network"
+        case .cloudLink:         return "link.badge.plus"
         case .diffTool:          return "arrow.left.arrow.right"
         case .progress:          return "chart.bar.doc.horizontal"
         case .externalTools:     return "wrench.and.screwdriver"

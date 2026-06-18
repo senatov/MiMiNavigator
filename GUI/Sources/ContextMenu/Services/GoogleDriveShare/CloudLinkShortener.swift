@@ -40,7 +40,7 @@ enum CloudLinkShortener {
     // MARK: - TinyURL API Token
 
     private static func tinyURLAPIToken() throws -> String {
-        if let token = try TinyURLTokenStore.loadAPIToken(), !token.isEmpty {
+        if let token = try? TinyURLTokenStore.loadAPIToken(), !token.isEmpty {
             return token
         }
         let bundledToken = CloudShortLinkTokenProvider.tinyURLAPIToken
@@ -174,7 +174,7 @@ private enum CloudLinkShortenerError: LocalizedError {
         case .invalidResponse:
             return "The link shortener returned an invalid response."
         case .missingAPIToken:
-            return "TinyURL API token is missing from Keychain."
+            return "TinyURL API token is missing from local credentials."
         case .requestFailed:
             return "The link shortener request failed."
         case .service(let message):

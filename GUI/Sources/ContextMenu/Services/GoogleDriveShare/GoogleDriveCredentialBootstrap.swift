@@ -34,6 +34,33 @@ enum GoogleDriveCredentialBootstrap {
         }
     }
 
+    // MARK: - Local Client Secret
+
+    static func localClientSecret() -> String {
+        GoogleDriveOAuthConfig.clientSecret ?? ""
+    }
+
+    // MARK: - Save Local Client Secret
+
+    static func saveLocalClientSecret(_ secret: String) throws {
+        let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else {
+            try deleteLocalCredentials()
+            return
+        }
+        let payload = ["client_secret": trimmed]
+        let data = try JSONEncoder().encode(payload)
+        try writeLocalCredentials(data)
+    }
+
+    // MARK: - Delete Local Credentials
+
+    static func deleteLocalCredentials() throws {
+        let url = GoogleDriveOAuthConfig.localCredentialsURL
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.removeItem(at: url)
+    }
+
     // MARK: - Has Usable Local Credentials
 
     private static func hasUsableLocalCredentials() throws -> Bool {

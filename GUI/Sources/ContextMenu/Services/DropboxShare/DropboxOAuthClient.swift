@@ -22,7 +22,7 @@ enum DropboxOAuthClient {
         if let token = await cachedAccessToken, token.isValid {
             return token.value
         }
-        if let refreshToken = try DropboxTokenStore.loadRefreshToken() {
+        if let refreshToken = try? DropboxTokenStore.loadRefreshToken() {
             do {
                 let token = try await refreshAccessToken(refreshToken)
                 await cache(token)

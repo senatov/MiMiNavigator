@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Keychain storage for TinyURL API token.
+// Description: Local and Keychain storage for TinyURL API token.
 
 import Foundation
 import Security
@@ -16,29 +16,40 @@ enum TinyURLTokenStore {
     // MARK: - Load API Token
 
     static func loadAPIToken() throws -> String? {
+        if let token = try CloudLinkCredentialsStore.token(.tinyURLAPIToken) {
+            return token
+        }
         var item: CFTypeRef?
         let status = SecItemCopyMatching(readQuery() as CFDictionary, &item)
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess else { throw TinyURLTokenStoreError.keychain(status) }
         guard let data = item as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        let token = String(data: data, encoding: .utf8)
+        if let token {
+            try? CloudLinkCredentialsStore.setToken(token, for: .tinyURLAPIToken)
+        }
+        return token
     }
 
     // MARK: - Save API Token
 
     static func saveAPIToken(_ token: String) throws {
-        try deleteAPIToken(ignoreMissing: true)
+        try CloudLinkCredentialsStore.setToken(token, for: .tinyURLAPIToken)
+        _ = SecItemDelete(baseQuery() as CFDictionary)
         var query = baseQuery()
         query[kSecValueData] = Data(token.utf8)
         query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
         query[kSecAttrLabel] = "MiMiNavigator TinyURL API token"
         let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else { throw TinyURLTokenStoreError.keychain(status) }
+        if status != errSecSuccess {
+            log.warning("[CloudLink] TinyURL Keychain mirror save failed status=\(status)")
+        }
     }
 
     // MARK: - Delete API Token
 
     static func deleteAPIToken(ignoreMissing: Bool = false) throws {
+        try CloudLinkCredentialsStore.setToken(nil, for: .tinyURLAPIToken)
         let status = SecItemDelete(baseQuery() as CFDictionary)
         if ignoreMissing && status == errSecItemNotFound { return }
         guard status == errSecSuccess || status == errSecItemNotFound else { throw TinyURLTokenStoreError.keychain(status) }

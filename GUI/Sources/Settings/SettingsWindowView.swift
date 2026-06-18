@@ -178,6 +178,7 @@ struct SettingsWindowView: View {
                             case .tabs:               SettingsTabsPane()
                             case .archives:           SettingsArchivesPane()
                             case .network:            SettingsNetworkPane()
+                            case .cloudLink:          SettingsCloudLinkPane()
                             case .diffTool:           SettingsDiffToolPane()
                             case .progress:           SettingsProgressPane()
                             case .externalTools:      SettingsExternalToolsPane()

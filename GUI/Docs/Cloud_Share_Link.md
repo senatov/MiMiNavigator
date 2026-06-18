@@ -26,9 +26,15 @@ The feature is intentionally narrow. MiMiNavigator remains a filesystem-first ap
 5. Resolve or create a view-only shared URL.
 6. Shorten and copy the branded URL.
 
-## Alias Contract
+## Shortener
 
-`CloudLinkShortener` is shared by both providers and generates aliases in this format:
+`CloudLinkShortener` is shared by both providers and uses TinyURL:
+
+```text
+https://api.tinyurl.com/create
+```
+
+It generates aliases in this format:
 
 ```text
 mimiNavi<8 random Base62 characters>
@@ -37,7 +43,7 @@ mimiNavi<8 random Base62 characters>
 Example:
 
 ```text
-https://spoo.me/mimiNavi5Jzui456
+https://tinyurl.com/mimiNavi5Jzui456
 ```
 
 The suffix alphabet is:
@@ -46,7 +52,7 @@ The suffix alphabet is:
 abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
 ```
 
-spoo.me limits custom aliases to 16 characters. The 8-character `mimiNavi` prefix plus an 8-character Base62 suffix uses the full limit and provides approximately 48 bits of random alias space. Do not replace the suffix with counters, timestamps, filenames, short UUID prefixes, or another predictable value.
+The 8-character `mimiNavi` prefix plus an 8-character Base62 suffix gives approximately 48 bits of random alias space. Do not replace the suffix with counters, timestamps, filenames, short UUID prefixes, or another predictable value.
 
 Keep punctuation out of the suffix. Characters such as `!` may be legal in some URL contexts but introduce escaping and interoperability risks in clipboard, browser, messaging, and API paths.
 
@@ -62,9 +68,31 @@ Other service rejections fail immediately and are reported through the Share+Lin
 
 ## Credential Storage
 
-Google Drive uses application OAuth credentials from the bundled or local configuration and stores runtime user tokens outside project files.
+Runtime Share+Link credentials are read from the local config before Keychain to avoid repeated macOS Keychain prompts:
 
-Dropbox uses PKCE without an embedded app secret. Its refresh token is stored in macOS Keychain under the MiMiNavigator Dropbox service.
+```text
+~/.mimi/cloud_link_credentials.json
+```
+
+The file is written with `0600` permissions and can contain:
+
+- `googleDriveRefreshToken`
+- `dropboxRefreshToken`
+- `tinyURLAPIToken`
+
+Google Drive uses application OAuth credentials from the bundled or local configuration:
+
+```text
+~/.mimi/google_drive_oauth.json
+```
+
+Google Drive refresh tokens are stored in `~/.mimi/cloud_link_credentials.json` first. `GoogleDriveTokenStore` can still mirror to and migrate from Keychain service `Senatov.MiMiNavigator.GoogleDrive`, account `refresh-token`.
+
+Dropbox uses PKCE without an embedded app secret. Its refresh token is stored in `~/.mimi/cloud_link_credentials.json` first. `DropboxTokenStore` can still mirror to and migrate from Keychain service `Senatov.MiMiNavigator.Dropbox`, account `refresh-token`.
+
+TinyURL uses `tinyURLAPIToken` from `~/.mimi/cloud_link_credentials.json` first, then the Keychain mirror, then the bundled fallback token. The Keychain mirror service is `Senatov.MiMiNavigator.TinyURL`, account `api-token`.
+
+Settings → Cloud Share+Link lets users edit Google client secret, Google refresh token, Dropbox refresh token, and TinyURL API token. Leaving TinyURL empty uses the bundled fallback token.
 
 Never log access tokens, refresh tokens, authorization codes, PKCE verifiers, or OAuth client secrets.
 

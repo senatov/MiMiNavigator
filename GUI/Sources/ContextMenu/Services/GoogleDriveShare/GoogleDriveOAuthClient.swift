@@ -24,11 +24,11 @@ enum GoogleDriveOAuthClient {
         if let token = await cachedAccessToken, token.isValid {
             return token.value
         }
-        if let token = try await configAccessToken(), token.isValid {
+        if let token = try? await configAccessToken(), token.isValid {
             await cacheAccessToken(token)
             return token.value
         }
-        if let refreshToken = try await refreshToken() {
+        if let refreshToken = try? await refreshToken() {
             do {
                 let token = try await refreshAccessToken(refreshToken)
                 try await cacheTokens(accessToken: token, refreshToken: refreshToken)
