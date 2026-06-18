@@ -320,10 +320,21 @@ class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource, NSMenuD
     private func addMenuItem(_ menu: NSMenu, title: String, action: Selector, key: String, icon: String? = nil) {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
         item.target = self
-        if let iconName = icon, let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
+        if title == "Console" {
+            item.image = consoleMenuIcon()
+        } else if let iconName = icon, let img = NSImage(systemSymbolName: iconName, accessibilityDescription: nil) {
             item.image = img
         }
         menu.addItem(item)
+    }
+
+    private func consoleMenuIcon() -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+            .applying(.init(hierarchicalColor: .systemGreen))
+        let image = NSImage(systemSymbolName: "apple.terminal.fill", accessibilityDescription: "Console")?
+            .withSymbolConfiguration(configuration)
+        image?.isTemplate = false
+        return image
     }
 
     private func addMoreMenuItem(_ menu: NSMenu, action: Selector) {

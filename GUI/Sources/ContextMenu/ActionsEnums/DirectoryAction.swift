@@ -89,7 +89,7 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .openInNewTab: return "plus.square.on.square"
         case .openInFinder: return "folder.badge.gearshape"
         case .openInTerminal: return "terminal"
-        case .console: return "terminal"
+        case .console: return "apple.terminal.fill"
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"

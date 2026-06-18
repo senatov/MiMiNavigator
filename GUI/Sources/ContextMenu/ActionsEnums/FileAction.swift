@@ -104,7 +104,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .share: return "square.and.arrow.up"
         case .convertMedia: return "arrow.triangle.2.circlepath"
         case .revealInFinder: return "folder"
-        case .console: return "terminal"
+        case .console: return "apple.terminal.fill"
         case .delete: return "trash"
         case .getInfo: return "info.circle"
         case .newFolder: return "folder.badge.plus"

@@ -133,6 +133,9 @@ struct PanelBackgroundContextMenu: View {
                 }
             } icon: {
                 Image(systemName: action.systemImage)
+                    .symbolRenderingMode(action == .console ? .palette : .monochrome)
+                    .foregroundStyle(action == .console ? .green : .primary)
+                    .font(action == .console ? .system(size: 17, weight: .semibold) : .body)
             }
         }
         .disabled(isActionDisabled(action))

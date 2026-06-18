@@ -71,11 +71,43 @@ struct DirectoryContextMenu: View {
                 }
             } icon: {
                 Image(systemName: action.systemImage)
-                    .symbolRenderingMode(action == .copyAsPathname ? .hierarchical : .monochrome)
-                    .foregroundStyle(action == .copyAsPathname ? .blue : .primary)
+                    .symbolRenderingMode(iconRenderingMode(for: action))
+                    .foregroundStyle(iconColor(for: action))
+                    .font(iconFont(for: action))
             }
         }
         .disabled(isActionDisabled(action))
+    }
+
+    private func iconRenderingMode(for action: DirectoryAction) -> SymbolRenderingMode {
+        switch action {
+        case .console:
+            .palette
+        case .copyAsPathname:
+            .hierarchical
+        default:
+            .monochrome
+        }
+    }
+
+    private func iconColor(for action: DirectoryAction) -> Color {
+        switch action {
+        case .console:
+            .green
+        case .copyAsPathname:
+            .blue
+        default:
+            .primary
+        }
+    }
+
+    private func iconFont(for action: DirectoryAction) -> Font {
+        switch action {
+        case .console:
+            .system(size: 17, weight: .semibold)
+        default:
+            .body
+        }
     }
 
     private func shortcutHint(for action: DirectoryAction) -> String? {

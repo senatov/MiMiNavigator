@@ -82,7 +82,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .sortByType: return "doc"
         case .openInFinder: return "folder"
         case .openInTerminal: return "terminal"
-        case .console: return "terminal"
+        case .console: return "apple.terminal.fill"
         case .mirrorPath: return "arrow.left.arrow.right.square"
         case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
         case .addToFavorites: return "star.fill"

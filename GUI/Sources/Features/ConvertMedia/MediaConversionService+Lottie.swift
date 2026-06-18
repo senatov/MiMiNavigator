@@ -23,7 +23,8 @@ extension MediaConversionService {
         let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
         try prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
         panel.appendLine("Rendering Lottie frames…")
-        if let lottieConvertPath = ExternalToolCatalog.lottieConvert.resolvedPath {
+        if let lottieConvertPath = resolvedLottieConvertPath(targetFormat: targetFormat) {
+            panel.appendLine("Using python-lottie: \(lottieConvertPath)")
             try await runLottieConvertCLI(
                 executablePath: lottieConvertPath,
                 jsonFile: jsonFile,
@@ -98,6 +99,33 @@ extension MediaConversionService {
             return true
         }
         return size == 0
+    }
+
+    func resolvedLottieConvertPath(targetFormat: MediaFormat) -> String? {
+        if targetFormat != .gif {
+            return ExternalToolCatalog.lottieConvert.resolvedPath
+        }
+        return ExternalToolCatalog.lottieConvert.binaryCandidates.first { path in
+            FileManager.default.isExecutableFile(atPath: path) && lottieConvertSupportsGIF(path)
+        }
+    }
+
+    func lottieConvertSupportsGIF(_ path: String) -> Bool {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: path)
+        process.arguments = ["--help"]
+        process.standardOutput = output
+        process.standardError = output
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return false
+        }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        let text = String(data: data, encoding: .utf8) ?? ""
+        return text.contains("--gif") || text.contains("gif")
     }
 
     func runLottieConvertCLI(

@@ -65,7 +65,7 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"
         case .revealInFinder: return "folder"
-        case .console: return "terminal"
+        case .console: return "apple.terminal.fill"
         case .delete: return "trash"
         case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"

@@ -48,11 +48,14 @@ extension FileContextMenu {
         Image(systemName: action.systemImage)
             .symbolRenderingMode(iconRenderingMode(for: action))
             .foregroundStyle(iconColor(for: action))
+            .font(iconFont(for: action))
     }
 
     // MARK: - Icon Rendering Mode
     func iconRenderingMode(for action: FileAction) -> SymbolRenderingMode {
         switch action {
+        case .console:
+            .palette
         case .copyAsPathname:
             .hierarchical
         default:
@@ -63,10 +66,22 @@ extension FileContextMenu {
     // MARK: - Icon Color
     func iconColor(for action: FileAction) -> Color {
         switch action {
+        case .console:
+            .green
         case .copyAsPathname:
             .blue
         default:
             .primary
+        }
+    }
+
+    // MARK: - Icon Font
+    func iconFont(for action: FileAction) -> Font {
+        switch action {
+        case .console:
+            .system(size: 17, weight: .semibold)
+        default:
+            .body
         }
     }
 }

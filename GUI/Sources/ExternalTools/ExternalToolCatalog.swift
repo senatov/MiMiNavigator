@@ -161,14 +161,14 @@ enum ExternalToolCatalog {
     static let lottieConvert = ExternalTool(
         id: "lottie_convert", name: "python-lottie",
         binaryCandidates: [
+            "/opt/homebrew/bin/lottie_convert.py",
+            "/usr/local/bin/lottie_convert.py",
             "\(NSHomeDirectory())/.local/bin/lottie_convert.py",
             "\(NSHomeDirectory())/Library/Python/3.13/bin/lottie_convert.py",
             "\(NSHomeDirectory())/Library/Python/3.12/bin/lottie_convert.py",
             "\(NSHomeDirectory())/Library/Python/3.11/bin/lottie_convert.py",
             "\(NSHomeDirectory())/Library/Python/3.10/bin/lottie_convert.py",
             "\(NSHomeDirectory())/Library/Python/3.9/bin/lottie_convert.py",
-            "/opt/homebrew/bin/lottie_convert.py",
-            "/usr/local/bin/lottie_convert.py",
         ],
         brewFormula: nil,
         websiteURL: "https://pypi.org/project/lottie/",
