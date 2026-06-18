@@ -214,16 +214,16 @@
         /// Update the path of the currently active tab (directory navigation)
         func updateActiveTabPath(_ newURL: URL) {
             ensureActiveTabIndex()
-            tabs[activeTabIndex].url = newURL.standardizedFileURL
-            tabs[activeTabIndex].archiveURL = nil
+            let current = tabs[activeTabIndex]
+            tabs[activeTabIndex] = TabItem(id: current.id, url: newURL)
             log.debug("[TabManager] updateActiveTabPath panel=\(panelSide) → '\(newURL.path)'")
         }
 
         /// Mark active tab as inside an archive
         func updateActiveTabForArchive(extractedURL: URL, archiveURL: URL) {
             ensureActiveTabIndex()
-            tabs[activeTabIndex].url = extractedURL.standardizedFileURL
-            tabs[activeTabIndex].archiveURL = archiveURL
+            let current = tabs[activeTabIndex]
+            tabs[activeTabIndex] = TabItem(id: current.id, url: extractedURL, archiveURL: archiveURL)
             log.debug("[TabManager] updateActiveTabForArchive panel=\(panelSide) archive='\(archiveURL.lastPathComponent)'")
         }
 
