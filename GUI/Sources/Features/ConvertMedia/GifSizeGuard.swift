@@ -7,6 +7,7 @@
 //   Pass 1: gifski with maxWidth + fps.
 //   Pass 2: if still too big — halve fps or shrink to fallbackWidth.
 
+import AppKit
 import Foundation
 
 
@@ -14,7 +15,7 @@ import Foundation
 
 enum GifSizeGuard {
 
-    static let maxBytes: UInt64 = 19 * 1024 * 1024
+    static let maxBytes: UInt64 = UInt64(19.5 * 1024 * 1024)
 
     static let initialMaxWidth: Int = 600
 
@@ -23,6 +24,14 @@ enum GifSizeGuard {
     static let fallbackFPS: Int = 5
 
     static let fallbackWidth: Int = 400
+
+    static let fallbackDurationSeconds: Int = 10
+
+    static let finalFPS: Int = 3
+
+    static let finalWidth: Int = 320
+
+    static let finalDurationSeconds: Int = 6
 
     static let minFPS: Int = 3
 
@@ -53,14 +62,19 @@ enum GifSizeGuard {
         source: URL,
         framePattern: URL,
         fps: Int,
-        maxWidth: Int
+        maxWidth: Int,
+        maxDuration: Int? = nil
     ) -> [String] {
-        [
+        var args = [
             "-hide_banner", "-y",
             "-i", source.path,
-            "-vf", "fps=\(fps),scale=\(maxWidth):-1:flags=lanczos",
-            framePattern.path,
+            "-vf", "fps=\(fps),scale=\(maxWidth):-1:flags=lanczos"
         ]
+        if let maxDuration {
+            args += ["-t", "\(maxDuration)"]
+        }
+        args.append(framePattern.path)
+        return args
     }
 
 
@@ -69,15 +83,19 @@ enum GifSizeGuard {
         source: URL,
         target: URL,
         fps: Int,
-        maxWidth: Int
+        maxWidth: Int,
+        maxDuration: Int? = nil
     ) -> [String] {
-        [
+        var args = [
             "-hide_banner", "-y",
             "-i", source.path,
-            "-vf", "fps=\(fps),scale=\(maxWidth):-1:flags=lanczos",
-            "-loop", "0",
-            target.path,
+            "-vf", "fps=\(fps),scale=\(maxWidth):-1:flags=lanczos"
         ]
+        if let maxDuration {
+            args += ["-t", "\(maxDuration)"]
+        }
+        args += ["-loop", "0", target.path]
+        return args
     }
 
 
@@ -102,4 +120,37 @@ enum GifSizeGuard {
         let mb = Double(size) / (1024 * 1024)
         return String(format: "%.1f MB", mb)
     }
+
+    // MARK: - User Decision
+
+    @MainActor
+    static func promptOversizedGIF(size: String) -> GifSizeDecision {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "GIF Exceeds 19.5 MB"
+        alert.informativeText = """
+            Generated GIF size is \(size).
+
+            You can keep this file anyway, or let MiMiNavigator regenerate it with shorter duration, lower FPS and smaller dimensions.
+            """
+        alert.addButton(withTitle: "Reduce Size")
+        alert.addButton(withTitle: "Keep Large GIF")
+        alert.addButton(withTitle: "Cancel")
+        switch alert.runModal() {
+            case .alertFirstButtonReturn:
+                return .reduce
+            case .alertSecondButtonReturn:
+                return .keep
+            default:
+                return .cancel
+        }
+    }
+}
+
+// MARK: - GifSizeDecision
+
+enum GifSizeDecision {
+    case reduce
+    case keep
+    case cancel
 }

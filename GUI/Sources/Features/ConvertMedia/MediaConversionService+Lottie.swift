@@ -23,11 +23,29 @@ extension MediaConversionService {
         let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
         try prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
         panel.appendLine("Rendering Lottie frames…")
-        if targetFormat == .gif {
-            try await runLottieToGIF(jsonFile: jsonFile, target: target, temporaryDirectory: temporaryDirectory, panel: panel)
+        if let lottieConvertPath = ExternalToolCatalog.lottieConvert.resolvedPath {
+            try await runLottieConvertCLI(
+                executablePath: lottieConvertPath,
+                jsonFile: jsonFile,
+                target: target,
+                targetFormat: targetFormat,
+                panel: panel
+            )
             return
         }
-        try await runGenericLottieExport(jsonFile: jsonFile, target: target, panel: panel)
+        if targetFormat == .gif {
+            do {
+                try await runLottieToGIF(jsonFile: jsonFile, target: target, temporaryDirectory: temporaryDirectory, panel: panel)
+            } catch {
+                try await handleMissingLottieConvert(error: error)
+            }
+            return
+        }
+        do {
+            try await runGenericLottieExport(jsonFile: jsonFile, target: target, panel: panel)
+        } catch {
+            try await handleMissingLottieConvert(error: error)
+        }
     }
 
     func makeTemporaryLottieDirectory() throws -> URL {
@@ -54,9 +72,104 @@ extension MediaConversionService {
     }
 
     func decompressTGS(source: URL, destination: URL) throws {
-        let compressedData = try Data(contentsOf: source)
-        let decompressedData = try (compressedData as NSData).decompressed(using: .zlib) as Data
-        try decompressedData.write(to: destination)
+        let gzipPath = ExternalToolCatalog.gzip.resolvedPath ?? "/usr/bin/gzip"
+        let process = Process()
+        let output = Pipe()
+        let errorOutput = Pipe()
+        process.executableURL = URL(fileURLWithPath: gzipPath)
+        process.arguments = ["-dc", source.path]
+        process.standardOutput = output
+        process.standardError = errorOutput
+        try process.run()
+        process.waitUntilExit()
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        if process.terminationStatus != 0 || data.isEmpty {
+            let errorData = errorOutput.fileHandleForReading.readDataToEndOfFile()
+            let message = String(data: errorData, encoding: .utf8) ?? source.lastPathComponent
+            throw ConversionError.readFailed(message)
+        }
+        try data.write(to: destination)
+    }
+
+    func runLottieConvertCLI(
+        executablePath: String,
+        jsonFile: URL,
+        target: URL,
+        targetFormat: MediaFormat,
+        panel: ProgressPanel
+    ) async throws {
+        let args = makeLottieConvertArguments(jsonFile: jsonFile, target: target, targetFormat: targetFormat)
+        try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
+        if targetFormat == .gif && GifSizeGuard.exceedsLimit(target) {
+            try await handleOversizedLottieGIF(
+                executablePath: executablePath,
+                jsonFile: jsonFile,
+                target: target,
+                panel: panel
+            )
+        }
+    }
+
+    func makeLottieConvertArguments(
+        jsonFile: URL,
+        target: URL,
+        targetFormat: MediaFormat,
+        fps: Int = GifSizeGuard.initialFPS,
+        width: Int = GifSizeGuard.initialMaxWidth
+    ) -> [String] {
+        if targetFormat == .gif {
+            return ["--fps", "\(fps)", "--width", "\(width)", jsonFile.path, target.path]
+        }
+        return [jsonFile.path, target.path]
+    }
+
+    func handleOversizedLottieGIF(
+        executablePath: String,
+        jsonFile: URL,
+        target: URL,
+        panel: ProgressPanel
+    ) async throws {
+        let firstPassSize = GifSizeGuard.fileSizeMB(target)
+        panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
+        switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+            case .keep:
+                panel.appendLine("Keeping GIF above 19.5 MB by user choice")
+                return
+            case .cancel:
+                throw CancellationError()
+            case .reduce:
+                panel.appendLine("Regenerating smaller Lottie GIF…")
+        }
+        var args = makeLottieConvertArguments(
+            jsonFile: jsonFile,
+            target: target,
+            targetFormat: .gif,
+            fps: GifSizeGuard.fallbackFPS,
+            width: GifSizeGuard.fallbackWidth
+        )
+        try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
+        if GifSizeGuard.exceedsLimit(target) {
+            args = makeLottieConvertArguments(
+                jsonFile: jsonFile,
+                target: target,
+                targetFormat: .gif,
+                fps: GifSizeGuard.finalFPS,
+                width: GifSizeGuard.finalWidth
+            )
+            try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
+        }
+        if GifSizeGuard.exceedsLimit(target) {
+            throw ConversionError.gifTooLarge(GifSizeGuard.fileSizeMB(target))
+        }
+    }
+
+    func handleMissingLottieConvert(error: Error) async throws {
+        guard error is ConversionError else { throw error }
+        _ = await ExternalToolDoctor.shared.ensureReady(
+            toolID: ExternalToolCatalog.lottieConvert.id,
+            context: "TGS and Lottie conversion needs python-lottie when ffmpeg cannot render Lottie JSON."
+        )
+        throw ConversionError.lottieToolMissing
     }
 
     func runLottieToGIF(

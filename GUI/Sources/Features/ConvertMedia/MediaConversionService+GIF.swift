@@ -32,24 +32,49 @@ extension MediaConversionService {
             panel.appendLine("✅ GIF size OK: \(GifSizeGuard.fileSizeMB(target))")
             return
         }
-        panel.appendLine("⚠️ GIF too large (\(GifSizeGuard.fileSizeMB(target))), retrying with \(GifSizeGuard.fallbackFPS)fps…")
+        let firstPassSize = GifSizeGuard.fileSizeMB(target)
+        panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
+        switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+            case .keep:
+                panel.appendLine("Keeping GIF above 19.5 MB by user choice")
+                return
+            case .cancel:
+                throw CancellationError()
+            case .reduce:
+                panel.appendLine("Regenerating shorter and smaller GIF…")
+        }
         fps = GifSizeGuard.fallbackFPS
         try cleanFrames(in: tempDir)
-        try await extractFrames(source: source, framePattern: framePattern, fps: fps, width: width, panel: panel)
+        try await extractFrames(
+            source: source,
+            framePattern: framePattern,
+            fps: fps,
+            width: width,
+            maxDuration: GifSizeGuard.fallbackDurationSeconds,
+            panel: panel
+        )
         try await runGifskiEncode(target: target, framesDir: tempDir, width: width, fps: fps, panel: panel)
         if !GifSizeGuard.exceedsLimit(target) {
             panel.appendLine("✅ GIF size OK after pass 2: \(GifSizeGuard.fileSizeMB(target))")
             return
         }
-        panel.appendLine("⚠️ Still too large, shrinking to \(GifSizeGuard.fallbackWidth)px…")
-        width = GifSizeGuard.fallbackWidth
+        panel.appendLine("⚠️ Still too large, shrinking to \(GifSizeGuard.finalWidth)px and \(GifSizeGuard.finalDurationSeconds)s…")
+        width = GifSizeGuard.finalWidth
+        fps = GifSizeGuard.finalFPS
         try cleanFrames(in: tempDir)
-        try await extractFrames(source: source, framePattern: framePattern, fps: fps, width: width, panel: panel)
+        try await extractFrames(
+            source: source,
+            framePattern: framePattern,
+            fps: fps,
+            width: width,
+            maxDuration: GifSizeGuard.finalDurationSeconds,
+            panel: panel
+        )
         try await runGifskiEncode(target: target, framesDir: tempDir, width: width, fps: fps, panel: panel)
         if GifSizeGuard.exceedsLimit(target) {
             let finalSize = GifSizeGuard.fileSizeMB(target)
-            panel.appendLine("❌ GIF still \(finalSize) — video may be too long for GIF format")
-            log.warning("[GifConvert] exceeded 19MB after 3 passes: \(finalSize)")
+            panel.appendLine("❌ GIF still \(finalSize) — video may be too long for 19.5 MB")
+            log.warning("[GifConvert] exceeded 19.5 MB after 3 passes: \(finalSize)")
             throw ConversionError.gifTooLarge(finalSize)
         }
         panel.appendLine("✅ GIF size OK after pass 3: \(GifSizeGuard.fileSizeMB(target))")
@@ -60,13 +85,15 @@ extension MediaConversionService {
         framePattern: URL,
         fps: Int,
         width: Int,
+        maxDuration: Int? = nil,
         panel: ProgressPanel
     ) async throws {
         let args = GifSizeGuard.ffmpegFrameExtractArguments(
             source: source,
             framePattern: framePattern,
             fps: fps,
-            maxWidth: width
+            maxWidth: width,
+            maxDuration: maxDuration
         )
         try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: args, panel: panel)
     }
@@ -145,19 +172,51 @@ extension MediaConversionService {
             )
             try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: args, panel: panel)
             if GifSizeGuard.exceedsLimit(target) {
-                panel.appendLine("\u{26A0}\u{FE0F} ffmpeg GIF \(GifSizeGuard.fileSizeMB(target)), retrying smaller\u{2026}")
-                let smallerArgs = GifSizeGuard.ffmpegDirectGifArguments(
-                    source: source,
-                    target: target,
-                    fps: GifSizeGuard.fallbackFPS,
-                    maxWidth: GifSizeGuard.fallbackWidth
-                )
-                try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: smallerArgs, panel: panel)
+                try await handleOversizedFFmpegGIF(source: source, target: target, panel: panel)
             }
             finishSuccess(panel: panel, target: target)
         } catch {
             finishFailure(panel: panel, error: error)
             throw error
+        }
+    }
+
+    func handleOversizedFFmpegGIF(
+        source: URL,
+        target: URL,
+        panel: ProgressPanel
+    ) async throws {
+        let firstPassSize = GifSizeGuard.fileSizeMB(target)
+        panel.appendLine("\u{26A0}\u{FE0F} ffmpeg GIF too large: \(firstPassSize)")
+        switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+            case .keep:
+                panel.appendLine("Keeping GIF above 19.5 MB by user choice")
+                return
+            case .cancel:
+                throw CancellationError()
+            case .reduce:
+                panel.appendLine("Regenerating shorter and smaller GIF…")
+        }
+        let smallerArgs = GifSizeGuard.ffmpegDirectGifArguments(
+            source: source,
+            target: target,
+            fps: GifSizeGuard.fallbackFPS,
+            maxWidth: GifSizeGuard.fallbackWidth,
+            maxDuration: GifSizeGuard.fallbackDurationSeconds
+        )
+        try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: smallerArgs, panel: panel)
+        if GifSizeGuard.exceedsLimit(target) {
+            let finalArgs = GifSizeGuard.ffmpegDirectGifArguments(
+                source: source,
+                target: target,
+                fps: GifSizeGuard.finalFPS,
+                maxWidth: GifSizeGuard.finalWidth,
+                maxDuration: GifSizeGuard.finalDurationSeconds
+            )
+            try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: finalArgs, panel: panel)
+        }
+        if GifSizeGuard.exceedsLimit(target) {
+            throw ConversionError.gifTooLarge(GifSizeGuard.fileSizeMB(target))
         }
     }
 }

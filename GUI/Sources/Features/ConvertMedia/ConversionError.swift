@@ -13,6 +13,7 @@ import Foundation
 enum ConversionError: LocalizedError {
     case toolMissing(String)
     case gifskiMissing
+    case lottieToolMissing
     case gifTooLarge(String)
     case readFailed(String)
     case writeFailed(String)
@@ -25,8 +26,10 @@ enum ConversionError: LocalizedError {
                 return "Required tool not found: \(tool). Install via: brew install ffmpeg"
             case .gifskiMissing:
                 return "gifski not installed. Install via: brew install gifski"
+            case .lottieToolMissing:
+                return "Lottie conversion needs python-lottie. Install via: python3 -m pip install --user lottie"
             case .gifTooLarge(let size):
-                return "GIF too large (\(size)) even after downscaling — try shorter video"
+                return "GIF too large (\(size)) even after duration and size reduction"
             case .readFailed(let name):
                 return "Failed to read: \(name)"
             case .writeFailed(let name):

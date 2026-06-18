@@ -70,6 +70,9 @@ final class ExternalToolDoctor {
         if tool.id == ExternalToolCatalog.gifski.id {
             return await diagnoseVersionedTool(tool: tool, path: path, arguments: ["--version"])
         }
+        if tool.id == ExternalToolCatalog.lottieConvert.id {
+            return await diagnoseVersionedTool(tool: tool, path: path, arguments: ["--help"])
+        }
         if tool.id == ExternalToolCatalog.sevenZip.id {
             return await diagnoseSevenZip(tool: tool, path: path)
         }

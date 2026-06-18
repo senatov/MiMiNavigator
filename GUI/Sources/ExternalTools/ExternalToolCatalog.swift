@@ -44,6 +44,13 @@ enum ExternalToolCatalog {
         purpose: "macOS archive tool with resource fork support",
         isSystemTool: true)
 
+    static let gzip = ExternalTool(
+        id: "gzip", name: "gzip",
+        binaryCandidates: ["/usr/bin/gzip"],
+        brewFormula: nil, websiteURL: nil,
+        purpose: "TGS gzip decompression",
+        isSystemTool: true)
+
     static let find = ExternalTool(
         id: "find", name: "find",
         binaryCandidates: ["/usr/bin/find"],
@@ -151,6 +158,24 @@ enum ExternalToolCatalog {
         purpose: "High-quality video to animated GIF conversion",
         isSystemTool: false)
 
+    static let lottieConvert = ExternalTool(
+        id: "lottie_convert", name: "python-lottie",
+        binaryCandidates: [
+            "\(NSHomeDirectory())/.local/bin/lottie_convert.py",
+            "\(NSHomeDirectory())/Library/Python/3.13/bin/lottie_convert.py",
+            "\(NSHomeDirectory())/Library/Python/3.12/bin/lottie_convert.py",
+            "\(NSHomeDirectory())/Library/Python/3.11/bin/lottie_convert.py",
+            "\(NSHomeDirectory())/Library/Python/3.10/bin/lottie_convert.py",
+            "\(NSHomeDirectory())/Library/Python/3.9/bin/lottie_convert.py",
+            "/opt/homebrew/bin/lottie_convert.py",
+            "/usr/local/bin/lottie_convert.py",
+        ],
+        brewFormula: nil,
+        websiteURL: "https://pypi.org/project/lottie/",
+        installCommand: "python3 -m pip install --user lottie",
+        purpose: "Lottie JSON and TGS conversion",
+        isSystemTool: false)
+
 
     // MARK: - Brew itself
 
@@ -166,9 +191,9 @@ enum ExternalToolCatalog {
     // MARK: - All tools
 
     static let allTools: [ExternalTool] = [
-        zip, unzip, tar, ditto, find,
+        zip, unzip, tar, ditto, gzip, find,
         ssh, scp, smbutil, nslookup, curl, open, opendiff,
-        sevenZip, unar, sshpass, ffmpeg, ffprobe, gifski,
+        sevenZip, unar, sshpass, ffmpeg, ffprobe, gifski, lottieConvert,
     ]
 
 

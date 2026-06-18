@@ -16,9 +16,29 @@ struct ExternalTool: Identifiable, Codable, Equatable, Sendable {
     let binaryCandidates: [String]
     let brewFormula: String?
     let websiteURL: String?
+    let installCommand: String?
     let purpose: String
     let isSystemTool: Bool
 
+    init(
+        id: String,
+        name: String,
+        binaryCandidates: [String],
+        brewFormula: String?,
+        websiteURL: String?,
+        installCommand: String? = nil,
+        purpose: String,
+        isSystemTool: Bool
+    ) {
+        self.id = id
+        self.name = name
+        self.binaryCandidates = binaryCandidates
+        self.brewFormula = brewFormula
+        self.websiteURL = websiteURL
+        self.installCommand = installCommand
+        self.purpose = purpose
+        self.isSystemTool = isSystemTool
+    }
 
     // MARK: - Resolved path (first existing candidate)
 
@@ -31,6 +51,9 @@ struct ExternalTool: Identifiable, Codable, Equatable, Sendable {
 
 
     var installHint: String {
+        if let installCommand {
+            return installCommand
+        }
         if let formula = brewFormula {
             return "brew install \(formula)"
         }
