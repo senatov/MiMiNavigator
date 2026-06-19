@@ -17,13 +17,14 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.5"><img src="https://img.shields.io/badge/release-v0.9.9.5.5-orange" alt="Release v0.9.9.5.5" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.6"><img src="https://img.shields.io/badge/release-v0.9.9.5.6-orange" alt="Release v0.9.9.5.6" /></a>
 </p>
 
 <p align="center">
   <a href="#features">Features</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#getting-started">Getting Started</a> ·
+  <a href="#external-utilities-and-tools">External Tools</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#archive-support">Archive Support</a> ·
   <a href="GUI/Docs/PLUGIN_BLUE_PAPER.md">Plugin Blue Paper</a> ·
@@ -37,18 +38,16 @@
 
 
 
-## Recent Changes (v0.9.9.5.5 - June 2026)
+## Recent Changes (v0.9.9.5.6 - June 2026)
 
-- **Reliable external drag-and-drop** — browser uploads no longer trigger MiMiNavigator's Move or Copy dialog when another window overlaps a panel.
-- **Native window targeting** — internal drop fallback uses AppKit frontmost-window hit testing and works consistently in List and Thumbnail views.
-- **Live directory updates** — FSEvents refresh handling was split into focused scanner components with safer timeout, cache, and recovery behavior.
-- **Command bars** — top and bottom bars share configurable background color and moire settings.
-- **Bundled defaults** — missing `~/.mimi` configuration files are installed from sanitized bundled defaults without replacing user data.
-- **Narrow-window layout** — the panel divider remains between the left and right panels when the main window is compressed.
-- **Build metadata** — release version is `0.9.9.5.5`, build `123`.
+- **IntelliJ IDEA compare launch** — directory/file compare now starts the built-in IntelliJ preset through `open -n ... --args diff`, avoiding stale JetBrains backend processes after a diff window is closed.
+- **Diff tool documentation** — IntelliJ IDEA setup now documents the `diff <left> <right>` command, detected app/launcher paths, installation choices, and free/commercial licensing notes.
+- **External tools guide** — README now has a dedicated setup chapter for archive tools, diff tools, media converters, cloud mounts, Homebrew commands, and detailed docs.
+- **Build metadata** — release version is `0.9.9.5.6`, build `124`.
 
 ## Previous Changes
 
+- **v0.9.9.5.5** — drag-and-drop window targeting reliability and release hardening.
 - **v0.9.9.5.4** — cloud short-link alias validation, URL-safe random aliases, and provider documentation.
 - **v0.9.9.5.2** — bottom panel tabs, native Option menu alternatives, selection fallback, Get Info coverage, and progress feedback.
 - **v0.9.9.5.1** — breadcrumb hover lens clarity and sharper enlarged path text.
@@ -194,7 +193,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.5 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.5)**
+**[Download MiMiNavigator v0.9.9.5.6 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.6)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
@@ -227,6 +226,57 @@ xcodebuild -project MiMiNavigator.xcodeproj -scheme MiMiNavigator \
   -configuration Release -derivedDataPath /tmp/mimi_build build CODE_SIGNING_ALLOWED=YES
 ```
 Binary output: `/tmp/mimi_build/Build/Products/Release/MiMiNavigator.app`
+
+---
+
+## External Utilities and Tools
+
+MiMiNavigator works out of the box for normal browsing and file operations, but
+some advanced features use external command-line tools or optional macOS apps.
+The app includes an **External Tool Doctor** and **Settings → Diff Tool** pane to
+detect missing tools and show repair hints.
+
+### Recommended Setup
+
+Install [Homebrew](https://brew.sh/) first, then run the project helper:
+
+```zsh
+zsh Scripts/update_external_tools.zsh
+```
+
+That script updates Homebrew, removes obsolete DiffMerge/RAR casks, installs
+KDiff3, installs `unar` and `p7zip`, and relinks configured formulas.
+
+Manual equivalent:
+
+```zsh
+brew install --cask kdiff3
+brew install unar p7zip ffmpeg gifski
+python3 -m pip install --user lottie
+```
+
+### Tool Matrix
+
+| Feature Area | Tool | Install / Source | Notes |
+|--------------|------|------------------|-------|
+| Archive browsing | macOS `/usr/bin/zip`, `/usr/bin/unzip`, `/usr/bin/tar`, `/usr/bin/ditto` | Built into macOS | Handles ZIP and TAR-family formats without extra setup |
+| Extended archives | [`unar`](https://theunarchiver.com/command-line), [`p7zip`](https://github.com/p7zip-project/p7zip) | `brew install unar p7zip` | Enables RAR, 7z, ISO, disk images, packages, and many legacy formats |
+| Directory/file compare | [KDiff3](https://apps.kde.org/kdiff3/) | `brew install --cask kdiff3` | Free recommended default for files and directories |
+| Directory/file compare | [IntelliJ IDEA](https://www.jetbrains.com/idea/download/) | JetBrains Toolbox, JetBrains DMG, or Homebrew cask | Optional viewer launched with `diff <left> <right>`; free core functionality is enough |
+| File compare | FileMerge / `opendiff` | Xcode / Xcode Command Line Tools | Good for files; less useful as the only directory compare tool |
+| Media conversion | [FFmpeg](https://ffmpeg.org/) / `ffprobe` | `brew install ffmpeg` | Video, audio, GIF, WebP, and media-inspection backend |
+| Animated GIF export | [gifski](https://gif.ski/) | `brew install gifski` | Optional high-quality GIF encoder |
+| Lottie / TGS conversion | [python-lottie](https://pypi.org/project/lottie/) | `python3 -m pip install --user lottie` | Provides `lottie_convert.py` for Lottie JSON and Telegram sticker conversion |
+| FTP and HTTP transfer | `curl` | Built into macOS | Used for FTP browsing and transfers |
+| SMB discovery | `smbutil`, `nslookup` | Built into macOS | Used by network-neighborhood helpers |
+| Cloud mounts | [Google Drive](https://www.google.com/drive/download/), [Dropbox](https://www.dropbox.com/install), [OneDrive](https://www.microsoft.com/en-us/microsoft-365/onedrive/download), [Proton Drive](https://proton.me/drive/download), [rclone](https://rclone.org/) | Provider desktop client or rclone mount | Mounted folders appear as normal filesystem locations |
+
+### Detailed Setup Docs
+
+- [Diff tools setup](GUI/Docs/DiffTools_Setup.md) — KDiff3, IntelliJ IDEA, FileMerge, launch commands, paths, and licensing notes.
+- [Supported archive formats](GUI/Docs/Supported_Archive_Formats.md) — archive extensions, extraction chain, and required tools.
+- [Cloud Share+Link design](GUI/Docs/Cloud_Share_Link.md) — Google Drive and Dropbox publishing flow, OAuth, and short-link rules.
+- [Archive virtual filesystem](GUI/Docs/Archive_VirtualFS_ParentNav.md) — archive session lifecycle and repack behavior.
 
 ---
 

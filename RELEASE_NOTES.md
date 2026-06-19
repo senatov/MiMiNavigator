@@ -1,38 +1,35 @@
-# MiMiNavigator v0.9.9.5.5
+# MiMiNavigator v0.9.9.5.6
 
-Drag-and-drop window targeting reliability update.
+External tools and IntelliJ IDEA compare reliability update.
 
 ## Highlights
 
-- Dragging a file from MiMiNavigator into a browser no longer opens the internal Move or Copy dialog when the browser overlaps the file panel.
-- Internal panel drops are accepted only when a MiMiNavigator window is the actual frontmost mouse target at the release point.
-- The same visibility check is applied to List and Thumbnail view drag paths.
+- IntelliJ IDEA directory and file compare now launches through a fresh macOS app instance.
+- The README now has a dedicated External Utilities and Tools chapter for installation and setup.
+- Diff tool documentation now explains IntelliJ IDEA command syntax, installation options, detected paths, and licensing.
 
 ## Changed
 
-- Replaced manual Core Graphics window-list inspection with AppKit's dedicated `NSWindow.windowNumber(at:belowWindowWithWindowNumber:)` hit-testing API.
-- Clear internal directory highlighting as soon as the drag moves over an overlapping window from another application.
-- Removed unused runtime exceptions and debug/personal-data entitlements from the signed Release build.
+- Launch the built-in IntelliJ IDEA diff preset with `open -n <IntelliJ.app> --args diff <left> <right>`.
+- Keep other diff tools on their existing direct launcher paths.
+- Document recommended Homebrew setup for KDiff3, `unar`, `p7zip`, FFmpeg, gifski, and python-lottie.
+- Update release metadata to version `0.9.9.5.6` and build `124`.
 
 ## Fixed
 
-- Prevented an external drag ending with an empty AppKit operation from being reinterpreted as an internal panel transfer based only on screen coordinates.
-- Prevented browser uploads and other external drop targets from triggering MiMiNavigator file-operation confirmation behind the destination window.
+- Prevented new IntelliJ compare requests from being routed into a stale JetBrains backend process that can remain alive after the diff window is closed.
 
 ## Documentation
 
-- Updated the README release badge, download link, and recent changes.
-- Corrected the historical `0.9.9.5.4` cloud alias description to the implemented `mimiNavi` plus 8 Base62 characters.
+- Added IntelliJ IDEA setup notes to `GUI/Docs/DiffTools_Setup.md`.
+- Added a README tool matrix with links to Homebrew, KDiff3, IntelliJ IDEA, FFmpeg, gifski, python-lottie, cloud desktop clients, rclone, and detailed internal docs.
 
 ## Validation
 
-- SwiftLint passes for the new window resolver.
-- Debug build succeeds with Xcode 26.5 and macOS 26.5.1.
-- The signed app retains hardened runtime without JIT, unsigned executable memory, DYLD environment, library-validation, or debug exceptions.
-- The release pipeline builds with Developer ID signing and hardened runtime, notarizes with `notarytool`, staples the ticket, validates the ticket, and runs Gatekeeper assessment.
+- `git diff --check` passes for the edited files.
 
 ## Download
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.4...v0.9.9.5.5
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...v0.9.9.5.6

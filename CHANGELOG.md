@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.6] — 2026-06-19
+
+> **Release notes**
+> External tools and IntelliJ IDEA compare reliability update.
+
+### Changed
+- **IntelliJ IDEA compare launch** — the built-in IntelliJ preset now starts through `open -n <IntelliJ.app> --args diff <left> <right>` so a fresh compare session is created even if an old JetBrains backend process is still alive.
+- **External tools documentation** — README now has a dedicated setup chapter with Homebrew commands, a tool matrix, official download links, and links to detailed internal docs.
+- **Diff tool documentation** — IntelliJ IDEA setup now documents command syntax, folder compare usage, install methods, detected paths, launch behavior, and free/commercial licensing notes.
+- **Build metadata** — marketing version updated to `0.9.9.5.6`; build number updated to `124`.
+
+### Fixed
+- **Repeated IntelliJ compare** — closing the IntelliJ diff window no longer blocks a later compare request from MiMiNavigator when a stale JetBrains process remains in the task list.
+
 ## [0.9.9.5.5] — 2026-06-14
 
 > **Release notes**
@@ -922,7 +936,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...HEAD
+[0.9.9.5.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...v0.9.9.5.6
 [0.9.9.5.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.4...v0.9.9.5.5
 [0.9.9.5.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.3...v0.9.9.5.4
 [0.9.9.5.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.2...v0.9.9.5.3

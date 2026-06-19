@@ -33,8 +33,8 @@ enum DiffToolLauncher {
         log.info("[Compare] using '\(tool.name)' binary=\(tool.resolvedBinary)")
         let args = tool.buildArgs(left: leftURL.path, right: rightURL.path)
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: tool.resolvedBinary)
-        task.arguments = args
+        task.executableURL = URL(fileURLWithPath: launchBinary(for: tool))
+        task.arguments = launchArguments(for: tool, args: args)
         do {
             try task.run()
             log.info("[Compare] launched \(tool.name) ✓  args=\(args)")
@@ -44,6 +44,22 @@ enum DiffToolLauncher {
             log.error("[Compare] \(tool.name) failed: \(error.localizedDescription)")
             offerNoToolInstalled(comparingDirs: comparingDirs)
         }
+    }
+
+    // MARK: - launchBinary
+    private static func launchBinary(for tool: DiffTool) -> String {
+        if tool.id == "intellij", tool.displayPath.hasSuffix(".app") {
+            return "/usr/bin/open"
+        }
+        return tool.resolvedBinary
+    }
+
+    // MARK: - launchArguments
+    private static func launchArguments(for tool: DiffTool, args: [String]) -> [String] {
+        if tool.id == "intellij", tool.displayPath.hasSuffix(".app") {
+            return ["-n", tool.displayPath, "--args"] + args
+        }
+        return args
     }
 
     // MARK: - launchDirEqualViaFinder
