@@ -24,15 +24,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     var pendingServices: [NetService] = []
     private var scanGeneration: Int = 0
 
-    // MARK: - Service types that indicate a printer
-    nonisolated static let printerServiceTypes: Set<String> = [
-        "_ipp._tcp.", "_ipps._tcp.", "_pdl-datastream._tcp.",
-        "_printer._tcp.", "_fax-ipp._tcp.",
-    ]
-
-    // MARK: - Mobile device service type (iPhone / iPad)
-    nonisolated static let mobileServiceType = "_apple-mobdev2._tcp."
-
     override private init() { super.init() }
 
     // MARK: - Start discovery
@@ -47,12 +38,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         let generation = scanGeneration
         mergeConfiguredLocalServers()
 
-        let serviceTypes =
-            NetworkServiceType.allCases.map { $0.rawValue }
-            + Array(Self.printerServiceTypes)
-            + [Self.mobileServiceType]
-
-        for svcType in serviceTypes {
+        for svcType in NetworkServiceCatalog.browseTypes {
             let browser = NetServiceBrowser()
             browser.schedule(in: .main, forMode: .common)
             browser.delegate = self
@@ -69,6 +55,14 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             }
         }
 
+        Task {
+            let ssdpDevices = await SSDPDiscovery.discover()
+            await MainActor.run {
+                guard self.scanGeneration == generation else { return }
+                self.mergeSSDPDevices(ssdpDevices)
+            }
+        }
+
         // Auto-stop after 14 seconds
         Task {
             try? await Task.sleep(for: .seconds(14))
@@ -77,23 +71,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                 self.stopDiscovery()
                 log.info("[Network] auto-stopped after 14s timeout")
             }
-        }
-    }
-
-    // MARK: - Merge FritzBox DHCP host list into discovered hosts
-    func mergeFritzHosts(_ fritzHosts: [FritzBoxHost]) {
-        let routerIPs: Set<String> = ["192.168.178.1", "192.168.178.46"]
-        let ipToIdx = buildHostIPIndex()
-
-        for fritzHost in fritzHosts {
-            guard !shouldSkipFritzHost(fritzHost, routerIPs: routerIPs) else { continue }
-
-            if let existingIndex = findExistingHostIndex(for: fritzHost, ipToIdx: ipToIdx) {
-                updateExistingHost(at: existingIndex, with: fritzHost)
-                continue
-            }
-
-            appendNewFritzHost(fritzHost)
         }
     }
 
@@ -173,7 +150,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
 
     // MARK: - Normalize name for dedup
     // strips .local .local. .fritz.box; dots→dashes so fritz.box == fritz-box
-    private func normalizedName(_ raw: String) -> String {
+    func normalizedName(_ raw: String) -> String {
         raw.lowercased()
             .replacingOccurrences(of: ".local.", with: "")
             .replacingOccurrences(of: ".local", with: "")
@@ -188,6 +165,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         isPrinter: Bool,
         bonjourType: String? = nil,
         isMobile: Bool = false,
+        isGeneric: Bool = false,
         fritzMAC: String? = nil,
         isOffline: Bool = false
     ) {
@@ -227,7 +205,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             ? .mobileDevice
             : isPrinter
                 ? .printer
-                : .fileServer
+                : isGeneric ? .generic : .fileServer
         var host = NetworkHost(
             name: name, hostName: hostName, port: port,
             serviceType: serviceType ?? .smb, nodeType: nodeType)
@@ -358,120 +336,4 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         hosts.removeAll { $0.name == name }
     }
 
-    private func buildHostIPIndex() -> [String: Int] {
-        var ipToIdx: [String: Int] = [:]
-
-        for (index, host) in hosts.enumerated() where !host.hostName.isEmpty && !host.hostName.contains("@") {
-            ipToIdx[host.hostName] = index
-
-            let stripped = host.hostName
-                .replacingOccurrences(of: ".local.", with: "")
-                .replacingOccurrences(of: ".local", with: "")
-
-            if stripped != host.hostName {
-                ipToIdx[stripped] = index
-            }
-        }
-
-        return ipToIdx
-    }
-
-    private func shouldSkipFritzHost(_ fritzHost: FritzBoxHost, routerIPs: Set<String>) -> Bool {
-        guard !fritzHost.ip.isEmpty, !isLocalhostIP(fritzHost.ip) else {
-            log.debug("[FritzBox] skip localhost: \(fritzHost.name) (\(fritzHost.ip))")
-            return true
-        }
-
-        if routerIPs.contains(fritzHost.ip) {
-            log.debug("[FritzBox] skip router IP duplicate: \(fritzHost.name) (\(fritzHost.ip))")
-            return true
-        }
-
-        return false
-    }
-
-    private func findExistingHostIndex(for fritzHost: FritzBoxHost, ipToIdx: [String: Int]) -> Int? {
-        let normalizedFritzName = normalizedName(fritzHost.name)
-        let fritzNameLowercased = fritzHost.name.lowercased()
-        let isFritzMobile = isLikelyMobileFritzHostName(fritzNameLowercased)
-
-        if let index = ipToIdx[fritzHost.ip] {
-            return index
-        }
-
-        return hosts.firstIndex { host in
-            let normalizedHostName = normalizedName(host.name)
-            if normalizedHostName == normalizedFritzName {
-                return true
-            }
-
-            if isFritzMobile {
-                return isMobilePlaceholderHostName(host.name)
-            }
-
-            return false
-        }
-    }
-
-    private func updateExistingHost(at index: Int, with fritzHost: FritzBoxHost) {
-        updateExistingHostAddress(at: index, with: fritzHost)
-        updateExistingHostMAC(at: index, with: fritzHost)
-        updateExistingHostOfflineState(at: index, with: fritzHost)
-        renameExistingPlaceholderIfNeeded(at: index, with: fritzHost)
-    }
-
-    private func updateExistingHostAddress(at index: Int, with fritzHost: FritzBoxHost) {
-        if hosts[index].hostName.contains("@") || hosts[index].hostName.isEmpty {
-            hosts[index].hostName = fritzHost.ip
-            log.debug("[FritzBox] updated IP \(hosts[index].name) → \(fritzHost.ip)")
-        }
-    }
-
-    private func updateExistingHostMAC(at index: Int, with fritzHost: FritzBoxHost) {
-        if hosts[index].rawMAC == nil && !fritzHost.mac.isEmpty {
-            hosts[index].rawMAC = fritzHost.mac
-        }
-    }
-
-    private func updateExistingHostOfflineState(at index: Int, with fritzHost: FritzBoxHost) {
-        if !fritzHost.isActive {
-            hosts[index].isOffline = true
-        }
-    }
-
-    private func renameExistingPlaceholderIfNeeded(at index: Int, with fritzHost: FritzBoxHost) {
-        let existingName = hosts[index].name
-        guard isMobilePlaceholderHostName(existingName) else { return }
-        guard !fritzHost.name.isEmpty else { return }
-
-        hosts[index].name = fritzHost.name
-        log.info("[FritzBox] renamed '\(existingName)' → '\(fritzHost.name)' (\(fritzHost.ip))")
-    }
-
-    private func appendNewFritzHost(_ fritzHost: FritzBoxHost) {
-        addResolvedHost(
-            name: fritzHost.name,
-            hostName: fritzHost.ip,
-            port: 445,
-            serviceType: .smb,
-            isPrinter: false,
-            bonjourType: nil,
-            fritzMAC: fritzHost.mac,
-            isOffline: !fritzHost.isActive
-        )
-        log.info("[FritzBox] added '\(fritzHost.name)' ip=\(fritzHost.ip) active=\(fritzHost.isActive)")
-    }
-
-    private func isLikelyMobileFritzHostName(_ lowercasedName: String) -> Bool {
-        lowercasedName == "ipad"
-            || lowercasedName.hasPrefix("iphone")
-            || lowercasedName.contains("-iphone")
-    }
-
-    private func isMobilePlaceholderHostName(_ name: String) -> Bool {
-        let lowercasedName = name.lowercased()
-        return lowercasedName.hasPrefix("apple device")
-            || lowercasedName.hasPrefix("iphone (")
-            || lowercasedName.hasPrefix("ipad (")
-    }
 }

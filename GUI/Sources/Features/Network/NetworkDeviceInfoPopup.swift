@@ -227,6 +227,8 @@ struct NetworkDeviceInfoPopup: View {
 
         let services = formattedBonjourServices()
         appendEntry(&result, label: "Services", value: services)
+        let capabilities = host.capabilities.map(\.label).joined(separator: ", ")
+        appendEntry(&result, label: "Capabilities", value: capabilities)
     }
 
     private func resolveMACAddress() async -> String? {
@@ -392,18 +394,6 @@ struct NetworkDeviceInfoPopup: View {
                 return .red
             default:
                 return .secondary
-        }
-    }
-}
-
-// MARK: - NetworkNodeType label helper
-extension NetworkHost {
-    var nodeTypeLabel: String {
-        switch nodeType {
-        case .printer:      return "Printer"
-        case .mobileDevice: return "Mobile Device"
-        case .fileServer:   return "File Server"
-        case .generic:      return "Network Device"
         }
     }
 }

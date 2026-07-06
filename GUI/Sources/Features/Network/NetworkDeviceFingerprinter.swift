@@ -42,6 +42,8 @@ enum NetworkDeviceFingerprinter {
         "mikrotik", "routerboard",
         // Huawei
         "huawei", "honor router",
+        // Orange / Sagemcom Livebox (France)
+        "livebox", "orange box", "sagemcom",
         // Generic
         "router", "gateway", "speedport", "easybox", "dsl-router",
         "technicolor", "vodafone box", "o2 box",
@@ -111,79 +113,6 @@ enum NetworkDeviceFingerprinter {
             return .androidPhone
         }
         return nil
-    }
-
-    private struct ServiceClassificationCandidate {
-        let device: NetworkDeviceXT
-        let score: Int
-    }
-
-    private static func serviceScore(_ lowercasedTypes: [String]) -> [ServiceClassificationCandidate] {
-        let hasType: (String) -> Bool = { needle in
-            lowercasedTypes.contains { $0.contains(needle) }
-        }
-
-        let hasSMB = hasType("_smb._tcp.")
-        let hasSFTP = hasType("_sftp-ssh._tcp.")
-        let hasFTP = hasType("_ftp._tcp.")
-        let hasAirPlay = hasType("_airplay._tcp.")
-        let hasGoogleCast = hasType("_googlecast._tcp.")
-        let hasRAOP = hasType("_raop._tcp.")
-        let hasUPnP = hasType("_upnp") || hasType("_media")
-        let hasHTTP = hasType("_http._tcp.") || hasType("_https._tcp.")
-        let hasPrinter = lowercasedTypes.contains {
-            $0.contains("_ipp._tcp.")
-                || $0.contains("_ipps._tcp.")
-                || $0.contains("_printer._tcp.")
-                || $0.contains("_pdl-datastream._tcp.")
-                || $0.contains("_fax-ipp._tcp.")
-        }
-        let hasMobileService = lowercasedTypes.contains { $0.contains("mobdev") }
-
-        var candidates: [ServiceClassificationCandidate] = []
-
-        if hasMobileService {
-            candidates.append(.init(device: .iPhone, score: 100))
-        }
-        if hasPrinter {
-            candidates.append(.init(device: .printer, score: 100))
-        }
-        if hasSMB && hasSFTP {
-            candidates.append(.init(device: .mac, score: 95))
-        }
-        if (hasSFTP || hasFTP) && !hasSMB {
-            candidates.append(.init(device: .linuxServer, score: 90))
-        }
-        if hasAirPlay || hasGoogleCast || hasRAOP {
-            candidates.append(.init(device: .mediaBox, score: 70))
-        }
-        if hasUPnP && hasHTTP {
-            candidates.append(.init(device: .mediaBox, score: 55))
-        }
-        if hasHTTP {
-            candidates.append(.init(device: .router, score: 20))
-        }
-
-        return candidates
-    }
-
-    private static func bestServiceClassification(from candidates: [ServiceClassificationCandidate]) -> NetworkDeviceXT? {
-        candidates
-            .sorted { lhs, rhs in
-                if lhs.score == rhs.score {
-                    return String(describing: lhs.device) < String(describing: rhs.device)
-                }
-                return lhs.score > rhs.score
-            }
-            .first?
-            .device
-    }
-
-    // MARK: - Fast classification by Bonjour service set (no network IO)
-    static func classifyByServices(_ serviceTypes: Set<String>) -> NetworkDeviceXT? {
-        let lowercasedTypes = serviceTypes.map { $0.lowercased() }
-        let candidates = serviceScore(lowercasedTypes)
-        return bestServiceClassification(from: candidates)
     }
 
     // MARK: - Name-based fast classification (before any probe)

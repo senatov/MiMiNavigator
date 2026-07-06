@@ -119,6 +119,13 @@ struct HostNodeRow: View {
 
     private var actionButtons: some View {
         HStack(spacing: 4) {
+            ForEach(Array(host.capabilities.prefix(3))) { capability in
+                Image(systemName: capability.systemImage)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16, height: 16)
+                    .help(capability.label)
+            }
             if host.webUIURL != nil {
                 Button { onOpenWebUI() } label: {
                     Label("Web UI", systemImage: "safari")

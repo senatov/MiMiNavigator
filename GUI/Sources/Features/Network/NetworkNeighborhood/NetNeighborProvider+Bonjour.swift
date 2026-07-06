@@ -8,6 +8,15 @@
 
 import Foundation
 
+// MARK: - NetService sendability bridge
+private final class NetServiceReference: @unchecked Sendable {
+    let service: NetService
+
+    init(_ service: NetService) {
+        self.service = service
+    }
+}
+
 // MARK: - NetServiceBrowserDelegate
 
 extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
@@ -18,15 +27,18 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
         let name = service.name
         let senderType = service.type
         log.info("[Bonjour] found '\(name)' type=\(senderType)")
-        let isMobile = senderType.contains("mobdev")
-        let isPrinter =
-            !isMobile
-            && NetworkNeighborhoodProvider.printerServiceTypes
-                .contains { senderType.contains($0) }
+        let isMobile = senderType == NetworkServiceCatalog.mobileType
+        let isPrinter = !isMobile && NetworkServiceCatalog.isPrinter(senderType)
+        let isGeneric = NetworkServiceCatalog.isGeneric(senderType)
         let serviceType =
-            (isMobile || isPrinter)
+            (isMobile || isPrinter || isGeneric)
             ? nil
             : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
+        let serviceReference = NetServiceReference(service)
+        MainActor.assumeIsolated {
+            guard self.isScanning else { return }
+            self.pendingServices.append(serviceReference.service)
+        }
         service.delegate = self
         service.resolve(withTimeout: 10.0)
         Task { @MainActor in
@@ -46,7 +58,8 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
                 serviceType: serviceType,
                 isPrinter: isPrinter,
                 bonjourType: senderType,
-                isMobile: isMobile
+                isMobile: isMobile,
+                isGeneric: isGeneric
             )
         }
     }
@@ -98,13 +111,11 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         let senderType = sender.type
         let senderID = ObjectIdentifier(sender)
         log.info("[Bonjour] resolved '\(name)' → \(resolvedHostName):\(port)")
-        let isMobile = senderType.contains("mobdev")
-        let isPrinter =
-            !isMobile
-            && NetworkNeighborhoodProvider.printerServiceTypes
-                .contains { senderType.contains($0) }
+        let isMobile = senderType == NetworkServiceCatalog.mobileType
+        let isPrinter = !isMobile && NetworkServiceCatalog.isPrinter(senderType)
+        let isGeneric = NetworkServiceCatalog.isGeneric(senderType)
         let serviceType =
-            (isMobile || isPrinter)
+            (isMobile || isPrinter || isGeneric)
             ? nil
             : NetworkServiceType.allCases.first { senderType.contains($0.rawValue) }
         Task { @MainActor in
@@ -116,7 +127,9 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
                 name: displayName, hostName: resolvedHostName,
                 port: port, serviceType: serviceType,
                 isPrinter: isPrinter,
-                isMobile: isMobile
+                bonjourType: senderType,
+                isMobile: isMobile,
+                isGeneric: isGeneric
             )
             self.pendingServices.removeAll { ObjectIdentifier($0) == senderID }
         }

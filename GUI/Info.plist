@@ -183,6 +183,23 @@
 		<string>_ipps._tcp</string>
 		<string>_printer._tcp</string>
 		<string>_pdl-datastream._tcp</string>
+		<string>_fax-ipp._tcp</string>
+		<string>_apple-mobdev2._tcp</string>
+		<string>_http._tcp</string>
+		<string>_https._tcp</string>
+		<string>_workstation._tcp</string>
+		<string>_device-info._tcp</string>
+		<string>_scanner._tcp</string>
+		<string>_uscan._tcp</string>
+		<string>_airplay._tcp</string>
+		<string>_raop._tcp</string>
+		<string>_googlecast._tcp</string>
+		<string>_spotify-connect._tcp</string>
+		<string>_sonos._tcp</string>
+		<string>_hap._tcp</string>
+		<string>_matter._tcp</string>
+		<string>_matterc._udp</string>
+		<string>_home-assistant._tcp</string>
 	</array>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>MiMiNavigator needs to control Finder to show file information.</string>
