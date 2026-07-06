@@ -346,6 +346,7 @@ enum NetworkShareEnumerator {
 
             results.append(KeychainCred(user: creds.user, password: creds.password, server: server))
             log.debug("[Keychain] found \(creds.user)@\(server)")
+            break
         }
 
         logCredentialCandidates(results)
