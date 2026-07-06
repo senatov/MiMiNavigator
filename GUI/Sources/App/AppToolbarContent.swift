@@ -90,14 +90,14 @@ struct ToolbarButtonGroup<Content: View>: View {
 /// appState passed explicitly — @Environment is unreliable inside ToolbarContent on macOS
 private struct ViewModeToolbarItem: View {
     let appState: AppState
-    @State private var viewModeStore = PanelViewModeStore.shared
 
     var body: some View {
         ToolbarButtonGroup {
             let side = appState.focusedPanel
+            let tabManager = appState.tabManager(for: side)
             Picker("", selection: Binding(
-                get: { viewModeStore.mode(for: side) },
-                set: { viewModeStore.setMode($0, for: side) }
+                get: { tabManager.activeViewMode },
+                set: { tabManager.setActiveViewMode($0) }
             )) {
                 Image(systemName: "list.bullet")
                     .tag(PanelViewMode.list)

@@ -34,7 +34,7 @@ struct FilePanelView: View {
     }
 
     var currentMode: PanelViewMode {
-        viewModeStore.mode(for: viewModel.panelSide)
+        appState.tabManager(for: viewModel.panelSide).activeViewMode
     }
 
     var columnLayout: ColumnLayoutModel {

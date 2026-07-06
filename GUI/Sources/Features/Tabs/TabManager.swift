@@ -33,7 +33,8 @@
 
         init(panelSide: FavPanelSide, initialURL: URL) {
             self.panelSide = panelSide
-            let initialTab = TabItem.directory(url: initialURL)
+            let initialMode = PanelViewModeStore.shared.mode(for: panelSide)
+            let initialTab = TabItem.directory(url: initialURL, viewMode: initialMode)
             self.tabs = [initialTab]
             self.activeTabIndex = 0
             self.activeTabID = initialTab.id
@@ -46,6 +47,17 @@
         var activeTab: TabItem {
             ensureActiveTabIndex()
             return tabs[activeTabIndex]
+        }
+
+        var activeViewMode: PanelViewMode {
+            activeTab.viewMode
+        }
+
+        func setActiveViewMode(_ mode: PanelViewMode) {
+            ensureActiveTabIndex()
+            tabs[activeTabIndex].viewMode = mode
+            PanelViewModeStore.shared.setMode(mode, for: panelSide)
+            log.debug("[TabManager] view mode panel=\(panelSide) tab=\(activeTabID) mode=\(mode.rawValue)")
         }
 
         // MARK: - Tab Selection
@@ -91,9 +103,9 @@
 
             let newTab: TabItem
             if let archiveURL {
-                newTab = TabItem.archive(extractedURL: url, archiveURL: archiveURL)
+                newTab = TabItem.archive(extractedURL: url, archiveURL: archiveURL, viewMode: activeViewMode)
             } else {
-                newTab = TabItem.directory(url: url)
+                newTab = TabItem.directory(url: url, viewMode: activeViewMode)
             }
 
             // Insert after active tab
@@ -198,7 +210,8 @@
             let original = tabs[index]
             let duplicate = TabItem(
                 url: original.url,
-                archiveURL: original.archiveURL
+                archiveURL: original.archiveURL,
+                viewMode: original.viewMode
             )
 
             tabs.insert(duplicate, at: index + 1)
@@ -215,7 +228,7 @@
         func updateActiveTabPath(_ newURL: URL) {
             ensureActiveTabIndex()
             let current = tabs[activeTabIndex]
-            tabs[activeTabIndex] = TabItem(id: current.id, url: newURL)
+            tabs[activeTabIndex] = TabItem(id: current.id, url: newURL, viewMode: current.viewMode)
             log.debug("[TabManager] updateActiveTabPath panel=\(panelSide) → '\(newURL.path)'")
         }
 
@@ -223,7 +236,7 @@
         func updateActiveTabForArchive(extractedURL: URL, archiveURL: URL) {
             ensureActiveTabIndex()
             let current = tabs[activeTabIndex]
-            tabs[activeTabIndex] = TabItem(id: current.id, url: extractedURL, archiveURL: archiveURL)
+            tabs[activeTabIndex] = TabItem(id: current.id, url: extractedURL, archiveURL: archiveURL, viewMode: current.viewMode)
             log.debug("[TabManager] updateActiveTabForArchive panel=\(panelSide) archive='\(archiveURL.lastPathComponent)'")
         }
 

@@ -70,6 +70,10 @@ struct SelectionStatusBar: View {
         displayedPanelFiles.reduce(0) { $0 + $1.sizeInBytes }
     }
 
+    private var currentViewMode: PanelViewMode {
+        appState.tabManager(for: panelSide).activeViewMode
+    }
+
     /// Current URL for this panel
     private var currentURL: URL {
         isLeftPanel ? appState.leftURL : appState.rightURL
@@ -217,7 +221,7 @@ struct SelectionStatusBar: View {
                 .fill(Color(nsColor: .separatorColor))
                 .frame(height: 1)
         }
-        .animation(.easeInOut(duration: 0.15), value: viewModeStore.mode(for: panelSide))
+        .animation(.easeInOut(duration: 0.15), value: currentViewMode)
         .animation(.easeInOut(duration: 0.15), value: markedCount)
     }
 
@@ -302,7 +306,7 @@ extension SelectionStatusBar {
     private var thumbnailSliderSection: some View {
 
         Group {
-            if viewModeStore.mode(for: panelSide) == .thumbnail {
+            if currentViewMode == .thumbnail {
                 ThumbnailSizeSlider(
                     value: Binding(
                         get: { viewModeStore.thumbSize(for: panelSide) },

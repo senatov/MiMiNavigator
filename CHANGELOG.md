@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.7] — 2026-07-06
+
+> **Release notes**
+> Per-tab panel view persistence update.
+
+### Changed
+- **Per-tab view configuration** — each panel tab now stores its own List, Preview, or Tree mode and restores that mode immediately when selected.
+- **New and duplicated tabs** — newly opened tabs inherit the active tab's mode, while duplicated tabs retain the original tab's mode.
+- **Session persistence** — tab view modes are encoded with restored tabs and remain available after restarting MiMiNavigator.
+- **Build metadata** — marketing version updated to `0.9.9.5.7`; build number updated to `125`.
+
+### Fixed
+- **Shared panel view mode** — changing the view in one tab no longer changes every tab on the same panel side.
+- **Navigation mode reset** — navigating to another directory or entering an archive no longer discards the active tab's configured view.
+
 ## [0.9.9.5.6] — 2026-06-19
 
 > **Release notes**
@@ -936,7 +951,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...HEAD
+[0.9.9.5.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...v0.9.9.5.7
 [0.9.9.5.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...v0.9.9.5.6
 [0.9.9.5.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.4...v0.9.9.5.5
 [0.9.9.5.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.3...v0.9.9.5.4

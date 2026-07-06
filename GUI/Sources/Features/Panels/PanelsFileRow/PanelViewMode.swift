@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - PanelViewMode
-enum PanelViewMode: String, CaseIterable, Sendable {
+enum PanelViewMode: String, CaseIterable, Codable, Sendable {
     case list = "list"
     case thumbnail = "thumbnail"
     case tree = "tree"

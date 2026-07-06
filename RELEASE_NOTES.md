@@ -1,35 +1,37 @@
-# MiMiNavigator v0.9.9.5.6
+# MiMiNavigator v0.9.9.5.7
 
-External tools and IntelliJ IDEA compare reliability update.
+Per-tab panel view persistence update.
 
 ## Highlights
 
-- IntelliJ IDEA directory and file compare now launches through a fresh macOS app instance.
-- The README now has a dedicated External Utilities and Tools chapter for installation and setup.
-- Diff tool documentation now explains IntelliJ IDEA command syntax, installation options, detected paths, and licensing.
+- Each panel tab remembers its own List, Preview, or Tree view.
+- Switching tabs immediately restores the selected tab's configured view.
+- View configuration persists with restored tabs across application restarts.
 
 ## Changed
 
-- Launch the built-in IntelliJ IDEA diff preset with `open -n <IntelliJ.app> --args diff <left> <right>`.
-- Keep other diff tools on their existing direct launcher paths.
-- Document recommended Homebrew setup for KDiff3, `unar`, `p7zip`, FFmpeg, gifski, and python-lottie.
-- Update release metadata to version `0.9.9.5.6` and build `124`.
+- Store panel view mode in each `TabItem` instead of sharing one mode across an entire panel side.
+- Make new tabs inherit the active tab's view and duplicated tabs retain the source view.
+- Preserve the configured view during directory and archive navigation.
+- Update release metadata to version `0.9.9.5.7` and build `125`.
 
 ## Fixed
 
-- Prevented new IntelliJ compare requests from being routed into a stale JetBrains backend process that can remain alive after the diff window is closed.
+- Changing List, Preview, or Tree mode in one tab no longer changes every tab on the same panel.
+- Returning to a previously configured tab no longer shows the last mode selected in another tab.
 
 ## Documentation
 
-- Added IntelliJ IDEA setup notes to `GUI/Docs/DiffTools_Setup.md`.
-- Added a README tool matrix with links to Homebrew, KDiff3, IntelliJ IDEA, FFmpeg, gifski, python-lottie, cloud desktop clients, rclone, and detailed internal docs.
+- Updated `README.md` with the current release highlights and download link.
+- Added the complete `0.9.9.5.7` entry to `CHANGELOG.md`.
 
 ## Validation
 
-- `git diff --check` passes for the edited files.
+- Debug build succeeds with the release changes.
+- `git diff --check` passes for all edited files.
 
 ## Download
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...v0.9.9.5.6
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...v0.9.9.5.7

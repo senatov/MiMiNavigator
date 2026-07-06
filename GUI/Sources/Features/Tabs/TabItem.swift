@@ -21,6 +21,9 @@
         /// Archive URL if this tab is viewing inside an archive
         var archiveURL: URL?
 
+        /// Display mode configured for this tab
+        var viewMode: PanelViewMode
+
         /// True if this tab represents an archive view
         var isArchive: Bool {
             archiveURL != nil
@@ -31,11 +34,30 @@
         init(
             id: UUID = UUID(),
             url: URL,
-            archiveURL: URL? = nil
+            archiveURL: URL? = nil,
+            viewMode: PanelViewMode = .list
         ) {
             self.id = id
             self.url = url.standardizedFileURL
             self.archiveURL = archiveURL?.standardizedFileURL
+            self.viewMode = viewMode
+        }
+
+        // MARK: - Codable
+
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case url
+            case archiveURL
+            case viewMode
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            url = try container.decode(URL.self, forKey: .url).standardizedFileURL
+            archiveURL = try container.decodeIfPresent(URL.self, forKey: .archiveURL)?.standardizedFileURL
+            viewMode = try container.decodeIfPresent(PanelViewMode.self, forKey: .viewMode) ?? .list
         }
 
         // MARK: - Display Name
@@ -91,12 +113,12 @@
     extension TabItem {
 
         /// Create a tab for a regular directory
-        static func directory(url: URL) -> TabItem {
-            TabItem(url: url)
+        static func directory(url: URL, viewMode: PanelViewMode = .list) -> TabItem {
+            TabItem(url: url, viewMode: viewMode)
         }
 
         /// Create a tab for an archive opened as virtual directory
-        static func archive(extractedURL: URL, archiveURL: URL) -> TabItem {
-            TabItem(url: extractedURL, archiveURL: archiveURL)
+        static func archive(extractedURL: URL, archiveURL: URL, viewMode: PanelViewMode = .list) -> TabItem {
+            TabItem(url: extractedURL, archiveURL: archiveURL, viewMode: viewMode)
         }
     }
