@@ -11,17 +11,16 @@ import Foundation
 @MainActor
 final class UpdateChecker: ObservableObject {
     static let shared = UpdateChecker()
-    
-    private let repoOwner = "senatov"
-    private let repoName = "MiMiNavigator"
-    
+
     @Published var latestRelease: GitHubRelease?
     @Published var updateAvailable: Bool = false
     @Published var isChecking: Bool = false
+    @Published var isInstalling: Bool = false
+    @Published var installStatus: String?
     @Published var error: String?
-    
+
     private var apiURL: URL {
-        URL(string: "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest")!
+        URL(string: "https://miminavi.tech/api/github/release")!
     }
     
     var currentVersion: String {
@@ -39,7 +38,7 @@ final class UpdateChecker: ObservableObject {
         
         do {
             var request = URLRequest(url: apiURL)
-            request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
             request.setValue("MiMiNavigator/\(currentVersion)", forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 15
             
@@ -50,15 +49,9 @@ final class UpdateChecker: ObservableObject {
                 return
             }
             
-            if httpResponse.statusCode == 404 {
-                error = "No releases found"
-                log.info("[UpdateChecker] No releases on GitHub yet")
-                return
-            }
-            
             guard httpResponse.statusCode == 200 else {
-                error = "GitHub API error: \(httpResponse.statusCode)"
-                log.warning("[UpdateChecker] API error: \(httpResponse.statusCode)")
+                error = "Update service error: \(httpResponse.statusCode)"
+                log.warning("[UpdateChecker] service error: \(httpResponse.statusCode)")
                 return
             }
             
@@ -116,5 +109,26 @@ final class UpdateChecker: ObservableObject {
             return
         }
         NSWorkspace.shared.open(url)
+    }
+
+    // MARK: - Install Update
+    func installUpdate() async {
+        guard let release = latestRelease, let asset = dmgAsset else {
+            error = "No installable DMG was found"
+            return
+        }
+        isInstalling = true
+        installStatus = "Downloading update..."
+        error = nil
+        do {
+            try await UpdateInstaller.install(release: release, asset: asset) { [weak self] status in
+                Task { @MainActor in self?.installStatus = status }
+            }
+        } catch {
+            self.error = error.localizedDescription
+            installStatus = nil
+            isInstalling = false
+            log.error("[UpdateChecker] install failed: \(error.localizedDescription)")
+        }
     }
 }

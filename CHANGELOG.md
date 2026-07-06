@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.8] — 2026-07-06
+
+> **Release notes**
+> Secure automatic update installation and daily update checks.
+
+### Added
+- **Automatic update installation** — the updater downloads the notarized DMG, verifies its published SHA-256 digest, Developer ID team, bundle identifier, version, and Gatekeeper status, then replaces the current application and relaunches it.
+- **Safe replacement rollback** — installation keeps the previous application until the new copy succeeds and restores it automatically if replacement fails.
+- **Automatic update schedule** — MiMiNavigator checks shortly after launch and every 24 hours while it remains open, showing the update window only when a newer release exists.
+- **What's New page** — successful update preparation opens the product release section in the default browser before MiMiNavigator restarts.
+
+### Changed
+- **Public update metadata** — update checks now use the public `miminavi.tech` release endpoint instead of anonymous requests to the GitHub API.
+- **Update dialog** — available releases show their full release notes, download size, installation state, and an Install Update action.
+- **Build metadata** — marketing version updated to `0.9.9.5.8`; build number updated to `126`.
+
+### Fixed
+- **False “No releases found” result** — update checks no longer fail when anonymous GitHub API access returns HTTP 404.
+- **Manual-only updates** — users no longer need to download, mount, and copy the application themselves for future releases.
+
 ## [0.9.9.5.7] — 2026-07-06
 
 > **Release notes**
@@ -951,7 +971,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.8...HEAD
+[0.9.9.5.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...v0.9.9.5.8
 [0.9.9.5.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...v0.9.9.5.7
 [0.9.9.5.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.5...v0.9.9.5.6
 [0.9.9.5.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.4...v0.9.9.5.5

@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.7"><img src="https://img.shields.io/badge/release-v0.9.9.5.7-orange" alt="Release v0.9.9.5.7" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.8"><img src="https://img.shields.io/badge/release-v0.9.9.5.8-orange" alt="Release v0.9.9.5.8" /></a>
 </p>
 
 <p align="center">
@@ -38,15 +38,16 @@
 
 
 
-## Recent Changes (v0.9.9.5.7 - July 2026)
+## Recent Changes (v0.9.9.5.8 - July 2026)
 
-- **Per-tab panel views** — every tab remembers whether it uses List, Preview, or Tree mode and restores that view when selected.
-- **Tab creation and duplication** — new tabs inherit the active view, while duplicated tabs retain the source tab's configuration.
-- **Session restoration** — configured tab views persist across application restarts and survive directory or archive navigation.
-- **Build metadata** — release version is `0.9.9.5.7`, build `125`.
+- **Secure automatic updates** — MiMiNavigator downloads the notarized DMG, validates SHA-256, Developer ID, bundle identity, version, and Gatekeeper status, then replaces and relaunches the app with rollback protection.
+- **Daily checks** — update checks run shortly after startup and every 24 hours, opening the update dialog only when a newer release is available.
+- **Release details** — the updater displays full release notes and opens the product What's New section in the default browser during installation.
+- **Build metadata** — release version is `0.9.9.5.8`, build `126`.
 
 ## Previous Changes
 
+- **v0.9.9.5.7** — per-tab List, Preview, and Tree view persistence across navigation and restarts.
 - **v0.9.9.5.6** — IntelliJ IDEA compare reliability and expanded external tool documentation.
 - **v0.9.9.5.5** — drag-and-drop window targeting reliability and release hardening.
 - **v0.9.9.5.4** — cloud short-link alias validation, URL-safe random aliases, and provider documentation.
@@ -194,7 +195,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.7 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.7)**
+**[Download MiMiNavigator v0.9.9.5.8 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.8)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

@@ -65,6 +65,9 @@ import LogKit
         installMainWindowObserver()
         logStartupStep("main window observer installed")
 
+        UpdateCoordinator.shared.startAutomaticChecks()
+        logStartupStep("automatic update checks scheduled")
+
         scheduleAutoConnectServers()
         logStartupStep("auto-connect scheduled")
 

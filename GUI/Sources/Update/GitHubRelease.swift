@@ -29,10 +29,12 @@ struct GitHubAsset: Codable {
     let name: String
     let browserDownloadURL: String
     let size: Int
+    let digest: String?
     
     enum CodingKeys: String, CodingKey {
         case name
         case browserDownloadURL = "browser_download_url"
         case size
+        case digest
     }
 }

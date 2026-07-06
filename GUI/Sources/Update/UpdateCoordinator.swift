@@ -11,14 +11,39 @@ import SwiftUI
 @MainActor
 final class UpdateCoordinator {
     static let shared = UpdateCoordinator()
-    
+
     private var panel: NSPanel?
+    private var automaticCheckTask: Task<Void, Never>?
     private let frameAutosaveName = "MiMiNavigator.UpdateWindow"
+    private let automaticCheckInterval: UInt64 = 86_400_000_000_000
     
     private init() {}
+
+    // MARK: - Automatic Checks
+    func startAutomaticChecks() {
+        guard automaticCheckTask == nil else { return }
+        automaticCheckTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            while !Task.isCancelled {
+                await self?.performAutomaticCheck()
+                try? await Task.sleep(nanoseconds: self?.automaticCheckInterval ?? 86_400_000_000_000)
+            }
+        }
+        log.info("[UpdateCoordinator] automatic checks scheduled every 24 hours")
+    }
+
+    private func performAutomaticCheck() async {
+        await UpdateChecker.shared.checkForUpdates()
+        guard UpdateChecker.shared.updateAvailable else { return }
+        showPanel(startCheck: false)
+    }
     
     func checkForUpdates() {
         log.debug(#function + "()")
+        showPanel(startCheck: true)
+    }
+
+    private func showPanel(startCheck: Bool) {
         // If already open, bring to front
         if let existing = panel, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
@@ -47,9 +72,10 @@ final class UpdateCoordinator {
         p.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         self.panel = p
-        // Start checking
-        Task {
-            await UpdateChecker.shared.checkForUpdates()
+        if startCheck {
+            Task {
+                await UpdateChecker.shared.checkForUpdates()
+            }
         }
         log.debug("[UpdateCoordinator] Update panel shown")
     }

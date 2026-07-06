@@ -1,37 +1,40 @@
-# MiMiNavigator v0.9.9.5.7
+# MiMiNavigator v0.9.9.5.8
 
-Per-tab panel view persistence update.
+Secure automatic update installation and daily update checks.
 
 ## Highlights
 
-- Each panel tab remembers its own List, Preview, or Tree view.
-- Switching tabs immediately restores the selected tab's configured view.
-- View configuration persists with restored tabs across application restarts.
+- MiMiNavigator can now download, verify, install, and relaunch into a new release automatically.
+- Update checks run shortly after startup and every 24 hours while the app remains open.
+- The update dialog shows release notes and opens the product What's New page during installation.
+
+## Added
+
+- Download notarized DMG updates from the public MiMiNavigator update service.
+- Validate the published SHA-256 digest, Developer ID team, bundle identifier, release version, and Gatekeeper assessment before installation.
+- Replace the installed application after shutdown, retain a rollback copy until replacement succeeds, and relaunch automatically.
+- Check for new releases shortly after app launch and every 24 hours.
+- Open `https://miminavi.tech/#download` in the default browser when installation begins.
 
 ## Changed
 
-- Store panel view mode in each `TabItem` instead of sharing one mode across an entire panel side.
-- Make new tabs inherit the active tab's view and duplicated tabs retain the source view.
-- Preserve the configured view during directory and archive navigation.
-- Update release metadata to version `0.9.9.5.7` and build `125`.
+- Use `miminavi.tech/api/github/release` for public release metadata instead of anonymous GitHub API access.
+- Display complete GitHub release notes, DMG size, and live installation status in the Software Update window.
+- Update release metadata to version `0.9.9.5.8` and build `126`.
 
 ## Fixed
 
-- Changing List, Preview, or Tree mode in one tab no longer changes every tab on the same panel.
-- Returning to a previously configured tab no longer shows the last mode selected in another tab.
-
-## Documentation
-
-- Updated `README.md` with the current release highlights and download link.
-- Added the complete `0.9.9.5.7` entry to `CHANGELOG.md`.
+- Update checks no longer report “No releases found” when GitHub rejects anonymous repository API requests.
+- Future releases no longer require users to download, mount, and manually replace MiMiNavigator.
 
 ## Validation
 
-- Debug build succeeds with the release changes.
+- Public update metadata and authenticated asset redirect verified through `miminavi.tech`.
+- Debug and notarized Release builds complete successfully.
 - `git diff --check` passes for all edited files.
 
 ## Download
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...v0.9.9.5.7
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...v0.9.9.5.8

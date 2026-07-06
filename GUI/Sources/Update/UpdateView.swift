@@ -117,6 +117,17 @@ struct UpdateView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
+
+            if checker.isInstalling, let status = checker.installStatus {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(status)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal)
+            }
             
             ScrollView {
                 Text(release.body.isEmpty ? "No release notes." : release.body)
@@ -148,11 +159,11 @@ struct UpdateView: View {
                 
                 Spacer()
                 
-                Button("Download Update") {
-                    checker.downloadUpdate()
-                    dismiss()
+                Button(checker.isInstalling ? "Installing..." : "Install Update") {
+                    Task { await checker.installUpdate() }
                 }
                 .keyboardShortcut(.defaultAction)
+                .disabled(checker.isInstalling || checker.dmgAsset == nil)
             } else {
                 Spacer()
                 
