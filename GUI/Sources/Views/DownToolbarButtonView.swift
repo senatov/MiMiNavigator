@@ -31,7 +31,7 @@ struct DownToolbarButtonView: View {
                 isHovered = hovering
             }
         }
-        .focusable(false)
+        .keyboardFocusable()
         .help(title)
     }
 }

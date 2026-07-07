@@ -63,7 +63,7 @@ struct TopMenuBarView: View {
         }
         .help(isFinderSidebarVisible ? "Hide Finder sidebar" : "Show Finder sidebar")
         .buttonStyle(TopMenuButtonStyle())
-        .focusable(false)
+        .keyboardFocusable()
     }
 
         // MARK: -
@@ -99,7 +99,7 @@ struct TopMenuBarView: View {
         .menuStyle(.borderlessButton)
         .controlSize(.small)
         .buttonStyle(TopMenuButtonStyle())
-        .focusable(false)
+        .keyboardFocusable()
     }
     
         // MARK: - All top-level menu categories are defined here:

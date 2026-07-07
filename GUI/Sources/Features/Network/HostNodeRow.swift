@@ -43,11 +43,24 @@ struct HostNodeRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(rowBorder)
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .keyboardFocusable()
         .onHover { isHovered = $0 }
         .onTapGesture {
             guard host.isExpandable else { return }
             withAnimation(.easeInOut(duration: 0.15)) { onToggle() }
         }
+        .onKeyPress(.return) {
+            activateFocusedRow()
+        }
+        .onKeyPress(.space) {
+            activateFocusedRow()
+        }
+    }
+
+    private func activateFocusedRow() -> KeyPress.Result {
+        guard host.isExpandable else { return .ignored }
+        withAnimation(.easeInOut(duration: 0.15)) { onToggle() }
+        return .handled
     }
 
 

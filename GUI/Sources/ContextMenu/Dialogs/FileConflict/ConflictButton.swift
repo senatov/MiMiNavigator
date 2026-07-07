@@ -28,6 +28,7 @@ struct ConflictButton: View {
                 .overlay(buttonBorder)
         }
         .buttonStyle(.plain)
+        .keyboardFocusable()
         .onHover { isHovering = $0 }
     }
     

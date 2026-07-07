@@ -81,7 +81,7 @@ struct BreadCrumbView: View {
             .frame(maxWidth: .infinity, maxHeight: barHeight, alignment: .leading)
         }
         .padding(.horizontal, 0)
-        .focusable(false)
+        .keyboardFocusSection()
         .frame(height: barHeight)
         .controlSize(.mini)
     }

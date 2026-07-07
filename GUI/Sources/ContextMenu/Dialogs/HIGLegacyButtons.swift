@@ -21,6 +21,7 @@ struct _LegacyHIGPrimaryButton: View {
             .buttonStyle(ThemedButtonStyle())
             .tint(isDestructive ? .red : .accentColor)
             .controlSize(.large)
+            .keyboardFocusable()
     }
 }
 
@@ -32,5 +33,6 @@ struct _LegacyHIGSecondaryButton: View {
         Button(title, action: action)
             .buttonStyle(ThemedButtonStyle())
             .controlSize(.large)
+            .keyboardFocusable()
     }
 }

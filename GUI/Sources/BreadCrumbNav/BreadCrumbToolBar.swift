@@ -53,7 +53,7 @@ struct BreadCrumbToolBar: View {
             navigationGroup
             utilityGroup
         }
-        .focusable(false)
+        .keyboardFocusSection()
     }
 
     private var navigationGroup: some View {
@@ -91,7 +91,7 @@ struct BreadCrumbToolBar: View {
                 .modifiers(.control)
                 .onEnded { _ in openHistoryWindow() }
         )
-        .focusable(false)
+        .keyboardFocusable()
         .allowsHitTesting(true)
         .help("Back (Ctrl+click: history)")
     }
@@ -103,7 +103,7 @@ struct BreadCrumbToolBar: View {
             iconColor: iconColor,
             action: { handleNavigateUp() }
         )
-        .focusable(false)
+        .keyboardFocusable()
         .help("Parent directory")
     }
 
@@ -121,7 +121,7 @@ struct BreadCrumbToolBar: View {
                 .modifiers(.control)
                 .onEnded { _ in openHistoryWindow() }
         )
-        .focusable(false)
+        .keyboardFocusable()
         .allowsHitTesting(true)
         .help("Forward (Ctrl+click: history)")
     }
@@ -136,7 +136,7 @@ struct BreadCrumbToolBar: View {
                 openHistoryWindow()
             }
         )
-        .focusable(false)
+        .keyboardFocusable()
         .help("Navigation history")
     }
 
@@ -150,7 +150,7 @@ struct BreadCrumbToolBar: View {
                 openFavoritesWindow()
             }
         )
-        .focusable(false)
+        .keyboardFocusable()
         .help("Favorites — \(panelSide.rawValue)")
     }
 

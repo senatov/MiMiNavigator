@@ -77,7 +77,7 @@ struct FileTableViewHybrid: View {
         .overlay(panelBorder)
         .contentShape(Rectangle())
         .focusable(true)
-        .focusEffectDisabled()
+        .focusEffectDisabled(false)
         // Keyboard navigation
         .onMoveCommand { direction in
             guard isFocused else { return }

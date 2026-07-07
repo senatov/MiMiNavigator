@@ -161,6 +161,7 @@ struct BatchConfirmationDialog: View {
                 onConfirm: onConfirm
             )
         }
+        .keyboardFocusSection()
         .padding(20)
         .frame(width: 380)
         .background(DialogColors.base)

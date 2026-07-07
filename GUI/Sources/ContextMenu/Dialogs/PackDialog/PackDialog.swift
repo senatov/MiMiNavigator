@@ -237,6 +237,7 @@ struct PackDialog: View {
                 onConfirm: performPack
             )
         }
+        .keyboardFocusSection()
         .padding(16)
         .frame(minWidth: 400)
         .background(PackDialogStyle.panelBackground)

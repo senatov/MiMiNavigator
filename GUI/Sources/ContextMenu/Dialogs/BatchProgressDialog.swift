@@ -65,6 +65,7 @@ struct BatchProgressDialog: View {
                 .keyboardShortcut(.cancelAction)
             }
         }
+        .keyboardFocusSection()
         .padding(16)
         .frame(width: 320)
         .background(DialogColors.base)

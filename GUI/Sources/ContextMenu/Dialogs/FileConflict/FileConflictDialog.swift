@@ -26,6 +26,7 @@ struct FileConflictDialog: View {
             Divider()
             buttonSection
         }
+        .keyboardFocusSection()
         .frame(width: 640)
         .background(dialogBackground)
         .overlay(dialogBorder)

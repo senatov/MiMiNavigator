@@ -29,6 +29,7 @@ struct HistoryWindowContent: View {
         }
         .frame(minWidth: 360, idealWidth: 558, maxWidth: .infinity)
         .frame(minHeight: 360, idealHeight: 768, maxHeight: .infinity)
+        .keyboardFocusSection()
         .background(.ultraThinMaterial)
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 4)

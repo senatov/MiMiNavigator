@@ -101,5 +101,6 @@ struct LiquidGlassButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.90 : 1)
             .animation(.bouncy, value: configuration.isPressed)
             .animation(.easeInOut(duration: 0.2), value: isHighlighted)
+            .focusEffectDisabled(false)
     }
 }

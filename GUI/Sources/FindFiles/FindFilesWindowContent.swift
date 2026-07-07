@@ -76,6 +76,7 @@ struct FindFilesWindowContent: View {
                     .padding(.vertical, 5)
             }
             .font(.system(size: 12))
+            .keyboardFocusSection()
             // Archive password dialog
             .sheet(isPresented: Binding(
                 get: { viewModel.showPasswordDialog },

@@ -102,7 +102,7 @@ extension FileTableView {
                 transaction.disablesAnimations = true
             }
             .focusable(true)
-            .focusEffectDisabled()
+            .focusEffectDisabled(false)
             .onGeometryChange(
                 for: CGFloat.self,
                 of: { geometry in geometry.size.height }

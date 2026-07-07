@@ -37,6 +37,7 @@ struct ThemedButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .focusEffectDisabled(false)
     }
 
     private var buttonBorderColor: Color {

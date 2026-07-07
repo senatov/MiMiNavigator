@@ -32,7 +32,7 @@ struct MediaInfoConvertButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
-        .focusable(false)
+        .keyboardFocusable()
         .help("Convert")
         .onHover { hovering in
             withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {

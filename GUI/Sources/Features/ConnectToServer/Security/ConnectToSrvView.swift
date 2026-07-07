@@ -103,6 +103,7 @@ struct ConnToSrvrView: View {
                     .frame(minWidth: Layout.minContentWidth, maxWidth: .infinity)
             }
             .focusScope(focusNamespace)
+            .keyboardFocusSection()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(

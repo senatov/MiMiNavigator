@@ -45,6 +45,7 @@ struct AnimatedDialogButtonStyle: ButtonStyle {
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.12)) { isHovering = hovering }
             }
+            .focusEffectDisabled(false)
     }
 
     // MARK: - Colors

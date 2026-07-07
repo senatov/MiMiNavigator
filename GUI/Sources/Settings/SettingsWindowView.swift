@@ -35,6 +35,7 @@ struct SettingsWindowView: View {
                 .frame(minWidth: 400)
         }
         .frame(minWidth: 600, minHeight: 440)
+        .keyboardFocusSection()
         .background(dialogBgColor.ignoresSafeArea())
         .onAppear {
             if let pending = coordinator.pendingSection {
@@ -125,26 +126,31 @@ struct SettingsWindowView: View {
     private func sidebarRow(_ section: SettingsSection) -> some View {
         let isSelected = selectedSection == section
         let indent: CGFloat = section.isSubItem ? 14 : 0
-        return HStack(spacing: 6) {
-            Image(systemName: section.icon)
-                .font(.system(size: section.isSubItem ? 12 : 14, weight: .medium))
-                .foregroundStyle(isSelected ? .white : Color.accentColor)
-                .frame(width: 18)
-            Text(section.label)
-                .font(.system(size: section.isSubItem ? 12 : 13,
-                              weight: isSelected ? .light : .regular))
-                .foregroundStyle(isSelected ? .white : Color.primary)
-            Spacer()
+        return Button {
+            withAnimation(.easeOut(duration: 0.15)) { selectedSection = section }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: section.icon)
+                    .font(.system(size: section.isSubItem ? 12 : 14, weight: .medium))
+                    .foregroundStyle(isSelected ? .white : Color.accentColor)
+                    .frame(width: 18)
+                Text(section.label)
+                    .font(.system(size: section.isSubItem ? 12 : 13,
+                                  weight: isSelected ? .light : .regular))
+                    .foregroundStyle(isSelected ? .white : Color.primary)
+                Spacer()
+            }
+            .padding(.leading, 10 + indent)
+            .padding(.trailing, 10)
+            .padding(.vertical, section.isSubItem ? 4 : 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+            )
+            .contentShape(Rectangle())
         }
-        .padding(.leading, 10 + indent)
-        .padding(.trailing, 10)
-        .padding(.vertical, section.isSubItem ? 4 : 6)
-        .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? Color.accentColor : Color.clear)
-        )
-        .contentShape(Rectangle())
-        .onTapGesture { withAnimation(.easeOut(duration: 0.15)) { selectedSection = section } }
+        .buttonStyle(.plain)
+        .keyboardFocusable()
         .padding(.horizontal, 6)
     }
 
@@ -186,6 +192,7 @@ struct SettingsWindowView: View {
                             case .hotkeys:            EmptyView()
                             }
                         }
+                        .keyboardFocusSection()
                         .padding(.horizontal, 24)
                         .padding(.bottom, 24)
                     }
