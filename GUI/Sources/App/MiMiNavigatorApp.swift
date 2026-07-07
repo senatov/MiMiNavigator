@@ -378,6 +378,11 @@ struct MiMiNavigatorApp: App {
         FindFilesCoordinator.shared.toggle(searchPath: path, selectedFile: selectedFile, appState: appState)
     }
 
+    func performMultiRename() {
+        log.debug("[MultiRename] toolbar button clicked")
+        MultiRenameCoordinator.shared.toggle(panel: appState.focusedPanel, appState: appState)
+    }
+
     func performSettings() {
         log.debug("Settings button clicked")
         SettingsCoordinator.shared.toggle()

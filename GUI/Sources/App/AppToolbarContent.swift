@@ -58,6 +58,8 @@ struct AppToolbarContent: ToolbarContent {
             app.makeToolbarIcon(.connectServer) { app.performConnectServer() }
         case .findFiles:
             app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
+        case .multiRename:
+            app.makeToolbarIcon(.multiRename) { app.performMultiRename() }
         case .settings:
             app.makeToolbarIcon(.settings) { app.performSettings() }
         case .feedback:

@@ -163,6 +163,7 @@ import LogKit
         PackDialogCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
         FindFilesCoordinator.shared.bringToFront()
+        MultiRenameCoordinator.shared.bringToFront()
         SettingsCoordinator.shared.bringToFront()
         ToolbarCustomizeCoordinator.shared.bringToFront()
         MediaInfoPanel.shared.bringToFront()

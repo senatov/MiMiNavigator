@@ -53,6 +53,7 @@
 			membershipExceptions = (
 				Info.plist,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
+				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
@@ -62,6 +63,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
+				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
