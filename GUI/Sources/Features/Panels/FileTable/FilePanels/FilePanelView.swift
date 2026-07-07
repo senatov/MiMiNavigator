@@ -294,17 +294,7 @@ struct FilePanelView: View {
 
     private func refreshLocalDirectory(_ url: URL) async {
         let _ = log.debug(#function + ": \(url.path)")
-        appState.updatePath(url, for: viewModel.panelSide)
-        switch viewModel.panelSide {
-            case .left:
-                await appState.scanner.setLeftDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-            case .right:
-                await appState.scanner.setRightDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-        }
+        await appState.navigateToDirectory(url.path, on: viewModel.panelSide)
     }
 
     private func enterDirectory(_ file: CustomFile) {

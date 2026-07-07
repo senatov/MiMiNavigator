@@ -54,14 +54,8 @@ extension AppState {
         let history = navigationHistory(for: panel)
         let previousPath = history.currentPath?.path ?? NSHomeDirectory()
         self[panel: panel].searchResultsPath = nil
-        updatePath(previousPath, for: panel)
         Task {
-            if panel == .left {
-                await scanner.setLeftDirectory(pathStr: previousPath)
-            } else {
-                await scanner.setRightDirectory(pathStr: previousPath)
-            }
-            await refreshFiles(for: panel)
+            await navigateToDirectory(previousPath, on: panel)
         }
     }
 

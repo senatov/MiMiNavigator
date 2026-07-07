@@ -117,16 +117,7 @@ extension FindFilesViewModel {
         }
     }
     private func refreshPanel(at path: String, panel: FavPanelSide, appState: AppState) async {
-        appState.updatePath(path, for: panel)
-        if panel == .left {
-            await appState.scanner.setLeftDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .left)
-            await appState.refreshLeftFiles()
-        } else {
-            await appState.scanner.setRightDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .right)
-            await appState.refreshRightFiles()
-        }
+        await appState.navigateToDirectory(path, on: panel)
     }
 
     private func archiveTargetFileURL(for result: FindFilesResult, archivePath: String, tempDir: URL) -> URL {

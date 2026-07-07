@@ -148,7 +148,7 @@ extension AppState {
         }
         if displayedFiles(for: panel).isEmpty || !PathUtils.areEqual(path(for: panel), newPath) {
             log.error("\(#function) \(panel): nav failed after \(maxAttempts) attempts → back to '\(previousPath)'")
-            updatePath(previousPath, for: panel)
+            updateKnownDirectoryPath(URL(fileURLWithPath: previousPath), for: panel)
             await setScannerDirectoryAndRefresh(previousPath, for: panel)
             if Self.isUserNavigablePath(newPath) {
                 Self.showNavFailAlert(path: newPath, panel: panel)

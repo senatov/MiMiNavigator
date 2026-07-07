@@ -161,8 +161,7 @@ struct MiMiNavigatorApp: App {
                activeConnection.server.remoteProtocol == .smb,
                let mountedURL = resolvedMountedOrRemoteURL(from: activeConnection.provider.mountPath)
             {
-                appState.updatePath(mountedURL, for: side)
-                await refreshPanel(at: mountedURL, for: side)
+                await navigatePanel(to: mountedURL, for: side)
                 return
             }
             await connectMountedShare(connectURL, for: side)
@@ -190,8 +189,7 @@ struct MiMiNavigatorApp: App {
 
     private func connectMountedShare(_ url: URL, for side: FavPanelSide) async {
         if let mountedURL = await SMBMounter.shared.mountShare(url) {
-            appState.updatePath(mountedURL, for: side)
-            await refreshPanel(at: mountedURL, for: side)
+            await navigatePanel(to: mountedURL, for: side)
         }
     }
 
@@ -205,22 +203,20 @@ struct MiMiNavigatorApp: App {
             return
         }
 
-        appState.updatePath(remoteURL, for: side)
-        await refreshPanel(at: remoteURL, for: side)
+        await navigatePanel(to: remoteURL, for: side)
     }
 
     private func handleNetworkNavigate(_ shareURL: URL) async {
         let side = appState.focusedPanel
 
         if shareURL.isFileURL {
-            appState.updatePath(shareURL, for: side)
+            await navigatePanel(to: shareURL, for: side)
             NetworkNeighborhoodCoordinator.shared.close()
             return
         }
 
         if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
-            appState.updatePath(mountedURL, for: side)
-            await refreshPanel(at: mountedURL, for: side)
+            await navigatePanel(to: mountedURL, for: side)
             NetworkNeighborhoodCoordinator.shared.close()
         }
     }
@@ -242,8 +238,7 @@ struct MiMiNavigatorApp: App {
         }
 
         let side = appState.focusedPanel
-        appState.updatePath(targetURL, for: side)
-        await refreshPanel(at: targetURL, for: side)
+        await navigatePanel(to: targetURL, for: side)
     }
 
     private func resolvedMountedOrRemoteURL(from mountPath: String) -> URL? {
@@ -254,11 +249,11 @@ struct MiMiNavigatorApp: App {
         return URL(string: mountPath)
     }
 
-    private func refreshPanel(at url: URL, for side: FavPanelSide) async {
+    private func navigatePanel(to url: URL, for side: FavPanelSide) async {
         if AppState.isRemotePath(url) {
-            await appState.refreshRemoteFiles(for: side)
+            await appState.navigateToDirectory(url.absoluteString, on: side)
         } else {
-            await appState.refreshFiles(for: side, force: true)
+            await appState.navigateToDirectory(url.path, on: side)
         }
     }
 

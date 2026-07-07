@@ -39,7 +39,7 @@ extension DualDirectoryScanner {
         }
         log.warning("[Scan] current directory disappeared side=\(context.side) path='\(url.path)' fallback='\(fallbackURL.path)'")
         await MainActor.run {
-            appState.updatePath(fallbackURL, for: context.side)
+            appState.updateKnownDirectoryPath(fallbackURL, for: context.side)
         }
         startFSEvents(for: context.side, url: fallbackURL)
         do {

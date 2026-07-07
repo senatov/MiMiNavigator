@@ -181,16 +181,8 @@ struct TabBarView: View {
         let newActive = tabManager.activeTab
         Task { @MainActor in
             let url = newActive.url
-            appState.updatePath(url, for: panelSide)
-            if panelSide == .left {
-                await appState.scanner.setLeftDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-            }
+            let target = url.isFileURL ? url.path : url.absoluteString
+            await appState.navigateToDirectory(target, on: panelSide)
         }
     }
 }

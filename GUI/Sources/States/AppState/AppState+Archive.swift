@@ -96,7 +96,7 @@ extension AppState {
         state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
         setArchiveState(state, for: panel)
         tabManager(for: panel).updateActiveTabForArchive(extractedURL: tempDir, archiveURL: archiveURL)
-        updatePath(tempDir, for: panel)
+        setPath(tempDir.path, for: panel)
     }
 
     @MainActor
@@ -112,8 +112,10 @@ extension AppState {
     }
 
     private func activateLocalDirectory(_ directoryURL: URL, for panel: FavPanelSide) async {
-        await MainActor.run {
-            updatePath(directoryURL, for: panel)
+        let isArchivePath = await MainActor.run { archiveState(for: panel).isInsideArchive }
+        if !isArchivePath {
+            await navigateToDirectory(directoryURL.path, on: panel)
+            return
         }
 
         switch panel {

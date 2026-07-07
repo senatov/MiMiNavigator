@@ -87,17 +87,7 @@ extension CntMenuCoord {
     // MARK: - Panel Navigation Helper
     /// Navigates a panel to a directory path and refreshes its file list.
     private func navigate(panel: FavPanelSide, to path: String, appState: AppState) async {
-        appState.updatePath(path, for: panel)
-
-        if panel == .left {
-            await appState.scanner.setLeftDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .left, force: true)
-            await appState.refreshFiles(for: .left, force: true)
-        } else {
-            await appState.scanner.setRightDirectory(pathStr: path)
-            await appState.scanner.refreshFiles(currSide: .right, force: true)
-            await appState.refreshFiles(for: .right, force: true)
-        }
+        await appState.navigateToDirectory(path, on: panel)
     }
 
     private func presentCreateLinkDialog(for file: CustomFile, panel: FavPanelSide, appState: AppState) {

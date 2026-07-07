@@ -39,11 +39,9 @@ final class FavNavAdapter: FavoritesNavigationDelegate {
             log.warning("\(#function) bookmark target gone, resolved to: \(resolvedURL.path)")
             updateStaleFavorite(oldURL: url, newURL: resolvedURL)
         }
-        appState.updatePath(resolvedURL, for: targetPanel)
+        await appState.navigateToDirectory(resolvedURL.path, on: targetPanel)
         let file = CustomFile(name: resolvedURL.lastPathComponent, path: resolvedURL.path)
         appState.selectedDir.selectedFSEntity = file
-        await appState.scanner.resetRefreshTimer(for: targetPanel)
-        await appState.scanner.refreshFiles(currSide: targetPanel)
     }
 
 

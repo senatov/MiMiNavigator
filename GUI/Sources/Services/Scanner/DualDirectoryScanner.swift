@@ -112,10 +112,6 @@ actor DualDirectoryScanner {
 
         let url = URL(fileURLWithPath: pathStr)
 
-        Task { @MainActor in
-            appState.updatePath(url, for: .right)
-        }
-
         startFSEvents(for: .right, url: url)
     }
 
@@ -128,10 +124,6 @@ actor DualDirectoryScanner {
         log.info("\(#function) '\(pathStr)'")
 
         let url = URL(fileURLWithPath: pathStr)
-
-        Task { @MainActor in
-            appState.updatePath(url, for: .left)
-        }
 
         startFSEvents(for: .left, url: url)
     }

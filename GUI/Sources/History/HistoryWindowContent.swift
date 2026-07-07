@@ -171,9 +171,7 @@ struct HistoryWindowContent: View {
             Task { @MainActor in
                 let mgr = RemoteConnectionManager.shared
                 if mgr.activeConnection != nil {
-                    // Connection alive — just navigate
-                    appState.updatePath(path, for: panelSide)
-                    await appState.refreshRemoteFiles(for: panelSide)
+                    await appState.navigateToDirectory(path, on: panelSide)
                 } else {
                     // Dead — try to reconnect from saved server matching origin
                     let origin = AppState.remoteOrigin(from: path)
@@ -183,8 +181,7 @@ struct HistoryWindowContent: View {
                         let pwd = RemoteServerKeychain.loadPassword(for: server)
                         await mgr.connect(to: server, password: pwd)
                         if mgr.isConnected {
-                            appState.updatePath(path, for: panelSide)
-                            await appState.refreshRemoteFiles(for: panelSide)
+                            await appState.navigateToDirectory(path, on: panelSide)
                         }
                     }
                 }

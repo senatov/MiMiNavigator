@@ -212,9 +212,8 @@ struct RemoteConnectionsDropdown: View {
             return
         }
         let side = appState.focusedPanel
-        appState.updatePath(targetURL, for: side)
         Task {
-            await refreshPanel(at: targetURL, for: side)
+            await navigatePanel(to: targetURL, for: side)
         }
         log.info("[DropdownNav] \(side) → \(server.displayName)")
     }
@@ -227,12 +226,11 @@ struct RemoteConnectionsDropdown: View {
         return URL(string: mountPath)
     }
 
-    private func refreshPanel(at url: URL, for side: FavPanelSide) async {
+    private func navigatePanel(to url: URL, for side: FavPanelSide) async {
         if AppState.isRemotePath(url) {
-            await appState.refreshRemoteFiles(for: side)
+            await appState.navigateToDirectory(url.absoluteString, on: side)
         } else {
-            await appState.scanner.clearCooldown(for: side)
-            await appState.scanner.refreshFiles(currSide: side, force: true)
+            await appState.navigateToDirectory(url.path, on: side)
         }
     }
 
@@ -311,8 +309,7 @@ struct RemoteConnectionsDropdown: View {
     }
 
     private func restorePanel(_ side: FavPanelSide, to url: URL) async {
-        appState.updatePath(url, for: side)
-        await refreshPanel(at: url, for: side)
+        await navigatePanel(to: url, for: side)
     }
 
 

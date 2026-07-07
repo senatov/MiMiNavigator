@@ -377,16 +377,8 @@ final class DuoFilePanelKeyboardHandler {
 
         Task { @MainActor in
             let url = tab.url
-            appState.updatePath(url, for: panel)
-            if panel == .left {
-                await appState.scanner.setLeftDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .left)
-                await appState.refreshLeftFiles()
-            } else {
-                await appState.scanner.setRightDirectory(pathStr: url.path)
-                await appState.scanner.refreshFiles(currSide: .right)
-                await appState.refreshRightFiles()
-            }
+            let target = url.isFileURL ? url.path : url.absoluteString
+            await appState.navigateToDirectory(target, on: panel)
         }
     }
 }
