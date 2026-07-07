@@ -16,9 +16,39 @@ struct BatchConfirmationDialog: View {
     let destination: URL?
     let onConfirm: () -> Void
     let onCancel: () -> Void
+    private let transferOperation: FileTransferOperation?
+    private let onTransferAction: ((FileTransferAction) -> Void)?
     
     @State private var showFileList = false
     @State private var deleteEstimate: DeletePreviewEstimate?
+
+    // MARK: - Initializers
+
+    init(
+        operationType: BatchOperationType,
+        files: [CustomFile],
+        destination: URL?,
+        onConfirm: @escaping () -> Void,
+        onCancel: @escaping () -> Void
+    ) {
+        self.operationType = operationType
+        self.files = files
+        self.destination = destination
+        self.onConfirm = onConfirm
+        self.onCancel = onCancel
+        self.transferOperation = nil
+        self.onTransferAction = nil
+    }
+
+    init(operation: FileTransferOperation, onAction: @escaping (FileTransferAction) -> Void) {
+        self.operationType = .copy
+        self.files = operation.sourceFiles
+        self.destination = operation.destinationPath
+        self.onConfirm = { onAction(.copy) }
+        self.onCancel = { onAction(.abort) }
+        self.transferOperation = operation
+        self.onTransferAction = onAction
+    }
     
     private var totalSize: String {
         if operationType == .delete, let deleteEstimate {
@@ -152,14 +182,7 @@ struct BatchConfirmationDialog: View {
             Divider()
             
             // Buttons
-            HIGDialogButtons(
-                cancelTitle: L10n.Button.cancel,
-                confirmTitle: confirmButtonTitle,
-                isDestructive: operationType == .delete,
-                isConfirmDisabled: operationType == .delete && directoriesCount > 0 && deleteEstimate == nil,
-                onCancel: onCancel,
-                onConfirm: onConfirm
-            )
+            dialogButtons
         }
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
@@ -179,8 +202,45 @@ struct BatchConfirmationDialog: View {
     }
     
     // MARK: - Computed Properties
+
+    @ViewBuilder
+    private var dialogButtons: some View {
+        if let onTransferAction {
+            HStack(spacing: 10) {
+                dialogButton(L10n.Button.cancel, shortcut: .cancelAction) { onTransferAction(.abort) }
+                Spacer()
+                dialogButton(L10n.Button.copy, shortcut: .defaultAction) { onTransferAction(.copy) }
+                dialogButton(L10n.Button.move) { onTransferAction(.move) }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 6)
+        } else {
+            HIGDialogButtons(
+                cancelTitle: L10n.Button.cancel,
+                confirmTitle: confirmButtonTitle,
+                isDestructive: operationType == .delete,
+                isConfirmDisabled: operationType == .delete && directoriesCount > 0 && deleteEstimate == nil,
+                onCancel: onCancel,
+                onConfirm: onConfirm
+            )
+        }
+    }
+
+    private func dialogButton(
+        _ title: String,
+        shortcut: KeyboardShortcut? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(title, action: action)
+            .optionalKeyboardShortcut(shortcut)
+            .buttonStyle(ThemedButtonStyle())
+            .controlSize(.large)
+            .focusable(true)
+            .focusEffectDisabled(false)
+    }
     
     private var operationIcon: Image {
+        if transferOperation != nil { return Image(systemName: "folder.fill") }
         switch operationType {
         case .copy: return Image(systemName: "doc.on.doc.fill")
         case .move: return Image(systemName: "arrow.right.doc.on.clipboard")
@@ -190,6 +250,7 @@ struct BatchConfirmationDialog: View {
     }
     
     private var iconColor: Color {
+        if transferOperation != nil { return .blue }
         switch operationType {
         case .copy: return .blue
         case .move: return .orange
@@ -199,6 +260,9 @@ struct BatchConfirmationDialog: View {
     }
     
     private var titleText: String {
+        if let transferOperation {
+            return "Move or copy \(transferOperation.itemsDescription) to \"\(transferOperation.destinationName)\"?"
+        }
         switch operationType {
         case .copy:
             return L10n.BatchOperation.confirmCopy(files.count, destination?.lastPathComponent ?? "")
@@ -234,6 +298,18 @@ struct BatchConfirmationDialog: View {
         }
         let skipped = deleteEstimate.skippedCount > 0 ? "\nSome entries could not be scanned: \(deleteEstimate.skippedCount)." : ""
         return "\(deleteEstimate.summaryText).\(skipped)"
+    }
+}
+
+// MARK: - Optional Keyboard Shortcut
+private extension View {
+    @ViewBuilder
+    func optionalKeyboardShortcut(_ shortcut: KeyboardShortcut?) -> some View {
+        if let shortcut {
+            keyboardShortcut(shortcut)
+        } else {
+            self
+        }
     }
 }
 

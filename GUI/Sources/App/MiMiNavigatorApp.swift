@@ -260,7 +260,7 @@ struct MiMiNavigatorApp: App {
     // MARK: - Transfer Confirmation Helpers
     @ViewBuilder
     func transferConfirmationDialog(for operation: FileTransferOperation) -> some View {
-        FileTransferConfirmationDialog(operation: operation) { action in
+        BatchConfirmationDialog(operation: operation) { action in
             executePendingTransfer(action)
         }
     }
