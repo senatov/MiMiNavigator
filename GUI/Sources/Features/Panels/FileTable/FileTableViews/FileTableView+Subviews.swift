@@ -46,7 +46,8 @@ extension FileTableView {
                         } header: {
                             TableHeaderView(
                                 panelSide: panelSide,
-                                layout: layout
+                                layout: layout,
+                                isFocused: isFocused
                             )
                         }
                     }
@@ -79,8 +80,6 @@ extension FileTableView {
     private var scrollBackgroundLayer: some View {
         ZStack {
             scrollZebraBackground
-
-            // Hit layer for empty area clicks. Does NOT receive events from subviews (rows).
             Color.clear
             .contentShape(Rectangle())
             .gesture(emptyAreaTapGesture, including: .gesture)
@@ -106,11 +105,9 @@ extension FileTableView {
         .onEnded { gesture in
             switch gesture {
             case .first:
-                // Double-click on empty area → clear marks (like Esc)
                 appState.unmarkAll(on: panelSide)
                 selectedID = nil
             case .second:
-                // Single-click on empty area → exit multi-selection and deselect
                 appState.unmarkAll(on: panelSide)
                 selectedID = nil
             }

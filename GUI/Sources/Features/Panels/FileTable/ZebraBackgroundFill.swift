@@ -3,40 +3,33 @@
 //
 // Created by Iakov Senatov on 15.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Minimal zebra fill that doesn't create scroll overflow.
-//              Only renders visible rows, no GeometryReader inside ScrollView.
+// Description: Zebra fill for the empty area below file rows.
 
 import SwiftUI
 
 // MARK: - Zebra Background Fill
-/// Minimal zebra fill — renders just a few rows to handle edge cases.
-/// Does NOT use GeometryReader (causes issues inside ScrollView).
 struct ZebraBackgroundFill: View {
+    private static let stripeCount = 200
     let startIndex: Int
     let isActivePanel: Bool
     let rowHeight: CGFloat
 
     var body: some View {
         ZStack(alignment: .top) {
-            stripesLayer()
+            stripesLayer
                 .frame(maxWidth: .infinity, alignment: .top)
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    // MARK: - Layers
-
-    private func stripesLayer() -> some View {
+    private var stripesLayer: some View {
         VStack(spacing: 0) {
-            ForEach(0..<maxVisibleRows(), id: \.self) { i in
+            ForEach(0..<Self.stripeCount, id: \.self) { i in
                 stripeRow(index: i)
             }
         }
     }
-
-
-    // MARK: - Stripe Rows
 
     private func stripeRow(index: Int) -> some View {
         Rectangle()
@@ -56,14 +49,6 @@ struct ZebraBackgroundFill: View {
         } else {
             return isOdd ? DesignTokens.zebraInactiveOdd : DesignTokens.zebraInactiveEven
         }
-    }
-
-
-    // MARK: - Layout Calculation
-    private func maxVisibleRows() -> Int {
-        // Large enough to visually cover any panel height without scroll issues
-        // Avoid GeometryReader completely
-        return 200
     }
 
 

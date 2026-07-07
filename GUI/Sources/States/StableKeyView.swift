@@ -8,16 +8,7 @@
 import SwiftUI
 
 // MARK: - Stable Key View
-/// A wrapper view that pins stable identity for its content using a provided key.
-/// Useful for preventing unnecessary re-renders when parent state changes,
-/// while still allowing updates when the key actually changes.
-///
-/// Usage:
-/// ```swift
-/// StableKeyView(currentPath) {
-///     ExpensiveView()
-/// }
-/// ```
+/// Assigns explicit SwiftUI identity to content and recreates it when the key changes.
 @MainActor
 struct StableKeyView<Key: Hashable, Content: View>: View {
     private let key: Key

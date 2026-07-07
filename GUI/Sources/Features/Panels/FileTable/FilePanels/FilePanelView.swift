@@ -18,7 +18,6 @@ struct FilePanelView: View {
     @State var viewModeStore = PanelViewModeStore.shared
     let containerWidth: CGFloat
     @Binding var leftPanelWidth: CGFloat
-    let onPanelTap: (FavPanelSide) -> Void
 
     private var panelURL: URL {
         switch viewModel.panelSide {
@@ -69,8 +68,7 @@ struct FilePanelView: View {
         containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
         fetchFiles: @escaping @Sendable @concurrent (FavPanelSide) async -> Void,
-        appState: AppState,
-        onPanelTap: @escaping (FavPanelSide) -> Void = { _ in }
+        appState: AppState
     ) {
         self._leftPanelWidth = leftPanelWidth
         self.containerWidth = containerWidth
@@ -81,7 +79,6 @@ struct FilePanelView: View {
                 fetchFiles: fetchFiles
             )
         )
-        self.onPanelTap = onPanelTap
     }
 
     // MARK: - View

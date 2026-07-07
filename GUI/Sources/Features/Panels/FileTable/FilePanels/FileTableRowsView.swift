@@ -60,6 +60,10 @@ struct FileTableRowsView: View {
         appState.focusedPanel == panelSide
     }
 
+    private var themeVersion: Int {
+        colorStore.themeVersion
+    }
+
 
     private var selectedDisplayIndex: Int? {
         rows.firstIndex { $0.id == currentSelectedID }
@@ -187,13 +191,17 @@ struct FileTableRowsView: View {
             sizeVersion: file.sizeVersion,
             byteSize: file.sizeInBytes,
             modifiedTimestamp: file.modifiedDate?.timeIntervalSince1970 ?? 0,
-            isParent: false
+            isParent: false,
+            isActivePanel: isActivePanel,
+            themeVersion: themeVersion
         ) {
             FileRow(
                 index: index,
                 file: file,
                 isSelected: isSelected,
                 panelSide: panelSide,
+                isActivePanel: isActivePanel,
+                themeVersion: themeVersion,
                 layout: layout,
                 layoutVersion: layout.layoutVersion,
                 onSelect: onSelect,
@@ -220,6 +228,8 @@ struct SizeAwareRow<Content: View>: View, Equatable {
     let byteSize: Int64
     let modifiedTimestamp: TimeInterval
     let isParent: Bool
+    let isActivePanel: Bool
+    let themeVersion: Int
     @ViewBuilder let content: () -> Content
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
@@ -229,6 +239,8 @@ struct SizeAwareRow<Content: View>: View, Equatable {
             && lhs.byteSize == rhs.byteSize
             && lhs.modifiedTimestamp == rhs.modifiedTimestamp
             && lhs.isParent == rhs.isParent
+            && lhs.isActivePanel == rhs.isActivePanel
+            && lhs.themeVersion == rhs.themeVersion
     }
     var body: some View {
         content()

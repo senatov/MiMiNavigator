@@ -82,7 +82,6 @@ extension FilePanelView {
                 files: files,
                 selectedID: selectedIDBinding,
                 panelSide: viewModel.panelSide,
-                onPanelTap: onPanelTap,
                 onSelect: { file in
                     viewModel.select(file)
                 },

@@ -18,6 +18,8 @@ struct FileRow: View, Equatable {
     let file: CustomFile
     let isSelected: Bool
     let panelSide: FavPanelSide
+    let isActivePanel: Bool
+    let themeVersion: Int
     let layout: ColumnLayoutModel
     let layoutVersion: Int
     let onSelect: (CustomFile) -> Void
@@ -54,6 +56,8 @@ struct FileRow: View, Equatable {
     /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
         lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
+            && lhs.isActivePanel == rhs.isActivePanel
+            && lhs.themeVersion == rhs.themeVersion
             && lhs.layoutVersion == rhs.layoutVersion
             && lhs.file.sizeVersion == rhs.file.sizeVersion
             && lhs.file.sizeInBytes == rhs.file.sizeInBytes
@@ -61,10 +65,6 @@ struct FileRow: View, Equatable {
             && lhs.file.cachedShallowSize == rhs.file.cachedShallowSize
             && lhs.file.cachedChildCount == rhs.file.cachedChildCount
             && lhs.file.modifiedDate?.timeIntervalSince1970 == rhs.file.modifiedDate?.timeIntervalSince1970
-    }
-
-    private var isActivePanel: Bool {
-        appState.focusedPanel == panelSide
     }
 
     var isParentEntry: Bool {
@@ -108,6 +108,7 @@ struct FileRow: View, Equatable {
                 ^ (file.cachedShallowSize ?? Int64.min).hashValue
                 ^ (file.cachedChildCount ?? Int.min).hashValue
                 ^ Int(file.modifiedDate?.timeIntervalSince1970 ?? 0).hashValue
+                ^ themeVersion.hashValue
         ) {
             rowContent
         }
