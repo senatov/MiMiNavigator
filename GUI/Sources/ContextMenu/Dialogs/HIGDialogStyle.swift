@@ -13,6 +13,7 @@ struct HIGDialogStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .keyboardFocusSection()
+            .forcedDialogTabNavigation()
             .padding(24)
             .frame(minWidth: 320, maxWidth: 440)
             .background(DialogColors.base)

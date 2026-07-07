@@ -66,6 +66,7 @@ struct BatchProgressDialog: View {
             }
         }
         .keyboardFocusSection()
+        .forcedDialogTabNavigation()
         .padding(16)
         .frame(width: 320)
         .background(DialogColors.base)

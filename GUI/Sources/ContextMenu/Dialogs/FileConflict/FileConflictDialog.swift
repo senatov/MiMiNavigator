@@ -27,6 +27,7 @@ struct FileConflictDialog: View {
             buttonSection
         }
         .keyboardFocusSection()
+        .forcedDialogTabNavigation()
         .frame(width: 640)
         .background(dialogBackground)
         .overlay(dialogBorder)

@@ -162,6 +162,7 @@ struct BatchConfirmationDialog: View {
             )
         }
         .keyboardFocusSection()
+        .forcedDialogTabNavigation()
         .padding(20)
         .frame(width: 380)
         .background(DialogColors.base)

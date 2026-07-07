@@ -126,6 +126,7 @@ struct ConvertMediaDialog: View {
         }
         .frame(minWidth: Layout.minWidth, idealWidth: Layout.idealWidth, minHeight: Layout.minHeight)
         .keyboardFocusSection()
+        .forcedDialogTabNavigation()
         .padding(.top, 10)
         .background(panelBackground)
         .glassEffect(.regular)

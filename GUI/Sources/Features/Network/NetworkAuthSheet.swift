@@ -105,6 +105,7 @@ struct NetworkAuthSheet: View {
         }
         .frame(width: NetworkAuthSheetLayout.dialogWidth)
         .keyboardFocusSection()
+        .forcedDialogTabNavigation()
         .padding(.vertical, 2)
         .background(NetworkAuthSheetGlassStyle.sheetBackground)
         .glassEffect(.regular)
