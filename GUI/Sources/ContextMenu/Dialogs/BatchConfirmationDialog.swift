@@ -236,7 +236,7 @@ struct BatchConfirmationDialog: View {
             .buttonStyle(ThemedButtonStyle())
             .controlSize(.large)
             .focusable(true)
-            .focusEffectDisabled(false)
+            .focusEffectDisabled()
     }
     
     private var operationIcon: Image {

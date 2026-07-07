@@ -85,7 +85,7 @@ extension View {
 
     func keyboardFocusable() -> some View {
         focusable(true)
-            .focusEffectDisabled(false)
+            .focusEffectDisabled()
     }
 
     func forcedDialogTabNavigation() -> some View {

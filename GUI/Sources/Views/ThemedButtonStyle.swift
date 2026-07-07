@@ -12,45 +12,21 @@ import SwiftUI
 /// Applies thin border + shadow from ColorThemeStore to any Button.
 /// Usage: .buttonStyle(ThemedButtonStyle())
 struct ThemedButtonStyle: ButtonStyle {
-
-    @State private var store = ColorThemeStore.shared
+    var tint: Color? = nil
+    @State private var isHovered = false
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: store.buttonCornerRadius, style: .continuous)
-                    .fill(configuration.isPressed
-                          ? Color(nsColor: .controlBackgroundColor).opacity(0.7)
-                          : Color(nsColor: .controlBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: store.buttonCornerRadius, style: .continuous)
-                    .stroke(buttonBorderColor, lineWidth: store.buttonBorderWidth)
-            )
-            .shadow(
-                color: buttonShadowColor,
-                radius: store.buttonShadowRadius,
-                x: 0,
-                y: store.buttonShadowY
-            )
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-            .focusEffectDisabled(false)
-    }
-
-    private var buttonBorderColor: Color {
-        if let c = Color(hex: store.hexButtonBorder), !store.hexButtonBorder.isEmpty {
-            return c
+        DownToolbarGlassButtonStyle(
+            isHovered: isHovered,
+            tint: tint,
+            horizontalPadding: 12,
+            verticalPadding: 6
+        )
+        .makeBody(configuration: configuration)
+        .onHover { hovering in
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
+                isHovered = hovering
+            }
         }
-        return Color.gray.opacity(0.35)
-    }
-
-    private var buttonShadowColor: Color {
-        if let c = Color(hex: store.hexButtonShadow), !store.hexButtonShadow.isEmpty {
-            return c
-        }
-        return Color.black.opacity(0.1)
     }
 }

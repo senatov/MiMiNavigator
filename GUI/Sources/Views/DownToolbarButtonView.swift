@@ -40,11 +40,15 @@ struct DownToolbarButtonView: View {
 
 struct DownToolbarGlassButtonStyle: ButtonStyle {
     let isHovered: Bool
+    var tint: Color? = nil
+    var horizontalPadding: CGFloat = 14
+    var verticalPadding: CGFloat = 9
+    @Environment(\.isFocused) private var isFocused
 
     // MARK: -
     func makeBody(configuration: Configuration) -> some View {
         let isPressed = configuration.isPressed
-        let scale = isPressed ? 0.976 : (isHovered ? 1.028 : 1.0)
+        let scale = isPressed ? 0.976 : (isFocused ? 1.035 : (isHovered ? 1.028 : 1.0))
         let shadowOpacity = isPressed ? 0.30 : (isHovered ? 0.28 : 0.18)
         let shadowRadius: CGFloat = isPressed ? 7 : (isHovered ? 9 : 5)
         let shadowYOffset: CGFloat = isPressed ? 4 : (isHovered ? 5 : 3)
@@ -57,8 +61,8 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
         return configuration.label
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(Color.primary.opacity(isPressed ? 0.96 : 0.90))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .background {
                 ZStack {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -89,6 +93,10 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
                         )
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
                         .fill(Color.white.opacity(isHovered ? 0.07 : 0.035))
+                    if let tint {
+                        RoundedRectangle(cornerRadius: isFocused ? 16 : 13, style: .continuous)
+                            .fill(tint.opacity(isPressed ? 0.28 : (isFocused ? 0.34 : 0.16)))
+                    }
                 }
             }
             .overlay {
@@ -132,6 +140,8 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             .scaleEffect(scale)
             .animation(.spring(response: 0.20, dampingFraction: 0.70), value: configuration.isPressed)
             .animation(.spring(response: 0.24, dampingFraction: 0.74), value: isHovered)
+            .animation(.spring(response: 0.24, dampingFraction: 0.74), value: isFocused)
             .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .focusEffectDisabled()
     }
 }
