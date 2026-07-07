@@ -88,7 +88,23 @@ final class ColorThemeStore {
     private(set) var themeVersion: Int = 0
 
     private init() {
+        migrateLegacyZebraOverrides()
         loadTheme(id: savedThemeID)
+    }
+
+    private func migrateLegacyZebraOverrides() {
+        let defaults = UserDefaults.standard
+        guard let even = defaults.string(forKey: "color.zebraActiveEven")?.uppercased(),
+              let odd = defaults.string(forKey: "color.zebraActiveOdd")?.uppercased()
+        else { return }
+        let legacyPairs = [
+            ("FEFFFF", "F6F6F6"),
+            ("FFFFFF", "F1F1F1")
+        ]
+        guard legacyPairs.contains(where: { $0 == (even, odd) }) else { return }
+        defaults.removeObject(forKey: "color.zebraActiveEven")
+        defaults.removeObject(forKey: "color.zebraActiveOdd")
+        log.info("[ColorTheme] removed legacy low-contrast active zebra overrides")
     }
 
     func loadTheme(id: String) {

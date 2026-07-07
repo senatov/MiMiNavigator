@@ -168,7 +168,7 @@ import LogKit
         MediaInfoPanel.shared.bringToFront()
     }
 
-    // MARK: - Termination — fast, no spinner
+    // MARK: - Termination
 
     /// Returns .terminateLater so we can do async cleanup before exit.
     /// All work must complete and call reply(.now) within the OS timeout (~5 s).
@@ -180,7 +180,7 @@ import LogKit
 
         isTerminationCleanupRunning = true
         appState?.beginTermination()
-        NSApp.deactivate()
+        NSApp.hide(nil)
         log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup")
 
         Task { [weak self] in
