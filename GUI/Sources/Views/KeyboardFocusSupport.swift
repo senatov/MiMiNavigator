@@ -76,7 +76,7 @@ private struct DialogTabNavigationBridge: NSViewRepresentable {
 extension View {
     func keyboardFocusSection() -> some View {
         focusSection()
-            .focusEffectDisabled(false)
+            .focusEffectDisabled()
             .onKeyPress(phases: .down) { press in
                 guard press.key == .tab else { return .ignored }
                 return KeyboardFocusNavigator.move(backward: press.modifiers.contains(.shift))

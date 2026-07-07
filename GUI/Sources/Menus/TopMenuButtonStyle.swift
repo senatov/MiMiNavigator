@@ -78,7 +78,7 @@ struct TopMenuButtonStyle: ButtonStyle {
                 .animation(.easeInOut(duration: 0.12), value: isHovered)
                 .animation(.easeInOut(duration: 0.08), value: configuration.isPressed)
                 .opacity(isEnabled ? 1.0 : 0.5)
-                .focusEffectDisabled(false)
+                .focusEffectDisabled()
                 .textSelection(.disabled)
         }
     }
