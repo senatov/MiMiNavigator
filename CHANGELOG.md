@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.5.9] — 2026-07-08
+
+> **Release notes**
+> Multi-Rename, reliable navigation, keyboard access, network discovery, and interface consistency update.
+
+### Added
+- **Multi-Rename tool** — rename selected items or complete directories with name and extension masks, counters, search or regular-expression replacement, case conversion, live conflict previews, keyboard navigation, safe two-phase renaming, rollback, and focused panel refresh.
+- **Complete keyboard focus navigation** — toolbars, menus, settings, dialogs, and network controls participate in the Tab sequence; custom network rows support Enter and Space activation.
+- **Expanded network discovery** — network device detection covers additional services and device sources.
+
+### Changed
+- **Unified directory navigation** — Favorites, sidebar, tabs, search, context menus, archives, history, and mounted connections use the same synchronized navigation flow.
+- **Copy and move confirmation** — drag-and-drop and bottom toolbar operations share one confirmation dialog with consistent Cancel, Copy, Move, Tab, and Shift-Tab behavior.
+- **Dialog button presentation** — themed dialog buttons reuse the shared 3D glass surface and indicate keyboard focus with tint, scale, and curvature while preserving confirm and destructive roles.
+- **Build metadata** — marketing version updated to `0.9.9.5.9`; build number updated to `127`.
+
+### Fixed
+- **Navigation races** — explicit refreshes no longer compete with hidden path mutations or delayed scanner state, preventing stale listings after navigation and rollback.
+- **Popup Tab handling** — window-scoped event handling advances the key-view loop before text fields or SwiftUI can send focus behind a modal dialog.
+- **Repeated Keychain prompts** — saved network credentials no longer trigger redundant authorization requests.
+- **Active-panel zebra contrast** — theme defaults, focus-aware row invalidation, and header state restore clear active-panel striping.
+- **Immediate termination feedback** — application windows hide as shutdown begins, cleanup runs behind termination, and the unsafe blocking scan of user-owned temporary JSON files is removed.
+
 ## [0.9.9.5.8] — 2026-07-06
 
 > **Release notes**

@@ -1,31 +1,33 @@
-# MiMiNavigator v0.9.9.5.8
+# MiMiNavigator v0.9.9.5.9
 
-Secure automatic update installation and daily update checks.
+Multi-Rename, reliable navigation, keyboard access, and interface consistency update.
 
 ## Highlights
 
-- MiMiNavigator can now download, verify, install, and relaunch into a new release automatically.
-- Update checks run shortly after startup and every 24 hours while the app remains open.
-- The update dialog shows release notes and opens the product What's New page during installation.
+- Rename multiple files or folders with masks, counters, replacements, case conversion, conflict preview, rollback, and keyboard control.
+- Navigate reliably through Favorites, tabs, search, archives, history, mounted connections, and file operations without stale panel listings.
+- Use consistent Tab navigation and button feedback throughout toolbars, settings, network controls, and modal dialogs.
 
 ## Added
 
-- Download notarized DMG updates from the public MiMiNavigator update service.
-- Validate the published SHA-256 digest, Developer ID team, bundle identifier, release version, and Gatekeeper assessment before installation.
-- Replace the installed application after shutdown, retain a rollback copy until replacement succeeds, and relaunch automatically.
-- Check for new releases shortly after app launch and every 24 hours.
-- Open `https://miminavi.tech/#download` in the default browser when installation begins.
+- Multi-Rename supports selection and directory scopes, separate name and extension masks, counters, plain or regex replacement, case conversion, and live conflict validation.
+- Safe two-phase renaming includes rollback and refreshes the focused panel after completion.
+- Network discovery recognizes additional devices and services.
 
 ## Changed
 
-- Use `miminavi.tech/api/github/release` for public release metadata instead of anonymous GitHub API access.
-- Display complete GitHub release notes, DMG size, and live installation status in the Software Update window.
-- Update release metadata to version `0.9.9.5.8` and build `126`.
+- Route all directory entry points through one synchronized navigation flow.
+- Use the same copy and move confirmation dialog for drag-and-drop and toolbar operations.
+- Apply consistent glass button styling and keyboard-focus feedback across dialogs.
+- Update release metadata to version `0.9.9.5.9` and build `127`.
 
 ## Fixed
 
-- Update checks no longer report “No releases found” when GitHub rejects anonymous repository API requests.
-- Future releases no longer require users to download, mount, and manually replace MiMiNavigator.
+- Prevent stale panel listings caused by scanner and path-update races.
+- Keep Tab and Shift-Tab focus inside popup dialogs.
+- Avoid repeated Keychain prompts for saved network credentials.
+- Restore clear active-panel zebra contrast and focus-aware row updates.
+- Hide windows immediately during termination and remove unsafe temporary JSON cleanup.
 
 ## Validation
 
@@ -37,4 +39,4 @@ Secure automatic update installation and daily update checks.
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...v0.9.9.5.8
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.8...v0.9.9.5.9

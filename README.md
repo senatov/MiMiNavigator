@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.8"><img src="https://img.shields.io/badge/release-v0.9.9.5.8-orange" alt="Release v0.9.9.5.8" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.9"><img src="https://img.shields.io/badge/release-v0.9.9.5.9-orange" alt="Release v0.9.9.5.9" /></a>
 </p>
 
 <p align="center">
@@ -38,15 +38,17 @@
 
 
 
-## Recent Changes (v0.9.9.5.8 - July 2026)
+## Recent Changes (v0.9.9.5.9 - July 2026)
 
-- **Secure automatic updates** — MiMiNavigator downloads the notarized DMG, validates SHA-256, Developer ID, bundle identity, version, and Gatekeeper status, then replaces and relaunches the app with rollback protection.
-- **Daily checks** — update checks run shortly after startup and every 24 hours, opening the update dialog only when a newer release is available.
-- **Release details** — the updater displays full release notes and opens the product What's New section in the default browser during installation.
-- **Build metadata** — release version is `0.9.9.5.8`, build `126`.
+- **Multi-Rename** — batch rename files and folders with masks, counters, search or regex replacement, case conversion, conflict preview, rollback, and keyboard control.
+- **Reliable navigation** — Favorites, tabs, search, archives, history, mounted connections, and file operations now share one synchronized navigation flow.
+- **Keyboard and dialog polish** — Tab navigation covers the interface and modal dialogs; copy/move confirmations and dialog buttons use consistent behavior and styling.
+- **Network and panel fixes** — broader device discovery, fewer repeated Keychain prompts, restored active-panel zebra contrast, and safer immediate shutdown feedback.
+- **Build metadata** — release version is `0.9.9.5.9`, build `127`.
 
 ## Previous Changes
 
+- **v0.9.9.5.8** — secure automatic update installation, validation, rollback, and daily update checks.
 - **v0.9.9.5.7** — per-tab List, Preview, and Tree view persistence across navigation and restarts.
 - **v0.9.9.5.6** — IntelliJ IDEA compare reliability and expanded external tool documentation.
 - **v0.9.9.5.5** — drag-and-drop window targeting reliability and release hardening.
@@ -195,7 +197,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.8 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.8)**
+**[Download MiMiNavigator v0.9.9.5.9 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.9)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
