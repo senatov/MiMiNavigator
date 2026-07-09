@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.9.0.0] — 2026-07-09
+## [0.9.9.6.0] — 2026-07-09
 
 > **Release notes**
 > Preview navigation stability and release pipeline hardening update.
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DMG asset state validation** — release publishing now verifies that the versioned DMG asset exists and is fully `uploaded`.
 
 ### Changed
-- **Release metadata** — marketing version updated to `0.9.9.0.0`; build number updated to `128`.
+- **Release metadata** — marketing version updated to `0.9.9.6.0`; build number updated to `129`.
 - **Release documentation** — release notes and README now describe the Preview navigation fix and editable-release requirement.
 
 ### Fixed
@@ -1011,8 +1011,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.0.0...HEAD
-[0.9.9.0.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.0.0
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.0...HEAD
+[0.9.9.6.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.6.0
 [0.9.9.5.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.8...v0.9.9.5.9
 [0.9.9.5.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...v0.9.9.5.8
 [0.9.9.5.7]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.6...v0.9.9.5.7

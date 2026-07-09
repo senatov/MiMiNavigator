@@ -1,4 +1,4 @@
-# MiMiNavigator v0.9.9.0.0
+# MiMiNavigator v0.9.9.6.0
 
 Preview navigation stability and release pipeline hardening update.
 
@@ -15,7 +15,7 @@ Preview navigation stability and release pipeline hardening update.
 
 ## Changed
 
-- Update release metadata to version `0.9.9.0.0` and build `128`.
+- Update release metadata to version `0.9.9.6.0` and build `129`.
 - Document the editable-release requirement in the release pipeline notes.
 
 ## Fixed
@@ -33,4 +33,4 @@ Preview navigation stability and release pipeline hardening update.
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.0.0
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.6.0

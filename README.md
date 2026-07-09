@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0.0"><img src="https://img.shields.io/badge/release-v0.9.9.0.0-orange" alt="Release v0.9.9.0.0" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.0"><img src="https://img.shields.io/badge/release-v0.9.9.6.0-orange" alt="Release v0.9.9.6.0" /></a>
 </p>
 
 <p align="center">
@@ -38,12 +38,12 @@
 
 
 
-## Recent Changes (v0.9.9.0.0 - July 2026)
+## Recent Changes (v0.9.9.6.0 - July 2026)
 
 - **Preview mounted-volume stability** — background refresh no longer moves a panel from a temporarily unavailable `/Volumes/...` path to `/Volumes`.
 - **Stale scan protection** — Preview batches and full scanner results are ignored when they no longer match the panel's current path.
 - **Release mutability checks** — the notarized release pipeline verifies that GitHub reports `isImmutable=false` and that the DMG asset is fully uploaded.
-- **Build metadata** — release version is `0.9.9.0.0`, build `128`.
+- **Build metadata** — release version is `0.9.9.6.0`, build `129`.
 
 ## Previous Changes
 
@@ -197,7 +197,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.0.0 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0.0)**
+**[Download MiMiNavigator v0.9.9.6.0 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.0)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
