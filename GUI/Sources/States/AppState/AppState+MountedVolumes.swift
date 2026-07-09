@@ -29,6 +29,10 @@ extension AppState {
 
     // MARK: - Handle Mount
     func handleMountedExternalVolume(_ url: URL) async {
+        if shouldIgnoreUpdateInstallerMount(url) {
+            log.info("[Update] mounted update DMG ignored path='\(url.path)'")
+            return
+        }
         guard Self.shouldAutoOpenMountedVolume(url) else {
             log.debug("[Volumes] mount ignored path='\(url.path)'")
             return
@@ -36,6 +40,11 @@ extension AppState {
         log.info("[Volumes] auto-open left panel path='\(url.path)'")
         focusedPanel = .left
         await navigateToDirectory(url.path, on: .left)
+    }
+
+    // MARK: - Update Mount Filter
+    private func shouldIgnoreUpdateInstallerMount(_ url: URL) -> Bool {
+        UpdateChecker.shared.isInstalling && url.lastPathComponent == "MiMiNavigator"
     }
 
     // MARK: - Notification URL

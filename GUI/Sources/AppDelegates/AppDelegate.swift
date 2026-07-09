@@ -23,7 +23,11 @@ import LogKit
     private let startupDate = CFAbsoluteTimeGetCurrent()
     private var didLogStartupCompletion = false
     private var isTerminationCleanupRunning = false
+    private var didReplyToTermination = false
+    private var isUpdateReplacementTermination = false
     private let terminationSaveDebounceInterval: TimeInterval = 1.0
+    private let standardTerminationCleanupTimeout: TimeInterval = 4.0
+    private let updateTerminationCleanupTimeout: TimeInterval = 1.5
 
     private func logStartupStep(_ message: String) {
         let elapsed = CFAbsoluteTimeGetCurrent() - startupDate
@@ -171,6 +175,11 @@ import LogKit
 
     // MARK: - Termination
 
+    func prepareForUpdateReplacementTermination() {
+        isUpdateReplacementTermination = true
+        log.info("[Update] app delegate prepared for update replacement termination")
+    }
+
     /// Returns .terminateLater so we can do async cleanup before exit.
     /// All work must complete and call reply(.now) within the OS timeout (~5 s).
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -182,7 +191,13 @@ import LogKit
         isTerminationCleanupRunning = true
         appState?.beginTermination()
         NSApp.hide(nil)
-        log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup")
+        let timeout = isUpdateReplacementTermination ? updateTerminationCleanupTimeout : standardTerminationCleanupTimeout
+        log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup timeout=\(timeout)s update=\(isUpdateReplacementTermination)")
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.replyToTerminationOnce(reason: "cleanup timeout \(timeout)s")
+            }
+        }
 
         Task { [weak self] in
             guard let self else {
@@ -191,33 +206,55 @@ import LogKit
             }
 
             await performCleanupBeforeExit()
-            log.info("[AppDelegate] cleanup done — replying .now")
-            NSApplication.shared.reply(toApplicationShouldTerminate: true)
+            replyToTerminationOnce(reason: "cleanup complete")
         }
         return .terminateLater
+    }
+
+    private func replyToTerminationOnce(reason: String) {
+        guard !didReplyToTermination else {
+            log.info("[AppDelegate] terminate reply skipped reason='\(reason)'")
+            return
+        }
+        didReplyToTermination = true
+        log.info("[AppDelegate] cleanup done — replying .now reason='\(reason)'")
+        NSApplication.shared.reply(toApplicationShouldTerminate: true)
     }
 
     /// Synchronously saves state + stops watchers, then resolves async resources.
     /// Must finish in well under 5 s to avoid macOS force-killing the process.
     private func performCleanupBeforeExit() async {
         // 1. Save panel state and cache — synchronous, fast
+        log.info("[AppDelegate] cleanup step save state begin")
         if shouldSkipTerminationStateSave() {
             log.info("[AppDelegate] performCleanupBeforeExit — skipping duplicate saveBeforeExit")
         } else {
             appState?.saveBeforeExit()
         }
+        log.info("[AppDelegate] cleanup step save state done")
         // 2. Stop scanner timers and FSEvents streams — synchronous actor work
+        log.info("[AppDelegate] cleanup step directory size shutdown begin")
         await DirectorySizeService.shared.shutdown()
+        log.info("[AppDelegate] cleanup step directory size shutdown done")
         if let scanner = appState?.scanner {
+            log.info("[AppDelegate] cleanup step scanner stop begin")
             await scanner.stopMonitoring()
+            log.info("[AppDelegate] cleanup step scanner stop done")
         }
         // 3. Stop SpinnerWatchdog poll timer
+        log.info("[AppDelegate] cleanup step spinner watchdog stop begin")
         SpinnerWatchdog.shared.stop()
+        log.info("[AppDelegate] cleanup step spinner watchdog stop done")
         // 4. Cleanup extracted archive temp dirs — actor hop, fast
+        log.info("[AppDelegate] cleanup step archive cleanup begin")
         await ArchiveManager.shared.cleanup()
+        log.info("[AppDelegate] cleanup step archive cleanup done")
         // 5. Release security-scoped bookmarks — actor hop, fast
+        log.info("[AppDelegate] cleanup step bookmarks stop begin")
         await BookmarkStore.shared.stopAll()
+        log.info("[AppDelegate] cleanup step bookmarks stop done")
         // 6. Flush file loggers before the process exits so /tmp mirror is complete
+        log.info("[AppDelegate] cleanup step log flush begin")
         LogKit.flush(timeoutSeconds: 2)
         log.info("[AppDelegate] performCleanupBeforeExit complete")
     }

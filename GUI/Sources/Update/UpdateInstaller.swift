@@ -83,8 +83,11 @@ enum UpdateInstaller {
         status("Restarting MiMiNavigator...")
         log.info("[UpdateInstaller] verified update \(expectedVersion); replacement helper launched")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            log.info("[Update] terminating app so helper can replace bundle")
-            NSApplication.shared.terminate(nil)
+            Task { @MainActor in
+                (NSApp.delegate as? AppDelegate)?.prepareForUpdateReplacementTermination()
+                log.info("[Update] terminating app so helper can replace bundle")
+                NSApplication.shared.terminate(nil)
+            }
         }
     }
 
@@ -197,7 +200,30 @@ enum UpdateInstaller {
         pid="$3"
         backup="${current}.update-backup"
         log "started current=$current staged=$staged pid=$pid"
-        while kill -0 "$pid" 2>/dev/null; do log "waiting for app pid=$pid"; sleep 0.2; done
+        wait_count=0
+        while kill -0 "$pid" 2>/dev/null && [[ "$wait_count" -lt 50 ]]; do
+            log "waiting for app pid=$pid count=$wait_count"
+            sleep 0.2
+            wait_count=$((wait_count + 1))
+        done
+        if kill -0 "$pid" 2>/dev/null; then
+            log "app still alive after graceful wait; sending TERM pid=$pid"
+            kill -TERM "$pid" >> "$log_file" 2>&1 || true
+            term_count=0
+            while kill -0 "$pid" 2>/dev/null && [[ "$term_count" -lt 25 ]]; do
+                sleep 0.2
+                term_count=$((term_count + 1))
+            done
+        fi
+        if kill -0 "$pid" 2>/dev/null; then
+            log "app still alive after TERM; sending KILL pid=$pid"
+            kill -KILL "$pid" >> "$log_file" 2>&1 || true
+            sleep 0.5
+        fi
+        if kill -0 "$pid" 2>/dev/null; then
+            log "app still alive after KILL; aborting"
+            exit 2
+        fi
         log "app exited"
         log "removing old backup=$backup"
         rm -rf "$backup" >> "$log_file" 2>&1
