@@ -6,7 +6,6 @@ import FileModelKit
 import SwiftUI
 
 struct FileRowMetadataColumnsView: View {
-
     let file: CustomFile
     let layout: ColumnLayoutModel
     let isParentEntry: Bool
@@ -31,7 +30,7 @@ struct FileRowMetadataColumnsView: View {
         return ZStack {
             Color.clear.frame(width: 14)
             Rectangle()
-                .fill(ColorThemeStore.shared.activeTheme.dividerNormalColor)
+                .fill(colorStore.activeTheme.columnDividerColor)
                 .frame(width: 1)
         }
         .frame(width: 14)
@@ -89,17 +88,17 @@ struct FileRowMetadataColumnsView: View {
 
     private func cellText(for column: ColumnID) -> String {
         switch column {
-            case .dateModified: file.modifiedDateFormatted
-            case .size: file.displaySizeFormatted
-            case .kind: file.kindFormatted
-            case .permissions: file.permissionsFormatted
-            case .owner: file.ownerFormatted
-            case .childCount: file.childCountFormatted
-            case .dateCreated: file.creationDateFormatted
-            case .dateLastOpened: file.lastOpenedFormatted
-            case .dateAdded: file.dateAddedFormatted
-            case .group: file.groupNameFormatted
-            case .name: ""
+        case .dateModified: file.modifiedDateFormatted
+        case .size: file.displaySizeFormatted
+        case .kind: file.kindFormatted
+        case .permissions: file.permissionsFormatted
+        case .owner: file.ownerFormatted
+        case .childCount: file.childCountFormatted
+        case .dateCreated: file.creationDateFormatted
+        case .dateLastOpened: file.lastOpenedFormatted
+        case .dateAdded: file.dateAddedFormatted
+        case .group: file.groupNameFormatted
+        case .name: ""
         }
     }
 
@@ -108,17 +107,17 @@ struct FileRowMetadataColumnsView: View {
     @ViewBuilder
     private func cellContent(for column: ColumnID) -> some View {
         switch column {
-            case .dateModified: Text(file.modifiedDateFormatted)
-            case .size: Text(file.displaySizeFormatted)
-            case .kind: KindCell(file: file)
-            case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
-            case .owner: Text(file.ownerFormatted)
-            case .childCount: Text(file.childCountFormatted)
-            case .dateCreated: Text(file.creationDateFormatted)
-            case .dateLastOpened: Text(file.lastOpenedFormatted)
-            case .dateAdded: Text(file.dateAddedFormatted)
-            case .group: Text(file.groupNameFormatted)
-            case .name: EmptyView()
+        case .dateModified: Text(file.modifiedDateFormatted)
+        case .size: Text(file.displaySizeFormatted)
+        case .kind: KindCell(file: file)
+        case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
+        case .owner: Text(file.ownerFormatted)
+        case .childCount: Text(file.childCountFormatted)
+        case .dateCreated: Text(file.creationDateFormatted)
+        case .dateLastOpened: Text(file.lastOpenedFormatted)
+        case .dateAdded: Text(file.dateAddedFormatted)
+        case .group: Text(file.groupNameFormatted)
+        case .name: EmptyView()
         }
     }
 
@@ -126,12 +125,12 @@ struct FileRowMetadataColumnsView: View {
 
     private func cellFont(for column: ColumnID) -> Font {
         switch column {
-            case .permissions:
-                return .system(size: 11, design: .monospaced)
-            case .size, .childCount, .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
-                return .system(size: 12).monospacedDigit()
-            default:
-                return .system(size: 12)
+        case .permissions:
+            return .system(size: 11, design: .monospaced)
+        case .size, .childCount, .dateModified, .dateCreated, .dateLastOpened, .dateAdded:
+            return .system(size: 12).monospacedDigit()
+        default:
+            return .system(size: 12)
         }
     }
 

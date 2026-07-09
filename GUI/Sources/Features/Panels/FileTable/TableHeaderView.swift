@@ -8,8 +8,8 @@ import SwiftUI
 
 // MARK: - Table Header View
 struct TableHeaderView: View {
-
     @Environment(AppState.self) var appState
+    @State private var colorStore = ColorThemeStore.shared
     let panelSide: FavPanelSide
     @Bindable var layout: ColumnLayoutModel
     var isFocused: Bool = false
@@ -20,18 +20,34 @@ struct TableHeaderView: View {
 
     // MARK: - Computed Properties
 
-    private var sortKey: SortKeysEnum { appState.sortKey }
-    private var sortAscending: Bool { appState.bSortAscending }
-    private var fixedCols: [ColumnSpec] { layout.fixedColumns }
-    private var maxRight: CGFloat { layout.containerWidth > 5 ? layout.containerWidth - 5 : 9999 }
+    private var sortKey: SortKeysEnum {
+        appState.sortKey
+    }
+
+    private var sortAscending: Bool {
+        appState.bSortAscending
+    }
+
+    private var fixedCols: [ColumnSpec] {
+        layout.fixedColumns
+    }
+
+    private var maxRight: CGFloat {
+        layout.containerWidth > 5 ? layout.containerWidth - 5 : 9999
+    }
 
     private var headerBg: Color {
         isFocused
-        ? ColorThemeStore.shared.activeTheme.warmWhite
-        : TableHeaderStyle.backgroundColor
+            ? ColorThemeStore.shared.activeTheme.warmWhite
+            : TableHeaderStyle.backgroundColor
+    }
+
+    private var columnDividerColor: Color {
+        colorStore.activeTheme.columnDividerColor
     }
 
     // MARK: - Header Drag Metrics
+
     private enum HeaderDragMetrics {
         static let coordinateSpaceName = "ColumnHeaderSpace"
         static let minimumDragDistance: CGFloat = 8
@@ -56,8 +72,8 @@ struct TableHeaderView: View {
     private var containerWidthProbe: some View {
         GeometryReader { geo in
             Color.clear
-            .onAppear { updateContainerWidth(geo.size.width) }
-            .onChange(of: geo.size.width) { _, w in updateContainerWidth(w) }
+                .onAppear { updateContainerWidth(geo.size.width) }
+                .onChange(of: geo.size.width) { _, w in updateContainerWidth(w) }
         }
     }
 
@@ -88,8 +104,8 @@ struct TableHeaderView: View {
 
     private var headerBorder: some View {
         RoundedRectangle(cornerRadius: 3)
-        .stroke(Color(nsColor: NSColor(calibratedRed: 0.08, green: 0.13, blue: 0.32, alpha: 0.50)), lineWidth: 0.75)
-        .allowsHitTesting(false)
+            .stroke(columnDividerColor, lineWidth: 0.75)
+            .allowsHitTesting(false)
     }
 
     // MARK: - Name Column Header
@@ -156,6 +172,7 @@ struct TableHeaderView: View {
             min: 60,
             max: effectiveMax,
             onEnd: { layout.saveWidths() },
+            color: columnDividerColor,
             onAutoFit: { layout.isColumnReorderActive ? layout.nameWidth : autoFitWidth(for: .name) }
         )
     }
@@ -169,6 +186,7 @@ struct TableHeaderView: View {
             min: spec.id.minDragWidth,
             max: Swift.min(spec.id.maxWidth, maxRight),
             onEnd: { layout.saveWidths() },
+            color: columnDividerColor,
             onAutoFit: { layout.isColumnReorderActive ? spec.width : autoFitWidth(for: spec.id) }
         )
     }
@@ -187,10 +205,10 @@ struct TableHeaderView: View {
     private func columnFrameMeasurement(for columnID: ColumnID) -> some View {
         GeometryReader { geo in
             Color.clear
-            .onAppear { columnFrames[columnID] = geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName)) }
-            .onChange(of: geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName))) { _, frame in
-                columnFrames[columnID] = frame
-            }
+                .onAppear { columnFrames[columnID] = geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName)) }
+                .onChange(of: geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName))) { _, frame in
+                    columnFrames[columnID] = frame
+                }
         }
     }
 
@@ -236,12 +254,12 @@ struct TableHeaderView: View {
 
     private func columnReorderGesture(for columnID: ColumnID) -> some Gesture {
         DragGesture(minimumDistance: HeaderDragMetrics.minimumDragDistance, coordinateSpace: .named(HeaderDragMetrics.coordinateSpaceName))
-        .onChanged { value in
-            handleColumnDragChanged(sourceID: columnID, location: value.location)
-        }
-        .onEnded { _ in
-            finishColumnDrag()
-        }
+            .onChanged { value in
+                handleColumnDragChanged(sourceID: columnID, location: value.location)
+            }
+            .onEnded { _ in
+                finishColumnDrag()
+            }
     }
 
     private func handleColumnDragChanged(sourceID: ColumnID, location: CGPoint) {
@@ -315,7 +333,7 @@ struct TableHeaderView: View {
             Swift.max($0, ($1 as NSString).size(withAttributes: attrs).width)
         }
         let optimal = ceil(maxTextW + 2 * ColumnID.cellPadding + 5)
-        return optimal.clamped(to: col.minDragWidth...col.maxWidth)
+        return optimal.clamped(to: col.minDragWidth ... col.maxWidth)
     }
 
     private func textsAndFont(for col: ColumnID, files: [CustomFile]) -> ([String], NSFont) {
@@ -374,9 +392,8 @@ struct TableHeaderView: View {
 }
 
 // MARK: - CGFloat Extension
-
-extension CGFloat {
-    fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
         Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }

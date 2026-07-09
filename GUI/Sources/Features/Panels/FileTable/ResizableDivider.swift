@@ -2,14 +2,16 @@
 // MiMiNavigator — SwiftUI wrapper for NSResizableDividerView.
 // Drag right → column to the left grows (Finder-style).
 
+import AppKit
 import SwiftUI
 
+// MARK: - Resizable Divider
 struct ResizableDivider: View {
-
     @Binding var width: CGFloat
     let min: CGFloat
     let max: CGFloat
     let onEnd: () -> Void
+    var color: Color = ColorThemeStore.shared.activeTheme.columnDividerColor
     var onAutoFit: (() -> CGFloat)? = nil
 
     var body: some View {
@@ -17,6 +19,7 @@ struct ResizableDivider: View {
             width: $width,
             min: min,
             max: max,
+            color: color,
             onEnd: onEnd,
             onAutoFit: onAutoFit
         )
@@ -27,34 +30,33 @@ struct ResizableDivider: View {
 // MARK: - NSViewRepresentable
 
 private struct Representable: NSViewRepresentable {
-
     @Binding var width: CGFloat
     let min: CGFloat
     let max: CGFloat
+    let color: Color
     let onEnd: () -> Void
     var onAutoFit: (() -> CGFloat)?
 
-    func makeNSView(context: Context) -> NSResizableDividerView {
+    func makeNSView(context _: Context) -> NSResizableDividerView {
         let view = NSResizableDividerView()
         configure(view)
         return view
     }
 
-    func updateNSView(_ view: NSResizableDividerView, context: Context) {
+    func updateNSView(_ view: NSResizableDividerView, context _: Context) {
         configure(view)
     }
 
     private func configure(_ view: NSResizableDividerView) {
+        view.dividerColor = NSColor(color)
         view.onDrag = { delta in
-            let newWidth = (width + delta).clamped(to: min...max)
+            let newWidth = (width + delta).clamped(to: min ... max)
             width = newWidth
         }
-
         view.onDragEnd = onEnd
-
         view.onDoubleClick = {
             guard let fit = onAutoFit else { return }
-            width = fit().clamped(to: min...max)
+            width = fit().clamped(to: min ... max)
             onEnd()
         }
     }
@@ -62,8 +64,8 @@ private struct Representable: NSViewRepresentable {
 
 // MARK: - CGFloat Extension
 
-extension CGFloat {
-    fileprivate func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
+private extension CGFloat {
+    func clamped(to range: ClosedRange<CGFloat>) -> CGFloat {
         Swift.max(range.lowerBound, Swift.min(self, range.upperBound))
     }
 }

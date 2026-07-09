@@ -9,36 +9,37 @@
 import SwiftUI
 
 // MARK: - SettingsColorsPanelsPane
-struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
 
+struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
     @State private var store = ColorThemeStore.shared
     @State private var selectedPresetID = ColorThemeStore.shared.activeTheme.id
-    @State private var useDarkVariant   = ColorThemeStore.shared.useDarkVariant
+    @State private var useDarkVariant = ColorThemeStore.shared.useDarkVariant
 
-    @AppStorage("color.panelBackground")   private var hexPanelBg: String = ""
-    @AppStorage("color.panelText")         private var hexPanelText: String = ""
-    @AppStorage("color.dirName")           private var hexDirName: String = ""
-    @AppStorage("color.fileName")          private var hexFileName: String = ""
-    @AppStorage("color.symlink")           private var hexSymlink: String = ""
-    @AppStorage("color.selectionActive")   private var hexSelActive: String = ""
+    @AppStorage("color.panelBackground") private var hexPanelBg: String = ""
+    @AppStorage("color.panelText") private var hexPanelText: String = ""
+    @AppStorage("color.dirName") private var hexDirName: String = ""
+    @AppStorage("color.fileName") private var hexFileName: String = ""
+    @AppStorage("color.symlink") private var hexSymlink: String = ""
+    @AppStorage("color.selectionActive") private var hexSelActive: String = ""
     @AppStorage("color.selectionInactive") private var hexSelInactive: String = ""
-    @AppStorage("color.selectionBorder")   private var hexSelBorder: String = ""
-    @AppStorage("selection.lineWidth")     private var selLineWidth: Double = 2.0
-    @AppStorage("color.accent")            private var hexAccent: String = ""
-    @AppStorage("color.dialogBackground")  private var hexDialogBg: String = ""
-    @AppStorage("color.hiddenFile")        private var hexHiddenFile: String = ""
-    @AppStorage("color.markedFile")        private var hexMarkedFile: String = ""
-    @AppStorage("color.parentEntry")       private var hexParentEntry: String = ""
-    @AppStorage("color.archivePath")       private var hexArchivePath: String = ""
-    @AppStorage("color.markedCount")       private var hexMarkedCount: String = ""
-    @AppStorage("color.columnName")        private var hexColumnName: String = ""
-    @AppStorage("color.columnSize")        private var hexColumnSize: String = ""
-    @AppStorage("color.columnKind")        private var hexColumnKind: String = ""
-    @AppStorage("color.columnDate")        private var hexColumnDate: String = ""
+    @AppStorage("color.selectionBorder") private var hexSelBorder: String = ""
+    @AppStorage("selection.lineWidth") private var selLineWidth: Double = 2.0
+    @AppStorage("color.accent") private var hexAccent: String = ""
+    @AppStorage("color.dialogBackground") private var hexDialogBg: String = ""
+    @AppStorage("color.hiddenFile") private var hexHiddenFile: String = ""
+    @AppStorage("color.markedFile") private var hexMarkedFile: String = ""
+    @AppStorage("color.parentEntry") private var hexParentEntry: String = ""
+    @AppStorage("color.archivePath") private var hexArchivePath: String = ""
+    @AppStorage("color.markedCount") private var hexMarkedCount: String = ""
+    @AppStorage("color.columnName") private var hexColumnName: String = ""
+    @AppStorage("color.columnSize") private var hexColumnSize: String = ""
+    @AppStorage("color.columnKind") private var hexColumnKind: String = ""
+    @AppStorage("color.columnDate") private var hexColumnDate: String = ""
     @AppStorage("color.columnPermissions") private var hexColumnPermissions: String = ""
-    @AppStorage("color.columnOwner")       private var hexColumnOwner: String = ""
-    @AppStorage("color.columnGroup")       private var hexColumnGroup: String = ""
-    @AppStorage("color.columnChildCount")  private var hexColumnChildCount: String = ""
+    @AppStorage("color.columnOwner") private var hexColumnOwner: String = ""
+    @AppStorage("color.columnGroup") private var hexColumnGroup: String = ""
+    @AppStorage("color.columnChildCount") private var hexColumnChildCount: String = ""
+    @AppStorage("color.columnDivider") private var hexColumnDivider: String = ""
 
     private var preset: ColorTheme {
         store.effectivePreset(id: selectedPresetID)
@@ -53,7 +54,6 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-
             // ── Theme Preset Picker ─────────────────────────
             paneGroupBox {
                 VStack(spacing: 0) {
@@ -68,10 +68,10 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                             }
                             HStack(spacing: 4) {
                                 swatch(preset.panelBackground, label: "BG")
-                                swatch(preset.panelText,       label: "Txt")
-                                swatch(preset.dirNameColor,    label: "Dir")
+                                swatch(preset.panelText, label: "Txt")
+                                swatch(preset.dirNameColor, label: "Dir")
                                 swatch(preset.selectionActive, label: "Sel")
-                                swatch(preset.accentColor,     label: "Acc")
+                                swatch(preset.accentColor, label: "Acc")
                             }
                         }
                     }
@@ -91,16 +91,16 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                     colorRow("Background", help: "File list panel background",
                              preset: preset.panelBackground, hex: $hexPanelBg, store: store)
                     Divider()
-                    colorRow("File name",  help: "Regular file text color",
+                    colorRow("File name", help: "Regular file text color",
                              preset: preset.fileNameColor, hex: $hexFileName, store: store)
                     Divider()
-                    colorRow("Directory",  help: "Directory name text color",
+                    colorRow("Directory", help: "Directory name text color",
                              preset: preset.dirNameColor, hex: $hexDirName, store: store)
                     Divider()
-                    colorRow("Symlink",    help: "Symbolic link name color",
+                    colorRow("Symlink", help: "Symbolic link name color",
                              preset: preset.symlinkColor, hex: $hexSymlink, store: store)
                     Divider()
-                    colorRow("Accent",     help: "Buttons, highlights, active borders",
+                    colorRow("Accent", help: "Buttons, highlights, active borders",
                              preset: preset.accentColor, hex: $hexAccent, store: store)
                     Divider()
                     colorRow("Dialog background", help: "Settings / Find Files floating panel bg",
@@ -148,10 +148,10 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                 VStack(spacing: 0) {
                     sectionHeader("File States")
                     colorRow("Hidden files", help: ".dotfile dimmed text",
-                             preset: preset.hiddenFileColor,  hex: $hexHiddenFile,  store: store)
+                             preset: preset.hiddenFileColor, hex: $hexHiddenFile, store: store)
                     Divider()
                     colorRow("Marked files", help: "TC-style marked text (Insert key)",
-                             preset: preset.markedFileColor,  hex: $hexMarkedFile,  store: store)
+                             preset: preset.markedFileColor, hex: $hexMarkedFile, store: store)
                     Divider()
                     colorRow("Parent entry", help: "'..' row color",
                              preset: preset.parentEntryColor, hex: $hexParentEntry, store: store)
@@ -168,29 +168,32 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
             paneGroupBox {
                 VStack(spacing: 0) {
                     sectionHeader("Column Colors")
-                    colorRow("Name",        help: "Name column text accent",
-                             preset: preset.columnNameColor,        hex: $hexColumnName,        store: store)
+                    colorRow("Divider", help: "Vertical separators in file tables",
+                             preset: preset.columnDividerColor, hex: $hexColumnDivider, store: store)
                     Divider()
-                    colorRow("Size",        help: "Size column text accent",
-                             preset: preset.columnSizeColor,        hex: $hexColumnSize,        store: store)
+                    colorRow("Name", help: "Name column text accent",
+                             preset: preset.columnNameColor, hex: $hexColumnName, store: store)
                     Divider()
-                    colorRow("Kind",        help: "Kind column text accent",
-                             preset: preset.columnKindColor,        hex: $hexColumnKind,        store: store)
+                    colorRow("Size", help: "Size column text accent",
+                             preset: preset.columnSizeColor, hex: $hexColumnSize, store: store)
                     Divider()
-                    colorRow("Date",        help: "All date columns text accent",
-                             preset: preset.columnDateColor,        hex: $hexColumnDate,        store: store)
+                    colorRow("Kind", help: "Kind column text accent",
+                             preset: preset.columnKindColor, hex: $hexColumnKind, store: store)
+                    Divider()
+                    colorRow("Date", help: "All date columns text accent",
+                             preset: preset.columnDateColor, hex: $hexColumnDate, store: store)
                     Divider()
                     colorRow("Permissions", help: "Permissions column",
                              preset: preset.columnPermissionsColor, hex: $hexColumnPermissions, store: store)
                     Divider()
-                    colorRow("Owner",       help: "Owner column",
-                             preset: preset.columnOwnerColor,       hex: $hexColumnOwner,       store: store)
+                    colorRow("Owner", help: "Owner column",
+                             preset: preset.columnOwnerColor, hex: $hexColumnOwner, store: store)
                     Divider()
-                    colorRow("Group",       help: "Group column",
-                             preset: preset.columnGroupColor,       hex: $hexColumnGroup,       store: store)
+                    colorRow("Group", help: "Group column",
+                             preset: preset.columnGroupColor, hex: $hexColumnGroup, store: store)
                     Divider()
-                    colorRow("# Count",     help: "Child count column",
-                             preset: preset.columnChildCountColor,  hex: $hexColumnChildCount,  store: store)
+                    colorRow("# Count", help: "Child count column",
+                             preset: preset.columnChildCountColor, hex: $hexColumnChildCount, store: store)
                 }
             }
 
@@ -231,7 +234,7 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
     private var selectionLineWidthRow: some View {
         rowLabel("Line width:", help: "Selection border thickness") {
             HStack(spacing: 10) {
-                Slider(value: $selLineWidth, in: 0.5...4.0, step: 0.5)
+                Slider(value: $selLineWidth, in: 0.5 ... 4.0, step: 0.5)
                     .frame(width: 130)
                     .onChange(of: selLineWidth) { _, newValue in
                         store.updateSelectionDefaults(lineWidth: newValue)

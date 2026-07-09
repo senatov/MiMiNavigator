@@ -4,13 +4,16 @@
 
 import AppKit
 
+// MARK: - NS Resizable Divider View
 final class NSResizableDividerView: NSView {
-
     // MARK: - Callbacks
 
     var onDrag: ((CGFloat) -> Void)?
     var onDragEnd: (() -> Void)?
     var onDoubleClick: (() -> Void)?
+    var dividerColor: NSColor = .separatorColor {
+        didSet { needsDisplay = true }
+    }
 
     // MARK: - State
 
@@ -19,7 +22,9 @@ final class NSResizableDividerView: NSView {
 
     // MARK: - NSView
 
-    override var acceptsFirstResponder: Bool { true }
+    override var acceptsFirstResponder: Bool {
+        true
+    }
 
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .resizeLeftRight)
@@ -34,10 +39,11 @@ final class NSResizableDividerView: NSView {
                 options: [.activeInKeyWindow, .mouseEnteredAndExited, .cursorUpdate],
                 owner: self,
                 userInfo: nil
-            ))
+            )
+        )
     }
 
-    override func draw(_ dirtyRect: NSRect) {
+    override func draw(_: NSRect) {
         drawDividerLine()
     }
 
@@ -47,7 +53,7 @@ final class NSResizableDividerView: NSView {
         path.move(to: NSPoint(x: x, y: bounds.minY))
         path.line(to: NSPoint(x: x, y: bounds.maxY))
         path.lineWidth = isDragging ? 2.0 : 1.0
-        (isDragging ? NSColor.controlAccentColor : NSColor.separatorColor).setStroke()
+        (isDragging ? NSColor.controlAccentColor : dividerColor).setStroke()
         path.stroke()
     }
 
@@ -73,22 +79,21 @@ final class NSResizableDividerView: NSView {
         isDragging = false
         needsDisplay = true
         onDragEnd?()
-        
         // Reset cursor if mouse ended outside our bounds
         let loc = convert(event.locationInWindow, from: nil)
-        if !bounds.contains(loc) && cursorPushed {
+        if !bounds.contains(loc), cursorPushed {
             NSCursor.pop()
             cursorPushed = false
         }
     }
 
-    override func mouseEntered(with event: NSEvent) {
+    override func mouseEntered(with _: NSEvent) {
         guard !cursorPushed else { return }
         NSCursor.resizeLeftRight.push()
         cursorPushed = true
     }
 
-    override func mouseExited(with event: NSEvent) {
+    override func mouseExited(with _: NSEvent) {
         guard cursorPushed else { return }
         NSCursor.pop()
         cursorPushed = false

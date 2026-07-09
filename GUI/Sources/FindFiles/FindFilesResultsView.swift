@@ -14,18 +14,20 @@ import SwiftUI
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState? = nil
-    private let colorStore = ColorThemeStore.shared  // @Observable singleton - no @State needed
+    private let colorStore = ColorThemeStore.shared // @Observable singleton - no @State needed
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
-    @State private var userHasSelected: Bool = false  // stops auto-scroll when user clicks
+    @State private var userHasSelected: Bool = false // stops auto-scroll when user clicks
 
     // MARK: - Fonts (static - same as FileRow)
+
     private static let rowFont: Font = .system(size: 12)
     private static let monoFont: Font = .system(size: 12).monospacedDigit()
 
     // MARK: - Formatters (static - allocated once)
+
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "dd.MM.yyyy HH:mm"
@@ -38,7 +40,9 @@ struct FindFilesResultsView: View {
         return f
     }()
 
-    private var theme: ColorTheme { colorStore.activeTheme }
+    private var theme: ColorTheme {
+        colorStore.activeTheme
+    }
 
     // MARK: - Body
 
@@ -55,7 +59,7 @@ struct FindFilesResultsView: View {
             rebuildSort()
             lastResultCount = viewModel.results.count
             if viewModel.searchState == .searching && !userHasSelected,
-                let last = cachedSorted.last
+               let last = cachedSorted.last
             {
                 viewModel.selectedResult = last
             }
@@ -109,7 +113,6 @@ struct FindFilesResultsView: View {
                 }
             ), sortOrder: $sortOrder
         ) {
-
             TableColumn("#") { result in
                 rowCell(result) {
                     if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
@@ -146,7 +149,8 @@ struct FindFilesResultsView: View {
                             ? "? Password protected archive"
                             : (result.isInsideArchive
                                 ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
-                                : result.filePath))
+                                : result.filePath)
+                    )
                 }
             }
             .width(min: 50, ideal: 180)
@@ -198,13 +202,14 @@ struct FindFilesResultsView: View {
             resultContextMenu(selection: selection)
         } primaryAction: { selection in
             if let id = selection.first,
-                let result = viewModel.results.first(where: { $0.id == id }),
-                let state = appState
+               let result = viewModel.results.first(where: { $0.id == id }),
+               let state = appState
             {
                 viewModel.goToFile(result: result, appState: state)
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .fileTableColumnDividerStyle()
     }
 
     // MARK: - Row Background Helper
@@ -222,6 +227,7 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Name Cell
+
     // Real NSWorkspace icons via FileRowView.getSmartIcon - same chain as main panel
 
     private func resultNameCell(_ result: FindFilesResult) -> some View {
@@ -235,7 +241,8 @@ struct FindFilesResultsView: View {
                 Text(result.fileName)
                     .font(
                         Self.rowFont.weight(
-                            result.isInsideArchive || result.isPasswordProtected ? .light : .regular)
+                            result.isInsideArchive || result.isPasswordProtected ? .light : .regular
+                        )
                     )
                     .foregroundStyle(
                         result.isPasswordProtected
@@ -252,7 +259,7 @@ struct FindFilesResultsView: View {
     @ViewBuilder
     private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
         if let id = selection.first,
-            let result = viewModel.results.first(where: { $0.id == id })
+           let result = viewModel.results.first(where: { $0.id == id })
         {
             Button("Go to File") {
                 if let state = appState { viewModel.goToFile(result: result, appState: state) }
