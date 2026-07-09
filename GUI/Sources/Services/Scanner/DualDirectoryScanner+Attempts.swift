@@ -46,7 +46,7 @@ extension DualDirectoryScanner {
                 logStaleScan(context, phase: "scan")
                 return .stop
             }
-            await publishPreviewIfNeeded(sorted, context: context)
+            await publishPreviewIfNeeded(sorted, scannedPath: url.path, context: context)
             guard isCurrentGeneration(context.generation, for: context.side) else {
                 logStaleScan(context, phase: "preview")
                 return .stop
@@ -80,9 +80,14 @@ extension DualDirectoryScanner {
     // MARK: - Publish Preview
     private func publishPreviewIfNeeded(
         _ files: [CustomFile],
+        scannedPath: String,
         context: ScanAttemptContext
     ) async {
         guard files.count > progressivePreviewThreshold else { return }
+        guard await isScannedPathCurrent(scannedPath, for: context.side) else {
+            logStaleScan(context, phase: "preview-path")
+            return
+        }
         let preview = Array(files.prefix(progressivePreviewThreshold))
         await MainActor.run {
             AutoFitScheduler.shared.runInitialPublishFit(panel: context.side, files: preview)

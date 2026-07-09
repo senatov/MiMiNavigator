@@ -333,8 +333,31 @@ extension DualDirectoryScanner {
         }
     }
 
+    // MARK: - Current Path Check
+    func isScannedPathCurrent(_ scannedPath: String, for side: FavPanelSide) async -> Bool {
+        let currentPath = await currentPanelPathOnMain(for: side)
+        if Self.normalizedPath(scannedPath) == Self.normalizedPath(currentPath) {
+            return true
+        }
+        return Self.resolvedNormalizedPath(scannedPath) == Self.resolvedNormalizedPath(currentPath)
+    }
+
+    // MARK: - Path Normalization
+    nonisolated static func normalizedPath(_ path: String) -> String {
+        NSString(string: path).standardizingPath
+    }
+
+    nonisolated static func resolvedNormalizedPath(_ path: String) -> String {
+        normalizedPath(URL(fileURLWithPath: path).resolvingSymlinksInPath().path)
+    }
+
     func publishSuccessfulScan(_ files: [CustomFile], scannedPath: String, for side: FavPanelSide) async {
         log.debug("[Scan] publish side=\(side) path='\(scannedPath)' raw=\(files.count)")
+        guard await isScannedPathCurrent(scannedPath, for: side) else {
+            let currentPath = await currentPanelPathOnMain(for: side)
+            log.info("[Scan] publish skipped stale path side=\(side) scanned='\(scannedPath)' current='\(currentPath)'")
+            return
+        }
         await MainActor.run {
             AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
         }

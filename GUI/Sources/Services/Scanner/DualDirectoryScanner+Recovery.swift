@@ -37,6 +37,10 @@ extension DualDirectoryScanner {
         guard let fallbackURL = nearestExistingReadableDirectory(from: url), fallbackURL.path != url.path else {
             return false
         }
+        if shouldKeepMissingMountedVolumePath(url, fallbackURL: fallbackURL) {
+            log.warning("[Scan] mounted path unavailable side=\(context.side) path='\(url.path)' fallback='/Volumes' suppressed")
+            return true
+        }
         log.warning("[Scan] current directory disappeared side=\(context.side) path='\(url.path)' fallback='\(fallbackURL.path)'")
         await MainActor.run {
             appState.updateKnownDirectoryPath(fallbackURL, for: context.side)
@@ -61,6 +65,11 @@ extension DualDirectoryScanner {
             log.error("[Scan] fallback scan failed side=\(context.side) path='\(fallbackURL.path)' error=\(error.localizedDescription)")
         }
         return true
+    }
+
+    // MARK: - Mounted Volume Recovery Guard
+    func shouldKeepMissingMountedVolumePath(_ missingURL: URL, fallbackURL: URL) -> Bool {
+        missingURL.path.hasPrefix("/Volumes/") && fallbackURL.path == "/Volumes"
     }
 
     // MARK: - Nearest Existing Readable Directory
