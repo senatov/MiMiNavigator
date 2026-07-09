@@ -4,6 +4,7 @@
 import SwiftUI
 
 // MARK: - Multi Rename Rules View
+
 struct MultiRenameRulesView: View {
     @Bindable var viewModel: MultiRenameViewModel
 
@@ -39,7 +40,7 @@ struct MultiRenameRulesView: View {
                 Text("Counter")
                 numericField("Start", value: $viewModel.counterStart)
                 numericField("Step", value: $viewModel.counterStep)
-                Stepper("Digits: \(viewModel.counterDigits)", value: $viewModel.counterDigits, in: 1...8)
+                Stepper("Digits: \(viewModel.counterDigits)", value: $viewModel.counterDigits, in: 1 ... 8)
                 Spacer()
                 Menu("Insert token") {
                     Button("Name [N]") { viewModel.nameMask += "[N]" }
@@ -51,9 +52,7 @@ struct MultiRenameRulesView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(14)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(nsColor: .separatorColor)))
+        .padding(12)
     }
 
     private func labeledField(_ title: String, text: Binding<String>, hint: String) -> some View {

@@ -4,6 +4,7 @@
 import SwiftUI
 
 // MARK: - Multi Rename Preview View
+
 struct MultiRenamePreviewView: View {
     let items: [MultiRenamePreviewItem]
     @State private var selection: MultiRenamePreviewItem.ID?
@@ -24,5 +25,6 @@ struct MultiRenamePreviewView: View {
             .width(min: 110, ideal: 150)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

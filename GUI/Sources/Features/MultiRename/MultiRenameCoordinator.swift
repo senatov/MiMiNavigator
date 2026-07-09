@@ -6,6 +6,7 @@ import FileModelKit
 import SwiftUI
 
 // MARK: - Multi Rename Coordinator
+
 @MainActor
 @Observable
 final class MultiRenameCoordinator {
@@ -35,12 +36,13 @@ final class MultiRenameCoordinator {
             isVisible = true
             return
         }
-        let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 480))
+        let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 520))
         let panelWindow = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow], backing: .buffered, defer: false)
         panelWindow.contentView = hostingView
         panelWindow.isReleasedWhenClosed = false
-        panelWindow.minSize = NSSize(width: 680, height: 480)
-        PanelTitleHelper.applyIconTitle(to: panelWindow, systemImage: "textformat", title: "Multi-Rename Tool")
+        panelWindow.minSize = NSSize(width: 680, height: 520)
+        panelWindow.titlebarAppearsTransparent = false
+        PanelTitleHelper.applyIconTitle(to: panelWindow, systemImage: "text.line.2.summary", title: "Multi-Rename Tool")
         panelWindow.toolbarStyle = .unified
         panelWindow.animationBehavior = .utilityWindow
         panelWindow.hidesOnDeactivate = false
@@ -73,9 +75,10 @@ final class MultiRenameCoordinator {
 }
 
 // MARK: - Multi Rename Window Delegate
+
 private final class MultiRenameWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = MultiRenameWindowDelegate()
-    func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_: Notification) {
         Task { @MainActor in MultiRenameCoordinator.shared.windowDidClose() }
     }
 }
