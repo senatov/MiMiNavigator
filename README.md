@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.9"><img src="https://img.shields.io/badge/release-v0.9.9.5.9-orange" alt="Release v0.9.9.5.9" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0.0"><img src="https://img.shields.io/badge/release-v0.9.9.0.0-orange" alt="Release v0.9.9.0.0" /></a>
 </p>
 
 <p align="center">
@@ -38,16 +38,16 @@
 
 
 
-## Recent Changes (v0.9.9.5.9 - July 2026)
+## Recent Changes (v0.9.9.0.0 - July 2026)
 
-- **Multi-Rename** — batch rename files and folders with masks, counters, search or regex replacement, case conversion, conflict preview, rollback, and keyboard control.
-- **Reliable navigation** — Favorites, tabs, search, archives, history, mounted connections, and file operations now share one synchronized navigation flow.
-- **Keyboard and dialog polish** — Tab navigation covers the interface and modal dialogs; copy/move confirmations and dialog buttons use consistent behavior and styling.
-- **Network and panel fixes** — broader device discovery, fewer repeated Keychain prompts, restored active-panel zebra contrast, and safer immediate shutdown feedback.
-- **Build metadata** — release version is `0.9.9.5.9`, build `127`.
+- **Preview mounted-volume stability** — background refresh no longer moves a panel from a temporarily unavailable `/Volumes/...` path to `/Volumes`.
+- **Stale scan protection** — Preview batches and full scanner results are ignored when they no longer match the panel's current path.
+- **Release mutability checks** — the notarized release pipeline verifies that GitHub reports `isImmutable=false` and that the DMG asset is fully uploaded.
+- **Build metadata** — release version is `0.9.9.0.0`, build `128`.
 
 ## Previous Changes
 
+- **v0.9.9.5.9** — Multi-Rename, unified navigation, keyboard access, network discovery, and interface consistency.
 - **v0.9.9.5.8** — secure automatic update installation, validation, rollback, and daily update checks.
 - **v0.9.9.5.7** — per-tab List, Preview, and Tree view persistence across navigation and restarts.
 - **v0.9.9.5.6** — IntelliJ IDEA compare reliability and expanded external tool documentation.
@@ -197,7 +197,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.5.9 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.5.9)**
+**[Download MiMiNavigator v0.9.9.0.0 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.0.0)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

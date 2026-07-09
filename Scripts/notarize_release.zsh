@@ -82,6 +82,31 @@ if ! grep -Fqx "# MiMiNavigator ${TAG}" "${NOTES_FILE}"; then
     exit 1
 fi
 
+assert_editable_uploaded_release() {
+    local immutable
+    local asset_name
+    local asset_state
+
+    immutable="$(gh release view "${TAG}" --json isImmutable --jq '.isImmutable')"
+    if [[ "${immutable}" == "true" ]]; then
+        echo "❌ GitHub release ${TAG} became immutable after upload."
+        echo "   Release assets may be locked; create a new editable release instead."
+        exit 1
+    fi
+
+    asset_name="$(basename "${DMG}")"
+    asset_state="$(gh release view "${TAG}" --json assets --jq ".assets[] | select(.name == \"${asset_name}\") | .state" | head -1)"
+    if [[ -z "${asset_state}" ]]; then
+        echo "❌ Uploaded asset not found on release ${TAG}: ${asset_name}"
+        exit 1
+    fi
+    if [[ "${asset_state}" != "uploaded" ]]; then
+        echo "❌ Uploaded asset is not ready: ${asset_name} state=${asset_state}"
+        exit 1
+    fi
+    echo "   Release ${TAG} is editable and asset ${asset_name} is uploaded."
+}
+
 # ── Step 0: Validate release refs ─────────────────────────────────────────────
 echo "[0/10] Checking release refs..."
 CURRENT_BRANCH="$(git branch --show-current)"
@@ -369,6 +394,8 @@ else
         --title "${TAG} — MiMiNavigator (notarized)" \
         --notes-file "${NOTES_FILE}"
 fi
+
+assert_editable_uploaded_release
 
 echo ""
 echo "═══════════════════════════════════════════"
