@@ -5,6 +5,7 @@
 import AppKit
 
 // MARK: - NS Resizable Divider View
+
 final class NSResizableDividerView: NSView {
     // MARK: - Callbacks
 
@@ -48,12 +49,13 @@ final class NSResizableDividerView: NSView {
     }
 
     private func drawDividerLine() {
+        guard isDragging else { return }
         let x = (bounds.width / 2).rounded() - 0.5
         let path = NSBezierPath()
         path.move(to: NSPoint(x: x, y: bounds.minY))
         path.line(to: NSPoint(x: x, y: bounds.maxY))
-        path.lineWidth = isDragging ? 2.0 : 1.0
-        (isDragging ? NSColor.controlAccentColor : dividerColor).setStroke()
+        path.lineWidth = 2.0
+        NSColor.controlAccentColor.setStroke()
         path.stroke()
     }
 

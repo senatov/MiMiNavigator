@@ -6,6 +6,7 @@ import AppKit
 import SwiftUI
 
 // MARK: - Resizable Divider
+
 struct ResizableDivider: View {
     @Binding var width: CGFloat
     let min: CGFloat
@@ -24,6 +25,12 @@ struct ResizableDivider: View {
             onAutoFit: onAutoFit
         )
         .frame(width: 14)
+        .overlay {
+            Rectangle()
+                .fill(color)
+                .frame(width: 1)
+                .allowsHitTesting(false)
+        }
     }
 }
 
