@@ -13,6 +13,7 @@
 import AppKit
 import FileModelKit
 import QuickLookThumbnailing
+import RenameKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -205,12 +206,7 @@ private struct ThumbnailCellView: View {
             }
 
             // Name — single line, macOS-style middle truncation
-            Text(file.nameStr)
-                .font(.system(size: 10))
-                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(width: cellSize - 4)
+            nameView
 
             // Size
             if !file.isDirectory {
@@ -238,6 +234,34 @@ private struct ThumbnailCellView: View {
             DragPreviewPopupView(files: dragFiles, panelSide: panelSide)
         }
         .task(id: file.pathStr) { await loadThumbnail() }
+    }
+
+    // MARK: - Name View
+    @ViewBuilder
+    private var nameView: some View {
+        if InlineRenameCommitter.isActive(file: file, panel: panelSide, appState: appState) {
+            InlineRenameField(
+                text: Bindable(appState.inlineRename).editedName,
+                originalName: appState.inlineRename.originalName,
+                nameWidth: cellSize - 4,
+                onCommit: { commitInlineRename() },
+                onCancel: { appState.inlineRename.cancel() }
+            )
+            .font(.system(size: 10))
+            .frame(width: cellSize - 4)
+        } else {
+            Text(file.nameStr)
+                .font(.system(size: 10))
+                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(width: cellSize - 4)
+        }
+    }
+
+    // MARK: - Commit Inline Rename
+    private func commitInlineRename() {
+        InlineRenameCommitter.commit(file: file, panel: panelSide, appState: appState)
     }
 
     private func makeDragProvider() -> NSItemProvider {

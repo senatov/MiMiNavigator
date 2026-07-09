@@ -13,7 +13,6 @@ import UniformTypeIdentifiers
 // MARK: - Lightweight row view for file list with drag-drop support
 @MainActor
 struct FileRow: View, Equatable {
-
     let index: Int
     let file: CustomFile
     let isSelected: Bool
@@ -68,10 +67,7 @@ struct FileRow: View, Equatable {
     }
 
     var isParentEntry: Bool {
-        // Primary check
         if ParentDirectoryEntry.isParentEntry(file) { return true }
-
-        // Fallback: synthetic parent row may not have the flag
         return file.nameStr == ".."
     }
 
@@ -93,7 +89,6 @@ struct FileRow: View, Equatable {
             if isParentEntry {
                 parentRowView()
             } else {
-                // Normal file row — full drag-drop + context menu
                 normalRowView()
             }
         }
@@ -165,7 +160,6 @@ struct FileRow: View, Equatable {
         (isDropTargeted || isInternalDropTarget) && isValidDropTarget
     }
 
-    /// True when DragDropManager signals this directory as the hover target during internal drag
     private var isInternalDropTarget: Bool {
         guard isValidDropTarget, !dragDropManager.draggedFiles.isEmpty else { return false }
         return dragDropManager.dropTargetPath == file.urlValue
@@ -178,7 +172,6 @@ struct FileRow: View, Equatable {
             .allowsHitTesting(false)
     }
 
-    /// True when there are marked files on this panel (show group menu)
     private var hasMarkedFiles: Bool {
         appState.markedCount(for: panelSide) > 0
     }
@@ -187,7 +180,6 @@ struct FileRow: View, Equatable {
     private var contextMenuContent: some View {
         let optionHeld = NSEvent.modifierFlags.contains(.option)
         if hasMarkedFiles {
-            // Group context menu for marked files
             MultiSelectionContextMenu(
                 markedCount: appState.markedCount(for: panelSide),
                 panelSide: panelSide,
@@ -212,16 +204,12 @@ struct FileRow: View, Equatable {
     // MARK: - Event Handlers
     private func handleSingleClick() {
         let _ = log.debug(#function)
-        // Detect modifier keys from current NSEvent
         let modifiers = Self.currentClickModifiers()
         log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
-        // Always select the file (updates cursor position)
         onSelect(file)
-        // Handle multi-selection via modifier keys
         appState.handleClickWithModifiers(on: file, modifiers: modifiers)
     }
 
-    /// Read modifier keys from the current NSEvent
     private static func currentClickModifiers() -> ClickModifiers {
         guard let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) else {
             return .none
@@ -258,27 +246,21 @@ struct FileRow: View, Equatable {
             log.warning("[FileRow] drop rejected: invalid target")
             return false
         }
-
         guard !droppedFiles.isEmpty else {
             log.warning("[FileRow] drop rejected: empty payload")
             return false
         }
-
         let droppedPaths = Set(droppedFiles.map { $0.urlValue.path })
         guard !droppedPaths.contains(file.urlValue.path) else {
             log.warning("[FileRow] drop rejected: self-drop")
             return false
         }
-
         log.info("[FileRow] drop accepted: \(droppedFiles.count) → '\(file.nameStr)'")
         dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: dragDropManager.dragSourcePanelSide)
         return true
     }
 
     // MARK: - Row content — driven by ColumnLayoutModel
-    /// Column widths and separators must EXACTLY match TableHeaderView layout:
-    ///   [Name flexible] | sep(1pt) | [col2 spec.width] | sep(1pt) | [col3 spec.width] | ...
-    /// NO extra padding inside fixed columns — width IS the total width.
     @ViewBuilder
     private var rowContent: some View {
         if isParentEntry {
@@ -307,7 +289,6 @@ struct FileRow: View, Equatable {
     private func normalRowContent() -> some View {
         HStack(alignment: .center, spacing: 0) {
             nameColumnView()
-
             FileRowMetadataColumnsView(
                 file: file,
                 layout: layout,
@@ -318,15 +299,8 @@ struct FileRow: View, Equatable {
     }
 
     // MARK: - Name column
-    // Uses layout.nameWidth — same value as TableHeaderView nameColumnHeader.
-    // This guarantees pixel-perfect alignment between header and rows.
     private var isInlineRenaming: Bool {
-        appState.inlineRename.activeFileID == AnyHashable(file.id)
-            && appState.inlineRename.panelTag == inlineRenamePanelTag
-    }
-
-    private var inlineRenamePanelTag: Int {
-        panelSide == .left ? 0 : 1
+        InlineRenameCommitter.isActive(file: file, panel: panelSide, appState: appState)
     }
 
     @ViewBuilder
@@ -357,18 +331,7 @@ struct FileRow: View, Equatable {
     }
 
     private func commitInlineRename() {
-        guard let result = appState.inlineRename.commit() else { return }
-        let panel: FavPanelSide = result.panelTag == 0 ? .left : .right
-        // Find the original file by matching the name that was active
-        guard let selectedFile = panel == .left ? appState.selectedLeftFile : appState.selectedRightFile else { return }
-        Task {
-            await CntMenuCoord.shared.performRename(
-                file: selectedFile,
-                newName: result.newName,
-                panel: panel,
-                appState: appState
-            )
-        }
+        InlineRenameCommitter.commit(file: file, panel: panelSide, appState: appState)
     }
 
     // MARK: - Parent Row View
@@ -394,7 +357,6 @@ struct FileRow: View, Equatable {
         withAnimation(.spring(response: 0.30, dampingFraction: 0.75, blendDuration: 0.1)) {
             isHoveringParentRow = hovering
         }
-
         hovering
             ? NSCursor.pointingHand.set()
             : NSCursor.arrow.set()

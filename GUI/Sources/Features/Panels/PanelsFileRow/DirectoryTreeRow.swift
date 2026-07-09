@@ -6,6 +6,7 @@
 
 import AppKit
 import FileModelKit
+import RenameKit
 import SwiftUI
 
 // MARK: - Directory Tree Row
@@ -61,16 +62,42 @@ struct DirectoryTreeRow: View {
                 .resizable()
                 .frame(width: 16, height: 16)
                 .opacity(isEmptyDirectory ? 0.55 : 1)
-            Text(file.nameStr)
-                .font(.system(size: 13))
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .foregroundStyle(nameForegroundStyle)
+            nameView
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 4)
         .frame(width: layout.nameWidth, alignment: .leading)
         .clipped()
+    }
+
+    // MARK: - Name View
+    @ViewBuilder
+    private var nameView: some View {
+        if InlineRenameCommitter.isActive(file: file, panel: panelSide, appState: appState) {
+            InlineRenameField(
+                text: Bindable(appState.inlineRename).editedName,
+                originalName: appState.inlineRename.originalName,
+                nameWidth: inlineRenameWidth,
+                onCommit: { commitInlineRename() },
+                onCancel: { appState.inlineRename.cancel() }
+            )
+        } else {
+            Text(file.nameStr)
+                .font(.system(size: 13))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .foregroundStyle(nameForegroundStyle)
+        }
+    }
+
+    // MARK: - Inline Rename Width
+    private var inlineRenameWidth: CGFloat {
+        max(80, layout.nameWidth - CGFloat(depth) * 16 - 48)
+    }
+
+    // MARK: - Commit Inline Rename
+    private func commitInlineRename() {
+        InlineRenameCommitter.commit(file: file, panel: panelSide, appState: appState)
     }
 
     @ViewBuilder
