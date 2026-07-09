@@ -128,20 +128,26 @@ private static func loadPersistentState() -> PersistentState? {
     static func saveBeforeExit(from state: AppState) {
         ensureStateFileExists()
         log.debug("[StatePersistence] saveBeforeExit")
-
+        let previous = loadPersistentState()
+        let leftIsRestorable = isRestorablePanelPath(state.leftPath)
+        let rightIsRestorable = isRestorablePanelPath(state.rightPath)
+        let leftTabs = leftIsRestorable ? state.leftTabManager.encodedTabs() : previous?.leftTabs
+        let rightTabs = rightIsRestorable ? state.rightTabManager.encodedTabs() : previous?.rightTabs
+        let leftActiveTabID = leftIsRestorable ? state.leftTabManager.activeTabIDString : previous?.leftActiveTabID
+        let rightActiveTabID = rightIsRestorable ? state.rightTabManager.activeTabIDString : previous?.rightActiveTabID
         // use cached frame — live window may already be closing
         let mainFrame = lastKnownWindowFrame
             ?? NSApp.windows.first(where: { !($0 is NSPanel) && $0.isVisible })?.frame
         let snapshot = PersistentState(
-            leftPath: state.leftPath,
-            rightPath: state.rightPath,
+            leftPath: leftIsRestorable ? state.leftPath : previous?.leftPath ?? "",
+            rightPath: rightIsRestorable ? state.rightPath : previous?.rightPath ?? "",
             focusedPanel: state.focusedPanel == .left ? "left" : "right",
-            selectedLeftFile: state.selectedLeftFile?.urlValue.path,
-            selectedRightFile: state.selectedRightFile?.urlValue.path,
-            leftTabs: state.leftTabManager.encodedTabs(),
-            rightTabs: state.rightTabManager.encodedTabs(),
-            leftActiveTabID: state.leftTabManager.activeTabIDString,
-            rightActiveTabID: state.rightTabManager.activeTabIDString,
+            selectedLeftFile: leftIsRestorable ? state.selectedLeftFile?.urlValue.path : previous?.selectedLeftFile,
+            selectedRightFile: rightIsRestorable ? state.selectedRightFile?.urlValue.path : previous?.selectedRightFile,
+            leftTabs: leftTabs,
+            rightTabs: rightTabs,
+            leftActiveTabID: leftActiveTabID,
+            rightActiveTabID: rightActiveTabID,
             sortKey: state.sortKey.rawValue,
             sortAscending: state.bSortAscending,
             windowFrameX: mainFrame.map { Double($0.origin.x) },
@@ -151,6 +157,9 @@ private static func loadPersistentState() -> PersistentState? {
         )
 
         writeStateToDisk(snapshot)
+        if !leftIsRestorable || !rightIsRestorable {
+            log.warning("[StatePersistence] skipped transient panel path(s) on save: L=\(state.leftPath) R=\(state.rightPath)")
+        }
         log.info("[StatePersistence] state saved to ~/.mimi/state.json")
     }
 
@@ -178,6 +187,10 @@ private static func loadPersistentState() -> PersistentState? {
     /// Returns URL for `path` if it points to an existing, accessible directory; otherwise `fallback`.
     private static func validDirectoryURL(_ path: String?, fallback: URL) -> URL {
         guard let path, !path.isEmpty else { return fallback }
+        guard isRestorablePanelPath(path) else {
+            log.warning("[StatePersistence] transient saved path: \(path) → fallback \(fallback.path)")
+            return fallback
+        }
         let url = URL(fileURLWithPath: path).resolvingSymlinksInPath()
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
@@ -189,6 +202,37 @@ private static func loadPersistentState() -> PersistentState? {
             return fallback
         }
         return url
+    }
+
+    // MARK: - Restorable Panel Paths
+
+    static func isRestorablePanelPath(_ path: String) -> Bool {
+        guard !path.isEmpty else { return false }
+        if path.contains("/DerivedData/") || path.contains(".xcarchive") { return false }
+        if isAppDistributionVolumePath(path) { return false }
+        guard let volumePath = currentAppVolumePath() else { return true }
+        return !PathUtils.areEqual(path, volumePath) && !path.hasPrefix(volumePath + "/")
+    }
+
+    private static func isAppDistributionVolumePath(_ path: String) -> Bool {
+        guard path.hasPrefix("/Volumes/") else { return false }
+        let parts = path.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count >= 2, parts[0] == "Volumes" else { return false }
+        return appDistributionVolumeNames().contains(String(parts[1]))
+    }
+
+    private static func appDistributionVolumeNames() -> Set<String> {
+        let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+        let displayName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+        return Set(["MiMiNavigator", bundleName, displayName].compactMap { $0 })
+    }
+
+    private static func currentAppVolumePath() -> String? {
+        let bundlePath = Bundle.main.bundleURL.standardizedFileURL.path
+        guard bundlePath.hasPrefix("/Volumes/") else { return nil }
+        let parts = bundlePath.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count >= 2, parts[0] == "Volumes" else { return nil }
+        return "/Volumes/\(parts[1])"
     }
 
     /// Get initial focused panel

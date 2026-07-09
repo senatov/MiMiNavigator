@@ -287,6 +287,10 @@
                 // Resolve container symlinks (e.g. ~/Library/Containers/.../Data/Downloads → ~/Downloads)
                 let validTabs: [TabItem] = decoded.compactMap { tab in
                     let realURL = tab.url.resolvingSymlinksInPath()
+                    guard StatePersistence.isRestorablePanelPath(realURL.path) else {
+                        log.warning("[TabManager] restoreTabs: transient tab skipped \(realURL.path)")
+                        return nil
+                    }
                     var isDir: ObjCBool = false
                     guard FileManager.default.fileExists(atPath: realURL.path, isDirectory: &isDir), isDir.boolValue else {
                         return nil

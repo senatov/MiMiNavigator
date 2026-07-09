@@ -33,7 +33,6 @@
             StatePersistence.restoreTabs(into: self)
             syncPanelPathsToRestoredTabs()
             StatePersistence.restoreSorting(into: self)
-            focusedPanel = .left
             if let cached = PanelStartupCache.shared.load(forLeftPath: leftPath, rightPath: rightPath) {
                 displayedLeftFiles = cached.left
                 displayedRightFiles = cached.right
@@ -48,7 +47,6 @@
                 await refreshFiles(for: .left)
                 await refreshFiles(for: .right)
                 selectionManager?.restoreSelectionsAndFocus()
-                focusedPanel = .left
                 if self[panel: .left].selectedFile == nil {
                     setSelectedFile(firstRealFile(in: displayedLeftFiles), for: .left)
                 }
