@@ -21,7 +21,10 @@ final class UpdateCoordinator {
 
     // MARK: - Automatic Checks
     func startAutomaticChecks() {
-        guard automaticCheckTask == nil else { return }
+        guard automaticCheckTask == nil else {
+            log.debug("[Update] automatic checks already scheduled")
+            return
+        }
         automaticCheckTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(3))
             while !Task.isCancelled {
@@ -33,19 +36,25 @@ final class UpdateCoordinator {
     }
 
     private func performAutomaticCheck() async {
+        log.info("[Update] automatic check started")
         await UpdateChecker.shared.checkForUpdates()
-        guard UpdateChecker.shared.updateAvailable else { return }
+        guard UpdateChecker.shared.updateAvailable else {
+            log.info("[Update] automatic check finished: no update")
+            return
+        }
+        log.info("[Update] automatic check found update; showing panel")
         showPanel(startCheck: false)
     }
     
     func checkForUpdates() {
-        log.debug(#function + "()")
+        log.info("[Update] manual check requested")
         showPanel(startCheck: true)
     }
 
     private func showPanel(startCheck: Bool) {
         // If already open, bring to front
         if let existing = panel, existing.isVisible {
+            log.info("[Update] panel already visible; bringing front")
             existing.makeKeyAndOrderFront(nil)
             return
         }
@@ -77,10 +86,11 @@ final class UpdateCoordinator {
                 await UpdateChecker.shared.checkForUpdates()
             }
         }
-        log.debug("[UpdateCoordinator] Update panel shown")
+        log.info("[Update] panel shown startCheck=\(startCheck)")
     }
     
     func close() {
+        log.info("[Update] panel closed")
         panel?.close()
         panel = nil
     }

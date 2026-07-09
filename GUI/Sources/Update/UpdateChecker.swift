@@ -31,41 +31,37 @@ final class UpdateChecker: ObservableObject {
 
     // MARK: - Check for Updates
     func checkForUpdates() async {
+        log.info("[Update] check started current=\(currentVersion) url=\(apiURL.absoluteString)")
         isChecking = true
         error = nil
-        
         defer { isChecking = false }
-        
         do {
             var request = URLRequest(url: apiURL)
             request.setValue("application/json", forHTTPHeaderField: "Accept")
             request.setValue("MiMiNavigator/\(currentVersion)", forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 15
-            
             let (data, response) = try await URLSession.shared.data(for: request)
-            
             guard let httpResponse = response as? HTTPURLResponse else {
                 error = "Invalid response"
+                log.error("[Update] check failed: invalid response")
                 return
             }
-            
+            log.info("[Update] check response status=\(httpResponse.statusCode) bytes=\(data.count)")
             guard httpResponse.statusCode == 200 else {
                 error = "Update service error: \(httpResponse.statusCode)"
-                log.warning("[UpdateChecker] service error: \(httpResponse.statusCode)")
+                log.warning("[Update] service error status=\(httpResponse.statusCode)")
                 return
             }
-            
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             latestRelease = release
-            
             let latestVersion = release.tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
             updateAvailable = isNewer(latestVersion, than: currentVersion)
-            
-            log.info("[UpdateChecker] current=\(currentVersion) latest=\(latestVersion) updateAvailable=\(updateAvailable)")
-            
+            let assets = release.assets.map { "\($0.name):\($0.size)" }.joined(separator: ",")
+            log.info("[Update] check decoded tag=\(release.tagName) assets=[\(assets)]")
+            log.info("[Update] current=\(currentVersion) latest=\(latestVersion) updateAvailable=\(updateAvailable)")
         } catch {
             self.error = error.localizedDescription
-            log.error("[UpdateChecker] failed: \(error.localizedDescription)")
+            log.error("[Update] check failed: \(error.localizedDescription)")
         }
     }
 
@@ -115,20 +111,23 @@ final class UpdateChecker: ObservableObject {
     func installUpdate() async {
         guard let release = latestRelease, let asset = dmgAsset else {
             error = "No installable DMG was found"
+            log.error("[Update] install requested but no DMG asset is available")
             return
         }
+        log.info("[Update] install requested tag=\(release.tagName) asset=\(asset.name) size=\(asset.size) digest=\(asset.digest ?? "nil")")
         isInstalling = true
         installStatus = "Downloading update..."
         error = nil
         do {
             try await UpdateInstaller.install(release: release, asset: asset) { [weak self] status in
+                log.info("[Update] status: \(status)")
                 Task { @MainActor in self?.installStatus = status }
             }
         } catch {
             self.error = error.localizedDescription
             installStatus = nil
             isInstalling = false
-            log.error("[UpdateChecker] install failed: \(error.localizedDescription)")
+            log.error("[Update] install failed: \(error.localizedDescription)")
         }
     }
 }
