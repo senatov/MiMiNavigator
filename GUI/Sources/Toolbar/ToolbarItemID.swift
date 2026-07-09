@@ -67,7 +67,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .network:        return "rectangle.connected.to.line.below"
         case .connectServer:  return "link"
         case .findFiles:      return "magnifyingglass"
-        case .multiRename:    return "textformat"
+        case .multiRename:    return "text.line.2.summary"
         case .settings:       return "gearshape"
         case .feedback:       return "bubble.left.and.text.bubble.right"
         case .menuBarToggle:  return "menubar.rectangle"

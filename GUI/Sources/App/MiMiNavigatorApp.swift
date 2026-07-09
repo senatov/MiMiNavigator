@@ -279,7 +279,17 @@ struct MiMiNavigatorApp: App {
     // MARK: - ═══════════════════════════════════════
     /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
     func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
-        ToolbarButton(systemImage: id.systemImage, help: id.helpText, action: action)
+        ToolbarButton(systemImage: id.systemImage, help: id.helpText, iconColor: toolbarIconColor(for: id), action: action)
+    }
+
+    // MARK: - Toolbar Icon Color
+    private func toolbarIconColor(for id: ToolbarItemID) -> Color? {
+        switch id {
+            case .multiRename:
+                return Color(#colorLiteral(red: 0.2470588235, green: 0.0784313725, blue: 0.3921568627, alpha: 1.0))
+            default:
+                return nil
+        }
     }
 
     /// Creates a ToolbarToggleButton for specific known toggle items.

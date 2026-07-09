@@ -14,12 +14,13 @@ import SwiftUI
 private struct ToolbarIcon: View {
     let name: String
     var active: Bool = false
+    var color: Color?
 
     var body: some View {
         Image(systemName: name)
             .symbolRenderingMode(.hierarchical)
             .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(active ? Color.accentColor : Color.primary)
+            .foregroundStyle(color ?? (active ? Color.accentColor : Color.primary))
     }
 }
 
@@ -154,11 +155,12 @@ extension View {
 struct ToolbarButton: View {
     let systemImage: String
     let help: String
+    var iconColor: Color?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            ToolbarIcon(name: systemImage)
+            ToolbarIcon(name: systemImage, color: iconColor)
         }
         .buttonStyle(.borderless)
         .fastTooltip(help)
