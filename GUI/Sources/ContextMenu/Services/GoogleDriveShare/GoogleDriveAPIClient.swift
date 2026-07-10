@@ -58,7 +58,7 @@ struct GoogleDriveAPIClient {
     // MARK: - File Metadata
 
     func fileMetadata(fileID: String) async throws -> GoogleDriveFile {
-        let fields = "id,name,mimeType,webViewLink,webContentLink"
+        let fields = "id,name,mimeType,webViewLink"
         let url = try endpoint("/files/\(fileID)", query: ["fields": fields])
         let data = try await jsonRequest(url: url, method: "GET", body: nil)
         return try JSONDecoder().decode(GoogleDriveFile.self, from: data)
@@ -106,7 +106,7 @@ struct GoogleDriveAPIClient {
     // MARK: - Upload File
 
     private func uploadFile(at url: URL, parentID: String) async throws -> GoogleDriveFile {
-        let fields = "id,name,mimeType,webViewLink,webContentLink"
+        let fields = "id,name,mimeType,webViewLink"
         let sessionURL = try await createUploadSession(fileURL: url, parentID: parentID, fields: fields)
         var request = URLRequest(url: sessionURL)
         request.httpMethod = "PUT"
@@ -195,7 +195,7 @@ struct GoogleDriveAPIClient {
     }
 
     private func validate(data: Data, response: URLResponse) throws {
-        guard let http = response as? HTTPURLResponse else { return }
+        guard let http = response as? HTTPURLResponse else { throw GoogleDriveError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? ""
             throw GoogleDriveError.requestFailed(http.statusCode, body)

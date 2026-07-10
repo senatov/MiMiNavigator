@@ -28,14 +28,7 @@ enum GoogleDriveMountedPaths {
         if directoryExists(publicURL) {
             return publicURL
         }
-        do {
-            try FileManager.default.createDirectory(at: publicURL, withIntermediateDirectories: true)
-            log.info("[CloudLink] created Google Drive public folder at '\(publicURL.path)'")
-            return publicURL
-        } catch {
-            log.warning("[CloudLink] failed to create Google Drive public folder: \(error.localizedDescription)")
-            return nil
-        }
+        return nil
     }
 
     // MARK: - Cloud Storage My Drive URL

@@ -6,7 +6,6 @@
 
 import AppKit
 import Foundation
-import UniformTypeIdentifiers
 
 // MARK: - GoogleDriveShareService
 
@@ -37,18 +36,28 @@ enum GoogleDriveShareService {
             panel.appendLog("Applying public \(permission.rawValue) permission…")
             try await client.applyPermission(fileID: uploaded.id, permission: permission)
             let metadata = try await client.fileMetadata(fileID: uploaded.id)
-            let link = try shareLink(from: metadata)
+            let link = shareLink(from: metadata)
             panel.appendLog("Creating MiMiNavi short link…")
-            let shortLink = try await CloudLinkShortener.shorten(link)
-            copyToClipboard(shortLink)
+            let copiedLink: String
+            let copiedLinkLabel: String
+            do {
+                copiedLink = try await CloudLinkShortener.shorten(link)
+                copiedLinkLabel = "Short link"
+            } catch {
+                copiedLink = link
+                copiedLinkLabel = "Share link"
+                panel.appendLog("⚠️ TinyURL could not create a short link; using the original Google Drive link.")
+                log.warning("[CloudLink] TinyURL fallback host='\(URL(string: link)?.host ?? "unknown")': \(error.localizedDescription)")
+            }
+            copyToClipboard(copiedLink)
             panel.appendLog("File uploaded to your personal Google Drive.")
             panel.appendKeyValueLog("File", value: url.lastPathComponent)
             panel.appendKeyValueLog("Path", value: url.path)
-            panel.appendKeyValueLog("Short link", value: shortLink)
+            panel.appendKeyValueLog(copiedLinkLabel, value: copiedLink)
             panel.appendLog("Share link copied to clipboard.")
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
             showNotification("Google Drive share link copied.")
-            log.info("[CloudLink] Google Drive short link copied fileID='\(uploaded.id)' link='\(shortLink)'")
+            log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(copiedLink)'")
             return true
         } catch {
             panel.appendLog("❌ \(error.localizedDescription)")
@@ -64,30 +73,14 @@ enum GoogleDriveShareService {
 
     // MARK: - Share Link
 
-    private static func shareLink(from file: GoogleDriveFile) throws -> String {
+    private static func shareLink(from file: GoogleDriveFile) -> String {
         if file.mimeType == "application/vnd.google-apps.folder" {
             return "https://drive.google.com/drive/folders/\(file.id)?usp=sharing"
-        }
-        if isInlineImage(file.mimeType) {
-            return "https://lh3.googleusercontent.com/d/\(file.id)=s0"
-        }
-        if let webContentLink = file.webContentLink, webContentLink.isEmpty == false {
-            return webContentLink
         }
         if let webViewLink = file.webViewLink, webViewLink.isEmpty == false {
             return webViewLink
         }
         return "https://drive.google.com/file/d/\(file.id)/view?usp=sharing"
-    }
-
-    // MARK: - Inline Image
-
-    private static func isInlineImage(_ mimeType: String?) -> Bool {
-        guard let mimeType,
-              let type = UTType(mimeType: mimeType) else {
-            return false
-        }
-        return type.conforms(to: .image)
     }
 
     // MARK: - Clipboard

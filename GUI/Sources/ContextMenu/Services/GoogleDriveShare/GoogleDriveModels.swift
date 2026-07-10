@@ -130,7 +130,6 @@ struct GoogleDriveFile: Decodable {
     let name: String?
     let mimeType: String?
     let webViewLink: String?
-    let webContentLink: String?
 }
 
 // MARK: - GoogleDrivePermissionResponse
@@ -142,6 +141,7 @@ struct GoogleDrivePermissionResponse: Decodable {
 // MARK: - GoogleDriveError
 
 enum GoogleDriveError: LocalizedError {
+    case invalidResponse
     case invalidURL(String)
     case missingLoopbackPort
     case missingOAuthCode
@@ -154,6 +154,8 @@ enum GoogleDriveError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .invalidResponse:
+            return "Google Drive returned an invalid network response."
         case .invalidURL(let value):
             return "Invalid URL: \(value)"
         case .missingLoopbackPort:

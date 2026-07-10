@@ -183,7 +183,7 @@ enum GoogleDriveOAuthClient {
     // MARK: - Validate
 
     private static func validate(data: Data, response: URLResponse) throws {
-        guard let http = response as? HTTPURLResponse else { return }
+        guard let http = response as? HTTPURLResponse else { throw GoogleDriveError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? ""
             if http.statusCode == 400 && body.contains("client_secret is missing") {
