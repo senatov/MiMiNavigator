@@ -54,6 +54,7 @@ struct DropboxSharedLinkList: Decodable {
 // MARK: - DropboxError
 
 enum DropboxError: LocalizedError {
+    case invalidResponse
     case invalidURL(String)
     case missingOAuthCode
     case oauthTimedOut
@@ -66,6 +67,8 @@ enum DropboxError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .invalidResponse:
+            return "Dropbox returned an invalid network response."
         case .invalidURL(let value):
             return "Invalid URL: \(value)"
         case .missingOAuthCode:

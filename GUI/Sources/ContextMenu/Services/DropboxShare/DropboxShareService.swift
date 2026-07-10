@@ -18,6 +18,7 @@ enum DropboxShareService {
         panel.show(icon: "link.badge.plus", title: "Share+Link: \(sourceURL.lastPathComponent)", status: "Authenticating with Dropbox…", operationKey: "dropbox-share")
         panel.updateProgress(nil)
         panel.appendKeyValueLog("Source", value: sourceURL.path)
+        var createdDestination: URL?
         do {
             guard let publicFolder = DropboxMountedPaths.publicFolderURL() else { throw DropboxError.missingPublicFolder }
             panel.appendLog("Authenticating with Dropbox…")
@@ -25,18 +26,30 @@ enum DropboxShareService {
             let destination = uniqueDestination(for: sourceURL, in: publicFolder)
             panel.appendLog("Copying item to Dropbox Public…")
             try FileManager.default.copyItem(at: sourceURL, to: destination)
+            createdDestination = destination
             panel.appendLog("Waiting for Dropbox sync and creating public link…")
             let path = "/Public/\(destination.lastPathComponent)"
             let originalLink = try await DropboxAPIClient(accessToken: token).sharedLink(for: path)
             panel.appendLog("Creating MiMiNavi short link…")
-            let shortLink = try await CloudLinkShortener.shorten(originalLink)
-            copyToClipboard(shortLink)
+            let copiedLink: String
+            let copiedLinkLabel: String
+            do {
+                copiedLink = try await CloudLinkShortener.shorten(originalLink)
+                copiedLinkLabel = "Short link"
+            } catch {
+                copiedLink = originalLink
+                copiedLinkLabel = "Share link"
+                panel.appendLog("⚠️ TinyURL could not create a short link; using the original Dropbox link.")
+                log.warning("[CloudLink] TinyURL fallback host='\(URL(string: originalLink)?.host ?? "unknown")': \(error.localizedDescription)")
+            }
+            copyToClipboard(copiedLink)
             panel.appendKeyValueLog("Dropbox path", value: path)
-            panel.appendKeyValueLog("Short link", value: shortLink)
+            panel.appendKeyValueLog(copiedLinkLabel, value: copiedLink)
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
-            log.info("[CloudLink] Dropbox short link copied path='\(path)' link='\(shortLink)'")
+            log.info("[CloudLink] Dropbox link copied path='\(path)' link='\(copiedLink)'")
             return true
         } catch {
+            removeCreatedDestination(createdDestination, panel: panel)
             panel.appendLog("❌ \(error.localizedDescription)")
             panel.finish(success: false, message: "Dropbox Share+Link failed")
             log.error("[CloudLink] Dropbox share failed: \(error.localizedDescription)")
@@ -47,19 +60,36 @@ enum DropboxShareService {
     // MARK: - Destination
 
     private static func uniqueDestination(for source: URL, in folder: URL) -> URL {
-        let initial = folder.appendingPathComponent(source.lastPathComponent, isDirectory: source.hasDirectoryPath)
+        var isDirectory: ObjCBool = false
+        FileManager.default.fileExists(atPath: source.path, isDirectory: &isDirectory)
+        let sourceIsDirectory = isDirectory.boolValue
+        let initial = folder.appendingPathComponent(source.lastPathComponent, isDirectory: sourceIsDirectory)
         guard FileManager.default.fileExists(atPath: initial.path) else { return initial }
-        let stem = source.deletingPathExtension().lastPathComponent
-        let ext = source.pathExtension
+        let stem = sourceIsDirectory ? source.lastPathComponent : source.deletingPathExtension().lastPathComponent
+        let ext = sourceIsDirectory ? "" : source.pathExtension
         for index in 2...999 {
             let name = ext.isEmpty ? "\(stem) \(index)" : "\(stem) \(index).\(ext)"
-            let candidate = folder.appendingPathComponent(name, isDirectory: source.hasDirectoryPath)
+            let candidate = folder.appendingPathComponent(name, isDirectory: sourceIsDirectory)
             if FileManager.default.fileExists(atPath: candidate.path) == false {
                 return candidate
             }
         }
         let fallbackName = ext.isEmpty ? "\(stem) \(UUID().uuidString)" : "\(stem) \(UUID().uuidString).\(ext)"
-        return folder.appendingPathComponent(fallbackName, isDirectory: source.hasDirectoryPath)
+        return folder.appendingPathComponent(fallbackName, isDirectory: sourceIsDirectory)
+    }
+
+    // MARK: - Cleanup
+
+    private static func removeCreatedDestination(_ destination: URL?, panel: ProgressPanel) {
+        guard let destination else { return }
+        do {
+            try FileManager.default.removeItem(at: destination)
+            panel.appendLog("Removed the incomplete Dropbox copy.")
+            log.info("[CloudLink] removed failed Dropbox copy path='\(destination.path)'")
+        } catch {
+            panel.appendLog("⚠️ Could not remove the incomplete Dropbox copy.")
+            log.warning("[CloudLink] failed to remove Dropbox copy path='\(destination.path)': \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Clipboard

@@ -22,14 +22,18 @@ enum DropboxOAuthClient {
         if let token = await cachedAccessToken, token.isValid {
             return token.value
         }
-        if let refreshToken = try? DropboxTokenStore.loadRefreshToken() {
+        if let refreshToken = try DropboxTokenStore.loadRefreshToken() {
             do {
                 let token = try await refreshAccessToken(refreshToken)
                 await cache(token)
                 return token.value
+            } catch DropboxError.requestFailed(let status, let body)
+                where status == 400 && body.localizedCaseInsensitiveContains("invalid_grant") {
+                log.warning("[CloudLink] Dropbox refresh token expired or was revoked")
+                try DropboxTokenStore.deleteRefreshToken(ignoreMissing: true)
             } catch {
                 log.warning("[CloudLink] Dropbox refresh token failed: \(error.localizedDescription)")
-                try? DropboxTokenStore.deleteRefreshToken(ignoreMissing: true)
+                throw error
             }
         }
         return try await interactiveAccessToken().value
@@ -130,7 +134,7 @@ enum DropboxOAuthClient {
     }
 
     private static func validate(data: Data, response: URLResponse) throws {
-        guard let http = response as? HTTPURLResponse else { return }
+        guard let http = response as? HTTPURLResponse else { throw DropboxError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             throw DropboxError.requestFailed(http.statusCode, String(data: data, encoding: .utf8) ?? "")
         }

@@ -26,7 +26,15 @@ struct DropboxAPIClient {
                 if let existing = try await existingSharedLink(for: path) {
                     return existing
                 }
-                return try await createSharedLink(for: path)
+                do {
+                    return try await createSharedLink(for: path)
+                } catch DropboxError.requestFailed(let status, let body)
+                    where status == 409 && body.contains("shared_link_already_exists") {
+                    if let existing = try await existingSharedLink(for: path) {
+                        return existing
+                    }
+                    throw DropboxError.requestFailed(status, body)
+                }
             } catch DropboxError.requestFailed(let status, let body)
                 where status == 409 && body.contains("path/not_found") && attempt < 29 {
                 try await Task.sleep(for: .seconds(1))
@@ -66,7 +74,7 @@ struct DropboxAPIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else { return data }
+        guard let http = response as? HTTPURLResponse else { throw DropboxError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             throw DropboxError.requestFailed(http.statusCode, String(data: data, encoding: .utf8) ?? "")
         }

@@ -16,43 +16,44 @@ enum DropboxTokenStore {
     // MARK: - Load Refresh Token
 
     static func loadRefreshToken() throws -> String? {
-        if let token = try CloudLinkCredentialsStore.token(.dropboxRefreshToken) {
-            return token
-        }
         var item: CFTypeRef?
         let status = SecItemCopyMatching(readQuery() as CFDictionary, &item)
-        if status == errSecItemNotFound { return nil }
+        if status == errSecItemNotFound {
+            return try migrateLegacyRefreshToken()
+        }
         guard status == errSecSuccess else { throw DropboxError.keychain(status) }
         guard let data = item as? Data else { return nil }
-        let token = String(data: data, encoding: .utf8)
-        if let token {
-            try? CloudLinkCredentialsStore.setToken(token, for: .dropboxRefreshToken)
-        }
-        return token
+        return String(data: data, encoding: .utf8)
     }
 
     // MARK: - Save Refresh Token
 
     static func saveRefreshToken(_ token: String) throws {
-        try CloudLinkCredentialsStore.setToken(token, for: .dropboxRefreshToken)
         _ = SecItemDelete(baseQuery() as CFDictionary)
         var query = baseQuery()
         query[kSecValueData] = Data(token.utf8)
         query[kSecAttrAccessible] = kSecAttrAccessibleAfterFirstUnlock
         query[kSecAttrLabel] = "MiMiNavigator Dropbox refresh token"
         let status = SecItemAdd(query as CFDictionary, nil)
-        if status != errSecSuccess {
-            log.warning("[CloudLink] Dropbox Keychain mirror save failed status=\(status)")
-        }
+        guard status == errSecSuccess else { throw DropboxError.keychain(status) }
+        try CloudLinkCredentialsStore.setToken(nil, for: .dropboxRefreshToken)
     }
 
     // MARK: - Delete Refresh Token
 
-    static func deleteRefreshToken(ignoreMissing: Bool = false) throws {
-        try CloudLinkCredentialsStore.setToken(nil, for: .dropboxRefreshToken)
+    static func deleteRefreshToken(ignoreMissing _: Bool = false) throws {
         let status = SecItemDelete(baseQuery() as CFDictionary)
-        if ignoreMissing && status == errSecItemNotFound { return }
         guard status == errSecSuccess || status == errSecItemNotFound else { throw DropboxError.keychain(status) }
+        try CloudLinkCredentialsStore.setToken(nil, for: .dropboxRefreshToken)
+    }
+
+    // MARK: - Legacy Migration
+
+    private static func migrateLegacyRefreshToken() throws -> String? {
+        guard let token = try CloudLinkCredentialsStore.token(.dropboxRefreshToken) else { return nil }
+        try saveRefreshToken(token)
+        log.info("[CloudLink] migrated Dropbox refresh token to Keychain")
+        return token
     }
 
     // MARK: - Queries
