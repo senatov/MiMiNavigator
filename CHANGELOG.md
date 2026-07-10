@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.1] — 2026-07-10
+
+> **Release notes**
+> Cloud Share+Link reliability, credential security, and development badge polish update.
+
+### Changed
+- **Google Drive links** — uploaded images now use standard Drive view URLs accepted by TinyURL, with the original public link retained as a fallback.
+- **Dropbox credentials** — refresh tokens use Keychain as the primary store and migrate automatically from the legacy local credentials file.
+- **Development badge** — the toolbar build badge uses a sharper multicolor cat, a lighter material surface, refined typography, and stronger convex depth.
+- **Build metadata** — marketing version updated to `0.9.9.6.1`; build number updated to `130`.
+
+### Fixed
+- **Shortener failures** — Google Drive and Dropbox operations copy the original provider link when TinyURL cannot create a short link instead of reporting a false upload failure.
+- **Duplicate cloud uploads** — Google Drive no longer encourages a retry after a successful upload, and Dropbox removes the copy created by a failed operation.
+- **Dropbox shared-link races** — an already-created shared link is retrieved when link creation returns `shared_link_already_exists`.
+- **Dropbox OAuth recovery** — temporary network failures preserve refresh tokens, while revoked `invalid_grant` credentials trigger clean reauthorization.
+- **Cloud HTTP validation** — non-HTTP Google Drive, Dropbox, and OAuth responses are rejected instead of being treated as successful requests.
+- **Google Drive mount warnings** — the app no longer attempts to create `Public` inside a read-only Google Drive desktop mount.
+
 ## [0.9.9.6.0] — 2026-07-09
 
 > **Release notes**
