@@ -267,6 +267,7 @@ final class FindFilesViewModel {
     // MARK: - Cancel Search
 
     func cancelSearch() {
+        cancelPasswordRequest()
         guard searchState == .searching else { return }
         log.info("[FindFiles] Cancelling search")
         // 1. Immediately update UI state — stops animation
@@ -280,6 +281,14 @@ final class FindFilesViewModel {
         Task {
             await engine.cancel()
         }
+    }
+
+    // MARK: - Cancel Password Request
+    private func cancelPasswordRequest() {
+        showPasswordDialog = false
+        guard let continuation = passwordContinuation else { return }
+        passwordContinuation = nil
+        continuation.resume(returning: .skip)
     }
 
     // MARK: - Stats Polling

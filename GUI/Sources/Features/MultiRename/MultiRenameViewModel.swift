@@ -25,6 +25,7 @@ final class MultiRenameViewModel {
     private var selectedSources: [MultiRenameSource] = []
     private var appState: AppState?
     private var panel = FavPanelSide.left
+    private var configurationID = UUID()
     private let engine = MultiRenameEngine()
 
     var canUseSelection: Bool { !selectedSources.isEmpty }
@@ -33,6 +34,7 @@ final class MultiRenameViewModel {
     var canRename: Bool { !isRenaming && previewItems.contains(where: \.isChanged) && previewItems.allSatisfy { $0.issue == nil } }
 
     func configure(allSources: [MultiRenameSource], selectedSources: [MultiRenameSource], panel: FavPanelSide, appState: AppState) {
+        configurationID = UUID()
         self.allSources = allSources
         self.selectedSources = selectedSources
         self.panel = panel
@@ -40,6 +42,7 @@ final class MultiRenameViewModel {
         scope = selectedSources.isEmpty ? .directory : .selection
         errorMessage = nil
         completionMessage = nil
+        isRenaming = false
     }
 
     func reset() {
@@ -59,24 +62,35 @@ final class MultiRenameViewModel {
     func rename() {
         let items = previewItems
         guard canRename else { return }
+        let operationAppState = appState
+        let operationPanel = panel
+        let operationConfigurationID = configurationID
         isRenaming = true
         errorMessage = nil
         Task {
             do {
                 let result = try await engine.rename(items)
-                completionMessage = "Renamed \(result.renamedCount) item(s)"
-                if let appState {
-                    await appState.scanner.clearCooldown(for: panel)
-                    await appState.refreshFiles(for: panel, force: true)
-                    appState.setMarkedFiles([], for: panel)
-                    reloadSources(from: appState, panel: panel)
+                if let operationAppState {
+                    await operationAppState.scanner.clearCooldown(for: operationPanel)
+                    await operationAppState.refreshFiles(for: operationPanel, force: true)
+                    operationAppState.setMarkedFiles([], for: operationPanel)
+                }
+                if configurationID == operationConfigurationID {
+                    completionMessage = "Renamed \(result.renamedCount) item(s)"
+                    if let operationAppState {
+                        reloadSources(from: operationAppState, panel: operationPanel)
+                    }
                 }
                 log.info("[MultiRename] renamed \(result.renamedCount) items")
             } catch {
-                errorMessage = error.localizedDescription
+                if configurationID == operationConfigurationID {
+                    errorMessage = error.localizedDescription
+                }
                 log.error("[MultiRename] \(error.localizedDescription)")
             }
-            isRenaming = false
+            if configurationID == operationConfigurationID {
+                isRenaming = false
+            }
         }
     }
 

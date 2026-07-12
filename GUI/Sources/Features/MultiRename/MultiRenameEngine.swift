@@ -19,18 +19,22 @@ enum MultiRenameError: LocalizedError {
 actor MultiRenameEngine {
     static func preview(sources: [MultiRenameSource], rule: MultiRenameRule) -> [MultiRenamePreviewItem] {
         let fileManager = FileManager.default
-        let sourcePaths = Set(sources.map { $0.url.standardizedFileURL.path.lowercased() })
+        let sourcePaths = Set(sources.map { pathKey(for: $0.url) })
+        let hasInvalidRegex = rule.useRegex && !rule.searchText.isEmpty
+            && (try? NSRegularExpression(pattern: rule.searchText)) == nil
         let proposals = sources.enumerated().map { index, source in
             (source, MultiRenamePattern.proposedName(for: source, index: index, rule: rule))
         }
         let counts = Dictionary(grouping: proposals, by: { proposal in
-            proposal.0.url.deletingLastPathComponent().appendingPathComponent(proposal.1).standardizedFileURL.path.lowercased()
+            pathKey(for: proposal.0.url.deletingLastPathComponent().appendingPathComponent(proposal.1))
         }).mapValues(\.count)
         return proposals.map { source, proposedName in
             let destination = source.url.deletingLastPathComponent().appendingPathComponent(proposedName)
-            let destinationKey = destination.standardizedFileURL.path.lowercased()
+            let destinationKey = pathKey(for: destination)
             let issue: String?
-            if proposedName.isEmpty {
+            if hasInvalidRegex {
+                issue = "Invalid regular expression"
+            } else if proposedName.isEmpty {
                 issue = "Name cannot be empty"
             } else if proposedName == "." || proposedName == ".." || proposedName.contains("/") || proposedName.contains(":") {
                 issue = "Invalid file name"
@@ -43,6 +47,16 @@ actor MultiRenameEngine {
             }
             return MultiRenamePreviewItem(source: source, proposedName: proposedName, issue: issue)
         }
+    }
+
+    // MARK: - Filesystem Path Key
+    private static func pathKey(for url: URL) -> String {
+        let standardizedURL = url.standardizedFileURL
+        let parentURL = standardizedURL.deletingLastPathComponent()
+        let values = try? parentURL.resourceValues(forKeys: [.volumeSupportsCaseSensitiveNamesKey])
+        return values?.volumeSupportsCaseSensitiveNames == true
+            ? standardizedURL.path
+            : standardizedURL.path.lowercased()
     }
 
     func rename(_ items: [MultiRenamePreviewItem]) throws -> MultiRenameResult {
@@ -80,10 +94,18 @@ actor MultiRenameEngine {
 
     private func rollback(_ staged: [(item: MultiRenamePreviewItem, temporary: URL)], finalized: [(item: MultiRenamePreviewItem, temporary: URL)], fileManager: FileManager) {
         for entry in finalized.reversed() where fileManager.fileExists(atPath: entry.item.destinationURL.path) {
-            try? fileManager.moveItem(at: entry.item.destinationURL, to: entry.temporary)
+            do {
+                try fileManager.moveItem(at: entry.item.destinationURL, to: entry.temporary)
+            } catch {
+                log.error("[MultiRename] rollback destination failed: \(entry.item.destinationURL.path) — \(error.localizedDescription)")
+            }
         }
         for entry in staged.reversed() where fileManager.fileExists(atPath: entry.temporary.path) {
-            try? fileManager.moveItem(at: entry.temporary, to: entry.item.source.url)
+            do {
+                try fileManager.moveItem(at: entry.temporary, to: entry.item.source.url)
+            } catch {
+                log.error("[MultiRename] rollback source failed: \(entry.item.source.url.path) — \(error.localizedDescription)")
+            }
         }
     }
 }
