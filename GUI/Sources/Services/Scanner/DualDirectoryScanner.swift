@@ -31,6 +31,7 @@ actor DualDirectoryScanner {
 
     var lastFSEventsPatch: [FavPanelSide: Date] = [:]
     var pendingRefreshAfterScan: [FavPanelSide: Bool] = [.left: false, .right: false]
+    var batchMutationDepth = 0
     let fallbackScanInterval: TimeInterval = 30
 
     var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
@@ -65,6 +66,17 @@ actor DualDirectoryScanner {
 
     init(appState: AppState) {
         self.appState = appState
+    }
+
+    // MARK: - Batch Mutation
+    func beginBatchMutation() {
+        batchMutationDepth += 1
+        log.debug("[Scan] batch mutation begin depth=\(batchMutationDepth)")
+    }
+
+    func endBatchMutation() {
+        batchMutationDepth = max(batchMutationDepth - 1, 0)
+        log.debug("[Scan] batch mutation end depth=\(batchMutationDepth)")
     }
 
     // MARK: - Lifecycle

@@ -36,6 +36,10 @@ extension DualDirectoryScanner {
     // MARK: - Refresh guards
 
     func canStartRefresh(for side: FavPanelSide, force: Bool) -> Bool {
+        if batchMutationDepth > 0 && !force {
+            log.debug("[Scan] refreshFiles deferred during batch mutation for \(side)")
+            return false
+        }
         if scanInProgress[side] == true && !force {
             log.debug("[Scan] refreshFiles skipped: scanInProgress=true for \(side)")
             return false

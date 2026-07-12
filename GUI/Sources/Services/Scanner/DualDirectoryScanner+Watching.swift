@@ -101,6 +101,10 @@ extension DualDirectoryScanner {
             return
         }
         lastFSEventsPatch[side] = Date()
+        if batchMutationDepth > 0 {
+            log.debug("[FSEvents] patch deferred during batch mutation for \(side)")
+            return
+        }
         if scanInProgress[side] == true {
             pendingRefreshAfterScan[side] = true
             log.debug("[FSEvents] refresh queued after active scan for \(side)")

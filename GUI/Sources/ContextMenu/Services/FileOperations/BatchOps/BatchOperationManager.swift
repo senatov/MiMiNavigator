@@ -36,6 +36,7 @@ final class BatchOperationManager {
     ) async {
         log.info("[BatchOpMgr] copy \(files.count) → \(destination.path)")
         let urls = files.map(\.urlValue)
+        await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.copy(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
@@ -44,6 +45,7 @@ final class BatchOperationManager {
         } catch {
             log.error("[BatchOpMgr] copy failed: \(error.localizedDescription)")
         }
+        await appState.scanner.endBatchMutation()
         await refreshPanels(appState: appState)
     }
 
@@ -57,6 +59,7 @@ final class BatchOperationManager {
     ) async {
         log.info("[BatchOpMgr] move \(files.count) → \(destination.path)")
         let urls = files.map(\.urlValue)
+        await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.move(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
@@ -68,6 +71,7 @@ final class BatchOperationManager {
         } catch {
             log.error("[BatchOpMgr] move failed: \(error.localizedDescription)")
         }
+        await appState.scanner.endBatchMutation()
         await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
         await refreshOpposite(appState: appState, sourcePanel: sourcePanel)
     }
@@ -81,6 +85,7 @@ final class BatchOperationManager {
     ) async {
         log.info("[BatchOpMgr] delete \(files.count)")
         let urls = files.map(\.urlValue)
+        await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.delete(items: urls)
             if progress.errors.isEmpty && !progress.isCancelled {
@@ -89,6 +94,7 @@ final class BatchOperationManager {
         } catch {
             log.error("[BatchOpMgr] delete failed: \(error.localizedDescription)")
         }
+        await appState.scanner.endBatchMutation()
         await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
         await refreshOpposite(appState: appState, sourcePanel: sourcePanel)
     }
