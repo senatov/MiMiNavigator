@@ -69,8 +69,8 @@ final class MultiRenameViewModel {
                     await appState.scanner.clearCooldown(for: panel)
                     await appState.refreshFiles(for: panel, force: true)
                     appState.setMarkedFiles([], for: panel)
+                    reloadSources(from: appState, panel: panel)
                 }
-                MultiRenameCoordinator.shared.close()
                 log.info("[MultiRename] renamed \(result.renamedCount) items")
             } catch {
                 errorMessage = error.localizedDescription
@@ -78,6 +78,15 @@ final class MultiRenameViewModel {
             }
             isRenaming = false
         }
+    }
+
+    // MARK: - Reload Sources
+    private func reloadSources(from appState: AppState, panel: FavPanelSide) {
+        allSources = appState.displayedFiles(for: panel)
+            .filter { !$0.isParentEntry }
+            .map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
+        selectedSources = []
+        scope = .directory
     }
 
     private var rule: MultiRenameRule {

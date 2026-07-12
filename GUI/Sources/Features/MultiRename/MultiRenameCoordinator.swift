@@ -39,7 +39,7 @@ final class MultiRenameCoordinator {
         let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 520))
         let panelWindow = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow], backing: .buffered, defer: false)
         panelWindow.contentView = hostingView
-        panelWindow.isReleasedWhenClosed = true
+        panelWindow.isReleasedWhenClosed = false
         panelWindow.minSize = NSSize(width: 680, height: 520)
         panelWindow.titlebarAppearsTransparent = false
         PanelTitleHelper.applyIconTitle(to: panelWindow, systemImage: "text.line.2.summary", title: "Multi-Rename Tool")
@@ -60,6 +60,7 @@ final class MultiRenameCoordinator {
     }
 
     func close() {
+        window?.makeFirstResponder(nil)
         window?.close()
         isVisible = false
     }
@@ -70,7 +71,10 @@ final class MultiRenameCoordinator {
     }
 
     func windowDidClose(_ closedWindow: NSWindow) {
-        if window === closedWindow { window = nil }
+        guard window === closedWindow else { return }
+        closedWindow.contentView = nil
+        closedWindow.delegate = nil
+        window = nil
         isVisible = false
     }
 }

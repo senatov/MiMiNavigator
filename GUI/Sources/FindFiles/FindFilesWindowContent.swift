@@ -150,13 +150,8 @@ struct FindFilesWindowContent: View {
             // Show in Panel — inject results into focused panel
             if let appState, !viewModel.results.isEmpty {
                 Button {
-                    // showInPanel extracts archives async; close dialog after injection completes
                     viewModel.cancelSearch()
                     viewModel.showInPanel(appState: appState)
-                    // Close on next run loop tick — gives showInPanel's Task time to start
-                    DispatchQueue.main.async {
-                        FindFilesCoordinator.shared.close()
-                    }
                 } label: {
                     Label("Show in Panel", systemImage: "sidebar.squares.left")
                 }
