@@ -58,7 +58,9 @@ struct MultiRenameRulesView: View {
     private func labeledField(_ title: String, text: Binding<String>, hint: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            TextField(hint, text: text).textFieldStyle(.roundedBorder)
+            TextField(hint, text: text)
+                .foregroundStyle(Color(nsColor: .textColor))
+                .textFieldStyle(.roundedBorder)
         }
         .frame(maxWidth: .infinity)
     }
@@ -67,6 +69,7 @@ struct MultiRenameRulesView: View {
         HStack(spacing: 4) {
             Text(title).foregroundStyle(.secondary)
             TextField(title, value: value, format: .number)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 56)
         }

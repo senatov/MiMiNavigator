@@ -19,6 +19,7 @@ extension ConnToSrvrView {
             labelWidth: 120
         ) {
             TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .name)
@@ -54,6 +55,7 @@ extension ConnToSrvrView {
     var hostRow: some View {
         SettingsRow(label: "Host:", help: "Hostname, IP, or paste full URL/connection string", labelWidth: 120) {
             TextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .host)
@@ -69,6 +71,7 @@ extension ConnToSrvrView {
     var portRow: some View {
         SettingsRow(label: "Port:", help: "Server port number", labelWidth: 120) {
             TextField("", value: $draft.port, formatter: Self.portFormatter)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .port)
@@ -79,6 +82,7 @@ extension ConnToSrvrView {
     var remotePathRow: some View {
         SettingsRow(label: "Remote Path:", help: "Initial directory on server", labelWidth: 120) {
             TextField("", text: $draft.remotePath)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .remotePath)
@@ -88,6 +92,7 @@ extension ConnToSrvrView {
     var userRow: some View {
         SettingsRow(label: "User:", help: "Login username", labelWidth: 120) {
             TextField("", text: $draft.user)
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .user)
@@ -109,12 +114,14 @@ extension ConnToSrvrView {
         if showPassword {
             TextField("", text: $password)
                 .id("plain-password-field")
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .password)
         } else {
             SecureField("", text: $password)
                 .id("secure-password-field")
+                .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .glassEffect()
                 .focused($focusedField, equals: .password)
@@ -163,6 +170,7 @@ extension ConnToSrvrView {
         SettingsRow(label: "Key Path:", help: "Path to SSH private key", labelWidth: 120) {
             HStack(spacing: 6) {
                 TextField("", text: $draft.privateKeyPath)
+                    .foregroundStyle(Color(nsColor: .textColor))
                     .textFieldStyle(.roundedBorder)
                     .glassEffect()
                     .focused($focusedField, equals: .keyPath)

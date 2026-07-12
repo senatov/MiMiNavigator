@@ -280,6 +280,7 @@ struct MediaInfoPanelView: View {
 
                 row("Output") {
                     TextField("Filename", text: $controller.outputName)
+                        .foregroundStyle(Color(nsColor: .textColor))
                         .textFieldStyle(.roundedBorder)
                     Text(".\(controller.targetPreset.targetFormat.fileExtension)")
                         .font(.caption)

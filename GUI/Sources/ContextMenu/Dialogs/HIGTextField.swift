@@ -31,6 +31,7 @@ struct HIGTextField: View {
                 }
             }
             .textFieldStyle(.plain)
+            .foregroundStyle(Color(nsColor: .textColor))
             .applyFocusState(focusState)
             .autocorrectionDisabled()
             .textContentType(.none)
