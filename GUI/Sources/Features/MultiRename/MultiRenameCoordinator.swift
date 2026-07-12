@@ -31,17 +31,15 @@ final class MultiRenameCoordinator {
         let allSources = allFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         let selectedSources = selectedFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         viewModel.configure(allSources: allSources, selectedSources: selectedSources, panel: panel, appState: appState)
-        if let window {
+        if let window, window.isVisible {
             window.makeKeyAndOrderFront(nil)
-            window.recalculateKeyViewLoop()
             isVisible = true
-            log.info("[MultiRename] window reopened with \(allSources.count) items")
             return
         }
         let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 520))
         let panelWindow = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow], backing: .buffered, defer: false)
         panelWindow.contentView = hostingView
-        panelWindow.isReleasedWhenClosed = false
+        panelWindow.isReleasedWhenClosed = true
         panelWindow.minSize = NSSize(width: 680, height: 520)
         panelWindow.titlebarAppearsTransparent = false
         PanelTitleHelper.applyIconTitle(to: panelWindow, systemImage: "text.line.2.summary", title: "Multi-Rename Tool")
@@ -71,7 +69,8 @@ final class MultiRenameCoordinator {
         window?.orderFront(nil)
     }
 
-    func windowDidClose() {
+    func windowDidClose(_ closedWindow: NSWindow) {
+        if window === closedWindow { window = nil }
         isVisible = false
     }
 }
@@ -80,7 +79,8 @@ final class MultiRenameCoordinator {
 
 private final class MultiRenameWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = MultiRenameWindowDelegate()
-    func windowWillClose(_: Notification) {
-        Task { @MainActor in MultiRenameCoordinator.shared.windowDidClose() }
+    func windowWillClose(_ notification: Notification) {
+        guard let closedWindow = notification.object as? NSWindow else { return }
+        Task { @MainActor in MultiRenameCoordinator.shared.windowDidClose(closedWindow) }
     }
 }
