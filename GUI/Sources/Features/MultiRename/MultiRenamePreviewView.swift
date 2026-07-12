@@ -25,7 +25,6 @@ struct MultiRenamePreviewView: View {
             .width(min: 110, ideal: 150)
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
-        .fileTableColumnDividerStyle()
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }

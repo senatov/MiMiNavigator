@@ -209,7 +209,6 @@ struct FindFilesResultsView: View {
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
-        .fileTableColumnDividerStyle()
     }
 
     // MARK: - Row Background Helper
