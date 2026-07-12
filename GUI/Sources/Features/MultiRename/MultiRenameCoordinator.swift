@@ -31,9 +31,11 @@ final class MultiRenameCoordinator {
         let allSources = allFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         let selectedSources = selectedFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         viewModel.configure(allSources: allSources, selectedSources: selectedSources, panel: panel, appState: appState)
-        if let window, window.isVisible {
+        if let window {
             window.makeKeyAndOrderFront(nil)
+            window.recalculateKeyViewLoop()
             isVisible = true
+            log.info("[MultiRename] window reopened with \(allSources.count) items")
             return
         }
         let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 520))
