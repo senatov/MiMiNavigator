@@ -25,7 +25,6 @@ import LogKit
     private var isTerminationCleanupRunning = false
     private var didReplyToTermination = false
     private var isUpdateReplacementTermination = false
-    private let terminationSaveDebounceInterval: TimeInterval = 1.0
     private let standardTerminationCleanupTimeout: TimeInterval = 4.0
     private let updateTerminationCleanupTimeout: TimeInterval = 1.5
 
@@ -226,11 +225,7 @@ import LogKit
     private func performCleanupBeforeExit() async {
         // 1. Save panel state and cache — synchronous, fast
         log.info("[AppDelegate] cleanup step save state begin")
-        if shouldSkipTerminationStateSave() {
-            log.info("[AppDelegate] performCleanupBeforeExit — skipping duplicate saveBeforeExit")
-        } else {
-            appState?.saveBeforeExit()
-        }
+        appState?.saveBeforeExit()
         log.info("[AppDelegate] cleanup step save state done")
         // 2. Stop scanner timers and FSEvents streams — synchronous actor work
         log.info("[AppDelegate] cleanup step directory size shutdown begin")
@@ -257,28 +252,6 @@ import LogKit
         log.info("[AppDelegate] cleanup step log flush begin")
         LogKit.flush(timeoutSeconds: 2)
         log.info("[AppDelegate] performCleanupBeforeExit complete")
-    }
-
-    private func shouldSkipTerminationStateSave() -> Bool {
-        let urls = [
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mimi/state.json"),
-            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".mimi/panel_startup_cache.json")
-        ]
-
-        let now = Date()
-        let recentlySaved = urls.contains { url in
-            guard let modificationDate = try? FileManager.default.attributesOfItem(atPath: url.path)[.modificationDate] as? Date else {
-                return false
-            }
-
-            return now.timeIntervalSince(modificationDate) <= terminationSaveDebounceInterval
-        }
-
-        if recentlySaved {
-            log.debug("[AppDelegate] recent state file modification detected — debounce active")
-        }
-
-        return recentlySaved
     }
 
     // MARK: - applicationWillTerminate — key monitor cleanup only
