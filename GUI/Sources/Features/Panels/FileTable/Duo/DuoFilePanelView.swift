@@ -89,7 +89,7 @@ struct DuoFilePanelView: View {
     private var geometrySection: some View {
         GeometryReader { geometry in
             let panelWidth = panelsContainerWidth(for: geometry.size.width)
-            let panelsHeight = max(geometry.size.height - (shouldShowDetachedTabs ? DuoPanelTabsSection.height : 0), 0)
+            let panelsHeight = max(geometry.size.height - DuoPanelTabsSection.height, 0)
             ZStack(alignment: .leading) {
                 HStack(spacing: 0) {
                     finderSidebar(height: geometry.size.height)
@@ -101,12 +101,10 @@ struct DuoFilePanelView: View {
                                 containerHeight: panelsHeight,
                                 fetchFiles: fetchFiles
                             )
-                            if shouldShowDetachedTabs {
-                                DuoPanelTabsSection(
-                                    leftPanelWidth: leftPanelWidth,
-                                    containerWidth: panelWidth
-                                )
-                            }
+                            DuoPanelTabsSection(
+                                leftPanelWidth: leftPanelWidth,
+                                containerWidth: panelWidth
+                            )
                         }
                         .frame(width: panelWidth, height: geometry.size.height)
                     }
@@ -145,10 +143,6 @@ struct DuoFilePanelView: View {
     private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
         let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
         return max(totalWidth - sidebarWidth, 0)
-    }
-
-    private var shouldShowDetachedTabs: Bool {
-        appState.leftTabManager.tabs.count > 1 || appState.rightTabManager.tabs.count > 1
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {

@@ -30,51 +30,47 @@ struct TabBarView: View {
         let tabs = tabManager.tabs
         let activeID = tabManager.activeTabID
         let isOnlyTab = tabs.count <= 1
-        if isOnlyTab {
-            EmptyView()
-        } else {
-            ScrollViewReader { proxy in
-                HStack(spacing: 2) {
-                    tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
-                    tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
-                            ForEach(tabs) { tab in
-                                TabItemView(
-                                    tab: tab,
-                                    panelSide: panelSide,
-                                    isActive: tab.id == activeID,
-                                    isPanelFocused: isPanelFocused,
-                                    isOnlyTab: isOnlyTab,
-                                    tabCount: tabs.count,
-                                    onSelect: {
-                                        handleTabSelect(tab)
-                                    },
-                                    onClose: {
-                                        handleTabClose(tab)
-                                    },
-                                    onCloseOthers: {
-                                        handleCloseOthers(keeping: tab)
-                                    },
-                                    onCloseToRight: {
-                                        handleCloseToRight(of: tab)
-                                    },
-                                    onDuplicate: {
-                                        handleDuplicate(tab)
-                                    }
-                                )
-                                .id(tab.id)
-                            }
+        ScrollViewReader { proxy in
+            HStack(spacing: 2) {
+                tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
+                tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 4) {
+                        ForEach(tabs) { tab in
+                            TabItemView(
+                                tab: tab,
+                                panelSide: panelSide,
+                                isActive: tab.id == activeID,
+                                isPanelFocused: isPanelFocused,
+                                isOnlyTab: isOnlyTab,
+                                tabCount: tabs.count,
+                                onSelect: {
+                                    handleTabSelect(tab)
+                                },
+                                onClose: {
+                                    handleTabClose(tab)
+                                },
+                                onCloseOthers: {
+                                    handleCloseOthers(keeping: tab)
+                                },
+                                onCloseToRight: {
+                                    handleCloseToRight(of: tab)
+                                },
+                                onDuplicate: {
+                                    handleDuplicate(tab)
+                                }
+                            )
+                            .id(tab.id)
                         }
                     }
-                    .frame(height: 28)
-                    addTabButton
                 }
-                .frame(height: 29)
-                .onChange(of: activeID) { _, newID in
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        proxy.scrollTo(newID, anchor: .center)
-                    }
+                .frame(height: 28)
+                addTabButton
+            }
+            .frame(height: 29)
+            .onChange(of: activeID) { _, newID in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(newID, anchor: .center)
                 }
             }
         }
@@ -114,6 +110,7 @@ struct TabBarView: View {
 
     private func handleTabSelect(_ tab: TabItem) {
         let mgr = tabManager
+        appState.focusedPanel = panelSide
         guard tab.id != mgr.activeTabID else { return }
         log.info("[TabBarView] selectTab panel=\(panelSide) tab='\(tab.displayName)'")
         mgr.selectTab(tab.id)
@@ -156,6 +153,7 @@ struct TabBarView: View {
 
     private func handleAddTab() {
         let mgr = tabManager
+        appState.focusedPanel = panelSide
         let url = appState.url(for: panelSide)
         log.info("[TabBarView] addTab panel=\(panelSide) path='\(url.path)'")
         _ = mgr.addTab(url: url)
@@ -164,12 +162,14 @@ struct TabBarView: View {
 
     private func handleSelectPrevious() {
         let mgr = tabManager
+        appState.focusedPanel = panelSide
         mgr.selectPreviousTab()
         syncToActiveTab()
     }
 
     private func handleSelectNext() {
         let mgr = tabManager
+        appState.focusedPanel = panelSide
         mgr.selectNextTab()
         syncToActiveTab()
     }
