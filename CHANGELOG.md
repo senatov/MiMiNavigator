@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.2] — 2026-07-15
+
+> **Release notes**
+> Documentation preview refresh.
+
+### Changed
+- **Documentation preview** — replaced the main interface screenshot with a newer, higher-resolution image.
+- **Build metadata** — marketing version updated to `0.9.9.6.2`; build number updated to `131`.
+
 ## [0.9.9.6.1] — 2026-07-10
 
 > **Release notes**

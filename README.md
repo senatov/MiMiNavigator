@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.1"><img src="https://img.shields.io/badge/release-v0.9.9.6.1-orange" alt="Release v0.9.9.6.1" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.2"><img src="https://img.shields.io/badge/release-v0.9.9.6.2-orange" alt="Release v0.9.9.6.2" /></a>
 </p>
 
 <p align="center">
@@ -38,12 +38,10 @@
 
 
 
-## Recent Changes (v0.9.9.6.1 - July 2026)
+## Recent Changes (v0.9.9.6.2 - July 2026)
 
-- **Reliable Google Drive links** — image sharing uses TinyURL-compatible Drive view URLs and falls back to the original public link without duplicate uploads.
-- **Safer Dropbox sharing** — failed operations clean up their copies, temporary OAuth failures preserve credentials, and legacy refresh tokens migrate to Keychain.
-- **Development badge polish** — the toolbar build badge has a sharper multicolor cat, brighter material, improved typography, and stronger convex depth.
-- **Build metadata** — release version is `0.9.9.6.1`, build `130`.
+- **Documentation preview** — refreshed the main interface screenshot with a newer, higher-resolution image.
+- **Build metadata** — release version is `0.9.9.6.2`, build `131`.
 
 ## Previous Changes
 
@@ -198,7 +196,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.6.1 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.1)**
+**[Download MiMiNavigator v0.9.9.6.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.2)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
