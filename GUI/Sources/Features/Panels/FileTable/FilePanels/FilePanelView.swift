@@ -98,7 +98,6 @@ struct FilePanelView: View {
             tx.animation = nil
         }
         .background(DesignTokens.panelBg)
-        .overlay(focusRingOverlay)
         .overlay { navigationOverlay }
         .controlSize(.regular)
         .contentShape(Rectangle())
@@ -201,13 +200,6 @@ struct FilePanelView: View {
         }
         .shadow(color: Color.black.opacity(0.10), radius: 3, x: 0, y: 1)
         .animation(.easeInOut(duration: 0.15), value: focused)
-        .drawingGroup()
-    }
-
-    // MARK: - Focus ring overlay — removed per design decision
-    @ViewBuilder
-    private var focusRingOverlay: some View {
-        EmptyView()
     }
 
     // MARK: - Calculated panel width

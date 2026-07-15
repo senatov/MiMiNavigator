@@ -36,7 +36,7 @@ struct ExpandableSegmentButton: View {
     }
 
     private var expandedText: String {
-        segment.isCollapsedChain ? segment.fullName : segment.fullName
+        segment.fullName
     }
 
     private var displayColor: Color {
@@ -59,14 +59,6 @@ struct ExpandableSegmentButton: View {
         .zIndex(isHovered ? 1_000 : 0)
         .onHover { hovering in
             setHover(hovering)
-        }
-        .onContinuousHover { phase in
-            switch phase {
-                case .active:
-                    setHover(true)
-                case .ended:
-                    setHover(false)
-            }
         }
         .contextMenu {
             Button("Copy path", action: copyAction)

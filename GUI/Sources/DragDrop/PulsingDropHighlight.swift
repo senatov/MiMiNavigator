@@ -20,7 +20,6 @@ struct PulsingDropHighlight: View {
 
         return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(Color.yellow.opacity(pulse ? fillRange.upperBound : fillRange.lowerBound))
-            .compositingGroup()
             .onAppear {
                 withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
                     pulse = true
