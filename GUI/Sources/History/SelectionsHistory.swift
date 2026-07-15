@@ -11,7 +11,8 @@ import Foundation
 struct RecentHistorySelection: Identifiable, Equatable {
     let url: URL
     let addedAt: Date
-    var id: String { url.path }
+    var id: String { "\(url.absoluteString)|\(addedAt.timeIntervalSinceReferenceDate)" }
+    var path: String { url.path }
 }
 
 // MARK: - SelectionsHistory
@@ -62,6 +63,12 @@ final class SelectionsHistory {
     private static func makeFileURL(from path: String) -> URL {
         URL(filePath: path, directoryHint: .inferFromPath, relativeTo: nil)
     }
+
+    private static func isAvailableDirectory(_ url: URL) -> Bool {
+        guard url.isFileURL else { return true }
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
+    }
     // MARK: - Init
     init() {
         Self.ensureHistoryDirectoryExists()
@@ -71,6 +78,7 @@ final class SelectionsHistory {
     // MARK: - Core visit logic
     private func visit(_ url: URL, recordHistory: Bool) {
         let normalized = url.standardizedFileURL
+        guard Self.isAvailableDirectory(normalized) else { return }
         if current?.standardizedFileURL == normalized { return }
         if recordHistory {
             guard normalized.hasDirectoryPath else { return }
@@ -80,13 +88,12 @@ final class SelectionsHistory {
             forwardStack.removeAll()
             trimHistory()
         }
-        // Always track in recentSelections for the History dialog.
-        // Collapse only consecutive visits to the same place, preserving older non-adjacent repeats.
-        if recentSelections.first?.url.standardizedFileURL == normalized {
-            recentSelections[0] = RecentHistorySelection(url: normalized, addedAt: Date())
-        } else {
-            recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: Date()), at: 0)
+        let now = Date()
+        let calendar = Calendar.current
+        recentSelections.removeAll {
+            $0.url.standardizedFileURL == normalized && calendar.isDate($0.addedAt, inSameDayAs: now)
         }
+        recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: now), at: 0)
         if recentSelections.count > Self.maxEntries {
             recentSelections.removeLast()
         }
@@ -135,10 +142,14 @@ final class SelectionsHistory {
     func getRecentSelectionItems() -> [RecentHistorySelection] {
         recentSelections
     }
+    // MARK: - Clean Recent Selections
+    func cleanRecentSelections() {
+        guard sanitizePersistedHistory() else { return }
+        saveToDisk()
+    }
     // MARK: - Remove entry
-    func remove(_ url: URL) {
-        let normalized = url.standardizedFileURL
-        recentSelections.removeAll { $0.url.standardizedFileURL == normalized }
+    func remove(_ item: RecentHistorySelection) {
+        recentSelections.removeAll { $0.id == item.id }
         saveToDisk()
     }
     // MARK: - Trim
@@ -202,8 +213,9 @@ final class SelectionsHistory {
                     RecentHistorySelection(url: Self.makeFileURL(from: path), addedAt: Date())
                 }
             }
-            collapseConsecutiveRecentSelections()
+            let didSanitize = sanitizePersistedHistory()
             updateNavigationState()
+            if didSanitize { saveToDisk() }
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             saveToDisk()
         } catch {
@@ -216,15 +228,24 @@ final class SelectionsHistory {
             saveToDisk()
         }
     }
-    // MARK: - Collapse Consecutive Recent Selections
-    private func collapseConsecutiveRecentSelections() {
-        var collapsed: [RecentHistorySelection] = []
-        for item in recentSelections {
-            if collapsed.last?.url.standardizedFileURL == item.url.standardizedFileURL {
-                continue
+    // MARK: - Sanitize Persisted History
+    private func sanitizePersistedHistory() -> Bool {
+        let originalRecent = recentSelections
+        let originalBack = backStack
+        let originalForward = forwardStack
+        backStack = backStack.filter(Self.isAvailableDirectory)
+        forwardStack = forwardStack.filter(Self.isAvailableDirectory)
+        var seen = Set<String>()
+        recentSelections = recentSelections
+            .filter { Self.isAvailableDirectory($0.url) }
+            .sorted { $0.addedAt > $1.addedAt }
+            .filter { item in
+                let day = Calendar.current.startOfDay(for: item.addedAt).timeIntervalSinceReferenceDate
+                return seen.insert("\(item.url.standardizedFileURL.absoluteString)|\(day)").inserted
             }
-            collapsed.append(item)
+        if recentSelections.count > Self.maxEntries {
+            recentSelections.removeLast(recentSelections.count - Self.maxEntries)
         }
-        recentSelections = collapsed
+        return recentSelections != originalRecent || backStack != originalBack || forwardStack != originalForward
     }
 }

@@ -17,6 +17,8 @@ struct HistoryWindowContent: View {
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
     @State private var appeared = false
+    @AppStorage("MiMiNavigator.HistoryWindow.sortNewestFirst") private var sortNewestFirst = true
+    private let timeColumnWidth: CGFloat = 150
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
@@ -35,6 +37,7 @@ struct HistoryWindowContent: View {
         .offset(y: appeared ? 0 : 4)
         .animation(.easeOut(duration: 0.22), value: appeared)
         .onAppear {
+            appState.selectionsHistory.cleanRecentSelections()
             isSearchFocused = true
             withAnimation { appeared = true }
         }
@@ -103,31 +106,57 @@ struct HistoryWindowContent: View {
         } else if filteredItems.isEmpty {
             noMatchView
         } else {
-            List {
-                ForEach(filteredItems) { item in
-                    let path = item.url.path
-                    let isDisconnected = AppState.isStaleAppManagedNetworkMountPath(item.url)
-                    HistoryRow(
-                        path: path,
-                        addedAt: item.addedAt,
-                        isAvailable: isDirectoryAvailable(item.url),
-                        unavailableReason: isDisconnected ? "Disconnected network mount" : nil,
-                        highlightText: searchText,
-                        onSelect: { navigateToPath(path) },
-                        onDelete: { deleteFromHistory(item.url) }
-                    )
-                    .listRowSeparator(.hidden)
-                }
-                .onDelete { indexSet in
-                    let items = filteredItems
-                    for idx in indexSet {
-                        deleteFromHistory(items[idx].url)
+            VStack(spacing: 0) {
+                columnHeader
+                Divider()
+                List {
+                    ForEach(filteredItems) { item in
+                        let path = item.url.path
+                        HistoryRow(
+                            path: path,
+                            addedAt: item.addedAt,
+                            timeColumnWidth: timeColumnWidth,
+                            highlightText: searchText,
+                            onSelect: { navigateToPath(path) },
+                            onDelete: { deleteFromHistory(item) }
+                        )
+                        .listRowSeparator(.hidden)
+                    }
+                    .onDelete { indexSet in
+                        let items = filteredItems
+                        for idx in indexSet {
+                            deleteFromHistory(items[idx])
+                        }
                     }
                 }
+                .listStyle(.inset(alternatesRowBackgrounds: true))
+                .scrollContentBackground(.hidden)
             }
-            .listStyle(.inset(alternatesRowBackgrounds: true))
-            .scrollContentBackground(.hidden)
         }
+    }
+    // MARK: - Column Header
+    private var columnHeader: some View {
+        HStack(spacing: 8) {
+            Button {
+                sortNewestFirst.toggle()
+            } label: {
+                HStack(spacing: 4) {
+                    Text("Date / Time")
+                    Image(systemName: sortNewestFirst ? "chevron.down" : "chevron.up")
+                        .font(.system(size: 8, weight: .bold))
+                }
+                .frame(width: timeColumnWidth, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .help(sortNewestFirst ? "Newest directories first" : "Oldest directories first")
+            Text("Directory")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 7)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
     // MARK: - Empty State
     private var emptyStateView: some View {
@@ -159,9 +188,16 @@ struct HistoryWindowContent: View {
     // MARK: - Data
     private var directoryItems: [RecentHistorySelection] { appState.selectionsHistory.getRecentSelectionItems() }
     private var filteredItems: [RecentHistorySelection] {
-        guard !searchText.isEmpty else { return directoryItems }
-        let q = searchText.lowercased()
-        return directoryItems.filter { $0.url.path.lowercased().contains(q) }
+        let matching: [RecentHistorySelection]
+        if searchText.isEmpty {
+            matching = directoryItems
+        } else {
+            let query = searchText.lowercased()
+            matching = directoryItems.filter { $0.url.path.lowercased().contains(query) }
+        }
+        return matching.sorted {
+            sortNewestFirst ? $0.addedAt > $1.addedAt : $0.addedAt < $1.addedAt
+        }
     }
     // MARK: - Actions
     private func navigateToPath(_ path: String) {
@@ -201,9 +237,9 @@ struct HistoryWindowContent: View {
         }
     }
     // MARK: - Delete from History
-    private func deleteFromHistory(_ url: URL) {
-        log.debug(#function + "(\(url.path))")
-        withAnimation { appState.selectionsHistory.remove(url) }
+    private func deleteFromHistory(_ item: RecentHistorySelection) {
+        log.debug(#function + "(\(item.url.path))")
+        withAnimation { appState.selectionsHistory.remove(item) }
     }
     // MARK: - Clear History
     private func clearHistory() {

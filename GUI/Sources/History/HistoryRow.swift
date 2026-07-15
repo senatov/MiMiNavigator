@@ -13,8 +13,7 @@ import SwiftUI
 struct HistoryRow: View {
     let path: String
     let addedAt: Date
-    let isAvailable: Bool
-    var unavailableReason: String?
+    let timeColumnWidth: CGFloat
     var highlightText: String = ""
     let onSelect: () -> Void
     let onDelete: () -> Void
@@ -43,7 +42,6 @@ struct HistoryRow: View {
         return "folder.fill"
     }
     private var iconColor: Color {
-        if !isAvailable { return Color.secondary.opacity(0.45) }
         let p = path.lowercased()
         if p.hasPrefix("/volumes/") { return .purple }
         if p.contains("/applications") { return .green }
@@ -51,37 +49,24 @@ struct HistoryRow: View {
         if p.contains("/users") { return .orange }
         return .accentColor
     }
-    private var pathColor: Color {
-        isAvailable ? .primary : Color.secondary.opacity(0.55)
-    }
-    private var dateColor: Color {
-        isAvailable ? .secondary : Color.secondary.opacity(0.45)
-    }
     // MARK: - Body
     var body: some View {
         HStack(spacing: 8) {
+            Text(formattedAddedAt)
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .frame(width: timeColumnWidth, alignment: .leading)
             Image(systemName: iconName)
                 .font(.system(size: 14))
                 .foregroundStyle(iconColor)
                 .frame(width: 20, alignment: .center)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                highlightedText(path)
-                    .font(.system(size: 14, weight: .light))
-                    .foregroundStyle(pathColor)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Text(formattedAddedAt)
-                    .font(.system(size: 12, weight: .light))
-                    .foregroundStyle(dateColor)
-                    .lineLimit(1)
-            }
+            highlightedText(path)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
             Spacer(minLength: 4)
-            if let unavailableReason {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.orange.opacity(0.8))
-                    .help(unavailableReason)
-            }
             Button(action: copyPath) {
                 Image(systemName: "doc.on.doc")
                     .font(.system(size: 13))
@@ -112,7 +97,6 @@ struct HistoryRow: View {
                 Label("Copy Path", systemImage: "doc.on.doc")
             }
         }
-        .opacity(isAvailable ? 1 : 0.55)
     }
     // MARK: - Copy Path
     private func copyPath() {
