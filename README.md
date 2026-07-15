@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.2"><img src="https://img.shields.io/badge/release-v0.9.9.6.2-orange" alt="Release v0.9.9.6.2" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.3"><img src="https://img.shields.io/badge/release-v0.9.9.6.3-orange" alt="Release v0.9.9.6.3" /></a>
 </p>
 
 <p align="center">
@@ -38,10 +38,13 @@
 
 
 
-## Recent Changes (v0.9.9.6.2 - July 2026)
+## Recent Changes (v0.9.9.6.3 - July 2026)
 
-- **Documentation preview** — refreshed the main interface screenshot with a newer, higher-resolution image.
-- **Build metadata** — release version is `0.9.9.6.2`, build `131`.
+- **Network intelligence** — optional Fing Local API and MAC vendor enrichment identify LAN devices by name, type, manufacturer, and model.
+- **History cleanup** — repeated directories are removed globally, leaving only the newest valid visit.
+- **Dialog layout** — confirmation and archive windows preserve readable content, standard margins, and accessible buttons.
+- **DMG presentation** — corrected installer geometry and a verified custom volume icon improve drag-to-install presentation.
+- **Build metadata** — release version is `0.9.9.6.3`, build `132`.
 
 ## Previous Changes
 
@@ -196,7 +199,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.6.2 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.2)**
+**[Download MiMiNavigator v0.9.9.6.3 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.3)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

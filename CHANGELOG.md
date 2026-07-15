@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.3] — 2026-07-15
+
+> **Release notes**
+> Network intelligence, History cleanup, dialog layout, and DMG presentation update.
+
+### Added
+- **Fing Local API** — optional Keychain-backed integration enriches Network Neighborhood with recognized device names, types, manufacturers, models, and presence.
+- **MAC vendor enrichment** — online manufacturer lookup supplements Bonjour, SSDP, router, and Fing discovery without sending credentials.
+- **Roadmap** — Nextcloud/WebDAV remote panels and CloudKit settings synchronization are documented as planned work.
+
+### Changed
+- **Apple mobile identity** — unresolved `_apple-mobdev2` services display as iPhone / iPad until hostname, router, or Fing evidence identifies the exact class.
+- **DMG presentation** — the installer background matches the Finder window, centers a dimensional motion arrow between the app and Applications, and places instructions at the top.
+- **Build metadata** — marketing version updated to `0.9.9.6.3`; build number updated to `132`.
+
+### Fixed
+- **History duplicates** — directory history is globally unique by normalized path and retains only the newest valid visit.
+- **Dialog clipping** — copy/move confirmations and shared HIG dialogs no longer crop long content because of conflicting fixed-size constraints.
+- **Archive panel margins** — Create Archive uses standard edge spacing and a sufficient minimum window size.
+- **DMG volume icon** — the custom icon is applied after Finder styling and verified after conversion and stapling.
+
 ## [0.9.9.6.2] — 2026-07-15
 
 > **Release notes**
