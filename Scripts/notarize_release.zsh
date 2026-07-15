@@ -54,6 +54,32 @@ DMG_STAGE="/tmp/mimi_dmg_notarize"
 DERIVED_DATA_ROOT="${HOME}/Library/Developer/Xcode/DerivedData"
 NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
 
+verify_dmg_volume_icon() {
+    local dmg_path="$1"
+    local attach_output
+    local device
+    local mount_point
+    local attributes
+    local verification_failed=0
+    attach_output="$(hdiutil attach -readonly -noverify -nobrowse "${dmg_path}")"
+    device="$(print -r -- "${attach_output}" | awk '/\/Volumes\// {print $1; exit}')"
+    mount_point="$(print -r -- "${attach_output}" | sed -n 's|.*\(/Volumes/.*\)|\1|p' | head -1)"
+    if [[ ! -f "${mount_point}/.VolumeIcon.icns" ]]; then
+        echo "❌ DMG volume icon file is missing after remount"
+        verification_failed=1
+    fi
+    attributes="$(xcrun GetFileInfo -a "${mount_point}" 2>/dev/null || true)"
+    if [[ "${attributes}" != *C* ]]; then
+        echo "❌ DMG volume custom-icon attribute is missing after remount"
+        verification_failed=1
+    fi
+    hdiutil detach "${device}" >/dev/null
+    if [[ ${verification_failed} -ne 0 ]]; then
+        return 1
+    fi
+    echo "   ✅ DMG volume icon verified"
+}
+
 echo "═══════════════════════════════════════════"
 echo "  MiMiNavigator Notarized Release ${TAG}"
 echo "═══════════════════════════════════════════"
@@ -267,6 +293,7 @@ if [[ ! -f "${DMG_VOLUME_ICON}" ]]; then
     echo "❌ Application icon not found: ${DMG_VOLUME_ICON}"
     exit 1
 fi
+cp "${DMG_VOLUME_ICON}" "${DMG_STAGE}/.VolumeIcon.icns"
 
 # create read-write DMG first
 rm -f "${DMG_RW}" "${DMG}"
@@ -287,6 +314,7 @@ sleep 2
 mkdir -p "${MOUNT_PT}/.background"
 cp "${DMG_BG}" "${MOUNT_PT}/.background/background.png"
 cp "${DMG_VOLUME_ICON}" "${MOUNT_PT}/.VolumeIcon.icns"
+xcrun SetFile -a V "${MOUNT_PT}/.VolumeIcon.icns"
 xcrun SetFile -a C "${MOUNT_PT}"
 touch "${MOUNT_PT}"
 
@@ -329,6 +357,7 @@ sleep 1
 # convert to compressed read-only DMG
 hdiutil convert "${DMG_RW}" -format UDZO -o "${DMG}"
 rm -f "${DMG_RW}"
+verify_dmg_volume_icon "${DMG}"
 echo "   DMG: ${DMG} ($(du -sh "${DMG}" | cut -f1))"
 echo "   Signing DMG container..."
 codesign \
@@ -367,6 +396,7 @@ fi
 echo "   ✅ Notarization accepted!"
 echo "   Stapling ticket to DMG..."
 xcrun stapler staple "${DMG}"
+verify_dmg_volume_icon "${DMG}"
 echo "   Validating stapled ticket..."
 xcrun stapler validate "${DMG}"
 echo "   Running Gatekeeper assessment..."
