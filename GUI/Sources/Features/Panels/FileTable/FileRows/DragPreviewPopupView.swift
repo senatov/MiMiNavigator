@@ -182,7 +182,6 @@ struct DragPreviewPopupView: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                            .shadow(color: .black.opacity(0.08), radius: 0, x: 0, y: 0.5)
 
                         Spacer(minLength: 8)
 
@@ -191,14 +190,12 @@ struct DragPreviewPopupView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .layoutPriority(1)
-                            .shadow(color: .black.opacity(0.06), radius: 0, x: 0, y: 0.5)
 
                         Text(row.sizeText)
                             .font(.system(size: 11, weight: .regular, design: .monospaced))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .frame(minWidth: 52, alignment: .trailing)
-                            .shadow(color: .black.opacity(0.06), radius: 0, x: 0, y: 0.5)
                     }
                     .padding(.vertical, 0)
                 }

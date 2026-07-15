@@ -104,8 +104,6 @@ private struct DevBuildCatMedallion: View {
                 .font(.system(size: 19))
                 .fixedSize()
                 .offset(y: -0.5)
-                .shadow(color: Color.white, radius: 0.25, x: 0, y: -0.35)
-                .shadow(color: Color.black.opacity(0.14), radius: 0.65, x: 0, y: 0.75)
         }
         .frame(width: 31, height: 31)
         .overlay {

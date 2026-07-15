@@ -13,14 +13,14 @@ import AppKit
     // MARK: - Install
     func install() {
         guard statusItem == nil else { return }
-        let item = NSStatusBar.system.statusItem(withLength: 30)
+        let item = NSStatusBar.system.statusItem(withLength: 34)
         guard let button = item.button else {
             NSStatusBar.system.removeStatusItem(item)
             log.error("[MenuBar] status item button unavailable")
             return
         }
         let image = NSApp.applicationIconImage.copy() as? NSImage
-        image?.size = NSSize(width: 18, height: 18)
+        image?.size = NSSize(width: 23, height: 23)
         image?.isTemplate = false
         button.image = image
         button.imageScaling = .scaleProportionallyDown
