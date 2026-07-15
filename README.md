@@ -475,6 +475,7 @@ When a cloud desktop client syncs the `Public` folder locally, MiMiNavigator exp
 - [x] Version auto-sync from git tag via `Scripts/stamp_version.zsh`
 - [x] Google Drive share-link publishing to `Public` with Keychain-backed OAuth
 - [x] Dropbox Share+Link with PKCE, sync-aware publishing, and branded random aliases
+- [x] Optional Fing Local API enrichment for accurate LAN device names, manufacturers, models, and presence
 
 ### In Progress 🚧
 
@@ -487,6 +488,8 @@ When a cloud desktop client syncs the `Public` folder locally, MiMiNavigator exp
 - [ ] ~~Three-panel layout option~~  for why?
 - [x] FTP/SFTP connectivity (Citadel SFTP + curl-based FTP)
 - [x] Network filesystem (SMB/AFP mount, Network Neighborhood discovery)
+- [ ] Nextcloud/WebDAV remote panels with browsing, transfers, conflicts, progress, and cancellation
+- [ ] CloudKit synchronization for Favorites, History, Tabs, layouts, and non-secret settings
 - [x] More cloud provider share-link APIs beyond Google Drive and Dropbox
 - [x ] Advanced file comparison 
 - [ ] ~~Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)~~ no need more
@@ -517,7 +520,8 @@ Recommended implementation order:
 4. Command Bar / Quick Open.
 5. Workspaces.
 6. Git status badges.
-7. Direct WebDAV/S3/B2 support or an rclone-first backend.
+7. Direct Nextcloud/WebDAV support, followed by S3/B2 or an rclone-first backend.
+8. CloudKit synchronization for user configuration and workspace metadata.
 
 Avoid prioritizing AI, Bluetooth, dashboards, or generic device-control features until the core file-manager workflows above feel complete.
 

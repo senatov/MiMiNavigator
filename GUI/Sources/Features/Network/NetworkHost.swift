@@ -108,6 +108,7 @@ struct NetworkHost: Identifiable, Hashable, Sendable {
     var isLocalhost: Bool           // true = this Mac itself
     var rawMAC: String?             // MAC address if known (for mobile devices after rename)
     var manufacturer: String?       // Confirmed by local discovery or MAC vendor lookup
+    var modelName: String?          // Exact model when supplied by a trusted discovery source
     var isOffline: Bool             // true = FritzBox knows device but it's currently off/sleeping
     var probedWebURL: URL?          // first responding web UI port found by WebUIProber
 
@@ -136,6 +137,7 @@ struct NetworkHost: Identifiable, Hashable, Sendable {
         self.isLocalhost    = isLocalhost
         self.rawMAC         = nil
         self.manufacturer   = nil
+        self.modelName      = nil
         self.isOffline      = false
         self.probedWebURL   = nil
     }

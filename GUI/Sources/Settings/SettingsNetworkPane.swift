@@ -13,6 +13,11 @@ import SwiftUI
 struct SettingsNetworkPane: View {
 
     @State private var prefs = UserPreferences.shared
+    @State private var fingEnabled = FingLocalAPISettings.isEnabled
+    @State private var fingPort = String(FingLocalAPISettings.port)
+    @State private var fingAPIKey = FingLocalAPISettings.loadAPIKey()
+    @State private var fingStatus = ""
+    @State private var isTestingFing = false
 
     private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
         Binding(
@@ -53,6 +58,46 @@ struct SettingsNetworkPane: View {
 
             SettingsGroupBox {
                 VStack(spacing: 0) {
+                    SettingsRow(label: "Fing discovery:", help: "Use Fing Local API to improve LAN device names, types, manufacturers, and models") {
+                        Toggle("Use Fing Local API", isOn: $fingEnabled)
+                            .toggleStyle(.checkbox)
+                            .onChange(of: fingEnabled) { _, value in
+                                FingLocalAPISettings.isEnabled = value
+                            }
+                    }
+                    Divider()
+                    SettingsRow(label: "Port:", help: "Local API port configured in Fing Desktop or Fing Agent") {
+                        TextField("49090", text: $fingPort)
+                            .frame(width: 90)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { saveFingSettings() }
+                    }
+                    Divider()
+                    SettingsRow(label: "API key:", help: "Stored securely in macOS Keychain") {
+                        SecureField("Fing Local API key", text: $fingAPIKey)
+                            .frame(width: 220)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { saveFingSettings() }
+                    }
+                    Divider()
+                    SettingsRow(label: "Connection:", help: "Save the settings and query the local Fing agent") {
+                        HStack(spacing: 10) {
+                            Button("Save & Test") { testFingConnection() }
+                                .disabled(isTestingFing || fingAPIKey.isEmpty || Int(fingPort) == nil)
+                            if isTestingFing { ProgressView().controlSize(.small) }
+                            if !fingStatus.isEmpty {
+                                Text(fingStatus)
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(fingStatus.hasPrefix("Connected") ? .green : .secondary)
+                                    .lineLimit(2)
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsGroupBox {
+                VStack(spacing: 0) {
                     SettingsRow(label: "Passwords:", help: "Save server passwords in macOS Keychain") {
                         Toggle("Save passwords in Keychain", isOn: prefBinding(\.networkSavePasswords))
                             .toggleStyle(.checkbox)
@@ -77,5 +122,32 @@ struct SettingsNetworkPane: View {
             .padding(.top, 4)
         }
     }
-}
 
+    // MARK: - Save Fing Settings
+    private func saveFingSettings() {
+        guard let port = Int(fingPort), (1...65_535).contains(port) else {
+            fingStatus = "Invalid port"
+            return
+        }
+        FingLocalAPISettings.port = port
+        FingLocalAPISettings.isEnabled = fingEnabled
+        FingLocalAPISettings.saveAPIKey(fingAPIKey.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    // MARK: - Test Fing Connection
+    private func testFingConnection() {
+        saveFingSettings()
+        guard Int(fingPort).map({ (1...65_535).contains($0) }) == true else { return }
+        isTestingFing = true
+        fingStatus = "Connecting…"
+        Task {
+            do {
+                let devices = try await FingLocalAPIClient.shared.fetchDevices()
+                fingStatus = "Connected — \(devices.count) devices"
+            } catch {
+                fingStatus = error.localizedDescription
+            }
+            isTestingFing = false
+        }
+    }
+}

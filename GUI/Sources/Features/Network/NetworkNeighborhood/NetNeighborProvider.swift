@@ -63,6 +63,20 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             }
         }
 
+        if FingLocalAPISettings.isEnabled {
+            Task {
+                do {
+                    let devices = try await FingLocalAPIClient.shared.fetchDevices()
+                    await MainActor.run {
+                        guard self.scanGeneration == generation else { return }
+                        self.mergeFingDevices(devices)
+                    }
+                } catch {
+                    log.debug("[Fing] discovery unavailable: \(error.localizedDescription)")
+                }
+            }
+        }
+
         // Auto-stop after 14 seconds
         Task {
             try? await Task.sleep(for: .seconds(14))

@@ -107,7 +107,7 @@ struct HostNodeRow: View {
     }
 
     private var secondaryDetails: String {
-        [resolvedIP, host.manufacturer ?? ""]
+        [resolvedIP, host.manufacturer ?? "", host.modelName ?? ""]
             .filter { !$0.isEmpty }
             .joined(separator: " · ")
     }

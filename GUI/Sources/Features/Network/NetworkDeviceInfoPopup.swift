@@ -225,6 +225,7 @@ struct NetworkDeviceInfoPopup: View {
         appendEntry(&result, label: "IP", value: host.hostDisplayName)
         appendEntry(&result, label: "Type", value: resolvedHostType())
         appendEntry(&result, label: "Manufacturer", value: host.manufacturer ?? "")
+        appendEntry(&result, label: "Model", value: host.modelName ?? "")
 
         let services = formattedBonjourServices()
         appendEntry(&result, label: "Services", value: services)
