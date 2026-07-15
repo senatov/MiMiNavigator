@@ -11,6 +11,10 @@ Documentation preview refresh.
 - Replace the main README preview with a newer, higher-resolution screenshot.
 - Update release metadata to version `0.9.9.6.2` and build `131`.
 
+## Fixed
+
+- Strip Finder and quarantine extended attributes from GUI resources before release builds so copied assets cannot break code signing.
+
 ## Validation
 
 - The release pipeline performs a clean signed build, notarization, stapling, and Gatekeeper assessment.

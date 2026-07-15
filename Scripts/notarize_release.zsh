@@ -179,6 +179,8 @@ echo "[4/10] Clearing SPM caches..."
 rm -rf "${HOME}/Library/Caches/org.swift.swiftpm" 2>/dev/null
 rm -rf "${HOME}/Library/org.swift.swiftpm" 2>/dev/null
 rm -rf "${PROJECT_DIR}/.build" 2>/dev/null
+echo "   Clearing extended attributes from GUI resources..."
+xattr -cr "${PROJECT_DIR}/GUI"
 
 # ── Step 5: Resolve packages ─────────────────────────────────────────────────
 echo "[5/10] Resolving packages..."

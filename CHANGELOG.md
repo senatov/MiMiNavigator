@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation preview** — replaced the main interface screenshot with a newer, higher-resolution image.
 - **Build metadata** — marketing version updated to `0.9.9.6.2`; build number updated to `131`.
 
+### Fixed
+- **Release signing** — GUI resource extended attributes are cleared before building so Finder metadata and quarantine flags cannot invalidate code signing.
+
 ## [0.9.9.6.1] — 2026-07-10
 
 > **Release notes**
