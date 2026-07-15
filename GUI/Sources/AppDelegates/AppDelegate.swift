@@ -19,6 +19,7 @@ import LogKit
 
     weak var appState: AppState?
     private var keyMonitor: Any?
+    private let menuBarController = MenuBarController()
     private let tabKeyCode: UInt16 = 48
     private let startupDate = CFAbsoluteTimeGetCurrent()
     private var didLogStartupCompletion = false
@@ -45,6 +46,7 @@ import LogKit
 
         // Ensure app is a regular Dock citizen from the very start
         NSApp.setActivationPolicy(.regular)
+        menuBarController.install()
 
         UserPreferences.shared.load()
         log.debug("prefs loaded, autoFit=\(UserPreferences.shared.snapshot.autoFitColumnsOnNavigate)")

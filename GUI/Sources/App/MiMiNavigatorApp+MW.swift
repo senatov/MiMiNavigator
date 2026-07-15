@@ -10,7 +10,6 @@ import SwiftUI
 
 extension MiMiNavigatorApp {
     // MARK: -
-    @SceneBuilder
     var body: some Scene {
         WindowGroup(id: "main") {
             mainWindowContent
@@ -21,9 +20,6 @@ extension MiMiNavigatorApp {
         .commands {
             AppCommands(appState: appState)
             SettingsCommands()
-        }
-        MenuBarExtra("MiMiNavigator", systemImage: "folder.fill") {
-            MenuBarContent()
         }
     }
 
