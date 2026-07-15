@@ -10,8 +10,9 @@ import SwiftUI
 
 extension MiMiNavigatorApp {
     // MARK: -
+    @SceneBuilder
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             mainWindowContent
         }
         .defaultSize(width: 1200, height: 700)
@@ -20,6 +21,9 @@ extension MiMiNavigatorApp {
         .commands {
             AppCommands(appState: appState)
             SettingsCommands()
+        }
+        MenuBarExtra("MiMiNavigator", systemImage: "folder.fill") {
+            MenuBarContent()
         }
     }
 

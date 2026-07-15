@@ -262,6 +262,11 @@ mkdir -p "${DMG_STAGE}"
 cp -R "${APP}" "${DMG_STAGE}/"
 xattr -cr "${DMG_STAGE}/MiMiNavigator.app"
 ln -s /Applications "${DMG_STAGE}/Applications"
+DMG_VOLUME_ICON="${APP}/Contents/Resources/AppIcon.icns"
+if [[ ! -f "${DMG_VOLUME_ICON}" ]]; then
+    echo "❌ Application icon not found: ${DMG_VOLUME_ICON}"
+    exit 1
+fi
 
 # create read-write DMG first
 rm -f "${DMG_RW}" "${DMG}"
@@ -281,6 +286,9 @@ sleep 2
 # copy background into hidden .background dir
 mkdir -p "${MOUNT_PT}/.background"
 cp "${DMG_BG}" "${MOUNT_PT}/.background/background.png"
+cp "${DMG_VOLUME_ICON}" "${MOUNT_PT}/.VolumeIcon.icns"
+xcrun SetFile -a C "${MOUNT_PT}"
+touch "${MOUNT_PT}"
 
 # style the Finder window via AppleScript
 echo "   Styling DMG window..."

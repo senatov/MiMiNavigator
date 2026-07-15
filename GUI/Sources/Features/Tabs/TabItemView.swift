@@ -68,19 +68,13 @@ struct TabItemView: View {
             // Favicon-style folder icon
             Image(systemName: tab.isArchive ? "doc.zipper" : "folder.fill")
                 .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(
-                    isActive
-                        ? activeForeground
-                        : inactiveForeground.opacity(0.72)
-                )
+                .foregroundStyle(isActive ? activeIconColor : inactiveForeground.opacity(0.72))
                 .frame(width: 14)
 
             Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.system(size: 12.5, weight: isActive ? .medium : .regular, design: .default))
+                .font(.system(size: 12.5, weight: isActive ? .semibold : .regular, design: .default))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
-                .shadow(color: activeTextHighlight, radius: 0, x: 0, y: isActive ? 1 : 0)
-                .shadow(color: activeTextShade, radius: 0, x: 0, y: isActive ? -0.5 : 0)
 
             Spacer(minLength: 0)
 
@@ -158,18 +152,16 @@ struct TabItemView: View {
         isPanelFocused ? activeNavy : Color(nsColor: .darkGray)
     }
 
+    private var activeIconColor: Color {
+        tab.isArchive
+            ? Color(#colorLiteral(red: 0.902, green: 0.314, blue: 0.184, alpha: 1))
+            : Color(#colorLiteral(red: 0.098, green: 0.431, blue: 0.922, alpha: 1))
+    }
+
     private var inactiveForeground: Color {
         colorScheme == .dark
             ? Color(nsColor: .tertiaryLabelColor)
             : Color(nsColor: .darkGray)
-    }
-
-    private var activeTextHighlight: Color {
-        isActive && isPanelFocused ? Color.white.opacity(colorScheme == .dark ? 0.08 : 0.48) : .clear
-    }
-
-    private var activeTextShade: Color {
-        isActive && isPanelFocused ? activeNavy.opacity(colorScheme == .dark ? 0.42 : 0.18) : .clear
     }
 
     private var tabOuterShadowColor: Color {

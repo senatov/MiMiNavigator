@@ -80,8 +80,15 @@ struct TabBarView: View {
 
     private var addTabButton: some View {
         Button(action: handleAddTab) {
-            Image(systemName: "plus")
-                .font(.system(size: 12, weight: .medium))
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(
+                    Color(nsColor: .darkGray),
+                    Color(nsColor: .controlBackgroundColor)
+                )
+                .shadow(color: Color.white.opacity(0.7), radius: 0.5, x: 0, y: -1)
+                .shadow(color: Color.black.opacity(0.28), radius: 1.2, x: 0, y: 1.2)
                 .frame(width: 22, height: 26)
         }
         .buttonStyle(.plain)
