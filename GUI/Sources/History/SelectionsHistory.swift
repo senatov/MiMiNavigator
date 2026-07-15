@@ -69,6 +69,12 @@ final class SelectionsHistory {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
+
+    private static func historyKey(for url: URL) -> String {
+        if !url.isFileURL { return url.absoluteString }
+        let path = url.standardizedFileURL.path
+        return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
+    }
     // MARK: - Init
     init() {
         Self.ensureHistoryDirectoryExists()
@@ -89,9 +95,8 @@ final class SelectionsHistory {
             trimHistory()
         }
         let now = Date()
-        let calendar = Calendar.current
         recentSelections.removeAll {
-            $0.url.standardizedFileURL == normalized && calendar.isDate($0.addedAt, inSameDayAs: now)
+            Self.historyKey(for: $0.url) == Self.historyKey(for: normalized)
         }
         recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: now), at: 0)
         if recentSelections.count > Self.maxEntries {
@@ -240,8 +245,7 @@ final class SelectionsHistory {
             .filter { Self.isAvailableDirectory($0.url) }
             .sorted { $0.addedAt > $1.addedAt }
             .filter { item in
-                let day = Calendar.current.startOfDay(for: item.addedAt).timeIntervalSinceReferenceDate
-                return seen.insert("\(item.url.standardizedFileURL.absoluteString)|\(day)").inserted
+                seen.insert(Self.historyKey(for: item.url)).inserted
             }
         if recentSelections.count > Self.maxEntries {
             recentSelections.removeLast(recentSelections.count - Self.maxEntries)
