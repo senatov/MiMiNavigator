@@ -352,7 +352,7 @@ tell application "Finder"
         set position of item "MiMiNavigator.app" of container window to {${DMG_APP_X}, ${DMG_APP_Y}}
         set position of item "Applications" of container window to {${DMG_APPS_X}, ${DMG_APPS_Y}}
         set hiddenItemX to ${DMG_HIDDEN_X}
-        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes"}
+        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes", ".VolumeIcon.icns"}
             try
                 set position of item (hiddenItemName as text) of container window to {hiddenItemX, ${DMG_HIDDEN_Y}}
             end try
