@@ -80,6 +80,27 @@ verify_dmg_volume_icon() {
     echo "   ✅ DMG volume icon verified"
 }
 
+apply_dmg_volume_icon() {
+    local mount_point="$1"
+    local icon_path="$2"
+    local attributes
+    cp "${icon_path}" "${mount_point}/.VolumeIcon.icns"
+    xcrun SetFile -a V "${mount_point}/.VolumeIcon.icns"
+    xcrun SetFile -a C "${mount_point}"
+    touch "${mount_point}"
+    sync
+    if [[ ! -f "${mount_point}/.VolumeIcon.icns" ]]; then
+        echo "❌ DMG volume icon file could not be installed"
+        return 1
+    fi
+    attributes="$(xcrun GetFileInfo -a "${mount_point}" 2>/dev/null || true)"
+    if [[ "${attributes}" != *C* ]]; then
+        echo "❌ DMG volume custom-icon attribute could not be set"
+        return 1
+    fi
+    echo "   ✅ DMG volume icon applied"
+}
+
 echo "═══════════════════════════════════════════"
 echo "  MiMiNavigator Notarized Release ${TAG}"
 echo "═══════════════════════════════════════════"
@@ -313,10 +334,6 @@ sleep 2
 # copy background into hidden .background dir
 mkdir -p "${MOUNT_PT}/.background"
 cp "${DMG_BG}" "${MOUNT_PT}/.background/background.png"
-cp "${DMG_VOLUME_ICON}" "${MOUNT_PT}/.VolumeIcon.icns"
-xcrun SetFile -a V "${MOUNT_PT}/.VolumeIcon.icns"
-xcrun SetFile -a C "${MOUNT_PT}"
-touch "${MOUNT_PT}"
 
 # style the Finder window via AppleScript
 echo "   Styling DMG window..."
@@ -335,7 +352,7 @@ tell application "Finder"
         set position of item "MiMiNavigator.app" of container window to {${DMG_APP_X}, ${DMG_APP_Y}}
         set position of item "Applications" of container window to {${DMG_APPS_X}, ${DMG_APPS_Y}}
         set hiddenItemX to ${DMG_HIDDEN_X}
-        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes", ".VolumeIcon.icns"}
+        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes"}
             try
                 set position of item (hiddenItemName as text) of container window to {hiddenItemX, ${DMG_HIDDEN_Y}}
             end try
@@ -349,7 +366,7 @@ tell application "Finder"
 end tell
 APPLESCRIPT
 
-sync
+apply_dmg_volume_icon "${MOUNT_PT}" "${DMG_VOLUME_ICON}"
 sleep 2
 hdiutil detach "${DEVICE}"
 sleep 1
