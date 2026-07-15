@@ -13,14 +13,27 @@ import AppKit
     // MARK: - Install
     func install() {
         guard statusItem == nil else { return }
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        let image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
-        image?.isTemplate = true
-        item.button?.image = image
-        item.button?.toolTip = "MiMiNavigator"
+        let item = NSStatusBar.system.statusItem(withLength: 30)
+        guard let button = item.button else {
+            NSStatusBar.system.removeStatusItem(item)
+            log.error("[MenuBar] status item button unavailable")
+            return
+        }
+        let image = NSApp.applicationIconImage.copy() as? NSImage
+        image?.size = NSSize(width: 18, height: 18)
+        image?.isTemplate = false
+        button.image = image
+        button.imageScaling = .scaleProportionallyDown
+        button.imagePosition = .imageOnly
+        button.toolTip = "MiMiNavigator"
+        button.setAccessibilityLabel("MiMiNavigator")
         item.menu = makeMenu()
+        item.isVisible = true
         statusItem = item
-        log.info("[MenuBar] status item installed")
+        log.info("[MenuBar] status item installed image=\(image != nil) visible=\(item.isVisible)")
+        DispatchQueue.main.async { [weak self] in
+            self?.logStatusItemState()
+        }
     }
 
     // MARK: - Make Menu
@@ -62,5 +75,15 @@ import AppKit
         NSApp.windows.first {
             !($0 is NSPanel) && $0.styleMask.contains(.titled) && $0.canBecomeMain
         }
+    }
+
+    // MARK: - Log State
+    private func logStatusItemState() {
+        guard let item = statusItem, let button = item.button else {
+            log.error("[MenuBar] status item lost after installation")
+            return
+        }
+        let frame = button.window?.frame ?? .zero
+        log.info("[MenuBar] status item ready visible=\(item.isVisible) windowVisible=\(button.window?.isVisible == true) frame=\(NSStringFromRect(frame))")
     }
 }
