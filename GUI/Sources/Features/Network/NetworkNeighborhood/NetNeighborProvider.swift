@@ -106,6 +106,7 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         isScanning = false
         log.info("[Network] stopDiscovery — \(hosts.count) hosts")
         runFingerprintPass()
+        runManufacturerLookupPass()
     }
 
     // MARK: - Fetch shares (lazy, on expand)
@@ -191,8 +192,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             // Rename mobile placeholder if resolved name is better
             if isMobile {
                 let existing = hosts[idx].name.lowercased()
-                let isPlaceholder = existing.hasPrefix("apple device")
-                if isPlaceholder && !name.hasPrefix("Apple Device") {
+                let isPlaceholder = existing.hasPrefix("apple device") || existing.hasPrefix("iphone / ipad")
+                let newNameIsPlaceholder = name.hasPrefix("Apple Device") || name.hasPrefix("iPhone / iPad")
+                if isPlaceholder && !newNameIsPlaceholder {
                     hosts[idx].name = name
                     log.info("[Network] mobile renamed '\(hosts[idx].name)' → '\(name)'")
                 }
@@ -224,13 +226,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         }
         host.isOffline = isOffline
 
-        // Classify by Bonjour services
-        if host.deviceClass == .unknown,
-            let cls = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices)
-        {
-            host.deviceClass = cls
-            if cls.isRouter { host.nodeType = .generic }
-        }
         // Classify by name
         if host.deviceClass == .unknown {
             if let cls = NetworkDeviceFingerprinter.classifyByName(name, hostName: hostName) {
@@ -240,11 +235,18 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
                 if cls == .printer { host.nodeType = .printer }
             }
         }
+        // Classify by Bonjour services when the name did not identify the device.
+        if host.deviceClass == .unknown,
+            let cls = NetworkDeviceFingerprinter.classifyByServices(host.bonjourServices)
+        {
+            host.deviceClass = cls
+            if cls.isRouter { host.nodeType = .generic }
+        }
         // Fallback classification from name patterns
         if host.deviceClass == .unknown {
             let nl = name.lowercased()
             if isMobile {
-                host.deviceClass = .iPhone
+                host.deviceClass = .appleMobile
             } else if nl.hasPrefix("brw") {
                 host.deviceClass = .printer
                 host.nodeType = .printer

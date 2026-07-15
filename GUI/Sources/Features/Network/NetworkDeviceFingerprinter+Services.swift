@@ -30,7 +30,7 @@ extension NetworkDeviceFingerprinter {
                 || $0.contains("_uscan._tcp.")
         }
         var candidates: [Candidate] = []
-        if types.contains(where: { $0.contains("mobdev") }) { candidates.append(.init(device: .iPhone, score: 100)) }
+        if types.contains(where: { $0.contains("mobdev") }) { candidates.append(.init(device: .appleMobile, score: 100)) }
         if hasPrinter { candidates.append(.init(device: .printer, score: 100)) }
         if hasSMB && hasSFTP { candidates.append(.init(device: .mac, score: 95)) }
         if (hasSFTP || hasFTP) && !hasSMB { candidates.append(.init(device: .linuxServer, score: 90)) }

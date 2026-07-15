@@ -68,6 +68,7 @@ struct BatchConfirmationDialog: View {
     
     var body: some View {
         let maximumSize = DialogWindowMetrics.maximumSize
+        let dialogWidth = min(520, maximumSize.width)
         VStack(spacing: 16) {
             // Icon
             operationIcon
@@ -79,6 +80,8 @@ struct BatchConfirmationDialog: View {
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(primaryTextColor)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
             
             // Summary info
             VStack(alignment: .leading, spacing: 6) {
@@ -188,13 +191,8 @@ struct BatchConfirmationDialog: View {
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
         .padding(20)
-        .fixedSize(horizontal: true, vertical: false)
-        .frame(
-            minWidth: min(380, maximumSize.width),
-            idealWidth: min(520, maximumSize.width),
-            maxWidth: maximumSize.width,
-            maxHeight: maximumSize.height
-        )
+        .frame(width: dialogWidth)
+        .frame(maxHeight: maximumSize.height)
         .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(

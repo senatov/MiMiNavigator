@@ -30,17 +30,13 @@ enum DialogWindowMetrics {
 struct HIGDialogStyle: ViewModifier {
     func body(content: Content) -> some View {
         let maximumSize = DialogWindowMetrics.maximumSize
+        let dialogWidth = min(440, maximumSize.width)
         content
             .keyboardFocusSection()
             .forcedDialogTabNavigation()
             .padding(24)
-            .fixedSize(horizontal: true, vertical: false)
-            .frame(
-                minWidth: min(320, maximumSize.width),
-                idealWidth: min(440, maximumSize.width),
-                maxWidth: maximumSize.width,
-                maxHeight: maximumSize.height
-            )
+            .frame(width: dialogWidth)
+            .frame(maxHeight: maximumSize.height)
             .background(DialogColors.base)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(

@@ -76,9 +76,9 @@ extension NetworkNeighborhoodProvider: NetServiceBrowserDelegate {
     nonisolated private func mobileDisplayName(from bonjourName: String) -> String {
         if let at = bonjourName.firstIndex(of: "@") {
             let mac = String(bonjourName[bonjourName.startIndex..<at])
-            return "Apple Device (\(mac.suffix(11)))"
+            return "iPhone / iPad (\(mac.suffix(11)))"
         }
-        return bonjourName
+        return "iPhone / iPad"
     }
 
     nonisolated func netServiceBrowser(
@@ -143,9 +143,9 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
             .lowercased()
         guard !hn.isEmpty && hn != "(nil)" else {
             if let at = rawName.firstIndex(of: "@") {
-                return "Apple Device (" + String(rawName[rawName.startIndex..<at].suffix(8)) + ")"
+                return "iPhone / iPad (" + String(rawName[rawName.startIndex..<at].suffix(8)) + ")"
             }
-            return "Apple Device"
+            return "iPhone / iPad"
         }
         let isIP =
             hn.components(separatedBy: "-").count == 4
@@ -157,7 +157,7 @@ extension NetworkNeighborhoodProvider: NetServiceDelegate {
         if hn.contains("ipad") { return "iPad (\(label))" }
         if hn.contains("iphone") || hn.contains("phone") { return "iPhone (\(label))" }
         if hn.contains("mabila") || hn.hasSuffix("-s-iphone") { return "iPhone (\(label))" }
-        return "Apple Device (\(label))"
+        return "iPhone / iPad (\(label))"
     }
 
     // MARK: - IPv4 address from resolved Bonjour service

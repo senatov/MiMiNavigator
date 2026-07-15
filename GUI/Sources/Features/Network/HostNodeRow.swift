@@ -99,12 +99,17 @@ struct HostNodeRow: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(host.hostDisplayName)
                 .font(.callout).lineLimit(1)
-            let ip = resolvedIP
-            if !ip.isEmpty {
-                Text(ip).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            if !secondaryDetails.isEmpty {
+                Text(secondaryDetails).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
         }
         .padding(.leading, 6)
+    }
+
+    private var secondaryDetails: String {
+        [resolvedIP, host.manufacturer ?? ""]
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
     }
 
 
@@ -228,7 +233,7 @@ struct HostNodeRow: View {
     private var iconColor: Color {
         switch host.deviceClass {
         case .router:        return .orange
-        case .iPhone, .iPad: return .green
+        case .appleMobile, .iPhone, .iPad: return .green
         case .printer:       return .purple
         case .nas:           return .mint
         case .mac:           return .blue

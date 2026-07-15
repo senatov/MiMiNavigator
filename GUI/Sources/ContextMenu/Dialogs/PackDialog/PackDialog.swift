@@ -239,8 +239,8 @@ struct PackDialog: View {
         }
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
-        .padding(16)
-        .frame(minWidth: 400)
+        .padding(24)
+        .frame(minWidth: 420)
         .background(PackDialogStyle.panelBackground)
         .overlay(PackDialogStyle.panelBorder)
         .clipShape(RoundedRectangle(cornerRadius: PackDialogStyle.outerCornerRadius, style: .continuous))

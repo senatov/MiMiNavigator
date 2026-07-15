@@ -24,7 +24,7 @@ final class PackDialogCoordinator {
     private(set) var isVisible = false
     private var window: NSPanel?
     private let frameAutosaveName = "MiMiNavigator.PackDialogWindow"
-    private let defaultWidth: CGFloat = 460
+    private let defaultWidth: CGFloat = 500
     private let defaultHeight: CGFloat = 520
     private init() {}
 
@@ -56,7 +56,7 @@ final class PackDialogCoordinator {
             }
         )
         .environment(appState)
-        .frame(minWidth: 400, minHeight: 360)
+        .frame(minWidth: 420, minHeight: 400)
 
         let panel = NSPanel(
             contentRect: .zero,
@@ -81,7 +81,7 @@ final class PackDialogCoordinator {
     private func configurePanel<Content: View>(_ panel: NSPanel, contentView: Content) {
         panel.contentView = NSHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 400, height: 360)
+        panel.minSize = NSSize(width: 460, height: 430)
         PanelTitleHelper.applyIconTitle(
             to: panel,
             systemImage: "archivebox",

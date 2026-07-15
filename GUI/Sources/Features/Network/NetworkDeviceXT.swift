@@ -18,6 +18,7 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
     case nas
     case router
     case printer
+    case appleMobile
     case iPhone
     case iPad
     case mediaBox      // Enigma2 / OpenPLi / Kodi / HTPC, often Linux-based with Web UI and file access
@@ -36,7 +37,8 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
     }
 
     var isMobile: Bool {
-        self == .iPhone
+        self == .appleMobile
+            || self == .iPhone
             || self == .iPad
             || self == .androidPhone
             || self == .androidTablet
@@ -87,6 +89,8 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
                 return "wifi.router"
             case .printer:
                 return "printer"
+            case .appleMobile:
+                return "iphone"
             case .iPhone:
                 return "iphone"
             case .iPad:
@@ -126,6 +130,8 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
                 return "Router"
             case .printer:
                 return "Printer"
+            case .appleMobile:
+                return "iPhone / iPad"
             case .iPhone:
                 return "iPhone"
             case .iPad:
@@ -154,7 +160,7 @@ enum NetworkDeviceXT: Sendable, CaseIterable {
     // MARK: - Behavior
     var isExpandable: Bool {
         switch self {
-            case .printer, .router, .repeater, .networkSwitch, .camera, .iPhone, .iPad, .androidPhone, .androidTablet, .smartTV, .gameConsole:
+            case .printer, .router, .repeater, .networkSwitch, .camera, .appleMobile, .iPhone, .iPad, .androidPhone, .androidTablet, .smartTV, .gameConsole:
                 return false
             default:
                 return true

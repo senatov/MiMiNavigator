@@ -120,7 +120,7 @@ enum WebUIProber {
             return infrastructurePorts
         case .mediaBox, .smartTV, .gameConsole:
             return infrastructurePorts + [8123, 8083, 8000]
-        case .mac, .windowsPC, .linuxServer, .unknown, .androidPhone, .androidTablet, .iPhone, .iPad:
+        case .mac, .windowsPC, .linuxServer, .unknown, .appleMobile, .androidPhone, .androidTablet, .iPhone, .iPad:
             return defaultCandidatePorts
         }
     }

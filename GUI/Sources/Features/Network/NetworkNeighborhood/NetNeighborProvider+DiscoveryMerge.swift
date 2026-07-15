@@ -90,6 +90,12 @@ extension NetworkNeighborhoodProvider {
         let existingName = hosts[index].name
         if isMobilePlaceholderHostName(existingName), !fritzHost.name.isEmpty {
             hosts[index].name = fritzHost.name
+            if hosts[index].deviceClass == .appleMobile,
+                let refinedClass = NetworkDeviceFingerprinter.classifyByName(fritzHost.name, hostName: fritzHost.ip),
+                refinedClass.isMobile
+            {
+                hosts[index].deviceClass = refinedClass
+            }
             log.info("[FritzBox] renamed '\(existingName)' → '\(fritzHost.name)' (\(fritzHost.ip))")
         }
     }
@@ -114,6 +120,7 @@ extension NetworkNeighborhoodProvider {
 
     private func isMobilePlaceholderHostName(_ name: String) -> Bool {
         let value = name.lowercased()
-        return value.hasPrefix("apple device") || value.hasPrefix("iphone (") || value.hasPrefix("ipad (")
+        return value.hasPrefix("apple device") || value.hasPrefix("iphone / ipad")
+            || value.hasPrefix("iphone (") || value.hasPrefix("ipad (")
     }
 }

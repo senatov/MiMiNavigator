@@ -224,6 +224,7 @@ struct NetworkDeviceInfoPopup: View {
 
         appendEntry(&result, label: "IP", value: host.hostDisplayName)
         appendEntry(&result, label: "Type", value: resolvedHostType())
+        appendEntry(&result, label: "Manufacturer", value: host.manufacturer ?? "")
 
         let services = formattedBonjourServices()
         appendEntry(&result, label: "Services", value: services)
@@ -382,7 +383,7 @@ struct NetworkDeviceInfoPopup: View {
                 return .purple
             case .nas:
                 return .green
-            case .iPhone, .iPad, .androidPhone, .androidTablet:
+            case .appleMobile, .iPhone, .iPad, .androidPhone, .androidTablet:
                 return .teal
             case .windowsPC:
                 return .indigo
