@@ -62,7 +62,7 @@ struct SettingsProgressPane: View {
                         .cornerRadius(4)
                         .overlay(
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color(nsColor: appearance.borderColor), lineWidth: 0.5)
+                                .stroke(Color(nsColor: appearance.borderColor), lineWidth: 1)
                         )
                 }
                 .padding(.vertical, 4)

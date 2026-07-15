@@ -109,7 +109,7 @@ struct ExternalToolInfoButton: View {
                     .background(Color(nsColor: .textBackgroundColor))
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5))
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1))
                 Button {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(cmd, forType: .string)

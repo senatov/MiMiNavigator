@@ -40,7 +40,7 @@ struct ConflictButton: View {
     
     private var buttonBorder: some View {
         RoundedRectangle(cornerRadius: 5)
-            .stroke(isPrimary ? Color.clear : Color.gray.opacity(0.3), lineWidth: 0.5)
+            .stroke(isPrimary ? Color.clear : Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
     }
     
     private var backgroundFillColor: Color {

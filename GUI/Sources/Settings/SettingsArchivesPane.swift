@@ -57,7 +57,7 @@ struct SettingsArchivesPane: View {
                 .background(Color.orange.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.orange.opacity(0.3), lineWidth: 0.5))
+                    .stroke(Color.orange.opacity(0.55), lineWidth: 1))
             }
 
             // ── Create ────────────────────────────────────────

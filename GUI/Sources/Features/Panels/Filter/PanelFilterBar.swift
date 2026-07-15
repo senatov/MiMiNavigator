@@ -84,8 +84,8 @@ struct PanelFilterBar: View {
                 .stroke(
                     isFocused
                         ? ColorThemeStore.shared.activeTheme.filterActiveColor
-                        : Color(nsColor: .separatorColor).opacity(0.6),
-                    lineWidth: isFocused ? 1.5 : 0.5
+                        : Color(nsColor: .separatorColor).opacity(0.9),
+                    lineWidth: isFocused ? 1.5 : 1
                 )
         )
         .animation(.easeInOut(duration: 0.12), value: query.isEmpty)

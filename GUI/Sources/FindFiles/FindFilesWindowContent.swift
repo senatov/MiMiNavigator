@@ -198,7 +198,7 @@ struct FindFilesWindowContent: View {
 
     private var actionBarBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(DialogColors.border.opacity(0.42), lineWidth: 0.5)
+            .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
     }
 
     // MARK: - Status Bar

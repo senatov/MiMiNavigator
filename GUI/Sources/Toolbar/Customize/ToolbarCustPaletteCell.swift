@@ -59,7 +59,7 @@ struct ToolbarCustPaletteCell: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(isVisible ? 0.42 : 0.24), lineWidth: 0.5)
+                    .strokeBorder(DialogColors.border.opacity(isVisible ? 0.75 : 0.55), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

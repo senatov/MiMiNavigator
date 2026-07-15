@@ -68,7 +68,7 @@ struct SettingsDiffToolPane: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                            .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
                     )
 
                     // +/- / up/down / Edit toolbar

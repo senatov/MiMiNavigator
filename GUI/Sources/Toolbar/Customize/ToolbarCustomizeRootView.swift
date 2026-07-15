@@ -96,7 +96,7 @@ struct ToolbarCustomizeRootView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.4), lineWidth: 0.5)
+                .strokeBorder(DialogColors.border.opacity(0.7), lineWidth: 1)
         )
         .onDrop(of: [.text], isTargeted: nil) { _ in
             dragItem = nil
@@ -241,7 +241,7 @@ struct ToolbarCustomizeRootView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.42), lineWidth: 0.5)
+                .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
         )
     }
 }

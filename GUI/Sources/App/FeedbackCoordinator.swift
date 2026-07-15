@@ -175,7 +175,7 @@ private struct FeedbackActionButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 0.5)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

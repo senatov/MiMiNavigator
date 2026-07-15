@@ -62,7 +62,7 @@ struct HotKeyTopToolbar: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
+                            .stroke(Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
                     )
                 }
             }
@@ -131,7 +131,7 @@ struct HotKeyFilterField: View {
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.gray.opacity(0.25), lineWidth: 0.5)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
                 )
         )
     }

@@ -199,7 +199,7 @@ struct BatchConfirmationDialog: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
         .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {

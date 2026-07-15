@@ -83,7 +83,7 @@
 
         private var cardBorder: some View {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
         }
         
         private var sizeText: some View {

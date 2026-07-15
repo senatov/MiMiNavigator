@@ -54,7 +54,7 @@ struct TopMenuButtonStyle: ButtonStyle {
             Group {
                 if configuration.isPressed || isHovered {
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .strokeBorder(.separator, lineWidth: 0.5)
+                        .strokeBorder(.separator, lineWidth: 1)
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .strokeBorder(.clear, lineWidth: 0)

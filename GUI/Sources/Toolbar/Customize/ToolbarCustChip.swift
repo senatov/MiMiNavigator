@@ -39,7 +39,7 @@ struct ToolbarCustChip: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(isDragging ? 0.28 : 0.42), lineWidth: 0.5)
+                .strokeBorder(DialogColors.border.opacity(isDragging ? 0.5 : 0.75), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(isDragging ? 0.03 : 0.06), radius: 6, y: 2)
         .opacity(isDragging ? 0.35 : 1.0)

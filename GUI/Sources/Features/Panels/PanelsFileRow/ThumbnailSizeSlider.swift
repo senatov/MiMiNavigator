@@ -167,7 +167,7 @@ struct ThumbnailSizeSlider: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.35), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.8), lineWidth: 1)
         )
     }
 

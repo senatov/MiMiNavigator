@@ -77,7 +77,7 @@ struct SystemConflictSheet: View {
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.blue.opacity(0.15), lineWidth: 0.5)
+                                    .stroke(Color.blue.opacity(0.45), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)

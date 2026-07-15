@@ -191,7 +191,7 @@ private extension FileConflictDialog {
 
     var dialogBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
+            .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
     }
 }
 

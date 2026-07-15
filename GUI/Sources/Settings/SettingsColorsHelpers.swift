@@ -66,7 +66,7 @@ extension ColorPaneHelpers {
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(DialogColors.light))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(DialogColors.border.opacity(0.45), lineWidth: 0.5))
+                .stroke(DialogColors.border.opacity(0.75), lineWidth: 1))
     }
 
     // MARK: - colorRow

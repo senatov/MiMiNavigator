@@ -131,7 +131,7 @@ struct ThumbnailGridView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
                 )
                 .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
                 .shadow(color: .white.opacity(0.5), radius: 0.5, x: 0, y: -0.5)

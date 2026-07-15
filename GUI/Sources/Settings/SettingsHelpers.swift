@@ -44,9 +44,8 @@ struct SettingsGroupBox<Content: View>: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(DialogColors.border.opacity(0.5), lineWidth: 0.5)
+                .stroke(DialogColors.border.opacity(0.75), lineWidth: 1)
         )
     }
 }
-
 

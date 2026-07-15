@@ -105,7 +105,7 @@ struct FindFilesGeneralTab: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 12)

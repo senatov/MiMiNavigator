@@ -264,7 +264,7 @@ struct FindFilesAdvancedTab: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.45), lineWidth: 0.5)
+                .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
         )
     }
 

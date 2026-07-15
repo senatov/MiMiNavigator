@@ -45,7 +45,7 @@ struct HIGDialogStyle: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(0.5), lineWidth: 0.5)
+                    .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }

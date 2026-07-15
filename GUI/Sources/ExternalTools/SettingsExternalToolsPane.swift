@@ -209,7 +209,7 @@ struct SettingsExternalToolsPane: View {
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor)))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5))
+                    .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1))
         }
     }
 }

@@ -65,7 +65,10 @@ struct HotKeyRecorderView: View {
     
     private var borderShape: some View {
         RoundedRectangle(cornerRadius: 6)
-            .stroke(isRecording ? Color.orange.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+            .stroke(
+                isRecording ? Color.orange.opacity(0.7) : Color(nsColor: .separatorColor).opacity(0.9),
+                lineWidth: 1
+            )
     }
 
     // MARK: - Recording

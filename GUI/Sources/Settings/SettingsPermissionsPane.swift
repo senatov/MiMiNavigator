@@ -44,7 +44,7 @@ struct SettingsPermissionsPane: View {
                 .background(Color.orange.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.orange.opacity(0.3), lineWidth: 0.5))
+                    .stroke(Color.orange.opacity(0.55), lineWidth: 1))
             }
 
             // ── Authorized Folders ─────────────────────────────
@@ -86,7 +86,7 @@ struct SettingsPermissionsPane: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(Color(nsColor: .separatorColor).opacity(0.6), lineWidth: 0.5)
+                            .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
                     )
 
                     // +/- buttons + Add Entire Disk
@@ -309,7 +309,7 @@ struct SettingsPermissionsPane: View {
             .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor)))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5))
+                .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1))
     }
 
     // MARK: - Logic
