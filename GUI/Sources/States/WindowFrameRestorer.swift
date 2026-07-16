@@ -91,7 +91,7 @@ final class WindowFrameRestorer {
                 win.setFrame(savedFrame, display: true, animate: false)
                 StatePersistence.lastKnownWindowFrame = savedFrame
                 log.info("[WindowFrameRestorer] restored saved frame \(fmtRect(savedFrame))")
-                StatePersistence.startTrackingWindowFrame()
+                StatePersistence.startTrackingWindowFrame(for: win)
                 return
             }
 
@@ -100,7 +100,7 @@ final class WindowFrameRestorer {
                 win.setFrame(adjustedFrame, display: true, animate: false)
                 StatePersistence.lastKnownWindowFrame = adjustedFrame
                 log.warning("[WindowFrameRestorer] adjusted unusable saved frame \(fmtRect(savedFrame)) -> \(fmtRect(adjustedFrame))")
-                StatePersistence.startTrackingWindowFrame()
+                StatePersistence.startTrackingWindowFrame(for: win)
                 return
             }
 
@@ -117,7 +117,7 @@ final class WindowFrameRestorer {
 
         // no setFrameAutosaveName — we own frame persistence via state.json;
         // autosave races with our setFrame and can overwrite it silently
-        StatePersistence.startTrackingWindowFrame()
+        StatePersistence.startTrackingWindowFrame(for: win)
     }
 
     private func adjustedFrameIfPossible(_ rect: NSRect) -> NSRect? {

@@ -17,17 +17,17 @@ enum StatePersistence {
     /// cached window frame — updated on resize/move, used at exit
     static var lastKnownWindowFrame: NSRect?
 
-    /// start observing window resize/move to keep frame cache fresh
-    static func startTrackingWindowFrame() {
+    /// start observing the main window resize/move to keep frame cache fresh
+    static func startTrackingWindowFrame(for mainWindow: NSWindow) {
         Task { @MainActor in
             for await note in NotificationCenter.default.notifications(named: NSWindow.didEndLiveResizeNotification) {
-                guard let win = note.object as? NSWindow, !(win is NSPanel) else { continue }
+                guard let win = note.object as? NSWindow, win === mainWindow else { continue }
                 lastKnownWindowFrame = win.frame
             }
         }
         Task { @MainActor in
             for await note in NotificationCenter.default.notifications(named: NSWindow.didMoveNotification) {
-                guard let win = note.object as? NSWindow, !(win is NSPanel) else { continue }
+                guard let win = note.object as? NSWindow, win === mainWindow else { continue }
                 lastKnownWindowFrame = win.frame
             }
         }
@@ -137,7 +137,7 @@ private static func loadPersistentState() -> PersistentState? {
         let rightActiveTabID = rightIsRestorable ? state.rightTabManager.activeTabIDString : previous?.rightActiveTabID
         // use cached frame — live window may already be closing
         let mainFrame = lastKnownWindowFrame
-            ?? NSApp.windows.first(where: { !($0 is NSPanel) && $0.isVisible })?.frame
+            ?? NSApp.mainWindow?.frame
         let snapshot = PersistentState(
             leftPath: leftIsRestorable ? state.leftPath : previous?.leftPath ?? "",
             rightPath: rightIsRestorable ? state.rightPath : previous?.rightPath ?? "",
