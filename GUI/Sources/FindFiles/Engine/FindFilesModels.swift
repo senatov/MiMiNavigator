@@ -114,6 +114,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
 struct FindFilesCriteria: Sendable {
     var searchDirectory: URL
     var fileNamePattern: String = "*"
+    var invertFileNamePattern: Bool = false
     var searchText: String = ""
     var caseSensitive: Bool = false
     var useRegex: Bool = false

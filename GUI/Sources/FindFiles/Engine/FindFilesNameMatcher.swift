@@ -33,11 +33,12 @@ enum FindFilesNameMatcher {
     /// Match file name against pre-built regex
     static func matches(fileName: String, regex: NSRegularExpression?, criteria: FindFilesCriteria) -> Bool {
         if criteria.fileNamePattern.isEmpty || criteria.fileNamePattern == "*" || criteria.fileNamePattern == "*.*" {
-            return true
+            return !criteria.invertFileNamePattern
         }
         guard let regex else { return true }
         let range = NSRange(fileName.startIndex..., in: fileName)
-        return regex.firstMatch(in: fileName, range: range) != nil
+        let isMatch = regex.firstMatch(in: fileName, range: range) != nil
+        return criteria.invertFileNamePattern ? !isMatch : isMatch
     }
 
     // MARK: - Private

@@ -18,6 +18,10 @@ struct FindFilesGeneralTab: View {
             VStack(spacing: 10) {
                 fieldRow(label: "Search for:", icon: "doc.text", iconColor: .orange) {
                     HStack(spacing: 6) {
+                        Toggle("NOT", isOn: $viewModel.invertFileNamePattern)
+                            .toggleStyle(.checkbox)
+                            .fixedSize()
+                            .help("Find names that do not match the pattern")
                         SearchHistoryComboBox(
                             text: $viewModel.fileNamePattern,
                             historyKey: .fileNamePattern,

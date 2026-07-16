@@ -305,9 +305,15 @@ actor FindFilesEngine {
         if criteria.useRegex {
             // Note: -E flag is inserted at args[0] before the path for BSD find
             args.insert("-E", at: 0)
+            if criteria.invertFileNamePattern {
+                args.append("!")
+            }
             args += ["-regex", ".*\(pattern).*", "-print"]
         } else {
             let nameFlag = criteria.caseSensitive ? "-name" : "-iname"
+            if criteria.invertFileNamePattern {
+                args.append("!")
+            }
             args += [nameFlag, pattern, "-print"]
         }
 

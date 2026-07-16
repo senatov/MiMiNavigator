@@ -17,6 +17,7 @@ final class FindFilesViewModel {
 
     // MARK: - Search Parameters (bound to UI)
     var fileNamePattern: String = "*.*"
+    var invertFileNamePattern: Bool = false
     var searchText: String = ""
     var searchDirectory: String = ""
     var caseSensitive: Bool = false
@@ -175,7 +176,8 @@ final class FindFilesViewModel {
         // Build search summary for export header
         var summaryParts: [String] = []
         if !fileNamePattern.isEmpty && fileNamePattern != "*" && fileNamePattern != "*.*" {
-            summaryParts.append("Name: \(fileNamePattern)")
+            let nameOperator = invertFileNamePattern ? "NOT " : ""
+            summaryParts.append("Name: \(nameOperator)\(fileNamePattern)")
         }
         if !searchText.isEmpty { summaryParts.append("Text: \(searchText)") }
         summaryParts.append("In: \(searchDirectory)")
@@ -184,6 +186,7 @@ final class FindFilesViewModel {
         // Build criteria
         var criteria = FindFilesCriteria(searchDirectory: targetURL)
         criteria.fileNamePattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
+        criteria.invertFileNamePattern = invertFileNamePattern
         criteria.searchText = searchText
         criteria.caseSensitive = caseSensitive
         criteria.useRegex = useRegex
