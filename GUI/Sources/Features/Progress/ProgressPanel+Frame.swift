@@ -171,10 +171,10 @@ extension ProgressPanel {
     }
 
     func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
-        if saved.relativeX < 12 || saved.relativeY < 12 { return false }
-        if saved.width < Double(ProgressPanelAppearance.defaultWidth * 0.85) { return false }
-        if saved.height < Double(ProgressPanelAppearance.defaultHeight * 0.85) { return false }
-        return true
+        let values = [saved.relativeX, saved.relativeY, saved.width, saved.height]
+        guard values.allSatisfy(\.isFinite) else { return false }
+        guard saved.width >= Double(ProgressPanelAppearance.defaultMinWidth) else { return false }
+        return saved.height >= Double(Layout.minimumPanelHeight)
     }
 
     func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {

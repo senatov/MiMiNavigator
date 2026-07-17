@@ -192,7 +192,7 @@ struct BatchConfirmationDialog: View {
         .forcedDialogTabNavigation()
         .padding(20)
         .frame(width: dialogWidth)
-        .frame(maxHeight: maximumSize.height)
+        .fixedSize(horizontal: false, vertical: true)
         .background(DialogColors.base)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
