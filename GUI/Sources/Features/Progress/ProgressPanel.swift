@@ -65,6 +65,8 @@ final class ProgressPanel: NSObject {
     var eventMonitor: Any?
     var operationKey = "default"
     var autoCloseTask: Task<Void, Never>?
+    var framePersistenceTask: Task<Void, Never>?
+    var isApplyingProgrammaticFrame = false
     private override init() { super.init() }
     var appearance: ProgressPanelAppearance { .shared }
 
@@ -106,6 +108,8 @@ final class ProgressPanel: NSObject {
         lineCount = 0
         onCancel = cancelHandler
         cancelAutoCloseTimer()
+        framePersistenceTask?.cancel()
+        framePersistenceTask = nil
         self.operationKey = normalizedOperationKey(operationKey ?? title)
         if panel == nil { createPanel() }
         guard let panel else { return }
@@ -255,6 +259,8 @@ final class ProgressPanel: NSObject {
         guard let panel, panel.isVisible else { return }
         autoCloseGeneration += 1
         cancelAutoCloseTimer()
+        framePersistenceTask?.cancel()
+        framePersistenceTask = nil
         persistFrameForCurrentOperation()
         let parent = panel.parent
         NSAnimationContext.runAnimationGroup(

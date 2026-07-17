@@ -13,7 +13,7 @@ extension ProgressPanel {
     // MARK: - Center in Main Window
     func centerInMainWindow() {
         guard let panel else { return }
-        if let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
+        if let mainFrame = hostWindowFrame() {
             let x = mainFrame.midX - panel.frame.width / 2
             let y = mainFrame.midY - panel.frame.height / 2
             panel.setFrameOrigin(NSPoint(x: x, y: y))
@@ -25,10 +25,12 @@ extension ProgressPanel {
     // MARK: - Restore Frame
     func restoreFrameForCurrentOperation() {
         guard let panel else { return }
+        isApplyingProgrammaticFrame = true
+        defer { isApplyingProgrammaticFrame = false }
         applySavedSizeIfNeeded(to: panel)
         if let saved = appearance.frame(for: operationKey),
            shouldRestoreFrame(saved),
-           let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame {
+           let mainFrame = hostWindowFrame() {
             let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
             let height = clampedHeight(restoredHeight(for: saved), mainFrame: mainFrame)
             let x = mainFrame.minX + CGFloat(saved.relativeX)
@@ -43,7 +45,7 @@ extension ProgressPanel {
 
     // MARK: - Persist Frame
     func persistFrameForCurrentOperation() {
-        guard let panel, let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame else { return }
+        guard let panel, let mainFrame = hostWindowFrame() else { return }
         let frame = panel.frame
         let stored = ProgressPanelFrame(
             relativeX: Double(frame.minX - mainFrame.minX),
@@ -55,15 +57,29 @@ extension ProgressPanel {
         appearance.updateFrame(stored, for: operationKey)
     }
 
+    // MARK: - Schedule Frame Persistence
+    func scheduleFramePersistence() {
+        framePersistenceTask?.cancel()
+        framePersistenceTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled, !isApplyingProgrammaticFrame else { return }
+            persistFrameForCurrentOperation()
+            framePersistenceTask = nil
+        }
+    }
+
     // MARK: - Compact
     func compactForShortOutputIfNeeded() {
         guard let panel, lineCount > 0, lineCount <= Layout.compactLineLimit else { return }
+        guard appearance.frame(for: operationKey) == nil else { return }
         let compactHeight = compactHeight(for: lineCount)
         guard panel.frame.height > compactHeight + Layout.compactHeightPadding else { return }
         let oldFrame = panel.frame
         let newFrame = NSRect(x: oldFrame.midX - oldFrame.width / 2, y: oldFrame.midY - compactHeight / 2, width: oldFrame.width, height: compactHeight)
-        panel.setFrame(newFrame, display: true, animate: true)
+        isApplyingProgrammaticFrame = true
+        panel.setFrame(newFrame, display: true)
         clampPanelToMainWindow()
+        isApplyingProgrammaticFrame = false
         persistFrameForCurrentOperation()
         log.debug("[ProgressPanel] compacted short output lines=\(lineCount) height=\(Int(compactHeight))")
     }
@@ -136,7 +152,7 @@ extension ProgressPanel {
     // MARK: - Clamp Panel
     func clampPanelToMainWindow() {
         guard let panel else { return }
-        let mainFrame = (NSApp.mainWindow ?? NSApp.keyWindow)?.frame ?? NSScreen.main?.visibleFrame
+        let mainFrame = hostWindowFrame() ?? NSScreen.main?.visibleFrame
         let availableWidth = max(ProgressPanelAppearance.defaultMinWidth, (mainFrame?.width ?? 760) - 48)
         let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
         let targetWidth = min(panel.frame.width, min(availableWidth, 760))
@@ -173,14 +189,19 @@ extension ProgressPanel {
     func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
         let values = [saved.relativeX, saved.relativeY, saved.width, saved.height]
         guard values.allSatisfy(\.isFinite) else { return false }
+        if abs(saved.relativeX) < 1, abs(saved.relativeY) < 1 { return false }
         guard saved.width >= Double(ProgressPanelAppearance.defaultMinWidth) else { return false }
         return saved.height >= Double(Layout.minimumPanelHeight)
     }
 
+    func hostWindowFrame() -> NSRect? {
+        if let parent = panel?.parent { return parent.frame }
+        if let mainWindow = NSApp.mainWindow, mainWindow !== panel { return mainWindow.frame }
+        if let keyWindow = NSApp.keyWindow, keyWindow !== panel, !(keyWindow is NSPanel) { return keyWindow.frame }
+        return NSApp.windows.first { $0 !== panel && !($0 is NSPanel) && $0.isVisible }?.frame
+    }
+
     func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
-        if let savedLineCount = saved.lineCount, savedLineCount <= Layout.compactLineLimit {
-            return compactHeight(for: savedLineCount)
-        }
         if saved.lineCount == nil, saved.height > Double(ProgressPanelAppearance.defaultHeight + 80) {
             return ProgressPanelAppearance.defaultHeight
         }

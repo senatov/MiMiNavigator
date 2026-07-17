@@ -19,16 +19,17 @@ extension ProgressPanel: NSWindowDelegate {
 
     nonisolated func windowDidResize(_ notification: Notification) {
         MainActor.assumeIsolated {
-            guard panel != nil else { return }
+            guard panel != nil, !isApplyingProgrammaticFrame else { return }
             registerUserInteraction(source: "resize")
-            persistFrameForCurrentOperation()
+            scheduleFramePersistence()
         }
     }
 
     nonisolated func windowDidMove(_ notification: Notification) {
         MainActor.assumeIsolated {
+            guard !isApplyingProgrammaticFrame else { return }
             registerUserInteraction(source: "move")
-            persistFrameForCurrentOperation()
+            scheduleFramePersistence()
         }
     }
 
