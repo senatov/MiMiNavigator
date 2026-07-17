@@ -77,9 +77,11 @@ extension ProgressPanel {
         iconView?.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
         titleLabel?.stringValue = title
         statusLabel?.stringValue = status
-        progressIndicator?.stopAnimation(nil)
-        progressIndicator?.isIndeterminate = false
-        progressIndicator?.doubleValue = 0
+        progressIndicator?.stopAnimating()
+        progressStartedAt = nil
+        lastProgressUpdateAt = nil
+        lastProgressFraction = 0
+        smoothedProgressRate = nil
         setProgressVisible(false)
         logTextView?.string = ""
         autoCloseCheckbox?.state = appearance.autoCloseEnabled ? .on : .off

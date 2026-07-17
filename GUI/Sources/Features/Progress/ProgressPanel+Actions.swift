@@ -65,7 +65,7 @@ extension ProgressPanel {
         actionButton?.isEnabled = true
         applyActionButtonStyle(.confirm)
         isFinished = true
-        progressIndicator?.stopAnimation(nil)
+        progressIndicator?.stopAnimating()
         onCancel?()
         log.debug("[ProgressPanel] cancel requested")
     }

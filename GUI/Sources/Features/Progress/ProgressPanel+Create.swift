@@ -94,15 +94,8 @@ extension ProgressPanel {
 
     // MARK: - Add Progress Bar
     func addProgressBar(to containerView: NSView) {
-        let progress = NSProgressIndicator()
+        let progress = ProgressBar3D()
         progress.translatesAutoresizingMaskIntoConstraints = false
-        progress.isIndeterminate = false
-        progress.minValue = 0
-        progress.maxValue = 1
-        progress.doubleValue = 0
-        progress.controlSize = .small
-        progress.style = .bar
-        progress.isDisplayedWhenStopped = false
         containerView.addSubview(progress)
         progressIndicator = progress
     }

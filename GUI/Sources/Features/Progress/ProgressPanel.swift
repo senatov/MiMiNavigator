@@ -24,7 +24,7 @@ final class ProgressPanel: NSObject {
         static let titleSpacing: CGFloat = 8
         static let statusTopSpacing: CGFloat = 6
         static let progressTopSpacing: CGFloat = 8
-        static let progressHeight: CGFloat = 10
+        static let progressHeight: CGFloat = 22
         static let logTopSpacing: CGFloat = 8
         static let buttonBottomInset: CGFloat = 10
         static let logCornerRadius: CGFloat = 6
@@ -46,7 +46,7 @@ final class ProgressPanel: NSObject {
     var iconView: NSImageView?
     var titleLabel: NSTextField?
     var statusLabel: NSTextField?
-    var progressIndicator: NSProgressIndicator?
+    var progressIndicator: ProgressBar3D?
     var progressHeightConstraint: NSLayoutConstraint?
     var logTextView: NSTextView?
     var scrollView: NSScrollView?
@@ -67,6 +67,10 @@ final class ProgressPanel: NSObject {
     var autoCloseTask: Task<Void, Never>?
     var framePersistenceTask: Task<Void, Never>?
     var isApplyingProgrammaticFrame = false
+    var progressStartedAt: Date?
+    var lastProgressUpdateAt: Date?
+    var lastProgressFraction: Double = 0
+    var smoothedProgressRate: Double?
     private override init() { super.init() }
     var appearance: ProgressPanelAppearance { .shared }
 
@@ -184,20 +188,48 @@ final class ProgressPanel: NSObject {
         guard let indicator = progressIndicator else { return }
         setProgressVisible(true)
         if let fraction {
-            indicator.stopAnimation(nil)
-            indicator.isIndeterminate = false
-            indicator.minValue = 0
-            indicator.maxValue = 1
-            indicator.doubleValue = min(max(fraction, 0), 1)
+            let clampedFraction = min(max(fraction, 0), 1)
+            updateProgressRate(fraction: clampedFraction)
+            indicator.setProgress(clampedFraction, detail: progressDetailText(fraction: clampedFraction))
         } else {
-            indicator.isIndeterminate = true
-            indicator.startAnimation(nil)
+            indicator.setIndeterminate()
         }
     }
 
     func hideProgress() {
-        progressIndicator?.stopAnimation(nil)
+        progressIndicator?.stopAnimating()
         setProgressVisible(false)
+    }
+
+    // MARK: - Progress Timing
+    func updateProgressRate(fraction: Double) {
+        let now = Date()
+        if progressStartedAt == nil { progressStartedAt = now }
+        if let lastUpdate = lastProgressUpdateAt {
+            let elapsed = now.timeIntervalSince(lastUpdate)
+            let delta = fraction - lastProgressFraction
+            if elapsed >= 0.05, delta > 0 {
+                let rate = delta / elapsed
+                smoothedProgressRate = smoothedProgressRate.map { $0 * 0.72 + rate * 0.28 } ?? rate
+            }
+        }
+        lastProgressUpdateAt = now
+        lastProgressFraction = fraction
+    }
+
+    func progressDetailText(fraction: Double) -> String {
+        let percentage = Int((fraction * 100).rounded())
+        guard fraction < 1, let startedAt = progressStartedAt, Date().timeIntervalSince(startedAt) >= 1, let rate = smoothedProgressRate, rate > 0.0001 else {
+            return fraction >= 1 ? "100% • Complete" : "\(percentage)%"
+        }
+        let seconds = min((1 - fraction) / rate, 359_999)
+        return "\(percentage)% • ≈ \(formatRemainingTime(seconds)) remaining"
+    }
+
+    func formatRemainingTime(_ seconds: TimeInterval) -> String {
+        if seconds < 60 { return "\(max(1, Int(seconds.rounded()))) sec" }
+        if seconds < 3_600 { return "\(Int(seconds / 60)) min \(Int(seconds) % 60) sec" }
+        return "\(Int(seconds / 3_600)) hr \((Int(seconds) % 3_600) / 60) min"
     }
 
     // MARK: - Update (preferred for live progress)

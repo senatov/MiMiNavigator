@@ -37,11 +37,10 @@ final class FileOpProgress {
     // MARK: - Computed
 
     var fraction: Double {
-        guard totalBytes > 0 else {
-            guard totalFiles > 0 else { return 0 }
-            return Double(processedFiles) / Double(totalFiles)
-        }
-        return Double(processedBytes) / Double(totalBytes)
+        let fileFraction = totalFiles > 0 ? min(Double(processedFiles + skippedFiles) / Double(totalFiles), 1) : 0
+        guard totalBytes > 0 else { return fileFraction }
+        let byteFraction = min(Double(processedBytes) / Double(totalBytes), 1)
+        return byteFraction * 0.7 + fileFraction * 0.3
     }
 
     var statusText: String {
