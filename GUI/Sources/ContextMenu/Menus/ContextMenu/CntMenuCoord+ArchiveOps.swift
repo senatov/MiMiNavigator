@@ -79,25 +79,27 @@ extension CntMenuCoord {
                 }
             }
 
-            // hide progress & refresh both panels
             await MainActor.run {
-                progressPanel.hide()
+                progressPanel.finish(success: true, message: "✅ Packed → \(archiveURL.lastPathComponent)")
             }
             await refreshAfterArchiveOp(appState: appState, destination: destination, archiveURL: archiveURL)
-
         } catch is CancellationError {
             log.info("[Pack] cancelled by user")
-            await MainActor.run { progressPanel.hide() }
-
-        } catch {
-            log.error("[Pack] FAILED — \(error.localizedDescription)")
             await MainActor.run {
-                progressPanel.hide()
-                ErrorAlertService.show(
-                    title: "Archive creation failed",
-                    message: "Could not create '\(fullName)'.\n\nReason: \(error.localizedDescription)",
-                    style: .critical
-                )
+                progressPanel.finish(success: false, message: "⏹ Packing cancelled")
+            }
+        } catch {
+            if progressPanel.isCancelled {
+                log.info("[Pack] cancelled by user — \(error.localizedDescription)")
+                await MainActor.run {
+                    progressPanel.finish(success: false, message: "⏹ Packing cancelled")
+                }
+            } else {
+                log.error("[Pack] FAILED — \(error.localizedDescription)")
+                await MainActor.run {
+                    progressPanel.appendLog("Failed: \(error.localizedDescription)")
+                    progressPanel.finish(success: false, message: "❌ Could not create \(fullName)")
+                }
             }
         }
     }

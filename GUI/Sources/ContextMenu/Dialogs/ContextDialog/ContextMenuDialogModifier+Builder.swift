@@ -170,17 +170,6 @@ extension ContextMenuDialogModifier {
                 )
             case .batchPackConfirmation:
                 EmptyView()
-            case .batchProgress(let state):
-                BatchProgressDialog(
-                    state: state,
-                    onCancel: {
-                        BatchOpsCoord.shared.cancelCurrentOperation()
-                    },
-                    onDismiss: {
-                        coordinator.dismissDialog()
-                        BatchOperationManager.shared.dismissProgressDialog()
-                    }
-                )
             default:
                 EmptyView()
         }

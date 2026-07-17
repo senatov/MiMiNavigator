@@ -31,6 +31,7 @@ extension ProgressPanel {
         addHeader(to: containerView, appearance: a)
         addProgressBar(to: containerView)
         addLogView(to: containerView)
+        addAutoCloseCheckbox(to: containerView)
         addActionButton(to: containerView)
         activateMainConstraints(containerView: containerView)
         self.panel = panel
@@ -127,6 +128,17 @@ extension ProgressPanel {
         self.scrollView = scrollView
         logTextView = textView
         pinLogBackground(logEffectView, to: scrollView)
+    }
+
+    // MARK: - Add Auto Close Checkbox
+    func addAutoCloseCheckbox(to containerView: NSView) {
+        let checkbox = NSButton(checkboxWithTitle: "Close automatically", target: self, action: #selector(autoCloseCheckboxChanged))
+        checkbox.translatesAutoresizingMaskIntoConstraints = false
+        checkbox.controlSize = .small
+        checkbox.state = appearance.autoCloseEnabled ? .on : .off
+        checkbox.setAccessibilityHelp("Automatically close file operation progress and result windows")
+        containerView.addSubview(checkbox)
+        autoCloseCheckbox = checkbox
     }
 
     // MARK: - Add Action Button

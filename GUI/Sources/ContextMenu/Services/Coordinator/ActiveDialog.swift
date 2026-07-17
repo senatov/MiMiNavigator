@@ -29,7 +29,6 @@ enum ActiveDialog: Identifiable {
     case batchMoveConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case batchDeleteConfirmation(files: [CustomFile], sourcePanel: FavPanelSide)
     case batchPackConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
-    case batchProgress(state: BatchOperationState)
 
     var id: String {
         switch self {
@@ -59,8 +58,6 @@ enum ActiveDialog: Identifiable {
                 return "batchDelete"
             case .batchPackConfirmation:
                 return "batchPack"
-            case .batchProgress:
-                return "batchProgress"
         }
     }
 }

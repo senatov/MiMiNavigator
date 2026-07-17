@@ -57,30 +57,6 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - Overlay
-    @ViewBuilder
-    var batchProgressOverlay: some View {
-        if BatchOperationManager.shared.showProgressDialog,
-            let state = BatchOperationManager.shared.currentOperation
-        {
-            ZStack {
-                Color.black.opacity(0.2)
-                    .ignoresSafeArea()
-                BatchProgressDialog(
-                    state: state,
-                    onCancel: {
-                        BatchOperationManager.shared.cancelCurrentOperation()
-                    },
-                    onDismiss: {
-                        BatchOperationManager.shared.dismissProgressDialog()
-                    }
-                )
-            }
-            .transition(.opacity)
-            .animation(.easeOut(duration: 0.15), value: BatchOperationManager.shared.showProgressDialog)
-        }
-    }
-
     // MARK: - App Lifecycle Helpers
     func handleMainWindowAppear() {
         log.debug(#function)

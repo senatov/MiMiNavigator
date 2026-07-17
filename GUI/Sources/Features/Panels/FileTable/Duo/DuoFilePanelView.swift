@@ -57,33 +57,6 @@ struct DuoFilePanelView: View {
             MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
             MiMiDefaults.shared.set(savedLeftPanelRatio(for: newValue, containerWidth: lastContainerWidth), forKey: "leftPanelWidthRatio")
         }
-        .overlay {
-            progressOverlay
-        }
-    }
-
-    @ViewBuilder
-    private var progressOverlay: some View {
-        if BatchOperationManager.shared.showProgressDialog,
-            let state = BatchOperationManager.shared.currentOperation
-        {
-            ZStack {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-
-                BatchProgressDialog(
-                    state: state,
-                    onCancel: {
-                        BatchOpsCoord.shared.cancelCurrentOperation()
-                    },
-                    onDismiss: {
-                        BatchOperationManager.shared.dismissProgressDialog()
-                    }
-                )
-            }
-            .transition(.opacity)
-            .animation(.easeOut(duration: 0.12), value: BatchOperationManager.shared.showProgressDialog)
-        }
     }
 
     private var geometrySection: some View {

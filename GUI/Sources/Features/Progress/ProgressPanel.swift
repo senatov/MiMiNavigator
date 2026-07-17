@@ -33,6 +33,7 @@ final class ProgressPanel: NSObject {
         static let borderWidth: CGFloat = 0.5
         static let buttonMinWidth: CGFloat = 92
         static let buttonHeight: CGFloat = 30
+        static let autoCloseCheckboxSpacing: CGFloat = 12
         static let compactLineLimit = 6
         static let compactExtraHeight: CGFloat = 168
         static let compactHeightPadding: CGFloat = 18
@@ -50,6 +51,7 @@ final class ProgressPanel: NSObject {
     var logTextView: NSTextView?
     var scrollView: NSScrollView?
     var actionButton: NSButton?
+    var autoCloseCheckbox: NSButton?
     var backgroundEffectView: NSVisualEffectView?
     var logBackgroundEffectView: NSVisualEffectView?
     // MARK: - State

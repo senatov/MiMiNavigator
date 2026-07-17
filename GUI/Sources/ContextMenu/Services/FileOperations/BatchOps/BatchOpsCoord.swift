@@ -184,34 +184,21 @@ final class BatchOpsCoord {
         }
 
         let archiveURL = destination.appendingPathComponent("\(archiveName).\(format.fileExtension)")
-
         log.info("[BatchOperationCoordinator] initiatePack: \(files.count) files to \(archiveURL.path)")
-
         Task { @MainActor in
-            await batchManager.packFiles(files, to: archiveURL, format: format, from: sourcePanel, appState: appState)
+            await CntMenuCoord.shared.performPack(
+                files: files,
+                archiveName: archiveName,
+                format: format,
+                destination: destination,
+                appState: appState
+            )
         }
-    }
-
-    // MARK: - Cancel Current Operation
-
-    func cancelCurrentOperation() {
-        batchManager.cancelCurrentOperation()
     }
 
     // MARK: - Dismiss Dialog
 
     func dismissDialog() {
         CntMenuCoord.shared.dismissDialog()
-        batchManager.dismissProgressDialog()
-    }
-
-    // MARK: - Check if operation is in progress
-
-    var isOperationInProgress: Bool {
-        batchManager.currentOperation != nil && !(batchManager.currentOperation?.isCompleted ?? true)
-    }
-
-    var currentOperationState: BatchOperationState? {
-        batchManager.currentOperation
     }
 }

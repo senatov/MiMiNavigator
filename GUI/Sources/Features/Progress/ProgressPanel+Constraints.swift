@@ -36,7 +36,7 @@ extension ProgressPanel {
 
     // MARK: - Main Constraints
     func activateMainConstraints(containerView: NSView) {
-        guard let iconView, let titleLabel, let statusLabel, let progressIndicator, let scrollView, let actionButton else { return }
+        guard let iconView, let titleLabel, let statusLabel, let progressIndicator, let scrollView, let autoCloseCheckbox, let actionButton else { return }
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
             iconView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: Layout.topInset),
@@ -55,6 +55,9 @@ extension ProgressPanel {
             scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
             scrollView.topAnchor.constraint(equalTo: progressIndicator.bottomAnchor, constant: Layout.logTopSpacing),
             scrollView.bottomAnchor.constraint(equalTo: actionButton.topAnchor, constant: -Layout.logTopSpacing),
+            autoCloseCheckbox.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Layout.outerPadding),
+            autoCloseCheckbox.trailingAnchor.constraint(lessThanOrEqualTo: actionButton.leadingAnchor, constant: -Layout.autoCloseCheckboxSpacing),
+            autoCloseCheckbox.centerYAnchor.constraint(equalTo: actionButton.centerYAnchor),
             actionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -Layout.outerPadding),
             actionButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -Layout.buttonBottomInset),
             actionButton.widthAnchor.constraint(greaterThanOrEqualToConstant: Layout.buttonMinWidth),

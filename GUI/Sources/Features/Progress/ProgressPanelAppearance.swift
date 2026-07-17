@@ -38,6 +38,7 @@ final class ProgressPanelAppearance {
     static let defaultMinWidth: CGFloat = 380
     static let defaultMinHeight: CGFloat = 168
     static let defaultAutoCloseSeconds = 2.0
+    static let defaultAutoCloseEnabled = true
 
     // MARK: - Published properties
 
@@ -51,6 +52,7 @@ final class ProgressPanelAppearance {
     var panelWidth: CGFloat         = defaultWidth
     var panelHeight: CGFloat        = defaultHeight
     var autoCloseSeconds: Double    = defaultAutoCloseSeconds
+    var autoCloseEnabled: Bool      = defaultAutoCloseEnabled
     var framesByOperation: [String: ProgressPanelFrame] = [:]
 
     // MARK: - Computed NSColor/NSFont accessors
@@ -87,6 +89,7 @@ final class ProgressPanelAppearance {
         var panelWidth: Double?
         var panelHeight: Double?
         var autoCloseSeconds: Double?
+        var autoCloseEnabled: Bool?
         var framesByOperation: [String: ProgressPanelFrame]?
     }
 
@@ -102,6 +105,7 @@ final class ProgressPanelAppearance {
             panelWidth: Double(panelWidth),
             panelHeight: Double(panelHeight),
             autoCloseSeconds: autoCloseSeconds,
+            autoCloseEnabled: autoCloseEnabled,
             framesByOperation: framesByOperation
         )
         do {
@@ -135,6 +139,7 @@ final class ProgressPanelAppearance {
             if let v = d.panelWidth      { panelWidth = CGFloat(v) }
             if let v = d.panelHeight     { panelHeight = CGFloat(v) }
             if let v = d.autoCloseSeconds { autoCloseSeconds = max(0, v) }
+            if let v = d.autoCloseEnabled { autoCloseEnabled = v }
             if let v = d.framesByOperation { framesByOperation = v }
             log.debug("[ProgressAppearance] loaded: \(Int(panelWidth))x\(Int(panelHeight)) font=\(logFontName)@\(logFontSize)")
         } catch {
@@ -157,6 +162,7 @@ final class ProgressPanelAppearance {
         panelWidth = Self.defaultWidth
         panelHeight = Self.defaultHeight
         autoCloseSeconds = Self.defaultAutoCloseSeconds
+        autoCloseEnabled = Self.defaultAutoCloseEnabled
         framesByOperation = [:]
         save()
     }

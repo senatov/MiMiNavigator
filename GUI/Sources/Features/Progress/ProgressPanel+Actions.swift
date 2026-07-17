@@ -35,6 +35,20 @@ extension ProgressPanel {
         copyAllToClipboard()
     }
 
+    // MARK: - Auto Close Checkbox
+    @objc func autoCloseCheckboxChanged() {
+        let isEnabled = autoCloseCheckbox?.state == .on
+        appearance.autoCloseEnabled = isEnabled
+        appearance.save()
+        if isEnabled, isFinished {
+            autoCloseSuppressedByUser = false
+            startAutoCloseTimerIfNeeded()
+        } else {
+            cancelAutoCloseTimer()
+        }
+        log.debug("[ProgressPanel] auto-close preference enabled=\(isEnabled)")
+    }
+
     // MARK: - Action Button
     @objc func actionButtonTapped() {
         lastActionButtonActionTime = Date().timeIntervalSince1970

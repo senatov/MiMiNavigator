@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 05.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Thin coordinator — delegates copy/move/delete to FileOpsEngine, keeps pack logic
+// Description: Thin coordinator that delegates copy, move, and delete to FileOpsEngine.
 
 import Foundation
 import FileModelKit
@@ -15,10 +15,6 @@ import FileModelKit
 final class BatchOperationManager {
 
     static let shared = BatchOperationManager()
-
-    // MARK: - State (kept for BatchProgressDialog compatibility)
-    var currentOperation: BatchOperationState?
-    var showProgressDialog: Bool = false
 
     private let engine = FileOpsEngine.shared
 
@@ -97,64 +93,6 @@ final class BatchOperationManager {
         await appState.scanner.endBatchMutation()
         await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
         await refreshOpposite(appState: appState, sourcePanel: sourcePanel)
-    }
-
-    // MARK: - Pack Files (archive — stays here, not in FileOpsEngine)
-
-    func packFiles(
-        _ files: [CustomFile],
-        to archiveURL: URL,
-        format: ArchiveFormat,
-        from sourcePanel: FavPanelSide,
-        appState: AppState
-    ) async {
-        log.info("[BatchOpMgr] pack \(files.count) → \(archiveURL.path)")
-
-        let state = BatchOperationState(
-            operationType: .pack,
-            sourcePanel: sourcePanel,
-            destinationURL: archiveURL.deletingLastPathComponent(),
-            files: files
-        )
-        currentOperation = state
-        showProgressDialog = true
-        state.updateProgress(fileName: archiveURL.lastPathComponent, fileSize: state.totalBytes)
-
-        var hasErrors = false
-        do {
-            let destDir = archiveURL.deletingLastPathComponent()
-            _ = try await ArchiveService.shared.createArchive(
-                from: files.map(\.urlValue),
-                to: destDir,
-                archiveName: archiveURL.deletingPathExtension().lastPathComponent,
-                format: format
-            )
-            state.processedFiles = files.count
-        } catch {
-            hasErrors = true
-            state.fileCompleted(success: false, error: error.localizedDescription)
-        }
-
-        state.complete()
-        showProgressDialog = false
-        currentOperation = nil
-
-        if !hasErrors && !state.isCancelled {
-            appState.clearMarksAfterOperation(on: sourcePanel)
-        }
-        await refreshPanels(appState: appState)
-    }
-
-    // MARK: - Cancel
-
-    func cancelCurrentOperation() {
-        currentOperation?.cancel()
-        log.info("[BatchOpMgr] cancelled")
-    }
-
-    func dismissProgressDialog() {
-        showProgressDialog = false
-        currentOperation = nil
     }
 
     // MARK: - Refresh Helpers

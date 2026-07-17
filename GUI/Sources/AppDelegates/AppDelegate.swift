@@ -238,15 +238,11 @@ import LogKit
             await scanner.stopMonitoring()
             log.info("[AppDelegate] cleanup step scanner stop done")
         }
-        // 3. Stop SpinnerWatchdog poll timer
-        log.info("[AppDelegate] cleanup step spinner watchdog stop begin")
-        SpinnerWatchdog.shared.stop()
-        log.info("[AppDelegate] cleanup step spinner watchdog stop done")
-        // 4. Cleanup extracted archive temp dirs — actor hop, fast
+        // 3. Cleanup extracted archive temp dirs — actor hop, fast
         log.info("[AppDelegate] cleanup step archive cleanup begin")
         await ArchiveManager.shared.cleanup()
         log.info("[AppDelegate] cleanup step archive cleanup done")
-        // 5. Release security-scoped bookmarks — actor hop, fast
+        // 4. Release security-scoped bookmarks — actor hop, fast
         log.info("[AppDelegate] cleanup step bookmarks stop begin")
         await BookmarkStore.shared.stopAll()
         log.info("[AppDelegate] cleanup step bookmarks stop done")

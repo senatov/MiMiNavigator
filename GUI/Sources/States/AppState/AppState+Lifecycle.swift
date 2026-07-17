@@ -15,12 +15,6 @@
 
         private static var didInitialize = false
 
-        private func setupSpinnerWatchdog() {
-            let watchdog = SpinnerWatchdog.shared
-            watchdog.addSource(name: "BatchOperation") { BatchOperationManager.shared.showProgressDialog }
-            watchdog.start()
-        }
-
         func initialize() {
             guard !Self.didInitialize else {
                 log.debug("[AppState] initialize() skipped — already done")
@@ -29,7 +23,6 @@
             Self.didInitialize = true
             log.info("[AppState] initialize() starting")
 
-            setupSpinnerWatchdog()
             StatePersistence.restoreTabs(into: self)
             syncPanelPathsToRestoredTabs()
             StatePersistence.restoreSorting(into: self)

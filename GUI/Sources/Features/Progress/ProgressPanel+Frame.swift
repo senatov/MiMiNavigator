@@ -71,6 +71,10 @@ extension ProgressPanel {
     // MARK: - Auto Close
     func startAutoCloseTimerIfNeeded(seconds overrideSeconds: Double? = nil) {
         guard isFinished else { return }
+        guard appearance.autoCloseEnabled else {
+            log.debug("[ProgressPanel] auto-close skipped: preference disabled")
+            return
+        }
         guard !autoCloseSuppressedByUser else {
             log.debug("[ProgressPanel] auto-close skipped: user interacted")
             return

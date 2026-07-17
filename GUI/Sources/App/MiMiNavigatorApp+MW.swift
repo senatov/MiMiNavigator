@@ -55,9 +55,6 @@ extension MiMiNavigatorApp {
             .sheet(isPresented: $showFullDiskOnboarding) {
                 FullDiskAccessOnboarding(isPresented: $showFullDiskOnboarding)
             }
-
-            // MARK: - Overlay
-            .overlay { batchProgressOverlay }
     }
     
     // MARK: - Bindings
