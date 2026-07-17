@@ -37,12 +37,12 @@ struct TabItemView: View {
     var body: some View {
         tabContent
             .frame(height: tabHeight)
-            .background(tabFill)
-            .clipShape(tabShape)
-            .overlay(tabGlassHighlight)
+            .background { tabFill.clipShape(tabShape) }
+            .overlay(tabInnerHighlight)
             .overlay(tabBorder)
-            .shadow(color: tabOuterShadowColor, radius: isActive ? 2.0 : 1.0, x: 0, y: -0.6)
-            .shadow(color: tabLowerShadowColor, radius: isActive ? 4.5 : 2.4, x: 0, y: isActive ? 3.0 : 1.8)
+            .contentShape(tabShape)
+            .compositingGroup()
+            .shadow(color: tabShadowColor, radius: isActive ? 2.2 : 1.2, x: 0, y: isActive ? 1.2 : 0.7)
             .background(frameReader)
             .onTapGesture { onSelect() }
             .onHover(perform: handleHover)
@@ -164,41 +164,34 @@ struct TabItemView: View {
             : Color(nsColor: .darkGray)
     }
 
-    private var tabOuterShadowColor: Color {
-        isActive
-            ? Color.white.opacity(colorScheme == .dark ? 0.04 : 0.44)
-            : Color.white.opacity(colorScheme == .dark ? 0.02 : 0.20)
-    }
-
-    private var tabLowerShadowColor: Color {
-        Color.black.opacity(colorScheme == .dark ? 0.38 : isActive ? 0.26 : 0.17)
+    private var tabShadowColor: Color {
+        Color.black.opacity(colorScheme == .dark ? isActive ? 0.32 : 0.20 : isActive ? 0.18 : 0.10)
     }
 
     private var tabBorder: some View {
         tabShape
-            .stroke(
+            .strokeBorder(
                 isActive
-                    ? activeBorder.opacity(isPanelFocused ? 0.86 : 0.66)
-                    : inactiveBorder.opacity(isHovered ? 0.68 : 0.52),
-                lineWidth: isActive ? 1.0 : 0.9
+                    ? activeBorder.opacity(isPanelFocused ? 0.82 : 0.62)
+                    : inactiveBorder.opacity(isHovered ? 0.56 : 0.38),
+                lineWidth: isActive ? 0.9 : 0.75
             )
     }
 
-    private var tabGlassHighlight: some View {
-        tabShape
-            .stroke(
-                LinearGradient(
-                    stops: [
-                        .init(color: Color.white.opacity(colorScheme == .dark ? 0.12 : 0.72), location: 0),
-                        .init(color: Color.white.opacity(0.08), location: 0.48),
-                        .init(color: activeNavy.opacity(colorScheme == .dark ? 0.20 : 0.10), location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ),
-                lineWidth: 0.8
+    private var tabInnerHighlight: some View {
+        tabShape.fill(
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(colorScheme == .dark ? 0.10 : isActive ? 0.52 : 0.30), location: 0),
+                    .init(color: Color.white.opacity(colorScheme == .dark ? 0.025 : 0.07), location: 0.38),
+                    .init(color: Color.clear, location: 0.68),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .padding(0.8)
+        )
+        .padding(1)
+        .allowsHitTesting(false)
     }
 
     private var activeNavy: Color {
@@ -245,11 +238,11 @@ struct TabItemView: View {
         }
     }
 
-    private var tabShape: some Shape {
+    private var tabShape: UnevenRoundedRectangle {
         UnevenRoundedRectangle(
             topLeadingRadius: cornerRadius,
-            bottomLeadingRadius: 4,
-            bottomTrailingRadius: 4,
+            bottomLeadingRadius: 5.5,
+            bottomTrailingRadius: 5.5,
             topTrailingRadius: cornerRadius,
             style: .continuous
         )

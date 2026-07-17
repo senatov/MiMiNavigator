@@ -35,13 +35,13 @@ struct DuoPanelTabsSection: View {
         .background(Color(nsColor: .windowBackgroundColor).opacity(0.92))
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
+                .fill(Color(nsColor: .separatorColor).opacity(0.72))
+                .frame(height: 0.5)
         }
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
+                .fill(Color(nsColor: .separatorColor).opacity(0.58))
+                .frame(height: 0.5)
         }
     }
 
@@ -49,7 +49,7 @@ struct DuoPanelTabsSection: View {
 
     private var dividerSpacer: some View {
         Rectangle()
-            .fill(Color(nsColor: .separatorColor).opacity(0.35))
+            .fill(Color(nsColor: .separatorColor).opacity(0.24))
             .frame(width: PanelDividerMetrics.hitAreaWidth, height: Self.height)
     }
 }
