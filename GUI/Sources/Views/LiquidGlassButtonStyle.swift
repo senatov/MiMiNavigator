@@ -87,16 +87,8 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                 )
                 .opacity(isHighlighted ? 0.75 : 0.5)
             )
-            // ── layer 6: inner shadow for depth ──
-            .overlay(
-                PebbleShape()
-                    .stroke(Color.black.opacity(0.20), lineWidth: 1.5)
-                    .blur(radius: 1.5)
-                    .clipShape(PebbleShape())
-            )
-            // ── drop shadows for 3D convexity ──
-            .shadow(color: .black.opacity(0.28), radius: 2, x: 0.8, y: 2)
-            .shadow(color: .white.opacity(0.45), radius: 1, x: -0.4, y: -0.6)
+            .compositingGroup()
+            .shadow(color: .black.opacity(0.22), radius: 2, x: 0.6, y: 1.4)
             // ── press + highlight animation ──
             .scaleEffect(configuration.isPressed ? 0.90 : 1)
             .animation(.bouncy, value: configuration.isPressed)

@@ -21,15 +21,24 @@ struct ParentStripButtonStyle: ButtonStyle {
             .background(buttonBackground)
             .glassEffect(.regular.tint(glassTint))
             .overlay(buttonHighlight)
-            .overlay(edgeGlow(isPressed: isPressed))
             .overlay(specularGlint(isPressed: isPressed))
             .clipShape(buttonShape)
             .overlay(
                 buttonShape
-                    .stroke(Color.white.opacity(edgeOpacity(isPressed: isPressed)), lineWidth: isLifted ? 1.0 : 0.8)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(edgeOpacity(isPressed: isPressed)),
+                                Color.black.opacity(isPressed ? 0.18 : 0.10)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: isLifted ? 0.9 : 0.75
+                    )
             )
+            .compositingGroup()
             .shadow(color: .black.opacity(shadowOpacity(isPressed: isPressed)), radius: shadowRadius(isPressed: isPressed), x: 0.8, y: shadowY(isPressed: isPressed))
-            .shadow(color: .white.opacity(isPressed ? 0.18 : 0.46), radius: isPressed ? 0.5 : 1.2, x: -0.4, y: isPressed ? -0.2 : -0.8)
             .scaleEffect(isPressed ? 0.982 : keyboardPulse ? 1.016 : isHighlighted ? 1.006 : 1)
             .offset(y: isPressed ? 0.8 : isLifted ? -0.6 : 0)
             .saturation(isLifted ? 1.12 : 1)
@@ -71,22 +80,6 @@ struct ParentStripButtonStyle: ButtonStyle {
             endPoint: .bottom
         )
         .blendMode(.overlay)
-    }
-    private func edgeGlow(isPressed: Bool) -> some View {
-        buttonShape
-            .stroke(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(isPressed ? 0.18 : isHighlighted ? 0.82 : 0.48),
-                        Color.white.opacity(0.06),
-                        Color.black.opacity(isPressed ? 0.22 : 0.10)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                lineWidth: isHighlighted ? 1.2 : 0.8
-            )
-            .blendMode(.screen)
     }
     private func specularGlint(isPressed: Bool) -> some View {
         RadialGradient(

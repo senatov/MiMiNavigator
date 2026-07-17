@@ -114,8 +114,8 @@ struct MediaInfoPanelView: View {
                                 endPoint: .bottom
                             )
                         )
+                        .compositingGroup()
                         .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1.5)
-                        .shadow(color: .white.opacity(0.6), radius: 0.5, x: 0, y: -0.5)
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)

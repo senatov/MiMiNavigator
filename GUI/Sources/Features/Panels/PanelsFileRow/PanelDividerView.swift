@@ -272,27 +272,19 @@ struct PanelDividerView: View {
             .fill(.ultraThinMaterial)
             .frame(width: PanelDividerMetrics.grooveWidth, height: height)
             .overlay(
-                RoundedRectangle(cornerRadius: 3)
-                    .stroke(Color.white.opacity(0.25), lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: -0.5, y: -0.5)
-                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .bottom))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 3)
-                    .stroke(Color.black.opacity(0.4), lineWidth: 1)
-                    .blur(radius: 0.5)
-                    .offset(x: 0.5, y: 0.5)
-                    .mask(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
-            )
-            .overlay(
                 Rectangle()
-                    .fill(Color.black.opacity(0.25))
-                    .frame(width: 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.16), Color.black.opacity(0.24)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 0.5)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 3)
-                    .stroke(PanelDividerMetrics.Colors.grooveBorder, lineWidth: 0.5)
+                    .strokeBorder(PanelDividerMetrics.Colors.grooveBorder.opacity(0.76), lineWidth: 0.5)
             )
             .allowsHitTesting(false)
     }
@@ -315,7 +307,7 @@ struct PanelDividerView: View {
             .shadow(color: Color.black.opacity(0.18), radius: 3, x: 0.5, y: 0)
             .overlay(
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .stroke(PanelDividerMetrics.Colors.activeLineEdge, lineWidth: 0.5)
+                    .strokeBorder(PanelDividerMetrics.Colors.activeLineEdge, lineWidth: 0.5)
             )
             .allowsHitTesting(false)
     }
@@ -389,28 +381,7 @@ struct PanelDividerView: View {
             isHighlighted
                 ? PanelDividerMetrics.Colors.activeLineEdge.opacity(0.95)
                 : PanelDividerMetrics.Colors.handleBorder,
-            lineWidth: isHighlighted ? 1.0 : 0.8
-        )
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: PanelDividerMetrics.handleCornerRadius,
-                style: .continuous
-            )
-            .stroke(Color.white.opacity(0.3), lineWidth: 0.6)
-            .blur(radius: 0.6)
-            .mask(
-                RoundedRectangle(
-                    cornerRadius: PanelDividerMetrics.handleCornerRadius,
-                    style: .continuous
-                )
-                .fill(
-                    LinearGradient(
-                        colors: [.white, .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            )
+            lineWidth: isHighlighted ? 0.9 : 0.7
         )
     }
 }

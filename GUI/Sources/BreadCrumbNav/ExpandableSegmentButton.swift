@@ -87,9 +87,8 @@ struct ExpandableSegmentButton: View {
                 .fill(lensFill)
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous))
                 .overlay(lensHighlight)
-                .overlay(lensInnerShadow)
+                .compositingGroup()
                 .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.24, blue: 0.38, alpha: 0.34)), radius: 10, x: 0, y: 5)
-                .shadow(color: Color(#colorLiteral(red: 0.84, green: 0.94, blue: 1.0, alpha: 0.34)), radius: 3, x: 0, y: -1)
                 .zIndex(1_000)
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
         }
@@ -117,36 +116,18 @@ struct ExpandableSegmentButton: View {
 
     private var lensHighlight: some View {
         RoundedRectangle(cornerRadius: lensCornerRadius - 2, style: .continuous)
-            .stroke(
+            .fill(
                 LinearGradient(
                     colors: [
-                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.86)),
-                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.28)),
-                        Color(#colorLiteral(red: 0.25, green: 0.42, blue: 0.62, alpha: 0.24))
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ),
-                lineWidth: 1
-            )
-            .padding(1)
-    }
-
-    private var lensInnerShadow: some View {
-        RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
-            .stroke(Color(#colorLiteral(red: 0.09, green: 0.22, blue: 0.36, alpha: 0.22)), lineWidth: 2)
-            .blur(radius: 1.5)
-            .offset(y: 1)
-            .mask(
-                LinearGradient(
-                    colors: [
-                        Color(#colorLiteral(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0)),
-                        Color(#colorLiteral(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0))
+                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.42)),
+                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.10)),
+                        Color.clear
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             )
+            .padding(1)
     }
 
     private var lensStroke: LinearGradient {

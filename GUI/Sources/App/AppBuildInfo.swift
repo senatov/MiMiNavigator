@@ -123,7 +123,7 @@ private struct DevBuildCatMedallion: View {
                 .frame(width: 18, height: 0.8)
                 .padding(.top, 1.5)
         }
-        .shadow(color: Color.blue.opacity(0.08), radius: 3, x: 0, y: 1)
+        .compositingGroup()
         .shadow(color: Color.black.opacity(0.18), radius: 2.25, x: 0, y: 1.75)
     }
 }

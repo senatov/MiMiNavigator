@@ -111,10 +111,10 @@ struct ThumbnailSizeSlider: View {
                         )
                         .overlay(
                             Circle()
-                                .stroke(Color(nsColor: .separatorColor).opacity(0.7), lineWidth: 0.75)
+                                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.75)
                         )
+                        .compositingGroup()
                         .shadow(color: .black.opacity(0.22), radius: 2, x: 0, y: 1)
-                        .shadow(color: .white.opacity(0.6), radius: 0.5, x: 0, y: -0.5)
                         .frame(width: knobDiameter, height: knobDiameter)
                         .offset(x: knobX - knobDiameter / 2)
                 }

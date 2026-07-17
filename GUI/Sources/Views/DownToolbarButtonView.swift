@@ -87,10 +87,6 @@ private struct DownToolbarGlassButtonBody: View {
         isPressed ? 4 : (isHovered ? 5 : 3)
     }
 
-    private var highlightOpacity: Double {
-        isPressed ? 0.24 : (isHovered ? 0.42 : 0.32)
-    }
-
     private var borderOpacity: Double {
         isPressed ? 0.28 : (isHovered ? 0.38 : 0.30)
     }
@@ -114,11 +110,10 @@ private struct DownToolbarGlassButtonBody: View {
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background { backgroundLayer }
-            .overlay { highlightBorder }
-            .overlay { outerBorder }
+            .overlay { buttonBorder }
             .overlay(alignment: .top) { topHighlight }
             .overlay(alignment: .bottom) { bottomEdge }
-            .shadow(color: Color.white.opacity(isHovered ? 0.26 : 0.16), radius: 1.5, y: -1)
+            .compositingGroup()
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
             .animation(.spring(response: 0.20, dampingFraction: 0.70), value: configuration.isPressed)
@@ -177,15 +172,19 @@ private struct DownToolbarGlassButtonBody: View {
         }
     }
 
-    private var highlightBorder: some View {
+    private var buttonBorder: some View {
         RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .stroke(Color.white.opacity(highlightOpacity), lineWidth: 1)
-    }
-
-    private var outerBorder: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .stroke(Color(#colorLiteral(red: 0.31, green: 0.42, blue: 0.57, alpha: 1)).opacity(borderOpacity), lineWidth: 1)
-            .padding(0.5)
+            .strokeBorder(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(isHovered ? 0.40 : 0.28),
+                        Color(#colorLiteral(red: 0.31, green: 0.42, blue: 0.57, alpha: 1)).opacity(borderOpacity)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ),
+                lineWidth: 0.85
+            )
     }
 
     private var topHighlight: some View {

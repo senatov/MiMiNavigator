@@ -32,13 +32,8 @@ struct DuoPanelToolbarBackground: View {
             .overlay(moireOverlay)
             .overlay(toolbarHighlight)
             .overlay(toolbarBorder)
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(Color.white.opacity(0.38 + moireIntensity * 0.28))
-                    .frame(height: 1)
-            }
-            .shadow(color: Color.white.opacity(0.24), radius: 1, y: -1)
-            .shadow(color: Color.black.opacity(0.12), radius: 4, y: 1)
+            .compositingGroup()
+            .shadow(color: Color.black.opacity(0.10), radius: 2.5, y: 1)
     }
 
     private var toolbarFill: some ShapeStyle {
@@ -76,23 +71,22 @@ struct DuoPanelToolbarBackground: View {
 
     private var toolbarHighlight: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .stroke(
+            .fill(
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.48 + moireIntensity * 0.20),
-                        Color.white.opacity(0.08),
-                        Color.black.opacity(0.10 + moireIntensity * 0.10)
+                        Color.white.opacity(0.34 + moireIntensity * 0.16),
+                        Color.white.opacity(0.04),
+                        Color.clear
                     ],
                     startPoint: .top,
                     endPoint: .bottom
-                ),
-                lineWidth: 0.9
+                )
             )
-            .padding(0.8)
+            .padding(1)
     }
 
     private var toolbarBorder: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .stroke(Color.black.opacity(0.22), lineWidth: 0.8)
+            .strokeBorder(Color.black.opacity(0.18), lineWidth: 0.75)
     }
 }
