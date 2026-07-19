@@ -11,7 +11,9 @@ import Darwin.Mach
 @MainActor final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var animationTimer: Timer?
-    private var animationPhase = false
+    private var animationPhase: Double = 0
+    private var animationTickCount = 0
+    private var currentMemoryLabel = "0M"
     private let iconCanvasSize = NSSize(width: 36, height: 24)
 
     // MARK: - Install
@@ -33,6 +35,7 @@ import Darwin.Mach
         item.menu = nil
         item.isVisible = true
         statusItem = item
+        refreshMemoryLabel()
         updateStatusImage()
         startAnimation()
         log.info("[MenuBar] animated memory status item installed visible=\(item.isVisible)")
@@ -58,13 +61,15 @@ import Darwin.Mach
     // MARK: - Animation
     private func startAnimation() {
         animationTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.8, target: self, selector: #selector(animationTick), userInfo: nil, repeats: true)
+        let timer = Timer(timeInterval: 0.1, target: self, selector: #selector(animationTick), userInfo: nil, repeats: true)
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer
     }
 
     @objc private func animationTick() {
-        animationPhase.toggle()
+        animationPhase = (animationPhase + 0.08).truncatingRemainder(dividingBy: 1)
+        animationTickCount += 1
+        if animationTickCount.isMultiple(of: 20) { refreshMemoryLabel() }
         updateStatusImage()
     }
 
@@ -73,35 +78,50 @@ import Darwin.Mach
         guard let button = statusItem?.button else { return }
         let image = NSImage(size: iconCanvasSize)
         image.lockFocus()
-        let iconSize: CGFloat = animationPhase ? 22.5 : 21.5
-        let iconRect = NSRect(x: 1.5, y: animationPhase ? 0.8 : 0.2, width: iconSize, height: iconSize)
+        let iconRect = NSRect(x: 1.5, y: 0.5, width: 22, height: 22)
         NSApp.applicationIconImage.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
-        drawMemoryLabel(memoryLabel, in: NSRect(x: 18, y: 3, width: 17, height: 10))
+        drawActivityPulse()
+        drawMemoryLabel(currentMemoryLabel, in: NSRect(x: 18, y: 3, width: 17, height: 10))
         image.unlockFocus()
         image.isTemplate = false
         button.image = image
-        button.toolTip = "MiMiNavigator — \(memoryLabel) memory"
+        button.toolTip = "MiMiNavigator — \(currentMemoryLabel) memory"
+    }
+
+    private func drawActivityPulse() {
+        let intensity = 0.42 + 0.30 * (sin(animationPhase * .pi * 2) + 1) / 2
+        let dotRect = NSRect(x: 20, y: 18.5, width: 3.5, height: 3.5)
+        NSColor.controlAccentColor.withAlphaComponent(intensity).setFill()
+        NSBezierPath(ovalIn: dotRect).fill()
+        NSColor.white.withAlphaComponent(0.72).setStroke()
+        let border = NSBezierPath(ovalIn: dotRect.insetBy(dx: 0.35, dy: 0.35))
+        border.lineWidth = 0.5
+        border.stroke()
     }
 
     private func drawMemoryLabel(_ text: String, in rect: NSRect) {
-        let background = NSBezierPath(roundedRect: rect, xRadius: 3, yRadius: 3)
-        NSColor.black.withAlphaComponent(0.78).setFill()
-        background.fill()
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
+        let shadow = NSShadow()
+        shadow.shadowColor = (isDark ? NSColor.black : NSColor.white).withAlphaComponent(0.92)
+        shadow.shadowBlurRadius = 1
+        shadow.shadowOffset = .zero
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 6.5, weight: .bold),
-            .foregroundColor: NSColor.white,
-            .paragraphStyle: paragraph
+            .foregroundColor: isDark ? NSColor.white : NSColor.black,
+            .paragraphStyle: paragraph,
+            .shadow: shadow
         ]
         text.draw(in: rect.offsetBy(dx: 0, dy: 1.2), withAttributes: attributes)
     }
 
-    private var memoryLabel: String {
+    private func refreshMemoryLabel() {
         let bytes = residentMemoryBytes
         let megabytes = bytes / 1_048_576
-        if megabytes < 1_000 { return "\(megabytes)M" }
-        return String(format: "%.1fG", Double(bytes) / 1_073_741_824)
+        currentMemoryLabel = megabytes < 1_000
+            ? "\(megabytes)M"
+            : String(format: "%.1fG", Double(bytes) / 1_073_741_824)
     }
 
     private var residentMemoryBytes: UInt64 {
