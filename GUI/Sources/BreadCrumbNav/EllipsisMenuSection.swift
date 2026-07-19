@@ -15,6 +15,12 @@ struct EllipsisMenuSection: View {
     @State private var isHovering = false
     @Environment(AppState.self) var appState
 
+    private enum Metrics {
+        static let buttonSize: CGFloat = 22
+        static let trailingInset: CGFloat = 4
+        static let iconSize: CGFloat = 13
+    }
+
     var body: some View {
         Menu {
             Button("Get Info", action: handleGetInfo)
@@ -23,13 +29,20 @@ struct EllipsisMenuSection: View {
             Button("Copy Path", action: handleCopyPath)
         } label: {
             Image(systemName: "ellipsis")
+                .font(.system(size: Metrics.iconSize, weight: .medium))
                 .rotationEffect(.degrees(90))
+                .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
+                .contentShape(Rectangle())
                 .symbolEffect(.scale.up, isActive: isHovering)
                 .onHover { hovering in
                     isHovering = hovering
                 }
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
+        .padding(.trailing, Metrics.trailingInset)
         .keyboardFocusable()
         .help("More options...")
     }

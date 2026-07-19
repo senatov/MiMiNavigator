@@ -24,7 +24,15 @@ struct ParentNavigationStripPanel: View {
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
 
+    private enum Metrics {
+        static let height: CGFloat = 25
+        static let utilitySpacing: CGFloat = 3
+        static let utilityWidth: CGFloat = 66
 
+        static var reservedTrailingWidth: CGFloat {
+            utilityWidth + utilitySpacing
+        }
+    }
     private var currentPath: String {
         appState.path(for: panelSide)
     }
@@ -65,6 +73,25 @@ struct ParentNavigationStripPanel: View {
 
 
     var body: some View {
+        ZStack(alignment: .trailing) {
+            parentNavigationArea
+                .padding(.trailing, Metrics.reservedTrailingWidth)
+                .zIndex(1)
+            utilityButtons
+                .zIndex(2)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: Metrics.height)
+        .background(Color.white)
+        .overlay(alignment: .bottom) {
+            Color(nsColor: .separatorColor)
+                .frame(height: 1)
+        }
+        .zIndex(10)
+    }
+
+    @ViewBuilder
+    private var parentNavigationArea: some View {
         if shouldShow {
             ParentEntryStripView(
                 file: parentFile,
@@ -73,7 +100,20 @@ struct ParentNavigationStripPanel: View {
                 onSelect: onSelect,
                 onActivate: activateParent
             )
+        } else {
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: Metrics.height)
         }
+    }
+
+    private var utilityButtons: some View {
+        BreadCrumbToolBar(selectedSide: panelSide, content: .utilities)
+            .frame(
+                width: Metrics.utilityWidth,
+                height: Metrics.height,
+                alignment: .leading
+            )
     }
 
     // MARK: - Activation

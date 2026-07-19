@@ -30,7 +30,6 @@ struct BreadCrumbPathControl: View {
         HStack(spacing: 2) {
             breadcrumbMenuSection
             breadcrumbPathSection
-            breadcrumbUtilitySection
             ellipsisSection
         }
         .frame(height: 30)
@@ -51,10 +50,6 @@ struct BreadCrumbPathControl: View {
             .environment(appState)
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
-    }
-
-    private var breadcrumbUtilitySection: some View {
-        BreadCrumbToolBar(selectedSide: panelSide, content: .utilities)
     }
 
     private var ellipsisSection: some View {

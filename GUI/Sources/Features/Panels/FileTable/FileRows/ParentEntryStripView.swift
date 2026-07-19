@@ -29,7 +29,6 @@ struct ParentEntryStripView: View {
             : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
     private static let activeContentColor = Color(#colorLiteral(red: 0.02, green: 0.16, blue: 0.72, alpha: 1))
-    private let borderColor = Color(#colorLiteral(red: 0.55, green: 0.55, blue: 0.58, alpha: 1))
     private var isActive: Bool { isSelected || isHovering }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
     private var parentName: String { parentURL.path == "/" ? "/Root" : parentURL.path }
@@ -38,9 +37,6 @@ struct ParentEntryStripView: View {
         static let stripHeight: CGFloat = 25
         static let buttonInset: CGFloat = 1
         static let buttonHeight: CGFloat = 24
-        static let borderHeight: CGFloat = 1.5
-        static let shadowRadius: CGFloat = 3.0
-        static let shadowY: CGFloat = -2.0
     }
     // MARK: - Body
     var body: some View {
@@ -69,7 +65,6 @@ struct ParentEntryStripView: View {
         ZStack(alignment: .leading) {
             Color.white
             fullWidthButton(geo: geo)
-            bottomBorder
         }
     }
     // MARK: - Full Width Button
@@ -110,15 +105,6 @@ struct ParentEntryStripView: View {
             .foregroundStyle(textColor)
             .lineLimit(1)
             .truncationMode(.middle)
-    }
-    // MARK: - Bottom Border
-    private var bottomBorder: some View {
-        VStack {
-            Spacer()
-            borderColor
-                .frame(height: UI.borderHeight)
-                .shadow(color: .black.opacity(0.30), radius: UI.shadowRadius, x: 0, y: UI.shadowY)
-        }
     }
     // MARK: - Parent Navigation
     private func activateParentNavigation() {

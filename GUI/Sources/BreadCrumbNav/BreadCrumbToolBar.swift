@@ -29,6 +29,8 @@ struct BreadCrumbToolBar: View {
         static let groupSpacing: CGFloat = 6
         static let iconSize: CGFloat = 15
         static let buttonSize: CGFloat = 28
+        static let raisedButtonHeight: CGFloat = 22
+        static let raisedCornerRadius: CGFloat = 6
     }
 
     private enum Palette {
@@ -137,6 +139,7 @@ struct BreadCrumbToolBar: View {
         ToolBarIconButton(
             iconName: "clock.arrow.circlepath",
             iconColor: Palette.utilityIcon,
+            isRaised: true,
             action: {
                 log.debug("[BreadCrumbToolBar] history tapped panel=\(panelSide)")
                 openHistoryWindow()
@@ -151,6 +154,7 @@ struct BreadCrumbToolBar: View {
         ToolBarIconButton(
             iconName: panelSide == .left ? "sidebar.left" : "sidebar.right",
             iconColor: Palette.utilityIcon,
+            isRaised: true,
             action: {
                 log.debug("[BreadCrumbToolBar] favorites tapped panel=\(panelSide)")
                 openFavoritesWindow()
@@ -236,6 +240,7 @@ struct BreadCrumbToolBar: View {
         let iconName: String
         let iconColor: Color
         var isEnabled: Bool = true
+        var isRaised: Bool = false
         let action: () -> Void
 
         @State private var isHovered = false
@@ -243,17 +248,69 @@ struct BreadCrumbToolBar: View {
         var body: some View {
             Button(action: action) {
                 Image(systemName: iconName)
-                    .font(.system(size: Metrics.iconSize, weight: .light))
+                    .font(.system(size: Metrics.iconSize, weight: isRaised ? .medium : .light))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(isHovered ? Palette.hoverTint : iconColor)
-                    .frame(width: Metrics.buttonSize, height: Metrics.buttonSize)
+                    .frame(
+                        width: Metrics.buttonSize,
+                        height: isRaised ? Metrics.raisedButtonHeight : Metrics.buttonSize
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .frame(width: Metrics.buttonSize, height: isRaised ? Metrics.raisedButtonHeight : Metrics.buttonSize)
+            .background { raisedBackground }
+            .overlay { raisedBorder }
+            .shadow(
+                color: isRaised ? Color.black.opacity(isHovered ? 0.24 : 0.17) : .clear,
+                radius: isHovered ? 2.2 : 1.4,
+                x: 0,
+                y: isHovered ? 1.4 : 1
+            )
             .disabled(!isEnabled)
             .opacity(isEnabled ? 1.0 : 0.35)
             .onHover { hovering in
                 isHovered = hovering && isEnabled
+            }
+        }
+
+        @ViewBuilder
+        private var raisedBackground: some View {
+            if isRaised {
+                RoundedRectangle(cornerRadius: Metrics.raisedCornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(isHovered ? 0.98 : 0.92),
+                                Color(nsColor: .controlBackgroundColor).opacity(0.96),
+                                Color(#colorLiteral(red: 0.74, green: 0.80, blue: 0.87, alpha: 1)).opacity(0.78)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            }
+        }
+
+        @ViewBuilder
+        private var raisedBorder: some View {
+            if isRaised {
+                RoundedRectangle(cornerRadius: Metrics.raisedCornerRadius, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white, Color(nsColor: .separatorColor).opacity(0.92)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.8
+                    )
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.7))
+                            .frame(height: 1)
+                            .padding(.horizontal, 5)
+                            .padding(.top, 1)
+                    }
             }
         }
     }
