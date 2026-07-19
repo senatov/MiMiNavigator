@@ -118,13 +118,7 @@ final class CntMenuCoord {
         guard conflict.sourceSize == conflict.targetSize else { return false }
         let source = conflict.sourceURL
         let target = conflict.targetURL
-        return await Task.detached(priority: .userInitiated) {
-            let manager = FileManager.default
-            let sourceIsRegular = try? source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile
-            let targetIsRegular = try? target.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile
-            guard sourceIsRegular == true, targetIsRegular == true else { return nil }
-            return manager.contentsEqual(atPath: source.path, andPath: target.path)
-        }.value
+        return await FileContentHashCache.shared.contentsEqual(source, target)
     }
 
     /// Resolve conflict from UI callback

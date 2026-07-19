@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CacheKit module** — GRDB-backed SQLite storage provides namespace isolation, TTL expiry, LRU pruning, cost limits, WAL journaling, and schema migrations for reconstructible application caches.
+- **Persistent file hashes** — conflict comparison streams SHA-256 in bounded chunks and reuses digests across sessions only while file size and modification time remain valid.
+
+### Changed
+- **Two-level directory-size cache** — active entries remain in a bounded in-memory L1 while older valid values are loaded individually from SQLite instead of decoding the complete JSON snapshot at startup.
+- **Cache lifecycle** — directory history context, idle age, entry count, and total cost now constrain both memory and persistent cache growth.
+
+### Fixed
+- **Legacy cache scaling** — the monolithic `dirsize.cache` snapshot is migrated safely and idempotently into SQLite and removed only after successful import, avoiding repeated full-file rewrites.
+
 ## [0.9.9.6.4] — 2026-07-19
 
 > **Release notes**

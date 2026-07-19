@@ -64,6 +64,8 @@
 
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
+Persistent cache design, invalidation, migration, and pruning rules are documented in [Persistent Cache Architecture](GUI/Docs/Persistent_Cache_Architecture.md).
+
 ## What is MiMiNavigator?
 
 MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and **Norton Commander**, reimagined with native macOS technologies. It combines the efficiency of classic two-panel navigation with modern SwiftUI, Swift concurrency (actors, async/await), and macOS 26 liquid-glass design language.
@@ -131,6 +133,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 | **Breadcrumb Nav** | Click-to-navigate path bar with arrowshape back/forward/up controls and autocomplete popup (ESC/click-outside dismiss, slide animation) |
 | **Favorites Sidebar** | Quick access to bookmarked locations (FavoritesKit package) |
 | **Real-time Updates** | Automatic refresh on file system changes |
+| **Persistent Computation Cache** | Bounded in-memory hot data backed by GRDB/SQLite for directory sizes and validated SHA-256 file hashes |
 | **FTP/SFTP** | Remote file browsing via curl (FTP) and Citadel/NIOSSH (SFTP) |
 | **Network Neighborhood** | SMB/AFP share discovery, mounting, and browsing across LAN |
 | **Connect to Server** | Saved server bookmarks with keychain passwords, session reuse, disconnect |
@@ -367,6 +370,7 @@ MiMiNavigator/
 │   └── Localization/       # L10n.swift
 ├── Packages/               # git submodule → github.com/senatov/MiMiKits (private)
 │   ├── ArchiveKit/         # Archive format support module
+│   ├── CacheKit/           # GRDB/SQLite persistent cache with TTL and LRU pruning
 │   ├── FavoritesKit/       # Reusable favorites module (.dylib)
 │   ├── FileModelKit/       # CustomFile model and utilities
 │   ├── LogKit/             # Centralized logging (SwiftyBeaver)
@@ -385,6 +389,7 @@ MiMiNavigator/
 | `@Observable` + `@MainActor` | `MultiSelectionManager` — Cmd/Shift click, Insert mark, pattern match |
 | `@Observable` + `@MainActor` | `TabManager` — per-panel tab collection, persistence, navigation |
 | `@Observable` + `@MainActor` | `CntMenuCoord` — singleton handling all context menu actions |
+| `actor` + GRDB/SQLite | `CacheKit` — bounded persistent L2 cache beneath small in-memory L1 caches |
 | `actor` | `DualDirectoryScanner` — thread-safe file scanning |
 | `actor` | `ArchiveManager` — session lifecycle, dirty tracking, extraction, repacking |
 | `AsyncStream` | `FindFilesEngine` — streaming search results with cancellation |

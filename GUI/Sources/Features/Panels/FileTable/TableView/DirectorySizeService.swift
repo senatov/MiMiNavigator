@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CacheKit
 import Foundation
 
 /// Calculates directory sizes asynchronously with:
@@ -65,10 +66,12 @@ actor DirectorySizeService {
     /// Prevents the same directory from being scanned multiple times simultaneously.
     private var inFlightTasks: [String: Task<Int64, Never>] = [:]
 
-    /// Disk cache location
-    private let cacheURL: URL
+    private let persistentCache = ApplicationPersistentCache.shared
+    private let legacyCacheURL: URL
+    private let cacheNamespace = "directory-size-v1"
     private let cacheEntryLimit = 512
     private let cacheMaxIdleAge: TimeInterval = 30 * 60
+    private let persistentLifetime: TimeInterval = 7 * 24 * 60 * 60
 
     // MARK: - Cache Entry
     private struct CacheEntry: Codable {
@@ -82,8 +85,8 @@ actor DirectorySizeService {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
         let dir = base.appendingPathComponent("MiMiNavigator", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        cacheURL = dir.appendingPathComponent("dirsize.cache")
-        Task { await self.loadDiskCache() }
+        legacyCacheURL = dir.appendingPathComponent("dirsize.cache")
+        Task { await self.migrateLegacyDiskCache() }
         self.registerVolumeMountObserver()
     }
 
@@ -129,7 +132,7 @@ actor DirectorySizeService {
         if permanentlyUnavailable.contains(key) {
             return Self.unavailableSize
         }
-        if let cached = cachedSize(for: resolvedURL) {
+        if let cached = await cachedSize(for: resolvedURL) {
             return cached
         }
         if let existingTask = inFlightTask(for: key) {
@@ -215,7 +218,7 @@ actor DirectorySizeService {
     }
 
     // MARK: - Cache Pruning
-    func pruneCache(keeping roots: [URL]) {
+    func pruneCache(keeping roots: [URL]) async {
         let now = Date().timeIntervalSince1970
         let normalizedRoots = roots.map { resolveURLForSizing($0).path }
         let before = memoryCache.count
@@ -236,13 +239,23 @@ actor DirectorySizeService {
                 normalizedRoots.contains { path == $0 || path.hasPrefix($0 + "/") }
             }
         )
-        persistCacheSnapshot()
         let removed = before - memoryCache.count
         if removed > 0 {
             log.info(
                 "[DirectorySizeService] pruned \(removed) stale entries; "
-                    + "retained=\(memoryCache.count) contextRoots=\(normalizedRoots.count)"
+                + "retained=\(memoryCache.count) contextRoots=\(normalizedRoots.count)"
             )
+        }
+        let policy = CachePruningPolicy(
+            retainedKeyPrefixes: normalizedRoots,
+            maximumIdleAge: persistentLifetime,
+            maximumEntryCount: 4_096,
+            maximumTotalCost: 16 * 1_024 * 1_024
+        )
+        if let diskRemoved = try? await persistentCache?.prune(namespace: cacheNamespace, policy: policy),
+            diskRemoved > 0
+        {
+            log.info("[DirectorySizeService] pruned \(diskRemoved) persistent entries")
         }
     }
 
@@ -270,21 +283,30 @@ actor DirectorySizeService {
 
     // MARK: - Cache Lookup
 
-    private func cachedSize(for url: URL) -> Int64? {
+    private func cachedSize(for url: URL) async -> Int64? {
         let path = url.resolvingSymlinksInPath().path
         guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: url.resolvingSymlinksInPath()) else {
             return nil
         }
-        guard var entry = memoryCache[path] else { return nil }
-        if entry.size == Self.unavailableSize {
-            return nil
-        }
-        if entry.mtime == mtime {
+        if var entry = memoryCache[path], entry.size != Self.unavailableSize, entry.mtime == mtime {
             entry.lastAccess = Date().timeIntervalSince1970
             memoryCache[path] = entry
             return entry.size
         }
-        return nil
+        memoryCache[path] = nil
+        guard let persisted = try? await persistentCache?.entry(namespace: cacheNamespace, key: path),
+            let entry = try? JSONDecoder().decode(CacheEntry.self, from: persisted.payload),
+            entry.size != Self.unavailableSize,
+            entry.mtime == mtime
+        else {
+            try? await persistentCache?.remove(namespace: cacheNamespace, key: path)
+            return nil
+        }
+        var refreshed = entry
+        refreshed.lastAccess = Date().timeIntervalSince1970
+        memoryCache[path] = refreshed
+        log.debug("[DirectorySizeService] persistent hit path='\(url.lastPathComponent)'")
+        return refreshed.size
     }
 
     // MARK: - Cache Store
@@ -299,23 +321,37 @@ actor DirectorySizeService {
         }
         let entry = CacheEntry(size: size, mtime: mtime, lastAccess: Date().timeIntervalSince1970)
         memoryCache[path] = entry
-        persistCacheSnapshot()
-    }
-
-    private func persistCacheSnapshot() {
-        Task.detached(priority: .utility) { [snapshot = memoryCache, cacheURL = cacheURL] in
-            if let data = try? JSONEncoder().encode(snapshot) {
-                try? data.write(to: cacheURL, options: .atomic)
-            }
+        if let payload = try? JSONEncoder().encode(entry) {
+            try? await persistentCache?.set(
+                namespace: cacheNamespace,
+                key: path,
+                payload: payload,
+                expiresAt: Date().addingTimeInterval(persistentLifetime)
+            )
         }
     }
 
-    // MARK: - Disk Cache
-
-    private func loadDiskCache() async {
-        guard let data = try? Data(contentsOf: cacheURL) else { return }
-        if let decoded = try? JSONDecoder().decode([String: CacheEntry].self, from: data) {
-            memoryCache = decoded
+    // MARK: - Legacy Cache Migration
+    private func migrateLegacyDiskCache() async {
+        guard FileManager.default.fileExists(atPath: legacyCacheURL.path),
+            let data = try? Data(contentsOf: legacyCacheURL),
+            let decoded = try? JSONDecoder().decode([String: CacheEntry].self, from: data),
+            let persistentCache
+        else { return }
+        do {
+            for (path, entry) in decoded {
+                let payload = try JSONEncoder().encode(entry)
+                try await persistentCache.set(
+                    namespace: cacheNamespace,
+                    key: path,
+                    payload: payload,
+                    expiresAt: Date().addingTimeInterval(persistentLifetime)
+                )
+            }
+            try FileManager.default.removeItem(at: legacyCacheURL)
+            log.info("[DirectorySizeService] migrated \(decoded.count) legacy entries to SQLite")
+        } catch {
+            log.error("[DirectorySizeService] legacy migration failed: \(error.localizedDescription)")
         }
     }
 

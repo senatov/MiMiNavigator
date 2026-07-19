@@ -15,6 +15,7 @@
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
 		BB000003BB000003BB000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		CA000003CA000003CA000003 /* CacheKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA000002CA000002CA000002 /* CacheKit */; };
 		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
@@ -54,6 +55,7 @@
 				Info.plist,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
+				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
@@ -64,6 +66,7 @@
 			membershipExceptions = (
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
+				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
@@ -101,6 +104,7 @@
 				FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */,
 				AA000003AA000003AA000003 /* LogKit in Frameworks */,
 				BB000003BB000003BB000003 /* (null) in Frameworks */,
+				CA000003CA000003CA000003 /* CacheKit in Frameworks */,
 				DD000003DD000003DD000003 /* (null) in Frameworks */,
 				EE000003EE000003EE000003 /* (null) in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
@@ -178,6 +182,7 @@
 				BB000012BB000012BB000012 /* ScannerKit */,
 				BB000013BB000013BB000013 /* ArchiveKit */,
 				DD000015DD000015DD000015 /* RenameKit */,
+				CA000002CA000002CA000002 /* CacheKit */,
 			);
 			productName = MiMiNavigator;
 			productReference = 97AD1A2E2C624E020045C38D /* MiMiNavigator.app */;
@@ -261,6 +266,7 @@
 				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
 				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */,
+				CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -693,6 +699,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/ArchiveKit;
 		};
+		CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/CacheKit;
+		};
 		DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/RenameKit;
@@ -758,6 +768,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */;
 			productName = ArchiveKit;
+		};
+		CA000002CA000002CA000002 /* CacheKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */;
+			productName = CacheKit;
 		};
 		CC000002CC000002CC000002 /* Citadel */ = {
 			isa = XCSwiftPackageProductDependency;
