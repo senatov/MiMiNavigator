@@ -14,12 +14,12 @@ import Darwin.Mach
     private var animationPhase: Double = 0
     private var animationTickCount = 0
     private var currentMemoryLabel = "0M"
-    private let iconCanvasSize = NSSize(width: 36, height: 24)
+    private let iconCanvasSize = NSSize(width: 25, height: 24)
 
     // MARK: - Install
     func install() {
         guard statusItem == nil else { return }
-        let item = NSStatusBar.system.statusItem(withLength: 38)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         guard let button = item.button else {
             NSStatusBar.system.removeStatusItem(item)
             log.error("[MenuBar] status item button unavailable")
@@ -29,7 +29,8 @@ import Darwin.Mach
         button.action = #selector(raiseApplication)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.imageScaling = .scaleProportionallyDown
-        button.imagePosition = .imageOnly
+        button.imagePosition = .imageLeading
+        button.font = NSFont.menuBarFont(ofSize: 9)
         button.toolTip = "MiMiNavigator"
         button.setAccessibilityLabel("Show MiMiNavigator")
         item.menu = nil
@@ -81,10 +82,10 @@ import Darwin.Mach
         let iconRect = NSRect(x: 1.5, y: 0.5, width: 22, height: 22)
         NSApp.applicationIconImage.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
         drawActivityPulse()
-        drawMemoryLabel(currentMemoryLabel, in: NSRect(x: 18, y: 3, width: 17, height: 10))
         image.unlockFocus()
         image.isTemplate = false
         button.image = image
+        button.title = currentMemoryLabel
         button.toolTip = "MiMiNavigator — \(currentMemoryLabel) memory"
     }
 
@@ -99,29 +100,11 @@ import Darwin.Mach
         border.stroke()
     }
 
-    private func drawMemoryLabel(_ text: String, in rect: NSRect) {
-        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        let shadow = NSShadow()
-        shadow.shadowColor = (isDark ? NSColor.black : NSColor.white).withAlphaComponent(0.92)
-        shadow.shadowBlurRadius = 1
-        shadow.shadowOffset = .zero
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.monospacedDigitSystemFont(ofSize: 6.5, weight: .bold),
-            .foregroundColor: isDark ? NSColor.white : NSColor.black,
-            .paragraphStyle: paragraph,
-            .shadow: shadow
-        ]
-        text.draw(in: rect.offsetBy(dx: 0, dy: 1.2), withAttributes: attributes)
-    }
-
     private func refreshMemoryLabel() {
-        let bytes = residentMemoryBytes
-        let megabytes = bytes / 1_048_576
-        currentMemoryLabel = megabytes < 1_000
-            ? "\(megabytes)M"
-            : String(format: "%.1fG", Double(bytes) / 1_073_741_824)
+        currentMemoryLabel = ByteCountFormatter.string(
+            fromByteCount: Int64(residentMemoryBytes),
+            countStyle: .memory
+        )
     }
 
     private var residentMemoryBytes: UInt64 {
