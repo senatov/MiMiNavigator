@@ -30,7 +30,6 @@ struct FileConflictDialog: View {
         .forcedDialogTabNavigation()
         .frame(width: 640)
         .background(dialogBackground)
-        .glassEffect(.regular)
         .overlay(dialogBorder)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
@@ -194,14 +193,14 @@ private extension FileConflictDialog {
 
     var dialogBackground: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(.clear)
-            .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
+            .fill(.regularMaterial)
+            .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
     }
 
 
     var dialogBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(.quaternary, lineWidth: 0.8)
+            .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.8)
     }
 }
 
