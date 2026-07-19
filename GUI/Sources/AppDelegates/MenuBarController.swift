@@ -27,7 +27,7 @@ import Darwin.Mach
         }
         button.target = self
         button.action = #selector(raiseApplication)
-        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.sendAction(on: [.leftMouseUp])
         button.imageScaling = .scaleProportionallyDown
         button.imagePosition = .imageLeading
         button.font = NSFont.menuBarFont(ofSize: 9)
@@ -50,13 +50,12 @@ import Darwin.Mach
         NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         if let window = existingMainWindow {
-            window.deminiaturize(nil)
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
+            raise(window)
         } else {
             NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
         }
-        log.info("[MenuBar] raised main window")
+        DispatchQueue.main.async { [weak self] in self?.raiseExistingMainWindow() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.raiseExistingMainWindow() }
     }
 
     // MARK: - Animation
@@ -119,9 +118,29 @@ import Darwin.Mach
     }
 
     private var existingMainWindow: NSWindow? {
-        NSApp.windows.first {
-            !($0 is NSPanel) && $0.styleMask.contains(.titled) && $0.canBecomeMain
+        let windows = NSApp.windows.filter { !($0 is NSPanel) && $0.styleMask.contains(.titled) }
+        return windows.first { $0.identifier?.rawValue.hasPrefix("main-AppWindow") == true }
+            ?? windows.first { $0.isMiniaturized || $0.isVisible }
+    }
+
+    // MARK: - Raise Main Window
+    private func raiseExistingMainWindow() {
+        guard let window = existingMainWindow else {
+            log.error("[MenuBar] main window unavailable after activation")
+            return
         }
+        raise(window)
+    }
+
+    private func raise(_ window: NSWindow) {
+        let wasMiniaturized = window.isMiniaturized
+        if wasMiniaturized { window.deminiaturize(nil) }
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.arrangeInFront(nil)
+        log.info(
+            "[MenuBar] raised main window id='\(window.identifier?.rawValue ?? "nil")' minimized=\(wasMiniaturized) visible=\(window.isVisible)"
+        )
     }
 
     // MARK: - Log State

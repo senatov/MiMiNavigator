@@ -65,13 +65,11 @@ final class ToolbarRightClickMonitor {
     // MARK: - Helpers
     private func resolveWindow(from event: NSEvent) -> NSWindow? {
         log.debug(#function + " called")
-        if let window = event.window {
-            return window
-        }
-        if let window = NSApp.keyWindow {
-            return window
-        }
-        return NSApp.mainWindow
+        guard let window = event.window,
+              !(window is NSPanel),
+              window.identifier?.rawValue.hasPrefix("main-AppWindow") == true
+        else { return nil }
+        return window
     }
 
     private func isClickInToolbar(event: NSEvent, window: NSWindow) -> Bool {
