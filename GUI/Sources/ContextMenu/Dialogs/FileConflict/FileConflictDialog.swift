@@ -103,9 +103,12 @@ private extension FileConflictDialog {
     /// shows which file is newer/bigger
     var comparisonBadge: some View {
         HStack(spacing: 16) {
-            if filesHaveMatchingMetadata {
-                comparisonChip(icon: "equal.circle", text: "Same size and modification time", color: .green)
-            } else if let srcDate = conflict.sourceDate, let tgtDate = conflict.targetDate {
+            if conflict.contentsMatch == true {
+                contentComparisonBadge(icon: "checkmark.circle.fill", text: "File contents are identical", iconColor: .blue)
+            } else if conflict.contentsMatch == false {
+                contentComparisonBadge(icon: "exclamationmark.circle.fill", text: "File contents are different", iconColor: .orange)
+            }
+            if conflict.contentsMatch != true, let srcDate = conflict.sourceDate, let tgtDate = conflict.targetDate {
                 comparisonChip(
                     icon: "clock",
                     text: modificationComparisonText(source: srcDate, target: tgtDate),
@@ -176,21 +179,31 @@ private extension FileConflictDialog {
     }
 
 
+    func contentComparisonBadge(icon: String, text: String, iconColor: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(iconColor)
+            Text(text)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.8)
+        }
+    }
+
+
     var sizeDiffText: String {
         let diff = abs(conflict.sourceSize - conflict.targetSize)
         let formatted = ByteCountFormatter.string(fromByteCount: diff, countStyle: .file)
         return conflict.sourceSize > conflict.targetSize
             ? "Source is \(formatted) larger"
             : "Target is \(formatted) larger"
-    }
-
-
-    var filesHaveMatchingMetadata: Bool {
-        guard conflict.sourceSize == conflict.targetSize,
-              let sourceDate = conflict.sourceDate,
-              let targetDate = conflict.targetDate
-        else { return false }
-        return abs(sourceDate.timeIntervalSince(targetDate)) < 1
     }
 
 

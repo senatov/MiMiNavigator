@@ -103,7 +103,28 @@ final class CntMenuCoord {
     /// Show file conflict resolution dialog — returns BatchConflictDecision with applyToAll flag
     func showConflictDialog(conflict: FileConflictInfo, remainingCount: Int = 1) async -> BatchConflictDecision {
         log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)' remaining=\(remainingCount)")
-        return await FileConflictPanelCoordinator.shared.present(conflict: conflict, remainingCount: remainingCount)
+        let contentsMatch = await compareConflictContents(conflict)
+        let inspectedConflict = FileConflictInfo(
+            source: conflict.sourceURL,
+            target: conflict.targetURL,
+            contentsMatch: contentsMatch
+        )
+        return await FileConflictPanelCoordinator.shared.present(conflict: inspectedConflict, remainingCount: remainingCount)
+    }
+
+    // MARK: - Compare Conflict Contents
+
+    private func compareConflictContents(_ conflict: FileConflictInfo) async -> Bool? {
+        guard conflict.sourceSize == conflict.targetSize else { return false }
+        let source = conflict.sourceURL
+        let target = conflict.targetURL
+        return await Task.detached(priority: .userInitiated) {
+            let manager = FileManager.default
+            let sourceIsRegular = try? source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile
+            let targetIsRegular = try? target.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile
+            guard sourceIsRegular == true, targetIsRegular == true else { return nil }
+            return manager.contentsEqual(atPath: source.path, andPath: target.path)
+        }.value
     }
 
     /// Resolve conflict from UI callback

@@ -18,9 +18,10 @@ struct FileConflictInfo {
     let targetSize: Int64
     let sourceDate: Date?
     let targetDate: Date?
+    let contentsMatch: Bool?
     
     // MARK: - Initialization
-    init(source: URL, target: URL) {
+    init(source: URL, target: URL, contentsMatch: Bool? = nil) {
         self.sourceURL = source
         self.targetURL = target
         self.sourceName = source.lastPathComponent
@@ -34,5 +35,6 @@ struct FileConflictInfo {
         self.targetSize = (targetAttributes?[.size] as? NSNumber)?.int64Value ?? 0
         self.sourceDate = sourceAttributes?[.modificationDate] as? Date
         self.targetDate = targetAttributes?[.modificationDate] as? Date
+        self.contentsMatch = contentsMatch
     }
 }
