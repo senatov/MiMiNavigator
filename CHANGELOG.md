@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.4] — 2026-07-19
+
+> **Release notes**
+> File-conflict clarity, operation progress polish, and dependable menu-bar activation.
+
+### Added
+- **Content-aware conflict checks** — equal-size source and destination files are compared asynchronously by their actual bytes before metadata is used to describe the conflict.
+- **Menu-bar memory indicator** — the application status item shows current memory usage with native compact units and a subtle activity animation.
+
+### Changed
+- **File-conflict dialog** — the conflict workflow uses a readable native utility panel, clear source and destination cards, emphasized apply-to-remaining control, and the same dimensional button language as Network Neighborhood.
+- **Conflict status messaging** — identical content, differing content, and metadata relationships use distinct system colors, icons, and clearer typography.
+- **Operation progress** — progress presentation, completion behavior, window geometry persistence, and the global Close automatically preference are more consistent across copy, move, and delete operations.
+- **Menu-bar interaction** — the status item has no menu and treats a primary click solely as a request to restore and foreground MiMiNavigator.
+- **Build metadata** — marketing version updated to `0.9.9.6.4`; build number updated to `133`.
+
+### Fixed
+- **Cancelled copy results** — cancelling from a file-conflict prompt no longer opens a follow-up result window claiming that zero files were copied.
+- **Auto-close interruption** — interacting with an operation window prevents its pending automatic close so the result remains available for inspection.
+- **Minimized-window restoration** — clicking the menu-bar icon reliably unhides, deminiaturizes, activates, and raises the main application window.
+- **Unwanted status-item menus** — secondary-clicking the menu-bar icon no longer reaches toolbar customization or other unintended AppKit actions.
+- **Conflict comparison accuracy** — files with matching size and modification time are no longer assumed identical without comparing their contents.
+
 ## [0.9.9.6.3] — 2026-07-15
 
 > **Release notes**

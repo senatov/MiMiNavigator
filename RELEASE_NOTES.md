@@ -1,31 +1,32 @@
-# MiMiNavigator v0.9.9.6.3
+# MiMiNavigator v0.9.9.6.4
 
-Network intelligence, History cleanup, dialog layout, and DMG presentation update.
+File-conflict clarity, operation progress polish, and dependable menu-bar activation.
 
 ## Highlights
 
-- Identify LAN devices more accurately with optional Fing Local API enrichment and online MAC vendor lookup.
-- Keep History globally unique by directory, retaining only the newest valid visit.
-- Present confirmation and archive dialogs at readable HIG-compliant sizes without clipped content or edge-hugging buttons.
+- Compare equal-size conflict candidates by their actual contents before interpreting timestamps and sizes.
+- Present file conflicts in a readable native utility panel with clear status messaging and familiar dimensional controls.
+- Restore MiMiNavigator from hidden or minimized states with one primary click on its menu-bar status item.
 
 ## Added
 
-- Fing Local API settings with Keychain-backed API key storage, connection testing, and device merging by MAC, IP, or name.
-- Manufacturer and model details in Network Neighborhood rows and device information popups.
-- Future plans for Nextcloud/WebDAV remote panels and CloudKit settings synchronization.
+- Asynchronous byte comparison for equal-size source and destination files.
+- Compact native memory usage beside the animated menu-bar application icon.
 
 ## Changed
 
-- Unknown Apple mobile Bonjour devices are shown honestly as iPhone / iPad until stronger evidence identifies the model.
-- The DMG uses a correctly sized background with a centered installation arrow, top instruction, and verified custom volume icon.
-- Release metadata is updated to version `0.9.9.6.3` and build `132`.
+- File-conflict choices use clearer file cards, emphasized apply-to-remaining control, and the dimensional control language used by Network Neighborhood.
+- Operation progress and automatic-close behavior are consistent across copy, move, and delete result windows.
+- The menu-bar status item is dedicated to foregrounding the application and exposes no contextual menu.
+- Release metadata is updated to version `0.9.9.6.4` and build `133`.
 
 ## Fixed
 
-- Remove all older History occurrences of a directory instead of preserving one duplicate per calendar day.
-- Prevent long copy/move confirmation content from being clipped by conflicting fixed-size constraints.
-- Restore standard margins and minimum sizing in the Create Archive panel.
-- Preserve the custom DMG volume icon through Finder styling, conversion, notarization, and stapling.
+- Cancelling from a conflict prompt no longer opens a zero-files-copied result window.
+- Clicking an operation window interrupts its pending automatic close.
+- Matching size and modification time no longer imply identical content without a byte comparison.
+- Primary-click activation reliably unhides, deminiaturizes, and raises the main window.
+- Secondary clicks on the status item no longer trigger toolbar customization or other unintended actions.
 
 ## Validation
 
@@ -35,4 +36,4 @@ Network intelligence, History cleanup, dialog layout, and DMG presentation updat
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.2...v0.9.9.6.3
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.3...v0.9.9.6.4

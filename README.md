@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.3"><img src="https://img.shields.io/badge/release-v0.9.9.6.3-orange" alt="Release v0.9.9.6.3" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.4"><img src="https://img.shields.io/badge/release-v0.9.9.6.4-orange" alt="Release v0.9.9.6.4" /></a>
 </p>
 
 <p align="center">
@@ -38,16 +38,17 @@
 
 
 
-## Recent Changes (v0.9.9.6.3 - July 2026)
+## Recent Changes (v0.9.9.6.4 - July 2026)
 
-- **Network intelligence** — optional Fing Local API and MAC vendor enrichment identify LAN devices by name, type, manufacturer, and model.
-- **History cleanup** — repeated directories are removed globally, leaving only the newest valid visit.
-- **Dialog layout** — confirmation and archive windows preserve readable content, standard margins, and accessible buttons.
-- **DMG presentation** — corrected installer geometry and a verified custom volume icon improve drag-to-install presentation.
-- **Build metadata** — release version is `0.9.9.6.3`, build `132`.
+- **Content-aware conflicts** — equal-size files are compared asynchronously by their bytes before timestamps and sizes are interpreted.
+- **Conflict dialog clarity** — native utility-panel presentation, clear file cards, stronger status messaging, and dimensional controls improve readability.
+- **Operation progress** — refined progress styling, persistent per-operation geometry, and interruptible automatic closing make result windows predictable.
+- **Menu-bar status item** — native memory units, stable animation, primary-click restoration, and ignored secondary clicks provide a focused activation shortcut.
+- **Build metadata** — release version is `0.9.9.6.4`, build `133`.
 
 ## Previous Changes
 
+- **v0.9.9.6.3** — network intelligence, History deduplication, dialog sizing, and DMG presentation.
 - **v0.9.9.6.0** — Preview mounted-volume stability, stale scan protection, and release pipeline validation.
 - **v0.9.9.5.9** — Multi-Rename, unified navigation, keyboard access, network discovery, and interface consistency.
 - **v0.9.9.5.8** — secure automatic update installation, validation, rollback, and daily update checks.
@@ -199,7 +200,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.6.3 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.3)**
+**[Download MiMiNavigator v0.9.9.6.4 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.4)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---
