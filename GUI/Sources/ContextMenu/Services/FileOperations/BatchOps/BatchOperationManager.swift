@@ -30,6 +30,8 @@ final class BatchOperationManager {
         from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
+        MemoryDiagnostics.shared.checkpoint("copy.before")
+        defer { MemoryDiagnostics.shared.checkpoint("copy.after") }
         log.info("[BatchOpMgr] copy \(files.count) → \(destination.path)")
         let urls = files.map(\.urlValue)
         await appState.scanner.beginBatchMutation()
@@ -53,6 +55,8 @@ final class BatchOperationManager {
         from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
+        MemoryDiagnostics.shared.checkpoint("move.before")
+        defer { MemoryDiagnostics.shared.checkpoint("move.after") }
         log.info("[BatchOpMgr] move \(files.count) → \(destination.path)")
         let urls = files.map(\.urlValue)
         await appState.scanner.beginBatchMutation()
@@ -79,6 +83,8 @@ final class BatchOperationManager {
         from sourcePanel: FavPanelSide,
         appState: AppState
     ) async {
+        MemoryDiagnostics.shared.checkpoint("delete.before")
+        defer { MemoryDiagnostics.shared.checkpoint("delete.after") }
         log.info("[BatchOpMgr] delete \(files.count)")
         let urls = files.map(\.urlValue)
         await appState.scanner.beginBatchMutation()

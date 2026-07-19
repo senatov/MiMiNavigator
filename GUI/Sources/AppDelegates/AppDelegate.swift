@@ -47,6 +47,7 @@ import LogKit
         // Ensure app is a regular Dock citizen from the very start
         NSApp.setActivationPolicy(.regular)
         menuBarController.install()
+        MemoryDiagnostics.shared.start()
 
         UserPreferences.shared.load()
         log.debug("prefs loaded, autoFit=\(UserPreferences.shared.snapshot.autoFitColumnsOnNavigate)")
@@ -225,6 +226,8 @@ import LogKit
     /// Synchronously saves state + stops watchers, then resolves async resources.
     /// Must finish in well under 5 s to avoid macOS force-killing the process.
     private func performCleanupBeforeExit() async {
+        MemoryDiagnostics.shared.checkpoint("application.termination")
+        MemoryDiagnostics.shared.stop()
         // 1. Save panel state and cache — synchronous, fast
         log.info("[AppDelegate] cleanup step save state begin")
         appState?.saveBeforeExit()

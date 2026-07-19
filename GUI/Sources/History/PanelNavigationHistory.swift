@@ -193,6 +193,14 @@ final class PanelNavigationHistory {
         return Array(history[(currentIndex + 1)..<end])
     }
 
+    // MARK: - Cache Context
+    func recentContextPaths(limit: Int = 6) -> [URL] {
+        guard currentIndex >= 0, !history.isEmpty else { return [] }
+        let start = max(0, currentIndex - limit)
+        let end = min(history.count, currentIndex + limit + 1)
+        return Array(history[start..<end])
+    }
+
     /// Jump to specific path in history (for dropdown menu)
     func jumpTo(_ url: URL) -> Bool {
         let normalized = url.standardizedFileURL

@@ -148,6 +148,7 @@ final class FindFilesViewModel {
 
     func startSearch() {
         guard searchState != .searching else { return }
+        MemoryDiagnostics.shared.checkpoint("search.before")
         log.info("[FindFiles] Starting search: name='\(fileNamePattern)' text='\(searchText)' dir='\(searchDirectory)'")
         errorMessage = nil
         // Validate target path
@@ -262,6 +263,7 @@ final class FindFilesViewModel {
                         self.saveResults()
                     }
                 }
+                MemoryDiagnostics.shared.checkpoint("search.after")
                 log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
             }
         }

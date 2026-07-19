@@ -228,6 +228,8 @@ extension AppState {
         var isDir: ObjCBool = false
         if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
             navigationHistory(for: panel).navigateTo(url)
+            let retainedPaths = leftNavigationHistory.recentContextPaths() + rightNavigationHistory.recentContextPaths()
+            Task { await DirectorySizeService.shared.pruneCache(keeping: retainedPaths) }
         }
     }
 

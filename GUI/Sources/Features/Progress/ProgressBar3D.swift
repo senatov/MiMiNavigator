@@ -8,7 +8,7 @@
 import AppKit
 
 // MARK: - Progress Bar 3D
-final class ProgressBar3D: NSView {
+@MainActor final class ProgressBar3D: NSView {
     private var fraction: Double?
     private var detailText = "Estimating progress…"
     private var animationPhase: CGFloat = 0
@@ -37,13 +37,20 @@ final class ProgressBar3D: NSView {
     // MARK: - Start Animation
     private func startAnimating() {
         guard animationTimer == nil else { return }
-        let timer = Timer(timeInterval: 1 / 30, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.animationPhase = (self.animationPhase + 0.018).truncatingRemainder(dividingBy: 1)
-            self.needsDisplay = true
-        }
+        let timer = Timer(
+            timeInterval: 1 / 30,
+            target: self,
+            selector: #selector(animationTick),
+            userInfo: nil,
+            repeats: true
+        )
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer
+    }
+
+    @objc private func animationTick() {
+        animationPhase = (animationPhase + 0.018).truncatingRemainder(dividingBy: 1)
+        needsDisplay = true
     }
 
     // MARK: - Stop Animation

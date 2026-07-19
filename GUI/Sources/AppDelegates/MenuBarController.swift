@@ -5,7 +5,6 @@
 // Description: Animated memory status item that only raises the main application window.
 
 import AppKit
-import Darwin.Mach
 
 // MARK: - Menu Bar Controller
 @MainActor final class MenuBarController: NSObject {
@@ -13,8 +12,10 @@ import Darwin.Mach
     private var animationTimer: Timer?
     private var animationPhase: Double = 0
     private var animationTickCount = 0
-    private var currentMemoryLabel = "0M"
+    private var currentMemoryLabel = "0 MB"
+    private var animationFrames: [NSImage] = []
     private let iconCanvasSize = NSSize(width: 25, height: 24)
+    private let animationFrameCount = 12
 
     // MARK: - Install
     func install() {
@@ -36,6 +37,7 @@ import Darwin.Mach
         item.menu = nil
         item.isVisible = true
         statusItem = item
+        animationFrames = makeAnimationFrames()
         refreshMemoryLabel()
         updateStatusImage()
         startAnimation()
@@ -61,35 +63,50 @@ import Darwin.Mach
     // MARK: - Animation
     private func startAnimation() {
         animationTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.1, target: self, selector: #selector(animationTick), userInfo: nil, repeats: true)
+        let timer = Timer(timeInterval: 0.25, target: self, selector: #selector(animationTick), userInfo: nil, repeats: true)
         RunLoop.main.add(timer, forMode: .common)
         animationTimer = timer
     }
 
     @objc private func animationTick() {
-        animationPhase = (animationPhase + 0.08).truncatingRemainder(dividingBy: 1)
+        animationPhase = (animationPhase + 1 / Double(animationFrameCount)).truncatingRemainder(dividingBy: 1)
         animationTickCount += 1
-        if animationTickCount.isMultiple(of: 20) { refreshMemoryLabel() }
+        if animationTickCount.isMultiple(of: 8) { refreshMemoryLabel() }
         updateStatusImage()
     }
 
     // MARK: - Status Image
     private func updateStatusImage() {
         guard let button = statusItem?.button else { return }
-        let image = NSImage(size: iconCanvasSize)
-        image.lockFocus()
-        let iconRect = NSRect(x: 1.5, y: 0.5, width: 22, height: 22)
-        NSApp.applicationIconImage.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
-        drawActivityPulse()
-        image.unlockFocus()
-        image.isTemplate = false
-        button.image = image
+        if animationFrames.isEmpty {
+            button.image = NSApp.applicationIconImage
+        } else {
+            let frameIndex = min(Int(animationPhase * Double(animationFrameCount)), animationFrames.count - 1)
+            button.image = animationFrames[frameIndex]
+        }
         button.title = currentMemoryLabel
         button.toolTip = "MiMiNavigator — \(currentMemoryLabel) memory"
     }
 
-    private func drawActivityPulse() {
-        let intensity = 0.42 + 0.30 * (sin(animationPhase * .pi * 2) + 1) / 2
+    private func makeAnimationFrames() -> [NSImage] {
+        guard let applicationIcon = NSApp.applicationIconImage else { return [] }
+        let baseIcon = applicationIcon.copy() as? NSImage ?? applicationIcon
+        return (0..<animationFrameCount).map {
+            index in
+                let phase = Double(index) / Double(animationFrameCount)
+                let image = NSImage(size: iconCanvasSize)
+                image.lockFocus()
+                let iconRect = NSRect(x: 1.5, y: 0.5, width: 22, height: 22)
+                baseIcon.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
+                drawActivityPulse(phase: phase)
+                image.unlockFocus()
+                image.isTemplate = false
+                return image
+        }
+    }
+
+    private func drawActivityPulse(phase: Double) {
+        let intensity = 0.42 + 0.30 * (sin(phase * .pi * 2) + 1) / 2
         let dotRect = NSRect(x: 20, y: 18.5, width: 3.5, height: 3.5)
         NSColor.controlAccentColor.withAlphaComponent(intensity).setFill()
         NSBezierPath(ovalIn: dotRect).fill()
@@ -100,21 +117,7 @@ import Darwin.Mach
     }
 
     private func refreshMemoryLabel() {
-        currentMemoryLabel = ByteCountFormatter.string(
-            fromByteCount: Int64(residentMemoryBytes),
-            countStyle: .memory
-        )
-    }
-
-    private var residentMemoryBytes: UInt64 {
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
-        let result = withUnsafeMutablePointer(to: &info) { pointer in
-            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
-            }
-        }
-        return result == KERN_SUCCESS ? UInt64(info.resident_size) : 0
+        currentMemoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: MemoryDiagnostics.capture().residentBytes)
     }
 
     private var existingMainWindow: NSWindow? {

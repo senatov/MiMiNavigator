@@ -34,6 +34,8 @@ final class CompressService: @unchecked Sendable {
         onProgress: (@Sendable (Double?) -> Void)? = nil,
         processHandle: ActiveArchiveProcess? = nil
     ) async throws -> URL {
+        await MainActor.run { MemoryDiagnostics.shared.checkpoint("compress.before") }
+        defer { Task { @MainActor in MemoryDiagnostics.shared.checkpoint("compress.after") } }
         log.debug("\(#function) files.count=\(files.count) level=\(compressionLevel) hasPassword=\(password != nil)")
         guard !files.isEmpty else {
             log.error("\(#function) FAILED: no files to compress")

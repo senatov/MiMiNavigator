@@ -67,11 +67,14 @@ actor DirectorySizeService {
 
     /// Disk cache location
     private let cacheURL: URL
+    private let cacheEntryLimit = 512
+    private let cacheMaxIdleAge: TimeInterval = 30 * 60
 
     // MARK: - Cache Entry
     private struct CacheEntry: Codable {
         let size: Int64
         let mtime: TimeInterval
+        var lastAccess: TimeInterval?
     }
 
     // MARK: - Init
@@ -211,6 +214,38 @@ actor DirectorySizeService {
         }
     }
 
+    // MARK: - Cache Pruning
+    func pruneCache(keeping roots: [URL]) {
+        let now = Date().timeIntervalSince1970
+        let normalizedRoots = roots.map { resolveURLForSizing($0).path }
+        let before = memoryCache.count
+        memoryCache = memoryCache.filter { path, entry in
+            let isRetained = normalizedRoots.contains { path == $0 || path.hasPrefix($0 + "/") }
+            let access = entry.lastAccess ?? entry.mtime
+            return isRetained && now - access <= cacheMaxIdleAge
+        }
+        if memoryCache.count > cacheEntryLimit {
+            let overflow = memoryCache.count - cacheEntryLimit
+            let oldest = memoryCache.sorted {
+                ($0.value.lastAccess ?? $0.value.mtime) < ($1.value.lastAccess ?? $1.value.mtime)
+            }.prefix(overflow)
+            for item in oldest { memoryCache.removeValue(forKey: item.key) }
+        }
+        permanentlyUnavailable = Set(
+            permanentlyUnavailable.filter { path in
+                normalizedRoots.contains { path == $0 || path.hasPrefix($0 + "/") }
+            }
+        )
+        persistCacheSnapshot()
+        let removed = before - memoryCache.count
+        if removed > 0 {
+            log.info(
+                "[DirectorySizeService] pruned \(removed) stale entries; "
+                    + "retained=\(memoryCache.count) contextRoots=\(normalizedRoots.count)"
+            )
+        }
+    }
+
     private func computeSizeOnBackgroundQueue(for url: URL) async -> Int64 {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [semaphore, weak self] in
@@ -240,11 +275,13 @@ actor DirectorySizeService {
         guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: url.resolvingSymlinksInPath()) else {
             return nil
         }
-        guard let entry = memoryCache[path] else { return nil }
+        guard var entry = memoryCache[path] else { return nil }
         if entry.size == Self.unavailableSize {
             return nil
         }
         if entry.mtime == mtime {
+            entry.lastAccess = Date().timeIntervalSince1970
+            memoryCache[path] = entry
             return entry.size
         }
         return nil
@@ -260,8 +297,12 @@ actor DirectorySizeService {
         guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: resolvedURL) else {
             return
         }
-        let entry = CacheEntry(size: size, mtime: mtime)
+        let entry = CacheEntry(size: size, mtime: mtime, lastAccess: Date().timeIntervalSince1970)
         memoryCache[path] = entry
+        persistCacheSnapshot()
+    }
+
+    private func persistCacheSnapshot() {
         Task.detached(priority: .utility) { [snapshot = memoryCache, cacheURL = cacheURL] in
             if let data = try? JSONEncoder().encode(snapshot) {
                 try? data.write(to: cacheURL, options: .atomic)
