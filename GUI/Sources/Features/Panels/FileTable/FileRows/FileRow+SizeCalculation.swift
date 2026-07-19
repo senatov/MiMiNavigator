@@ -68,6 +68,15 @@ extension FileRow {
             return
         }
 
+        if DirectorySizeService.isExpensiveAutomaticRoot(fileURL) {
+            log.info("[FileRow] Skipping automatic size calculation for expensive root '\(fileURL.path)'")
+            file.cachedDirectorySize = DirectorySizeService.unavailableSize
+            file.cachedShallowSize = nil
+            file.sizeIsExact = false
+            file.sizeCalculationStarted = false
+            return
+        }
+
         // Skip known special / virtual directories to avoid useless scans and permission errors
         if shouldSkipSizeCalculation(fileURL) {
             log.debug("[FileRow] Skipping size calculation for special directory '\(file.nameStr)' path='\(fileURL.path)'")

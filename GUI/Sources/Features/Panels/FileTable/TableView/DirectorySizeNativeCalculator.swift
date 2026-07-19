@@ -10,6 +10,9 @@ import Foundation
 
 // MARK: - Directory Size Native Calculator
 enum DirectorySizeNativeCalculator {
+    private static let maximumEntryCount = 200_000
+    private static let maximumDuration: TimeInterval = 8
+    private static let autoreleaseBatchSize = 512
 
     // MARK: - Shallow Size
     static func shallowSize(_ url: URL) -> Int64 {
@@ -38,41 +41,7 @@ enum DirectorySizeNativeCalculator {
             log.debug("[DirectorySizeService] skipping unreadable directory: \(url.path)")
             return DirectorySizeService.unavailableSize
         }
-        let path = url.path
-        let fast = fastDiskUsage(path, cancellation: cancellation)
-        if fast == DirectorySizeService.unavailableSize {
-            log.debug("[DirectorySizeService] Phase2 fast usage unavailable for: \(path)")
-            return DirectorySizeService.unavailableSize
-        }
-        if fast > 0, fast < 1_000_000 {
-            return fast
-        }
-        if fast == 0 {
-            return resolvedZeroSize(url, path: path, cancellation: cancellation)
-        }
         return fullRecursive(url, cancellation: cancellation)
-    }
-
-    // MARK: - Fast Disk Usage
-    private static func fastDiskUsage(_ path: String, cancellation: DirectorySizeCancellationState) -> Int64 {
-        guard FileManager.default.isReadableFile(atPath: path) else {
-            log.debug("[DirectorySizeService] fastDiskUsage skipped unreadable: \(path)")
-            return DirectorySizeService.unavailableSize
-        }
-        var total: Int64 = 0
-        let fm = FileManager.default
-        guard let enumerator = fm.enumerator(atPath: path) else { return DirectorySizeService.unavailableSize }
-        while let item = enumerator.nextObject() as? String {
-            if cancellation.isCancelled {
-                log.debug("[DirectorySizeService] fastDiskUsage cancelled: \(path)")
-                return DirectorySizeService.unavailableSize
-            }
-            let fullPath = path + "/" + item
-            if let allocated = statAllocatedSize(path: fullPath) {
-                total += allocated
-            }
-        }
-        return total
     }
 
     // MARK: - Full Recursive
@@ -90,17 +59,19 @@ enum DirectorySizeNativeCalculator {
             .fileAllocatedSizeKey,
             .totalFileAllocatedSizeKey,
         ]
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: Array(keys),
-            options: [],
-            errorHandler: { fileURL, error in
-                if (error as NSError).code != NSFileReadNoPermissionError {
-                    log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: url,
+                includingPropertiesForKeys: Array(keys),
+                options: [.skipsPackageDescendants],
+                errorHandler: { fileURL, error in
+                    if (error as NSError).code != NSFileReadNoPermissionError {
+                        log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
+                    }
+                    return true
                 }
-                return true
-            }
-        ) else {
+            )
+        else {
             return DirectorySizeService.unavailableSize
         }
         var countedFiles = 0
@@ -108,28 +79,56 @@ enum DirectorySizeNativeCalculator {
         var skippedSymlinks = 0
         var resourceValueFailures = 0
         var statFallbacks = 0
-        while let fileURL = enumerator.nextObject() as? URL {
+        var visitedEntries = 0
+        var isFinished = false
+        let startedAt = Date()
+        while !isFinished {
+            let batch = autoreleasepool {
+                var accumulation = SizeScanBatch()
+                for _ in 0..<autoreleaseBatchSize {
+                    guard let fileURL = enumerator.nextObject() as? URL else {
+                        accumulation.reachedEnd = true
+                        break
+                    }
+                    accumulation.visitedEntries += 1
+                    if let values = try? fileURL.resourceValues(forKeys: keys) {
+                        accumulation.append(accumulatedSize(from: values, path: fileURL.path))
+                    } else {
+                        accumulation.resourceValueFailures += 1
+                        if let statSize = statAllocatedSize(path: fileURL.path) {
+                            accumulation.statFallbacks += 1
+                            accumulation.countedFiles += 1
+                            accumulation.total += statSize
+                        }
+                    }
+                }
+                return accumulation
+            }
+            total += batch.total
+            countedFiles += batch.countedFiles
+            skippedDirs += batch.skippedDirs
+            skippedSymlinks += batch.skippedSymlinks
+            resourceValueFailures += batch.resourceValueFailures
+            statFallbacks += batch.statFallbacks
+            visitedEntries += batch.visitedEntries
+            isFinished = batch.reachedEnd
+
             if cancellation.isCancelled {
                 log.debug("[DirectorySizeService] fullRecursive cancelled: \(url.path)")
                 return DirectorySizeService.unavailableSize
             }
-            if let values = try? fileURL.resourceValues(forKeys: keys) {
-                let result = accumulatedSize(from: values, path: fileURL.path)
-                skippedSymlinks += result.skippedSymlink ? 1 : 0
-                skippedDirs += result.skippedDirectory ? 1 : 0
-                statFallbacks += result.usedStatFallback ? 1 : 0
-                countedFiles += result.countedFile ? 1 : 0
-                total += result.size
-            } else {
-                resourceValueFailures += 1
-                if let statSize = statAllocatedSize(path: fileURL.path) {
-                    statFallbacks += 1
-                    countedFiles += 1
-                    total += statSize
-                }
+            if visitedEntries >= maximumEntryCount || Date().timeIntervalSince(startedAt) >= maximumDuration {
+                let elapsed = String(format: "%.1f", Date().timeIntervalSince(startedAt))
+                log.warning(
+                    "[DirectorySizeService] scan budget exceeded path='\(url.path)' "
+                        + "entries=\(visitedEntries) elapsed=\(elapsed)s"
+                )
+                return DirectorySizeService.unavailableSize
             }
         }
-        log.debug("[DirectorySizeService] fullRecursive done: \(url.path) total=\(total) files=\(countedFiles) skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)")
+        log.debug(
+            "[DirectorySizeService] fullRecursive done: \(url.path) total=\(total) files=\(countedFiles) skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)"
+        )
         return total
     }
 
@@ -159,28 +158,6 @@ enum DirectorySizeNativeCalculator {
         return SizeAccumulation(size: statSize, usedStatFallback: true, countedFile: true)
     }
 
-    // MARK: - Resolved Zero Size
-    private static func resolvedZeroSize(_ url: URL, path: String, cancellation: DirectorySizeCancellationState) -> Int64 {
-        let full = fullRecursive(url, cancellation: cancellation)
-        if full == DirectorySizeService.unavailableSize {
-            log.debug("[DirectorySizeService] Phase3 full recursive unavailable for: \(path)")
-            return DirectorySizeService.unavailableSize
-        }
-        if full > 0 {
-            log.debug("[DirectorySizeService] Phase3 full recursive produced non-zero result for: \(path)")
-            return full
-        }
-        if isDirectoryEmpty(path: path) == true {
-            return 0
-        }
-        if isDirectoryEmpty(path: path) == nil {
-            log.warning("[DirectorySizeService] Directory unreadable, size unavailable: \(path)")
-            return DirectorySizeService.unavailableSize
-        }
-        log.debug("[DirectorySizeService] Directory readable but size remained 0 after full scan: \(path)")
-        return 0
-    }
-
     // MARK: - Stat Allocated Size
     private static func statAllocatedSize(path: String) -> Int64? {
         var statbuf = stat()
@@ -194,15 +171,6 @@ enum DirectorySizeNativeCalculator {
         return Int64(statbuf.st_blocks) * 512
     }
 
-    // MARK: - Directory Empty
-    private static func isDirectoryEmpty(path: String) -> Bool? {
-        do {
-            return try FileManager.default.contentsOfDirectory(atPath: path).isEmpty
-        } catch {
-            log.debug("[DirectorySizeService] Cannot read directory to verify emptiness: \(path) error=\(error.localizedDescription)")
-            return nil
-        }
-    }
 }
 
 // MARK: - Size Accumulation
@@ -212,4 +180,23 @@ private struct SizeAccumulation {
     var skippedDirectory = false
     var usedStatFallback = false
     var countedFile = false
+}
+
+private struct SizeScanBatch {
+    var total: Int64 = 0
+    var countedFiles = 0
+    var skippedDirs = 0
+    var skippedSymlinks = 0
+    var resourceValueFailures = 0
+    var statFallbacks = 0
+    var visitedEntries = 0
+    var reachedEnd = false
+
+    mutating func append(_ result: SizeAccumulation) {
+        total += result.size
+        countedFiles += result.countedFile ? 1 : 0
+        skippedDirs += result.skippedDirectory ? 1 : 0
+        skippedSymlinks += result.skippedSymlink ? 1 : 0
+        statFallbacks += result.usedStatFallback ? 1 : 0
+    }
 }

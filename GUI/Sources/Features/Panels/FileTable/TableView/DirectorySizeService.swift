@@ -124,6 +124,10 @@ actor DirectorySizeService {
     func requestSize(for url: URL) async -> Int64 {
         guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
+        guard !Self.isExpensiveAutomaticRoot(resolvedURL) else {
+            log.info("[DirectorySizeService] automatic scan skipped for expensive root: \(resolvedURL.path)")
+            return Self.unavailableSize
+        }
         guard !AppState.isAppManagedNetworkMountPath(resolvedURL) else {
             return Self.unavailableSize
         }
@@ -229,9 +233,11 @@ actor DirectorySizeService {
         }
         if memoryCache.count > cacheEntryLimit {
             let overflow = memoryCache.count - cacheEntryLimit
-            let oldest = memoryCache.sorted {
-                ($0.value.lastAccess ?? $0.value.mtime) < ($1.value.lastAccess ?? $1.value.mtime)
-            }.prefix(overflow)
+            let oldest =
+                memoryCache.sorted {
+                    ($0.value.lastAccess ?? $0.value.mtime) < ($1.value.lastAccess ?? $1.value.mtime)
+                }
+                .prefix(overflow)
             for item in oldest { memoryCache.removeValue(forKey: item.key) }
         }
         permanentlyUnavailable = Set(
@@ -243,7 +249,7 @@ actor DirectorySizeService {
         if removed > 0 {
             log.info(
                 "[DirectorySizeService] pruned \(removed) stale entries; "
-                + "retained=\(memoryCache.count) contextRoots=\(normalizedRoots.count)"
+                    + "retained=\(memoryCache.count) contextRoots=\(normalizedRoots.count)"
             )
         }
         let policy = CachePruningPolicy(
@@ -322,12 +328,13 @@ actor DirectorySizeService {
         let entry = CacheEntry(size: size, mtime: mtime, lastAccess: Date().timeIntervalSince1970)
         memoryCache[path] = entry
         if let payload = try? JSONEncoder().encode(entry) {
-            try? await persistentCache?.set(
-                namespace: cacheNamespace,
-                key: path,
-                payload: payload,
-                expiresAt: Date().addingTimeInterval(persistentLifetime)
-            )
+            try? await persistentCache?
+                .set(
+                    namespace: cacheNamespace,
+                    key: path,
+                    payload: payload,
+                    expiresAt: Date().addingTimeInterval(persistentLifetime)
+                )
         }
     }
 

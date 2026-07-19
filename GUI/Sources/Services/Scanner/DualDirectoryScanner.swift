@@ -32,7 +32,7 @@ actor DualDirectoryScanner {
     var lastFSEventsPatch: [FavPanelSide: Date] = [:]
     var pendingRefreshAfterScan: [FavPanelSide: Bool] = [.left: false, .right: false]
     var batchMutationDepth = 0
-    let fallbackScanInterval: TimeInterval = 30
+    let fallbackScanInterval: TimeInterval = 5 * 60
 
     var scanInProgress: [FavPanelSide: Bool] = [.left: false, .right: false]
     var activeScanTask: [FavPanelSide: Task<Void, Never>] = [:]

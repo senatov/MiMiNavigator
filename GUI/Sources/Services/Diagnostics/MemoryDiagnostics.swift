@@ -22,6 +22,8 @@ final class MemoryDiagnostics {
     private var lastSnapshot: MemorySnapshot?
     private let sampleLimit = 8
     private let growthWarningBytes: UInt64 = 64 * 1_024 * 1_024
+    private let spikeWarningBytes: UInt64 = 256 * 1_024 * 1_024
+    private let highFootprintBytes: UInt64 = 512 * 1_024 * 1_024
 
     private init() {}
 
@@ -46,6 +48,14 @@ final class MemoryDiagnostics {
         let footprint = Self.megabytes(snapshot.footprintBytes)
         let delta = lastSnapshot.map { Int64(snapshot.footprintBytes) - Int64($0.footprintBytes) } ?? 0
         log.info("[Memory] checkpoint=\(name) resident=\(resident)MB footprint=\(footprint)MB delta=\(Self.signedMegabytes(delta))MB")
+        if delta >= Int64(spikeWarningBytes)
+            || (snapshot.footprintBytes >= highFootprintBytes && lastSnapshot?.footprintBytes ?? 0 < highFootprintBytes)
+        {
+            log.warning(
+                "[Memory] high allocation spike checkpoint=\(name) footprint=\(footprint)MB "
+                    + "delta=\(Self.signedMegabytes(delta))MB; inspect active directory scans and previews"
+            )
+        }
         lastSnapshot = snapshot
         if name == "idle.periodic" { recordTrend(snapshot.footprintBytes, checkpoint: name) }
     }
@@ -63,9 +73,10 @@ final class MemoryDiagnostics {
             let last = recentFootprints.last
         else { return }
         let tolerance: UInt64 = 2 * 1_024 * 1_024
-        let sustained = zip(recentFootprints, recentFootprints.dropFirst()).allSatisfy {
-            previous, next in next + tolerance >= previous
-        }
+        let sustained = zip(recentFootprints, recentFootprints.dropFirst())
+            .allSatisfy {
+                previous, next in next + tolerance >= previous
+            }
         guard sustained, last > first, last - first >= growthWarningBytes else { return }
         log.warning(
             "[Memory] possible sustained growth checkpoint=\(checkpoint) samples=\(sampleLimit) "

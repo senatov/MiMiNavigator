@@ -5,6 +5,23 @@ import Testing
 
 // MARK: - File Content Hash Cache Tests
 struct FileContentHashCacheTests {
+    @Test func skipsExpensiveAutomaticDirectorySizeRoots() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        #expect(DirectorySizeService.isExpensiveAutomaticRoot(home))
+        #expect(DirectorySizeService.isExpensiveAutomaticRoot(home.appendingPathComponent("Library")))
+        #expect(
+            DirectorySizeService.isExpensiveAutomaticRoot(
+                home.appendingPathComponent("Library/CloudStorage/OneDrive-Personal")
+            )
+        )
+        #expect(
+            !DirectorySizeService.isExpensiveAutomaticRoot(
+                home.appendingPathComponent("Library/CloudStorage/OneDrive-Personal/Documents")
+            )
+        )
+        #expect(!DirectorySizeService.isExpensiveAutomaticRoot(FileManager.default.temporaryDirectory))
+    }
+
     @Test func comparesStreamedContentsAndRevalidatesChanges() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("FileContentHashCacheTests-\(UUID().uuidString)", isDirectory: true)

@@ -63,6 +63,7 @@ final class AppState {
 
     // MARK: - Autosave
     var configurationAutosaveTask: Task<Void, Never>?
+    var lastConfigurationAutosaveFingerprint: String?
 
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()

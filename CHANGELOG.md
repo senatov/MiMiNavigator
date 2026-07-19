@@ -14,9 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Two-level directory-size cache** — active entries remain in a bounded in-memory L1 while older valid values are loaded individually from SQLite instead of decoding the complete JSON snapshot at startup.
 - **Cache lifecycle** — directory history context, idle age, entry count, and total cost now constrain both memory and persistent cache growth.
+- **Bounded directory sizing** — automatic size calculation uses one streaming pass, drains temporary Foundation objects in batches, stops after 200,000 entries or eight seconds, and excludes home, Library, and cloud-storage roots.
+- **Idle resource use** — fallback panel scans run every five minutes, configuration snapshots are written only after state changes, and logs are limited to four 8 MB rotation segments.
 
 ### Fixed
 - **Legacy cache scaling** — the monolithic `dirsize.cache` snapshot is migrated safely and idempotently into SQLite and removed only after successful import, avoiding repeated full-file rewrites.
+- **Memory spike diagnostics** — rapid physical-footprint growth and crossings above 512 MB now produce immediate diagnostic warnings instead of relying only on long monotonic trends.
 
 ## [0.9.9.6.4] — 2026-07-19
 

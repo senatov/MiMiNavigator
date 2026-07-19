@@ -44,10 +44,10 @@ extension DualDirectoryScanner {
 
     func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool) {
         switch side {
-        case .left:
-            if leftWatchedPath == path { return }
-        case .right:
-            if rightWatchedPath == path { return }
+            case .left:
+                if leftWatchedPath == path { return }
+            case .right:
+                if rightWatchedPath == path { return }
         }
         let watcher = FSEventsDirectoryWatcher { [weak self] patch in
             guard let self else { return }
@@ -63,14 +63,14 @@ extension DualDirectoryScanner {
         }
 
         switch side {
-        case .left:
-            leftFSEvents?.stop()
-            leftFSEvents = watcher
-            leftWatchedPath = path
-        case .right:
-            rightFSEvents?.stop()
-            rightFSEvents = watcher
-            rightWatchedPath = path
+            case .left:
+                leftFSEvents?.stop()
+                leftFSEvents = watcher
+                leftWatchedPath = path
+            case .right:
+                rightFSEvents?.stop()
+                rightFSEvents = watcher
+                rightWatchedPath = path
         }
 
         log.info("[FSEvents] started for \(side) panel: '\(path)'")
@@ -79,14 +79,14 @@ extension DualDirectoryScanner {
     func stopFSEvents(for side: FavPanelSide) {
         requestedWatchedPath[side] = nil
         switch side {
-        case .left:
-            leftFSEvents?.stop()
-            leftFSEvents = nil
-            leftWatchedPath = nil
-        case .right:
-            rightFSEvents?.stop()
-            rightFSEvents = nil
-            rightWatchedPath = nil
+            case .left:
+                leftFSEvents?.stop()
+                leftFSEvents = nil
+                leftWatchedPath = nil
+            case .right:
+                rightFSEvents?.stop()
+                rightFSEvents = nil
+                rightWatchedPath = nil
         }
     }
 
@@ -95,7 +95,7 @@ extension DualDirectoryScanner {
     func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
         let activePath = side == .left ? leftWatchedPath : rightWatchedPath
         guard activePath == patch.watchedPath,
-              requestedWatchedPath[side] == patch.watchedPath
+            requestedWatchedPath[side] == patch.watchedPath
         else {
             log.debug("[FSEvents] stale patch ignored for \(side): '\(patch.watchedPath)'")
             return
@@ -222,10 +222,12 @@ extension DualDirectoryScanner {
 
     func setupTimer(for side: FavPanelSide) {
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global())
+        let interval = max(refreshInterval, Int(fallbackScanInterval))
 
         timer.schedule(
-            deadline: .now() + .seconds(refreshInterval),
-            repeating: .seconds(refreshInterval)
+            deadline: .now() + .seconds(interval),
+            repeating: .seconds(interval),
+            leeway: .seconds(15)
         )
 
         timer.setEventHandler { [weak self] in
@@ -236,10 +238,10 @@ extension DualDirectoryScanner {
         }
         timer.resume()
         switch side {
-        case .left:
-            leftTimer = timer
-        case .right:
-            rightTimer = timer
+            case .left:
+                leftTimer = timer
+            case .right:
+                rightTimer = timer
         }
     }
 
@@ -270,14 +272,14 @@ extension DualDirectoryScanner {
 
     func resetRefreshTimer(for side: FavPanelSide) {
         switch side {
-        case .left:
-            leftTimer?.cancel()
-            leftTimer = nil
-            setupTimer(for: .left)
-        case .right:
-            rightTimer?.cancel()
-            rightTimer = nil
-            setupTimer(for: .right)
+            case .left:
+                leftTimer?.cancel()
+                leftTimer = nil
+                setupTimer(for: .left)
+            case .right:
+                rightTimer?.cancel()
+                rightTimer = nil
+                setupTimer(for: .right)
         }
     }
 

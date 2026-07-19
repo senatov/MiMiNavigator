@@ -29,8 +29,9 @@ enum AppLogger {
             logFileName: defaultLogFileName,
             wipeOnLaunch: true,
             rotationPolicy: .init(
-                maxFileSizeBytes: 50 * 1024 * 1024,
-                uncompressedBackupCount: 3
+                maxFileSizeBytes: 8 * 1024 * 1024,
+                uncompressedBackupCount: 1,
+                maximumBackupCount: 4
             )
         )
     }
