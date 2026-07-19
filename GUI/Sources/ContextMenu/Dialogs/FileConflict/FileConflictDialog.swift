@@ -29,7 +29,8 @@ struct FileConflictDialog: View {
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
         .frame(width: 640)
-        .background(dialogBackground)
+        .background(.clear)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .overlay(dialogBorder)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
@@ -45,7 +46,6 @@ private extension FileConflictDialog {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 28))
                 .foregroundStyle(.yellow)
-                .shadow(color: .orange.opacity(0.3), radius: 2, y: 1)
             VStack(alignment: .leading, spacing: 2) {
                 Text("File already exists")
                     .font(.system(size: 14, weight: .semibold))
@@ -58,7 +58,7 @@ private extension FileConflictDialog {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(DialogColors.stripe)
+        .background(.clear)
     }
 
 
@@ -147,7 +147,7 @@ private extension FileConflictDialog {
             ConflictButton(title: "Replace Existing", isPrimary: true, action: { resolve(.replace) })
         }
         .padding(12)
-        .background(DialogColors.stripe)
+        .background(.clear)
     }
 }
 
@@ -190,13 +190,6 @@ private extension FileConflictDialog {
 // MARK: - Styling
 
 private extension FileConflictDialog {
-
-    var dialogBackground: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(.regularMaterial)
-            .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
-    }
-
 
     var dialogBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)

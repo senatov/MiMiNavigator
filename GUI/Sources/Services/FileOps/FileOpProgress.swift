@@ -135,6 +135,17 @@ final class FileOpProgress {
         log.info("[FileOpProgress] cancelled at \(processedFiles)/\(totalFiles)")
     }
 
+    // MARK: - Silent Cancel
+
+    func cancelSilently() {
+        isCancelled = true
+        endTime = Date()
+        if usesProgressPanel {
+            ProgressPanel.shared.hide()
+        }
+        log.info("[FileOpProgress] silently cancelled at \(processedFiles)/\(totalFiles)")
+    }
+
     func complete() {
         guard !isCancelled else { return }
         isCompleted = true

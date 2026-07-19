@@ -288,12 +288,18 @@ final class ProgressPanel: NSObject {
 
     // MARK: - Hide
     func hide() {
-        guard let panel, panel.isVisible else { return }
+        guard let panel else { return }
         autoCloseGeneration += 1
         cancelAutoCloseTimer()
         framePersistenceTask?.cancel()
         framePersistenceTask = nil
         persistFrameForCurrentOperation()
+        guard panel.isVisible else {
+            panel.parent?.removeChildWindow(panel)
+            panel.orderOut(nil)
+            removeEventMonitor()
+            return
+        }
         let parent = panel.parent
         NSAnimationContext.runAnimationGroup(
             { ctx in

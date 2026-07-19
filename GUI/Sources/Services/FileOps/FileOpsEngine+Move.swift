@@ -30,7 +30,8 @@ extension FileOpsEngine {
             guard !progress.isCancelled else { break }
             let remaining = items.count - index
             let (target, skip, stop) = try await resolveConflictIfNeeded(
-                source: item, destination: destination, operation: .move, remaining: remaining, memorized: &memorized)
+                source: item, destination: destination, operation: .move, remaining: remaining,
+                progress: progress, memorized: &memorized)
             if stop { break }
             if skip {
                 progress.fileSkipped(name: item.lastPathComponent)
@@ -63,10 +64,10 @@ extension FileOpsEngine {
             destination: destination,
             operation: .move,
             remaining: 1,
+            progress: progress,
             memorized: &memorized
         )
         if stop {
-            progress.complete()
             return progress
         }
         if skip {

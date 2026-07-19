@@ -19,6 +19,7 @@ extension FileOpsEngine {
         destination: URL,
         operation: FileOpType,
         remaining: Int,
+        progress: FileOpProgress,
         memorized: inout ConflictResolution?
     ) async throws -> (target: URL, skip: Bool, stop: Bool) {
         let target = destination.appendingPathComponent(source.lastPathComponent)
@@ -37,9 +38,13 @@ extension FileOpsEngine {
         } else if let handler = conflictHandler {
             let conflict = FileConflictInfo(source: source, target: target)
             panel.suspendForUserDecision()
-            defer { panel.resumeAfterUserDecision() }
             let decision = await handler(conflict, remaining)
             resolution = decision.resolution
+            if resolution == .stop {
+                progress.cancelSilently()
+            } else {
+                panel.resumeAfterUserDecision()
+            }
             if decision.applyToAll {
                 memorized = resolution
                 log.info("[FileOpsEngine] 'apply to all' → \(resolution)")
