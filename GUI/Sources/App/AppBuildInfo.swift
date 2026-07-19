@@ -10,12 +10,12 @@
 import SwiftUI
 
 // MARK: - AppBuildInfo
-/// Provides the build-info toolbar badge and version Text helpers.
+/// Provides the app identity and build-info toolbar item.
 /// Used by MiMiNavigatorApp to avoid polluting the @main App struct.
 enum AppBuildInfo {
 
     // MARK: - toolBarItem
-    /// ToolbarItem with cat icon + DEV BUILD badge showing current version.
+    /// ToolbarItem with app icon, name, and development build version.
     @MainActor
     static func toolBarItem() -> ToolbarItem<(), some View> {
         ToolbarItem(placement: .status) {
@@ -59,18 +59,19 @@ private struct DevBuildBadge: View {
 
     var body: some View {
         HStack(spacing: 9) {
-            DevBuildCatMedallion()
-            VStack(alignment: .leading, spacing: 1) {
-                Text("DEV BUILD")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .tracking(0.55)
-                    .foregroundStyle(.primary.opacity(0.82))
-                Text(version)
-                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(.primary.opacity(0.72))
-                    .lineLimit(1)
-            }
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 29, height: 29)
+            Text("MiMiNavigator")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+            Text("DEV BUILD  \(version)")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .tracking(0.35)
+                .monospacedDigit()
+                .foregroundStyle(.primary.opacity(0.78))
+                .lineLimit(1)
         }
         .padding(.leading, 7)
         .padding(.trailing, 11)

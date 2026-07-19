@@ -129,7 +129,8 @@ private extension FileConflictDialog {
             Spacer()
             Toggle(isOn: $applyToAll) {
                 Text("Apply to remaining")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
             }
             .toggleStyle(.checkbox)
             .help("Use the selected action for the remaining conflicts without showing this dialog again.")

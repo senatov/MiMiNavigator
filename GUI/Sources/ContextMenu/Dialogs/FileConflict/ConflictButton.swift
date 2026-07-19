@@ -8,47 +8,25 @@
 import SwiftUI
 
 // MARK: - Conflict Button
-/// Styled button for conflict resolution actions with hover effect
+/// Standard macOS button for conflict resolution actions.
 struct ConflictButton: View {
     let title: String
     var isPrimary: Bool = false
     let action: () -> Void
     
-    @State private var isHovering = false
-    
     // MARK: - Body
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: isPrimary ? .medium : .regular))
-                .foregroundStyle(isPrimary ? .white : .primary)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 12)
-                .background(buttonBackground)
-                .overlay(buttonBorder)
+        Group {
+            if isPrimary {
+                Button(title, action: action)
+                    .buttonStyle(.borderedProminent)
+            } else {
+                Button(title, action: action)
+                    .buttonStyle(.bordered)
+            }
         }
-        .buttonStyle(.plain)
+        .controlSize(.regular)
         .keyboardFocusable()
-        .onHover { isHovering = $0 }
-    }
-    
-    // MARK: - Private Views
-    private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: 5)
-            .fill(backgroundFillColor)
-    }
-    
-    private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: 5)
-            .stroke(isPrimary ? Color.clear : Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
-    }
-    
-    private var backgroundFillColor: Color {
-        if isPrimary {
-            return isHovering ? Color.accentColor.opacity(0.9) : Color.accentColor
-        } else {
-            return isHovering ? Color.gray.opacity(0.15) : Color.gray.opacity(0.1)
-        }
     }
 }
 

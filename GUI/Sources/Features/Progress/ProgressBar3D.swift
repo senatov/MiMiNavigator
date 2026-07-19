@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 17.07.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Dark-blue progress bar with percentage, ETA, highlight, and shadow.
+// Description: Glass progress bar using the standard macOS accent color.
 
 import AppKit
 
@@ -66,14 +66,14 @@ final class ProgressBar3D: NSView {
         let path = NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2)
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor(#colorLiteral(red: 0.01, green: 0.04, blue: 0.10, alpha: 0.55))
-        shadow.shadowBlurRadius = 3
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.22)
+        shadow.shadowBlurRadius = 2
         shadow.shadowOffset = NSSize(width: 0, height: -1)
         shadow.set()
-        NSColor(#colorLiteral(red: 0.025, green: 0.075, blue: 0.16, alpha: 0.32)).setFill()
+        NSColor.controlBackgroundColor.withAlphaComponent(0.72).setFill()
         path.fill()
         NSGraphicsContext.restoreGraphicsState()
-        NSColor(#colorLiteral(red: 0.02, green: 0.10, blue: 0.24, alpha: 0.72)).setStroke()
+        NSColor.separatorColor.withAlphaComponent(0.72).setStroke()
         path.lineWidth = 0.8
         path.stroke()
     }
@@ -94,16 +94,17 @@ final class ProgressBar3D: NSView {
         let path = NSBezierPath(roundedRect: clippedRect, xRadius: radius, yRadius: radius)
         NSGraphicsContext.saveGraphicsState()
         path.addClip()
+        let accent = NSColor.controlAccentColor
         let gradient = NSGradient(colors: [
-            NSColor(#colorLiteral(red: 0.03, green: 0.20, blue: 0.48, alpha: 1.0)),
-            NSColor(#colorLiteral(red: 0.02, green: 0.10, blue: 0.31, alpha: 1.0)),
-            NSColor(#colorLiteral(red: 0.015, green: 0.06, blue: 0.20, alpha: 1.0))
+            accent.highlight(withLevel: 0.22) ?? accent,
+            accent,
+            accent.shadow(withLevel: 0.18) ?? accent
         ])
         gradient?.draw(in: clippedRect, angle: -90)
         let highlightRect = NSRect(x: clippedRect.minX, y: clippedRect.midY, width: clippedRect.width, height: clippedRect.height * 0.46)
         let highlight = NSGradient(colors: [
-            NSColor(#colorLiteral(red: 0.48, green: 0.72, blue: 1.0, alpha: 0.62)),
-            NSColor(#colorLiteral(red: 0.22, green: 0.48, blue: 0.85, alpha: 0.05))
+            NSColor.white.withAlphaComponent(0.68),
+            NSColor.white.withAlphaComponent(0.04)
         ])
         highlight?.draw(in: highlightRect, angle: -90)
         NSGraphicsContext.restoreGraphicsState()
@@ -126,7 +127,7 @@ final class ProgressBar3D: NSView {
 
     private var labelShadow: NSShadow {
         let shadow = NSShadow()
-        shadow.shadowColor = NSColor(#colorLiteral(red: 0.0, green: 0.02, blue: 0.08, alpha: 0.9))
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.65)
         shadow.shadowBlurRadius = 1.5
         shadow.shadowOffset = NSSize(width: 0, height: -1)
         return shadow

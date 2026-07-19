@@ -55,9 +55,7 @@ extension ProgressPanel {
         panel.minSize = NSSize(width: ProgressPanelAppearance.defaultMinWidth, height: Layout.minimumPanelHeight)
         if let progressPanel = panel as? ProgressPanelWindow {
             progressPanel.onInteraction = { [weak self] in
-                Task { @MainActor in
-                    self?.registerUserInteraction(source: "window")
-                }
+                self?.registerUserInteraction(source: "window")
             }
             progressPanel.onPrimaryMouseDown = { [weak self] event in
                 Task { @MainActor in
@@ -128,6 +126,7 @@ extension ProgressPanel {
         let checkbox = NSButton(checkboxWithTitle: "Close automatically", target: self, action: #selector(autoCloseCheckboxChanged))
         checkbox.translatesAutoresizingMaskIntoConstraints = false
         checkbox.controlSize = .small
+        checkbox.font = .systemFont(ofSize: NSFont.systemFontSize, weight: .semibold)
         checkbox.state = appearance.autoCloseEnabled ? .on : .off
         checkbox.setAccessibilityHelp("Automatically close file operation progress and result windows")
         containerView.addSubview(checkbox)
