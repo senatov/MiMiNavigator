@@ -29,10 +29,7 @@ struct FileConflictDialog: View {
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
         .frame(width: 640)
-        .background(.clear)
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .overlay(dialogBorder)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 
@@ -106,10 +103,12 @@ private extension FileConflictDialog {
     /// shows which file is newer/bigger
     var comparisonBadge: some View {
         HStack(spacing: 16) {
-            if let srcDate = conflict.sourceDate, let tgtDate = conflict.targetDate {
+            if filesHaveMatchingMetadata {
+                comparisonChip(icon: "equal.circle", text: "Same size and modification time", color: .green)
+            } else if let srcDate = conflict.sourceDate, let tgtDate = conflict.targetDate {
                 comparisonChip(
                     icon: "clock",
-                    text: srcDate > tgtDate ? "Source is newer" : "Target is newer",
+                    text: modificationComparisonText(source: srcDate, target: tgtDate),
                     color: srcDate > tgtDate ? .blue : .orange
                 )
             }
@@ -165,9 +164,9 @@ private extension FileConflictDialog {
     func comparisonChip(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(.system(size: 12, weight: .semibold))
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 13, weight: .semibold))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 8)
@@ -184,16 +183,21 @@ private extension FileConflictDialog {
             ? "Source is \(formatted) larger"
             : "Target is \(formatted) larger"
     }
-}
 
 
-// MARK: - Styling
+    var filesHaveMatchingMetadata: Bool {
+        guard conflict.sourceSize == conflict.targetSize,
+              let sourceDate = conflict.sourceDate,
+              let targetDate = conflict.targetDate
+        else { return false }
+        return abs(sourceDate.timeIntervalSince(targetDate)) < 1
+    }
 
-private extension FileConflictDialog {
 
-    var dialogBorder: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.8)
+    func modificationComparisonText(source: Date, target: Date) -> String {
+        let difference = source.timeIntervalSince(target)
+        if abs(difference) < 1 { return "Same modification time" }
+        return difference > 0 ? "Source is newer" : "Target is newer"
     }
 }
 

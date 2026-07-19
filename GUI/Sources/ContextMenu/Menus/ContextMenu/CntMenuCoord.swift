@@ -103,13 +103,7 @@ final class CntMenuCoord {
     /// Show file conflict resolution dialog — returns BatchConflictDecision with applyToAll flag
     func showConflictDialog(conflict: FileConflictInfo, remainingCount: Int = 1) async -> BatchConflictDecision {
         log.debug("\(#function) source='\(conflict.sourceName)' target='\(conflict.targetName)' remaining=\(remainingCount)")
-        return await withCheckedContinuation { continuation in
-            activeDialog = .fileConflict(
-                conflict: conflict,
-                remainingCount: remainingCount,
-                continuation: continuation
-            )
-        }
+        return await FileConflictPanelCoordinator.shared.present(conflict: conflict, remainingCount: remainingCount)
     }
 
     /// Resolve conflict from UI callback
