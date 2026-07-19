@@ -8,7 +8,7 @@
 import SwiftUI
 
 // MARK: - Conflict Button
-/// Standard macOS button for conflict resolution actions.
+/// Standard application 3D button for conflict resolution actions.
 struct ConflictButton: View {
     let title: String
     var isPrimary: Bool = false
@@ -16,15 +16,8 @@ struct ConflictButton: View {
     
     // MARK: - Body
     var body: some View {
-        Group {
-            if isPrimary {
-                Button(title, action: action)
-                    .buttonStyle(.borderedProminent)
-            } else {
-                Button(title, action: action)
-                    .buttonStyle(.bordered)
-            }
-        }
+        Button(title, action: action)
+        .buttonStyle(ThemedButtonStyle(tint: isPrimary ? .accentColor : nil))
         .controlSize(.regular)
         .keyboardFocusable()
     }

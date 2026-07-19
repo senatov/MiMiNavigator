@@ -30,7 +30,9 @@ struct FileConflictDialog: View {
         .forcedDialogTabNavigation()
         .frame(width: 640)
         .background(dialogBackground)
+        .glassEffect(.regular)
         .overlay(dialogBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -129,8 +131,15 @@ private extension FileConflictDialog {
             Spacer()
             Toggle(isOn: $applyToAll) {
                 Text("Apply to remaining")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.primary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color.accentColor.opacity(0.55), lineWidth: 1)
+                    }
             }
             .toggleStyle(.checkbox)
             .help("Use the selected action for the remaining conflicts without showing this dialog again.")
@@ -185,14 +194,14 @@ private extension FileConflictDialog {
 
     var dialogBackground: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(DialogColors.base)
+            .fill(.clear)
             .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
     }
 
 
     var dialogBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
+            .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 }
 
