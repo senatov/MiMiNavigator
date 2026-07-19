@@ -34,6 +34,7 @@ extension FileTableView {
                         Section {
                             FileTableRowsView(
                                 rows: sortedRows,
+                                indexByID: cachedIndexByID,
                                 selectedID: $selectedID,
                                 panelSide: panelSide,
                                 layout: layout,
@@ -55,7 +56,7 @@ extension FileTableView {
 
                     // 1px breathing room inside scroll content so the bottom selection border isn't clipped.
                     Color.clear
-                    .frame(height: onePixel)
+                        .frame(height: onePixel)
                 }
             }
             .background(scrollBackgroundLayer)
@@ -81,8 +82,8 @@ extension FileTableView {
         ZStack {
             scrollZebraBackground
             Color.clear
-            .contentShape(Rectangle())
-            .gesture(emptyAreaTapGesture, including: .gesture)
+                .contentShape(Rectangle())
+                .gesture(emptyAreaTapGesture, including: .gesture)
         }
     }
 
@@ -104,12 +105,12 @@ extension FileTableView {
         )
         .onEnded { gesture in
             switch gesture {
-            case .first:
-                appState.unmarkAll(on: panelSide)
-                selectedID = nil
-            case .second:
-                appState.unmarkAll(on: panelSide)
-                selectedID = nil
+                case .first:
+                    appState.unmarkAll(on: panelSide)
+                    selectedID = nil
+                case .second:
+                    appState.unmarkAll(on: panelSide)
+                    selectedID = nil
             }
         }
     }
@@ -140,20 +141,20 @@ extension FileTableView {
 
     var panelBorder: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-        .stroke(
-            isPanelDropTargeted
-            ? Color.accentColor.opacity(0.8)
-            : Color.clear,
-            lineWidth: isPanelDropTargeted ? 2 : 1
-        )
-        .allowsHitTesting(false)
+            .stroke(
+                isPanelDropTargeted
+                    ? Color.accentColor.opacity(0.8)
+                    : Color.clear,
+                lineWidth: isPanelDropTargeted ? 2 : 1
+            )
+            .allowsHitTesting(false)
     }
 
 }
 
-private extension View {
+extension View {
     @ViewBuilder
-    func panelScrollIndicators(isFocused _: Bool) -> some View {
+    fileprivate func panelScrollIndicators(isFocused _: Bool) -> some View {
         self
     }
 }

@@ -47,6 +47,8 @@ A cache miss, expired row, metadata mismatch, disconnected volume, unreadable fi
 
 ## Maintenance
 
-Automatic directory-size calculation is deliberately bounded. Home, `~/Library`, top-level cloud-storage roots, mounted-volume roots, and protected system roots are not recursively measured during normal table rendering. Other calculations use one streaming traversal, drain temporary Foundation objects in batches, and stop after 200,000 entries or eight seconds. A skipped or budget-limited result remains unavailable rather than risking unbounded memory and I/O pressure.
+Automatic directory-size calculation is deliberately bounded. Home, `/Library` and its descendants, top-level cloud-storage roots, mounted-volume roots, and protected system roots are not recursively measured during normal table rendering. Other calculations use one streaming traversal, drain temporary Foundation objects in batches, and stop after 200,000 entries or eight seconds. Navigating away cancels its active traversal. A skipped or budget-limited result remains unavailable rather than risking unbounded memory and I/O pressure.
+
+Directory listings above 5,000 entries remain available to the active panel but are not retained in `DirectoryContentCache`. This prevents a large inactive table from surviving through navigation history while keeping the current directory fully accessible.
 
 Namespace names include a schema version. Change the suffix when payload compatibility cannot be maintained. Database schema changes use GRDB migrations. Add a bounded pruning policy for every new namespace and include its expected validation keys in this document.

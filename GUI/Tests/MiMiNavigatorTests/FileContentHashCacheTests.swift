@@ -19,6 +19,7 @@ struct FileContentHashCacheTests {
                 home.appendingPathComponent("Library/CloudStorage/OneDrive-Personal/Documents")
             )
         )
+        #expect(DirectorySizeService.isExpensiveAutomaticRoot(URL(fileURLWithPath: "/Library/Developer")))
         #expect(!DirectorySizeService.isExpensiveAutomaticRoot(FileManager.default.temporaryDirectory))
     }
 

@@ -13,11 +13,17 @@ import SwiftUI
 
 // MARK: - Navigation Panel with Favorites Button
 struct BreadCrumbToolBar: View {
+    enum Content {
+        case navigation
+        case utilities
+    }
+
     @Environment(AppState.self) var appState
     // MARK: - State
     @StateObject private var store = FavoritesKit.FavoritesStore.shared
     @State private var favNavAdapter: FavNavAdapter? = nil
     let panelSide: FavPanelSide
+    let content: Content
 
     private enum Metrics {
         static let groupSpacing: CGFloat = 6
@@ -43,17 +49,16 @@ struct BreadCrumbToolBar: View {
 
     // MARK: - Body
     var body: some View {
-        navigationControls
-            .onAppear(perform: handleAppear)
-    }
-
-    // MARK: - Navigation Controls
-    private var navigationControls: some View {
-        HStack(spacing: Metrics.groupSpacing) {
-            navigationGroup
-            utilityGroup
+        Group {
+            switch content {
+                case .navigation:
+                    navigationGroup
+                case .utilities:
+                    utilityGroup
+            }
         }
         .keyboardFocusSection()
+        .onAppear(perform: handleAppear)
     }
 
     private var navigationGroup: some View {
@@ -72,9 +77,10 @@ struct BreadCrumbToolBar: View {
     }
 
     // MARK: - Init
-    init(selectedSide: FavPanelSide) {
+    init(selectedSide: FavPanelSide, content: Content = .navigation) {
         log.debug("[BreadCrumbToolBar] init panel=\(selectedSide)")
         self.panelSide = selectedSide
+        self.content = content
     }
 
     // MARK: - Back Button

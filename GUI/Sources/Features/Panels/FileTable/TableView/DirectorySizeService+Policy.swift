@@ -11,12 +11,16 @@ extension DirectorySizeService {
         let path = url.resolvingSymlinksInPath().standardizedFileURL.path
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         let blockedRoots = [
+            "/",
+            "/Users",
             home,
             home + "/Library",
             home + "/Library/CloudStorage",
             home + "/Library/Mobile Documents",
         ]
         if blockedRoots.contains(path) { return true }
+        if path == "/Library" || path.hasPrefix("/Library/") { return true }
+        if path == "/System" || path.hasPrefix("/System/") { return true }
 
         let cloudStorage = home + "/Library/CloudStorage/"
         if path.hasPrefix(cloudStorage) {

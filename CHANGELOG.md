@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cache lifecycle** — directory history context, idle age, entry count, and total cost now constrain both memory and persistent cache growth.
 - **Bounded directory sizing** — automatic size calculation uses one streaming pass, drains temporary Foundation objects in batches, stops after 200,000 entries or eight seconds, and excludes home, Library, and cloud-storage roots.
 - **Idle resource use** — fallback panel scans run every five minutes, configuration snapshots are written only after state changes, and logs are limited to four 8 MB rotation segments.
+- **Large directory presentation** — breadcrumb controls now reserve trailing space for History and Favorites, collapse leading path segments before the current directory, and account for control padding to prevent overlap.
+- **Large listing memory** — oversized directory listings are no longer retained in navigation LRU, row rendering avoids an enumerated copy, and navigation cancels outstanding directory-size traversals.
 
 ### Fixed
 - **Legacy cache scaling** — the monolithic `dirsize.cache` snapshot is migrated safely and idempotently into SQLite and removed only after successful import, avoiding repeated full-file rewrites.

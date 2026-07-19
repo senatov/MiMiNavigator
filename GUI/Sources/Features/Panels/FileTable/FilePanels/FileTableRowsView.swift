@@ -41,6 +41,7 @@ struct FileTableRowsView: View {
     @State private var colorStore = ColorThemeStore.shared
 
     let rows: [CustomFile]
+    let indexByID: [CustomFile.ID: Int]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: FavPanelSide
     let layout: ColumnLayoutModel
@@ -50,11 +51,9 @@ struct FileTableRowsView: View {
     let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
     let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
-
     private var currentSelectedID: CustomFile.ID? {
         selectedID
     }
-
 
     private var isActivePanel: Bool {
         appState.focusedPanel == panelSide
@@ -64,11 +63,9 @@ struct FileTableRowsView: View {
         colorStore.themeVersion
     }
 
-
     private var selectedDisplayIndex: Int? {
         rows.firstIndex { $0.id == currentSelectedID }
     }
-
 
     private var selectedRowYOffset: CGFloat? {
         guard let selectedDisplayIndex else { return nil }
@@ -76,12 +73,10 @@ struct FileTableRowsView: View {
             + CGFloat(selectedDisplayIndex) * FilePanelStyle.rowHeight
     }
 
-
     private var selectedRowHeight: CGFloat? {
         guard selectedDisplayIndex != nil else { return nil }
         return FilePanelStyle.rowHeight
     }
-
 
     private var selectionFillLayout: SelectionOverlayLayout? {
         guard let selectedRowYOffset, let selectedRowHeight else { return nil }
@@ -93,7 +88,6 @@ struct FileTableRowsView: View {
         )
     }
 
-
     private var selectionBorderLayout: SelectionOverlayLayout? {
         guard let selectedRowYOffset, let selectedRowHeight else { return nil }
         return SelectionOverlayLayout(
@@ -103,7 +97,6 @@ struct FileTableRowsView: View {
             bottomInset: SelectionOverlayMetrics.borderBottomInset
         )
     }
-
 
     var body: some View {
         VStack(spacing: 0) {
@@ -124,17 +117,15 @@ struct FileTableRowsView: View {
         .animation(Self.selectionSpring, value: selectedRowYOffset)
     }
 
-
     private var rowsStack: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, file in
-                sizeAwareRow(index: index, file: file)
+            ForEach(rows) { file in
+                sizeAwareRow(index: indexByID[file.id] ?? 0, file: file)
             }
         }
         .padding(.top, SelectionOverlayMetrics.rowsTopInset)
         .transaction { $0.disablesAnimations = true }
     }
-
 
     @ViewBuilder
     private var selectionFillOverlay: some View {
@@ -149,7 +140,6 @@ struct FileTableRowsView: View {
         }
     }
 
-
     @ViewBuilder
     private var selectionBorderOverlay: some View {
         if let layout = selectionBorderLayout {
@@ -163,22 +153,18 @@ struct FileTableRowsView: View {
         }
     }
 
-
     private var selectionBorderColor: Color {
         let base = colorStore.activeTheme.selectionBorder
         return isActivePanel ? base : base.opacity(0.5)
     }
 
-
     private var selectionBorderLineWidth: CGFloat {
         max(onePixel, colorStore.activeTheme.selectionLineWidth)
     }
 
-
     private var bottomBreathingSpace: some View {
         Color.clear.frame(height: onePixel)
     }
-
 
     @ViewBuilder
     private func sizeAwareRow(index: Int, file: CustomFile) -> some View {
@@ -214,7 +200,6 @@ struct FileTableRowsView: View {
         }
     }
 }
-
 
 // MARK: - SizeAwareRow
 

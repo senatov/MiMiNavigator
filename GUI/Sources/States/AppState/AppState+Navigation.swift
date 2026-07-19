@@ -31,6 +31,8 @@ extension AppState {
             return
         }
 
+        await DirectorySizeService.shared.cancelRequests(under: URL(fileURLWithPath: previousPath))
+
         rememberCurrentSelection(for: panel)
         updateKnownDirectoryPath(URL(fileURLWithPath: newPath), for: panel)
         setSelectedFile(nil, for: panel)
@@ -75,7 +77,8 @@ extension AppState {
                 let files = self.displayedFiles(for: panel)
                 if !files.isEmpty || Self.isReadableDirectory(newPath) {
                     log.info("[Navigate] \(panel): mounted volume refresh completed, \(files.count) files")
-                    await DirectoryContentCache.shared.store(path: newPath, files: files, showHidden: UserPreferences.shared.snapshot.showHiddenFiles)
+                    await DirectoryContentCache.shared.store(
+                        path: newPath, files: files, showHidden: UserPreferences.shared.snapshot.showHiddenFiles)
                 }
             }
 

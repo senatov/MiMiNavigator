@@ -9,17 +9,9 @@ import AppKit
 import CacheKit
 import Foundation
 
-/// Calculates directory sizes asynchronously with:
-/// - concurrency limit
-/// - persistent disk cache
-/// - very low CPU usage
-///
-/// This service is intentionally isolated from UI code.
-/// UI requests a size → service returns cached value or calculates it.
+/// Asynchronous, bounded directory sizing with memory and persistent caches.
 actor DirectorySizeService {
-
     // MARK: - Singleton
-
     static let shared = DirectorySizeService()
     private nonisolated static let cancellation = DirectorySizeCancellationState()
     // MARK: - Constants
@@ -27,13 +19,9 @@ actor DirectorySizeService {
     /// IMPORTANT: Do not format/display this as a real size.
     static let unavailableSize: Int64 = -1
 
-    // MARK: - Security-Scoped Access
-
     /// Best-effort wrapper for sandboxed locations.
     /// If the URL is not security-scoped, startAccessingSecurityScopedResource() returns false and we still try.
     nonisolated private func withSecurityScope<T>(_ url: URL, _ work: () throws -> T) rethrows -> T {
-        // Best-effort: only attempt security-scoped access for file URLs.
-        // If not security-scoped, `startAccessing...` returns false and we still execute `work()`.
         let isFileURL = url.isFileURL
         let didStart = isFileURL ? url.startAccessingSecurityScopedResource() : false
         defer {
@@ -65,6 +53,7 @@ actor DirectorySizeService {
     /// Tracks directory size calculations currently in progress
     /// Prevents the same directory from being scanned multiple times simultaneously.
     private var inFlightTasks: [String: Task<Int64, Never>] = [:]
+    private var inFlightCancellation: [String: DirectorySizeCancellationState] = [:]
 
     private let persistentCache = ApplicationPersistentCache.shared
     private let legacyCacheURL: URL
@@ -142,12 +131,17 @@ actor DirectorySizeService {
         if let existingTask = inFlightTask(for: key) {
             return await existingTask.value
         }
-        let task = makeSizeTask(for: resolvedURL)
+        let cancellation = DirectorySizeCancellationState()
+        let task = makeSizeTask(for: resolvedURL, cancellation: cancellation)
+        inFlightCancellation[key] = cancellation
         setInFlightTask(task, for: key)
         let result = await task.value
-        clearInFlightTask(for: key)
+        if inFlightCancellation[key] === cancellation {
+            clearInFlightTask(for: key)
+            inFlightCancellation[key] = nil
+        }
         // mark as permanently unavailable if unreadable
-        if result == Self.unavailableSize {
+        if result == Self.unavailableSize, !cancellation.isCancelled {
             permanentlyUnavailable.insert(key)
             log.debug("\(#function) marked permanently unavailable: \(key)")
         }
@@ -189,10 +183,10 @@ actor DirectorySizeService {
         inFlightTasks[path] = nil
     }
 
-    private func makeSizeTask(for url: URL) -> Task<Int64, Never> {
+    private func makeSizeTask(for url: URL, cancellation: DirectorySizeCancellationState) -> Task<Int64, Never> {
         Task { [weak self] () -> Int64 in
             guard let self else { return Self.unavailableSize }
-            let size = await self.computeSizeOnBackgroundQueue(for: url)
+            let size = await self.computeSizeOnBackgroundQueue(for: url, cancellation: cancellation)
             await self.storeCache(size: size, for: url)
             return size
         }
@@ -204,7 +198,11 @@ actor DirectorySizeService {
         for task in inFlightTasks.values {
             task.cancel()
         }
+        for cancellation in inFlightCancellation.values {
+            cancellation.cancel()
+        }
         inFlightTasks.removeAll()
+        inFlightCancellation.removeAll()
         log.info("[DirectorySizeService] shutdown requested")
     }
 
@@ -214,7 +212,9 @@ actor DirectorySizeService {
         let matchingKeys = inFlightTasks.keys.filter { $0 == rootPath || $0.hasPrefix(rootPath + "/") }
         for key in matchingKeys {
             inFlightTasks[key]?.cancel()
+            inFlightCancellation[key]?.cancel()
             inFlightTasks[key] = nil
+            inFlightCancellation[key] = nil
         }
         if !matchingKeys.isEmpty {
             log.info("[DirectorySizeService] cancelled \(matchingKeys.count) request(s) under \(rootPath)")
@@ -265,7 +265,10 @@ actor DirectorySizeService {
         }
     }
 
-    private func computeSizeOnBackgroundQueue(for url: URL) async -> Int64 {
+    private func computeSizeOnBackgroundQueue(
+        for url: URL,
+        cancellation: DirectorySizeCancellationState
+    ) async -> Int64 {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
             queue.async { [semaphore, weak self] in
                 guard let self else {
@@ -274,13 +277,13 @@ actor DirectorySizeService {
                 }
                 semaphore.wait()
                 defer { semaphore.signal() }
-                guard !Self.cancellation.isCancelled else {
+                guard !Self.cancellation.isCancelled, !cancellation.isCancelled else {
                     continuation.resume(returning: Self.unavailableSize)
                     return
                 }
                 // Phase 2 + 3 native calculation (security-scoped best-effort)
                 let size: Int64 = self.withSecurityScope(url) {
-                    DirectorySizeNativeCalculator.directorySize(url, cancellation: Self.cancellation)
+                    DirectorySizeNativeCalculator.directorySize(url, cancellation: cancellation)
                 }
                 continuation.resume(returning: size)
             }

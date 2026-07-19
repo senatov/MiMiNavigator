@@ -30,9 +30,11 @@ extension BreadCrumbView {
             return [displaySegment(for: components[0], index: 0, showsSeparatorBefore: false)]
         }
         let charWidth: CGFloat = 7.5
-        let separatorWidth: CGFloat = 10
+        let separatorWidth: CGFloat = 18
+        let segmentHorizontalChrome: CGFloat = 8
         let totalSepWidth = CGFloat(components.count - 1) * separatorWidth
-        let budgetForText = availableWidth - totalSepWidth - 16
+        let totalSegmentChrome = CGFloat(components.count) * segmentHorizontalChrome
+        let budgetForText = availableWidth - totalSepWidth - totalSegmentChrome - 8
         let widths = components.map { CGFloat($0.text.count) * charWidth }
         let totalWidth = widths.reduce(0, +)
         if totalWidth <= budgetForText {
@@ -41,15 +43,16 @@ extension BreadCrumbView {
         if let collapsed = contextualCollapsedSegments(components: components, budgetForText: budgetForText, charWidth: charWidth) {
             return collapsed
         }
-        var segs = components.enumerated().map { i, component in
-            BreadCrumbMeasuredSegment(
-                index: i,
-                name: component.text,
-                display: component.text,
-                width: widths[i],
-                priority: truncPriority(index: i, total: components.count, len: component.text.count)
-            )
-        }
+        var segs = components.enumerated()
+            .map { i, component in
+                BreadCrumbMeasuredSegment(
+                    index: i,
+                    name: component.text,
+                    display: component.text,
+                    width: widths[i],
+                    priority: truncPriority(index: i, total: components.count, len: component.text.count)
+                )
+            }
         var used = totalWidth
         while used > budgetForText {
             guard let idx = shrinkCandidateIndex(in: segs) else { break }
@@ -115,11 +118,10 @@ extension BreadCrumbView {
     }
 
     private func contextualBudgets(for count: Int) -> [(leading: Int, trailing: Int)] {
-        let leadingMax = min(4, count - 3)
         let trailingMax = min(6, count - 3)
         var result: [(leading: Int, trailing: Int)] = []
-        for leading in stride(from: leadingMax, through: 2, by: -1) {
-            for trailing in stride(from: trailingMax, through: 2, by: -1) {
+        for leading in 1...min(2, count - 2) {
+            for trailing in stride(from: trailingMax, through: 1, by: -1) {
                 guard leading + trailing < count else { continue }
                 result.append((leading, trailing))
             }
@@ -140,18 +142,22 @@ extension BreadCrumbView {
         let hiddenRange = hiddenStart..<hiddenEnd
         let hiddenText = components[hiddenRange].map(\.text).joined(separator: " / ")
         let indexes = Array(0..<leadingCount) + [-1] + Array(hiddenEnd..<components.count)
-        var textByIndex = Dictionary(uniqueKeysWithValues: indexes.compactMap { index -> (Int, String)? in
-            guard index >= 0 else { return (-1, "...") }
-            return (index, components[index].text)
-        })
+        var textByIndex = Dictionary(
+            uniqueKeysWithValues: indexes.compactMap { index -> (Int, String)? in
+                guard index >= 0 else { return (-1, "...") }
+                return (index, components[index].text)
+            })
         if fits(indexes: indexes, textByIndex: textByIndex, budgetForText: budgetForText, charWidth: charWidth) {
-            return makeCollapsedSegments(components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange, hiddenText: hiddenText)
+            return makeCollapsedSegments(
+                components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange, hiddenText: hiddenText)
         }
         for index in shrinkOrder(indexes: indexes, components: components) {
             guard index >= 0, let text = textByIndex[index], text.count > 8 else { continue }
             textByIndex[index] = truncMiddle(text, maxLen: max(8, min(12, text.count - 4)))
             if fits(indexes: indexes, textByIndex: textByIndex, budgetForText: budgetForText, charWidth: charWidth) {
-                return makeCollapsedSegments(components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange, hiddenText: hiddenText)
+                return makeCollapsedSegments(
+                    components: components, indexes: indexes, textByIndex: textByIndex, hiddenRange: hiddenRange,
+                    hiddenText: hiddenText)
             }
         }
         return nil
@@ -195,9 +201,10 @@ extension BreadCrumbView {
 
     private func shrinkOrder(indexes: [Int], components: [BreadCrumbDisplayComponent]) -> [Int] {
         indexes
-            .filter { $0 >= 0 }
+            .filter { $0 > 0 && $0 < components.count - 1 }
             .sorted { lhs, rhs in
-                components[lhs].text.count > components[rhs].text.count
+                if lhs != rhs { return lhs < rhs }
+                return components[lhs].text.count > components[rhs].text.count
             }
     }
 
@@ -214,7 +221,7 @@ extension BreadCrumbView {
 
     private func truncPriority(index: Int, total: Int, len: Int) -> Int {
         guard index != 0 && index != total - 1 else { return 0 }
-        return len * 10
+        return (total - index) * 1_000 + len * 10
     }
 
     private func shrinkPriority(index: Int, total: Int, len: Int) -> Int {
