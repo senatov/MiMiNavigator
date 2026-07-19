@@ -14,18 +14,18 @@ struct AboutView: View {
     private let tagline = "Dual-panel file manager for macOS"
     private let copyright = "© 2024–2026 Iakov Senatov"
     private let githubURL = "https://github.com/senatov/MiMiNavigator"
-    
+
     private var version: String {
         let marketing = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         return "\(marketing) (\(build))"
     }
-    
+
     private var macOSVersion: String {
         let v = ProcessInfo.processInfo.operatingSystemVersion
         return "macOS \(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
     }
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -34,6 +34,8 @@ struct AboutView: View {
                 infoSection
                 Divider().padding(.horizontal, 20)
                 linksSection
+                Divider().padding(.horizontal, 20)
+                architectureSection
                 Divider().padding(.horizontal, 20)
                 acknowledgmentsSection
                 Divider().padding(.horizontal, 20)
@@ -58,18 +60,18 @@ struct AboutView: View {
                     .frame(width: 96, height: 96)
                     .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
             }
-            
+
             Text(appName)
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
-            
+
             Text(tagline)
                 .font(.system(size: 14, weight: .light))
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 20)
     }
-    
+
     // MARK: - Info Section
     private var infoSection: some View {
         VStack(spacing: 6) {
@@ -80,7 +82,7 @@ struct AboutView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
     }
-    
+
     private func infoRow(label: String, value: String) -> some View {
         HStack {
             Text(label)
@@ -93,14 +95,14 @@ struct AboutView: View {
         }
         .font(.system(size: 12))
     }
-    
+
     private var architectureString: String {
         #if arch(arm64)
-        return "Apple Silicon (arm64)"
+            return "Apple Silicon (arm64)"
         #elseif arch(x86_64)
-        return "Intel (x86_64)"
+            return "Intel (x86_64)"
         #else
-        return "Unknown"
+            return "Unknown"
         #endif
     }
 
@@ -129,7 +131,7 @@ struct AboutView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
     }
-    
+
     private func linkButton(title: String, subtitle: String, icon: String, url: String) -> some View {
         Button {
             if let linkURL = URL(string: url) {
@@ -161,6 +163,79 @@ struct AboutView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Application Architecture
+    private var architectureSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Application Architecture")
+                .font(.system(size: 11, weight: .light))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 6) {
+                architectureRow(
+                    name: "CacheKit",
+                    description: "SQLite-backed persistent cache with TTL and LRU pruning",
+                    icon: "externaldrive.badge.timemachine"
+                )
+                architectureRow(
+                    name: "Two-level caching",
+                    description: "Bounded in-memory L1 with persistent, validated L2 storage",
+                    icon: "square.2.layers.3d"
+                )
+                architectureRow(
+                    name: "NetworkKit",
+                    description: "Network discovery, neighborhood browsing, and remote mounts",
+                    icon: "network"
+                )
+                architectureRow(
+                    name: "FavoritesKit",
+                    description: "Sandbox-aware favorites, bookmarks, and sidebar presentation",
+                    icon: "star"
+                )
+                architectureRow(
+                    name: "FileModelKit & ScannerKit",
+                    description: "File metadata model and asynchronous directory scanning",
+                    icon: "doc.text.magnifyingglass"
+                )
+                architectureRow(
+                    name: "ArchiveKit & RenameKit",
+                    description: "Archive virtual filesystem and batch rename operations",
+                    icon: "archivebox"
+                )
+                architectureRow(
+                    name: "LogKit",
+                    description: "Shared structured diagnostics across application modules",
+                    icon: "text.alignleft"
+                )
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 24)
+    }
+
+    private func architectureRow(name: String, description: String, icon: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundStyle(.blue)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.primary)
+                Text(description)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
+    }
+
     // MARK: - Acknowledgments (Third-Party Libraries)
     private var acknowledgmentsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -168,8 +243,14 @@ struct AboutView: View {
                 .font(.system(size: 11, weight: .light))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
-            
+
             VStack(spacing: 6) {
+                libraryRow(
+                    name: "GRDB.swift",
+                    description: "SQLite persistence and schema migrations for CacheKit",
+                    url: "https://github.com/groue/GRDB.swift",
+                    license: "MIT"
+                )
                 libraryRow(
                     name: "SwiftyBeaver",
                     description: "Colorful logging framework",
@@ -217,7 +298,7 @@ struct AboutView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
     }
-    
+
     private func libraryRow(name: String, description: String, url: String, license: String) -> some View {
         Button {
             if let linkURL = URL(string: url) {
@@ -229,7 +310,7 @@ struct AboutView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.orange)
                     .frame(width: 20)
-                
+
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
                         Text(name)
@@ -246,9 +327,9 @@ struct AboutView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 9))
                     .foregroundStyle(.quaternary)
@@ -266,25 +347,25 @@ struct AboutView: View {
             Text("Built with")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
-            
+
             HStack(spacing: 12) {
                 creditBadge("Swift 6", color: .orange)
                 creditBadge("SwiftUI", color: .blue)
                 creditBadge("AppKit", color: .purple)
             }
-            
+
             Text(copyright)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .padding(.top, 6)
-            
+
             Text("Released under MIT License")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 14)
     }
-    
+
     private func creditBadge(_ text: String, color: Color) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .medium))
@@ -293,7 +374,7 @@ struct AboutView: View {
             .padding(.vertical, 4)
             .background(color.opacity(0.12), in: Capsule())
     }
-    
+
     // MARK: - Close Button
     private var closeButton: some View {
         HStack {
