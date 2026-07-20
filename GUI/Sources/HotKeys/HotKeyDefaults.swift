@@ -15,7 +15,7 @@ enum HotKeyDefaults {
     /// All default bindings — Total Commander-inspired layout
     static let bindings: [HotKeyBinding] = [
         // ── File Operations ──
-        HotKeyBinding(action: .viewFile,         keyCode: 0x63, modifiers: .none),         // F3
+        HotKeyBinding(action: .backupFiles,      keyCode: 0x63, modifiers: .none),         // F3
         HotKeyBinding(action: .editFile,         keyCode: 0x76, modifiers: .none),         // F4
         HotKeyBinding(action: .copyFile,         keyCode: 0x60, modifiers: .none),         // F5
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6

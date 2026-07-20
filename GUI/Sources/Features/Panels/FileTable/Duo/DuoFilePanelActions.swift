@@ -16,14 +16,15 @@
         let appState: AppState
         let refreshBothPanels: @concurrent @Sendable () async -> Void
 
-        // MARK: - F3 View
-        func performView() {
-            log.debug("performView — F3 pressed")
-            guard let file = currentSelectedFile, !file.isDirectory else {
-                log.debug("performView: no file selected or is directory")
+        // MARK: - F3 Temp-Backup
+        func performBackup() {
+            let panel = appState.focusedPanel
+            let files = appState.filesForOperation(on: panel).filter { !$0.isParentEntry }
+            guard !files.isEmpty else {
+                log.debug("[Backup] no files selected")
                 return
             }
-            openWithDefaultOrPicker(file: file, preferEdit: false)
+            Task { await CntMenuCoord.shared.requestBackup(files: files, sourcePanel: panel, appState: appState) }
         }
 
         // MARK: - F4 Edit
@@ -33,23 +34,21 @@
                 log.debug("performEdit: no file selected or is directory")
                 return
             }
-            openWithDefaultOrPicker(file: file, preferEdit: true)
+            openWithDefaultApplication(file: file)
         }
 
         // MARK: - Open with default app; if none — show Open With picker
         @MainActor
-        private func openWithDefaultOrPicker(file: CustomFile, preferEdit: Bool) {
+        private func openWithDefaultApplication(file: CustomFile) {
             let url = file.urlValue
             // Try default application from Launch Services
             if let defaultApp = NSWorkspace.shared.urlForApplication(toOpen: url) {
                 log.info("Opening '\(file.nameStr)' with default app: \(defaultApp.lastPathComponent)")
-                let config = NSWorkspace.OpenConfiguration()
-                config.activates = true
-                NSWorkspace.shared.open([url], withApplicationAt: defaultApp, configuration: config) { _, error in
-                    if let error {
-                        log.error("openWithDefault failed: \(error.localizedDescription)")
-                    }
-                }
+                ExternalApplicationLauncher.shared.open(
+                    fileURL: url,
+                    applicationURL: defaultApp,
+                    bundleIdentifier: Bundle(url: defaultApp)?.bundleIdentifier
+                )
                 // Record in LRU
                 if let bundleID = Bundle(url: defaultApp)?.bundleIdentifier {
                     OpenWithService.shared.recordUsage(bundleID: bundleID, ext: url.pathExtension, appURL: defaultApp)

@@ -4,6 +4,7 @@
 //
 //  Created by Iakov Senatov on 21.02.25.
 
+import AppKit
 import SwiftUI
 
 // MARK: -
@@ -12,16 +13,33 @@ import SwiftUI
 struct DownToolbarButtonView: View {
     let title: String
     let systemImage: String
+    let image: NSImage?
     let action: () -> Void
     @State private var isHovered: Bool = false
 
     // MARK: -
 
+    init(title: String, systemImage: String, image: NSImage? = nil, action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.image = image
+        self.action = action
+    }
     var body: some View {
         Button(action: {
             action()
         }) {
-            Label(title, systemImage: systemImage)
+            HStack(spacing: 6) {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                } else {
+                    Image(systemName: systemImage)
+                }
+                Text(title)
+            }
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(minWidth: 90)

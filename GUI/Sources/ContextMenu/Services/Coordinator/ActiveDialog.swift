@@ -23,6 +23,7 @@ enum ActiveDialog: Identifiable {
     case fileConflict(conflict: FileConflictInfo, remainingCount: Int, continuation: CheckedContinuation<BatchConflictDecision, Never>)
     case error(title: String, message: String)
     case success(title: String, message: String)
+    case backupConfirmation(files: [CustomFile], assessment: BackupAssessment, archiveURL: URL, sourcePanel: FavPanelSide)
 
     // MARK: - Batch operation dialogs
     case batchCopyConfirmation(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
@@ -50,6 +51,8 @@ enum ActiveDialog: Identifiable {
                 return "error"
             case .success:
                 return "success"
+            case .backupConfirmation:
+                return "backupConfirmation"
             case .batchCopyConfirmation:
                 return "batchCopy"
             case .batchMoveConfirmation:

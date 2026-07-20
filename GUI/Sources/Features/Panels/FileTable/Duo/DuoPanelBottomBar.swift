@@ -6,12 +6,14 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Bottom toolbar with action buttons and optional thumbnail size slider
 struct DuoPanelBottomToolbarSection: View {
     let onRename: () -> Void
-    let onView: () -> Void
+    let onBackup: () -> Void
     let onEdit: () -> Void
     let onCopy: () -> Void
     let onMove: () -> Void
@@ -32,7 +34,12 @@ struct DuoPanelBottomToolbarSection: View {
         VStack(spacing: 0) {
             HStack(spacing: Layout.toolbarButtonSpacing) {
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.rename, for: .renameFile), icon: "pencil", action: onRename)
-                downToolBarButton(title: store.buttonLabel(L10n.Toolbar.view, for: .viewFile), icon: "eye.circle", action: onView)
+                DownToolbarButtonView(
+                    title: store.buttonLabel(L10n.Toolbar.tempBackup, for: .backupFiles),
+                    systemImage: "zipper.page",
+                    image: NSWorkspace.shared.icon(for: .zip),
+                    action: onBackup
+                )
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.copy, for: .copyFile), icon: "doc.on.doc", action: onCopy)
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.move, for: .moveFile), icon: "square.and.arrow.down.on.square", action: onMove)

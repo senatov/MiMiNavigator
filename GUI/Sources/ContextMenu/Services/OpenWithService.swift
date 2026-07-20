@@ -15,12 +15,12 @@ import Foundation
 final class OpenWithService {
 
     static let shared = OpenWithService()
-    private let workspace = NSWorkspace.shared
-    private let fileManager = FileManager.default
+    let workspace = NSWorkspace.shared
+    let fileManager = FileManager.default
     private let notificationCenter = NotificationCenter.default
-    private let remoteConnectionManager = RemoteConnectionManager.shared
+    let remoteConnectionManager = RemoteConnectionManager.shared
 
-    private enum Constants {
+    enum Constants {
         static let noExtensionKey = "__noext__"
         static let maxLRUCount = 5
         static let applicationDirectory = "/Applications"
@@ -43,7 +43,7 @@ final class OpenWithService {
         }
     }
 
-    private struct CachedAppDescriptor {
+    struct CachedAppDescriptor {
         let bundleIdentifier: String
         let name: String
         let icon: NSImage
@@ -51,18 +51,18 @@ final class OpenWithService {
     }
 
     private static var menuCache: [String: MenuCacheEntry] = [:]
-    private static var appDescriptorCache: [String: CachedAppDescriptor] = [:]
+    static var appDescriptorCache: [String: CachedAppDescriptor] = [:]
     private static var requestSequence: Int = 0
 
-    private func logDebug(_ message: String) {
+    func logDebug(_ message: String) {
         log.debug("\(Constants.logPrefix) \(message)")
     }
 
-    private func logInfo(_ message: String) {
+    func logInfo(_ message: String) {
         log.info("\(Constants.logPrefix) \(message)")
     }
 
-    private func logError(_ message: String) {
+    func logError(_ message: String) {
         log.error("\(Constants.logPrefix) \(message)")
     }
 
@@ -105,7 +105,7 @@ final class OpenWithService {
         logDebug("storeMenuCache count=\(apps.count)")
     }
 
-    private func isRemoteFileURL(_ fileURL: URL) -> Bool {
+    func isRemoteFileURL(_ fileURL: URL) -> Bool {
         let isRemote = fileURL.scheme == "sftp" || fileURL.scheme == "ftp"
         if isRemote {
             logDebug("isRemoteFileURL=true scheme='\(fileURL.scheme ?? "nil")' path='\(fileURL.path)'")
@@ -115,7 +115,7 @@ final class OpenWithService {
 
     // MARK: - Key helpers
 
-    private func normalizedExtensionKey(for ext: String) -> String {
+    func normalizedExtensionKey(for ext: String) -> String {
         let normalized = ext.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return normalized.isEmpty ? Constants.noExtensionKey : normalized
     }
@@ -147,7 +147,7 @@ final class OpenWithService {
         return defaults?[key]
     }
 
-    private func storeUserAssociation(bundleID: String, ext: String, appURL: URL) {
+    func storeUserAssociation(bundleID: String, ext: String, appURL: URL) {
         let key = normalizedExtensionKey(for: ext)
         var defaults = MiMiDefaults.shared.dictionary(forKey: userAssociationsKey) as? [String: String] ?? [:]
         defaults[key] = bundleID
@@ -174,7 +174,7 @@ final class OpenWithService {
     }
 
     /// Records that `bundleID` was used to open a file with `ext`
-    private func recordLRU(bundleID: String, ext: String, appURL: URL? = nil) {
+    func recordLRU(bundleID: String, ext: String, appURL: URL? = nil) {
         let key = normalizedExtensionKey(for: ext)
         var defaults = MiMiDefaults.shared.dictionary(forKey: lruDefaultsKey) as? [String: [String]] ?? [:]
         var bundles = defaults[key] ?? []
@@ -387,166 +387,6 @@ final class OpenWithService {
         }
 
         apps.append(appInfo)
-    }
-
-    // MARK: - File Opening
-
-    /// Public alias for recordLRU — called from F3/F4 after opening with default app
-    func recordUsage(bundleID: String, ext: String, appURL: URL) {
-        let normalizedExt = normalizedExtensionKey(for: ext)
-        logInfo("recordUsage bundle='\(bundleID)' ext='\(normalizedExt)'")
-        logDebug("recordUsage app='\(appURL.lastPathComponent)'")
-        recordLRU(bundleID: bundleID, ext: ext, appURL: appURL)
-    }
-
-    /// Opens file with the chosen AppInfo and records it in LRU.
-    /// For remote files (sftp://) — downloads to tmp first.
-    func openFile(_ fileURL: URL, with app: AppInfo) {
-        logInfo("openFile file='\(fileURL.lastPathComponent)' app='\(app.name)'")
-
-        recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension, appURL: app.url)
-
-        let configuration = makeOpenConfiguration()
-
-        if isRemoteFileURL(fileURL) {
-            logInfo("remote file detected scheme='\(fileURL.scheme ?? "unknown")'")
-            Task {
-                await openRemoteFile(fileURL, with: app, configuration: configuration)
-            }
-            return
-        }
-
-        openLocalFile(fileURL, with: app, configuration: configuration)
-    }
-
-    private func makeOpenConfiguration() -> NSWorkspace.OpenConfiguration {
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        return configuration
-    }
-
-    private func openLocalFile(_ fileURL: URL, with app: AppInfo, configuration: NSWorkspace.OpenConfiguration) {
-        workspace.open([fileURL], withApplicationAt: app.url, configuration: configuration) { [weak self] runningApp, error in
-            Task { @MainActor in
-                guard let self else {
-                    return
-                }
-
-                if let error {
-                    self.logError("openLocalFile failed: \(error.localizedDescription)")
-                    return
-                }
-
-                self.logDebug("openLocalFile success pid=\(runningApp?.processIdentifier ?? -1)")
-            }
-        }
-    }
-
-    private func openRemoteFile(_ fileURL: URL, with app: AppInfo, configuration: NSWorkspace.OpenConfiguration) async {
-        do {
-            logInfo("downloading remote file path='\(fileURL.path)'")
-            let localURL = try await remoteConnectionManager.downloadFile(remotePath: fileURL.path)
-
-            await MainActor.run {
-                self.logInfo("remote download success local='\(localURL.path)'")
-                self.openLocalFile(localURL, with: app, configuration: configuration)
-            }
-        } catch {
-            logError("remote download failed: \(error.localizedDescription)")
-        }
-    }
-
-    /// Opens file with default application
-    func openFileWithDefault(_ fileURL: URL) {
-        logInfo("openFileWithDefault file='\(fileURL.lastPathComponent)'")
-        workspace.open(fileURL)
-    }
-
-    // MARK: - Open With Picker
-
-    /// Shows system "Open With" picker (Choose Application...)
-    func showOpenWithPicker(for fileURL: URL) {
-        logDebug("showOpenWithPicker file='\(fileURL.lastPathComponent)'")
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: Constants.applicationDirectory)
-        panel.allowedContentTypes = [.application]
-        panel.message = "Choose an application to open '\(fileURL.lastPathComponent)'"
-        panel.prompt = "Open"
-
-        panel.begin { [weak self] response in
-            guard let self else {
-                return
-            }
-
-            guard response == .OK, let appURL = panel.url else {
-                self.logDebug("picker cancelled")
-                return
-            }
-
-            self.logInfo("picker selected app='\(appURL.lastPathComponent)'")
-
-            let icon = self.workspace.icon(forFile: appURL.path)
-            icon.size = Constants.appIconSize
-
-            let bundleIdentifier = Bundle(url: appURL)?.bundleIdentifier ?? appURL.lastPathComponent
-            let selectedApp = AppInfo(
-                id: bundleIdentifier,
-                name: self.fileManager.displayName(atPath: appURL.path),
-                bundleIdentifier: bundleIdentifier,
-                icon: icon,
-                url: appURL,
-                isDefault: false
-            )
-
-            self.storeUserAssociation(bundleID: bundleIdentifier, ext: fileURL.pathExtension, appURL: appURL)
-            self.openFile(fileURL, with: selectedApp)
-        }
-    }
-
-    // MARK: - Private Helpers
-
-    private func makeAppInfo(from appURL: URL, isDefault: Bool) -> AppInfo? {
-        let normalizedURL = appURL.standardizedFileURL
-        let cacheKey = normalizedURL.path
-
-        let descriptor: CachedAppDescriptor
-        if let cached = Self.appDescriptorCache[cacheKey] {
-            descriptor = cached
-        } else {
-            guard let bundle = Bundle(url: normalizedURL),
-                  let bundleIdentifier = bundle.bundleIdentifier else {
-                logDebug("makeAppInfo failed path='\(normalizedURL.path)'")
-                return nil
-            }
-
-            let name = fileManager.displayName(atPath: normalizedURL.path)
-            let icon = workspace.icon(forFile: normalizedURL.path)
-            icon.size = Constants.appIconSize
-
-            descriptor = CachedAppDescriptor(
-                bundleIdentifier: bundleIdentifier,
-                name: name,
-                icon: icon,
-                url: normalizedURL
-            )
-            Self.appDescriptorCache[cacheKey] = descriptor
-        }
-
-        logDebug("app='\(descriptor.name)'")
-        logDebug("bundle='\(descriptor.bundleIdentifier)' default=\(isDefault)")
-        logDebug("path='\(descriptor.url.path)'")
-
-        return AppInfo(
-            id: descriptor.bundleIdentifier,
-            name: descriptor.name,
-            bundleIdentifier: descriptor.bundleIdentifier,
-            icon: descriptor.icon,
-            url: descriptor.url,
-            isDefault: isDefault
-        )
     }
 
 }

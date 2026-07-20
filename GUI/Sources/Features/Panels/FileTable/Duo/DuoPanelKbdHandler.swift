@@ -16,7 +16,7 @@ final class DuoFilePanelKeyboardHandler {
     private weak var appState: AppState?
 
     // Action callbacks — set by DuoFilePanelView during setup
-    var onView: (() -> Void)?
+    var onBackup: (() -> Void)?
     var onEdit: (() -> Void)?
     var onCopy: (() -> Void)?
     var onMove: (() -> Void)?
@@ -117,9 +117,9 @@ final class DuoFilePanelKeyboardHandler {
         switch action {
 
             // ── File Operations ──
-            case .viewFile:
-                log.info("[KEY] → View")
-                onView?()
+            case .backupFiles:
+                log.info("[Backup] F3 → Temp-Backup")
+                onBackup?()
                 return nil
 
             case .editFile:

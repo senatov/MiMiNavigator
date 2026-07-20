@@ -41,7 +41,7 @@ struct DuoFilePanelView: View {
 
             DuoPanelBottomToolbarSection(
                 onRename: { actions.performRename() },
-                onView: { actions.performView() },
+                onBackup: { actions.performBackup() },
                 onEdit: { actions.performEdit() },
                 onCopy: { actions.performCopy() },
                 onMove: { actions.performMove() },
@@ -336,7 +336,7 @@ extension DuoFilePanelView {
         log.debug("\(#function)")
         let actions = actions
         let handler = DuoFilePanelKeyboardHandler(appState: appState)
-        handler.onView = { actions.performView() }
+        handler.onBackup = { actions.performBackup() }
         handler.onEdit = { actions.performEdit() }
         handler.onCopy = { actions.performCopy() }
         handler.onMove = { actions.performMove() }

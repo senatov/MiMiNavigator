@@ -79,6 +79,25 @@ extension ContextMenuDialogModifier {
                         coordinator.resolveConflict(decision)
                     }
                 )
+            case .backupConfirmation(let files, let assessment, let archiveURL, let sourcePanel):
+                BackupConfirmationDialog(
+                    files: files,
+                    assessment: assessment,
+                    archiveName: archiveURL.lastPathComponent,
+                    onConfirm: {
+                        coordinator.dismissDialog()
+                        Task {
+                            await coordinator.performBackup(
+                                files: files,
+                                archiveURL: archiveURL,
+                                sourcePanel: sourcePanel,
+                                showsProgress: true,
+                                appState: appState
+                            )
+                        }
+                    },
+                    onCancel: { coordinator.dismissDialog() }
+                )
             default:
                 EmptyView()
         }

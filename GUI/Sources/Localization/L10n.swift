@@ -25,7 +25,7 @@ enum L10n {
     // MARK: - Toolbar Buttons (labels only, hotkeys added dynamically)
     enum Toolbar {
         static let rename = String(localized: "Rename", comment: "Rename toolbar button")
-        static let view = String(localized: "View", comment: "View toolbar button")
+        static let tempBackup = String(localized: "Temp-Backup", comment: "Temporary backup toolbar button")
         static let edit = String(localized: "Edit", comment: "Edit toolbar button")
         static let copy = String(localized: "Copy", comment: "Copy toolbar button")
         static let move = String(localized: "Move", comment: "Move toolbar button")

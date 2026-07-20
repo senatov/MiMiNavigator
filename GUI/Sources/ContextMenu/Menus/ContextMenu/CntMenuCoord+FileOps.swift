@@ -1,7 +1,6 @@
 // CntMenuCoord+FileOps.swift
 // MiMiNavigator
 //
-// Created by Claude AI on 04.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: CntMenuCoord file operations (delete, rename, duplicate, compress, pack, create folder, links, paste)
 

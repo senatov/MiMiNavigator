@@ -83,6 +83,8 @@ struct ContextMenuDialogModifier: ViewModifier {
                 .batchDeleteConfirmation,
                 .batchPackConfirmation:
                 batchDialogContent(for: dialog)
+            case .backupConfirmation:
+                primaryDialogContent(for: dialog)
         }
     }
 }

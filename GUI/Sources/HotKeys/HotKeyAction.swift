@@ -13,7 +13,8 @@ import Foundation
 enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
 
     // MARK: - File Operations
-    case viewFile = "viewFile"
+    // Keep the persisted raw value so existing F3 custom bindings migrate to Temp-Backup.
+    case backupFiles = "viewFile"
     case editFile = "editFile"
     case copyFile = "copyFile"
     case moveFile = "moveFile"
@@ -75,7 +76,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     // MARK: - Display Name
     var displayName: String {
         switch self {
-            case .viewFile: return "View File"
+            case .backupFiles: return "Temp-Backup"
             case .editFile: return "Edit File"
             case .copyFile: return "Copy File"
             case .moveFile: return "Move File"
@@ -123,7 +124,7 @@ enum HotKeyAction: String, CaseIterable, Identifiable, Codable, Sendable {
     // MARK: - Category
     var category: HotKeyCategory {
         switch self {
-            case .viewFile, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile,
+            case .backupFiles, .editFile, .copyFile, .moveFile, .newFolder, .deleteFile,
                  .packFiles, .unpackFiles, .compareContent, .syncDirectories,
                  .clipboardCopy, .clipboardCut, .clipboardPaste, .renameFile:
                 return .fileOperations

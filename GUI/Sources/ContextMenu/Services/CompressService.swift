@@ -64,6 +64,16 @@ final class CompressService: @unchecked Sendable {
                 onProgress: onProgress,
                 processHandle: processHandle
             )
+        } else if files.count > 1 {
+            try await compressMultipleWithZip(
+                files: files,
+                to: archiveURL,
+                compressionLevel: compressionLevel,
+                onStage: onStage,
+                onLog: onLog,
+                onProgress: onProgress,
+                processHandle: processHandle
+            )
         } else {
             try await compressWithDitto(
                 files: files,
@@ -96,6 +106,45 @@ final class CompressService: @unchecked Sendable {
         }
         
         return archiveURL
+    }
+
+    // MARK: - Direct Multi-Item ZIP Compression
+    private func compressMultipleWithZip(
+        files: [URL],
+        to archiveURL: URL,
+        compressionLevel: CompressionLevel,
+        onStage: (@Sendable (String) -> Void)?,
+        onLog: (@Sendable (String) -> Void)?,
+        onProgress: (@Sendable (Double?) -> Void)?,
+        processHandle: ActiveArchiveProcess?
+    ) async throws {
+        guard let parent = files.first?.deletingLastPathComponent(), files.allSatisfy({ $0.deletingLastPathComponent() == parent }) else {
+            throw CompressError.sourcesMustShareDirectory
+        }
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        task.currentDirectoryURL = parent
+        task.arguments = ["-q", "-r", "-\(compressionLevel.rawValue)", archiveURL.path] + files.map(\.lastPathComponent)
+        let errorPipe = Pipe()
+        let outputPipe = Pipe()
+        task.standardError = errorPipe
+        task.standardOutput = outputPipe
+        onStage?("Compressing with zip…")
+        onProgress?(nil)
+        onLog?("Tool: zip")
+        onLog?("Items: \(files.count)")
+        do {
+            try await ArchiveProcessRunner.runWithProgress(
+                task,
+                errorPipe: errorPipe,
+                outputPipe: outputPipe,
+                onLine: { line in onLog?(line) },
+                processHandle: processHandle
+            )
+        } catch {
+            log.error("[Compress] direct zip failed error='\(error.localizedDescription)'")
+            throw CompressError.compressionFailed(error.localizedDescription)
+        }
     }
     
     // MARK: - Ditto Compression (no password)
@@ -255,6 +304,7 @@ enum CompressError: LocalizedError {
     case noFilesToCompress
     case compressionFailed(String)
     case moveToArchiveFailed(String, String)
+    case sourcesMustShareDirectory
 
     var errorDescription: String? {
         switch self {
@@ -264,6 +314,8 @@ enum CompressError: LocalizedError {
             return "Compression failed: \(message)"
         case .moveToArchiveFailed(let fileName, let message):
             return "Archive created, but failed to remove '\(fileName)': \(message)"
+        case .sourcesMustShareDirectory:
+            return "All archived items must be in the same directory"
         }
     }
 }

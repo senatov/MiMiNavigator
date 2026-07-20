@@ -32,7 +32,7 @@ enum HotKeyPresets {
     // ═══════════════════════════════════════════════════════════════════
     static let totalCommander: [HotKeyBinding] = [
         // ── File Operations (F3-F8) ──
-        HotKeyBinding(action: .viewFile,         keyCode: 0x63, modifiers: .none),         // F3
+        HotKeyBinding(action: .backupFiles,      keyCode: 0x63, modifiers: .none),         // F3
         HotKeyBinding(action: .editFile,         keyCode: 0x76, modifiers: .none),         // F4
         HotKeyBinding(action: .copyFile,         keyCode: 0x60, modifiers: .none),         // F5
         HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
@@ -95,7 +95,7 @@ enum HotKeyPresets {
     // ═══════════════════════════════════════════════════════════════════
     static let finder: [HotKeyBinding] = [
         // ── File Operations (Finder style) ──
-        HotKeyBinding(action: .viewFile,         keyCode: 0x31, modifiers: .none),         // Space (Quick Look)
+        HotKeyBinding(action: .backupFiles,      keyCode: 0x00, modifiers: .none),         // No Finder-style default
         HotKeyBinding(action: .editFile,         keyCode: 0x24, modifiers: .command),      // ⌘Return
         HotKeyBinding(action: .copyFile,         keyCode: 0x08, modifiers: .command),      // ⌘C (then paste = copy)
         HotKeyBinding(action: .moveFile,         keyCode: 0x07, modifiers: .command),      // ⌘X (then paste = move)
