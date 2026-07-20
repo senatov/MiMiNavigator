@@ -101,7 +101,7 @@ struct UpdateView: View {
             HStack {
                 Image(systemName: "gift.fill")
                     .foregroundStyle(.accent)
-                Text("Version \(release.tagName) is available!")
+                Text(updateTitle(for: release))
                     .font(.system(size: 14, weight: .medium))
                 Spacer()
                 if let asset = checker.downloadAsset {
@@ -147,6 +147,14 @@ struct UpdateView: View {
     private func formatSize(_ bytes: Int) -> String {
         let mb = Double(bytes) / 1_048_576
         return String(format: "%.1f MB", mb)
+    }
+    private func updateTitle(for release: GitHubRelease) -> String {
+        switch checker.availabilityReason {
+            case .replacedAsset, .newerSameVersionBuild:
+                return "A newer build of version \(release.tagName) is available!"
+            default:
+                return "Version \(release.tagName) is available!"
+        }
     }
 
     // MARK: - Buttons

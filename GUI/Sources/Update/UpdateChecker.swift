@@ -10,10 +10,16 @@ import Foundation
 // MARK: - UpdateChecker
 @MainActor
 final class UpdateChecker: ObservableObject {
+    enum AvailabilityReason: String {
+        case newerVersion
+        case replacedAsset
+        case newerSameVersionBuild
+    }
     static let shared = UpdateChecker()
 
     @Published var latestRelease: GitHubRelease?
     @Published var updateAvailable: Bool = false
+    @Published var availabilityReason: AvailabilityReason?
     @Published var isChecking: Bool = false
     @Published var isInstalling: Bool = false
     @Published var installStatus: String?
@@ -27,12 +33,16 @@ final class UpdateChecker: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
     
-    private init() {}
+    private init() {
+        UpdateAssetIdentityStore.reconcilePendingInstallation(currentVersion: currentVersion)
+    }
 
     // MARK: - Check for Updates
     func checkForUpdates() async {
         log.info("[Update] check started current=\(currentVersion) url=\(apiURL.absoluteString)")
         isChecking = true
+        updateAvailable = false
+        availabilityReason = nil
         error = nil
         defer { isChecking = false }
         do {
@@ -54,11 +64,12 @@ final class UpdateChecker: ObservableObject {
             }
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             latestRelease = release
-            let latestVersion = release.tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
-            updateAvailable = isNewer(latestVersion, than: currentVersion)
+            let latestVersion = release.normalizedVersion
+            availabilityReason = availabilityReason(for: release)
+            updateAvailable = availabilityReason != nil
             let assets = release.assets.map { "\($0.name):\($0.size)" }.joined(separator: ",")
             log.info("[Update] check decoded tag=\(release.tagName) assets=[\(assets)]")
-            log.info("[Update] current=\(currentVersion) latest=\(latestVersion) updateAvailable=\(updateAvailable)")
+            log.info("[Update] current=\(currentVersion) latest=\(latestVersion) updateAvailable=\(updateAvailable) reason=\(availabilityReason?.rawValue ?? "none")")
         } catch {
             self.error = error.localizedDescription
             log.error("[Update] check failed: \(error.localizedDescription)")
@@ -77,6 +88,27 @@ final class UpdateChecker: ObservableObject {
             if l < c { return false }
         }
         return false
+    }
+    // MARK: - Asset Comparison
+    private func availabilityReason(for release: GitHubRelease) -> AvailabilityReason? {
+        if isNewer(release.normalizedVersion, than: currentVersion) { return .newerVersion }
+        guard release.normalizedVersion == currentVersion, let asset = preferredAsset(in: release) else { return nil }
+        let remoteFingerprint = UpdateAssetIdentityStore.assetFingerprint(asset)
+        if let installed = UpdateAssetIdentityStore.installedIdentity(), installed.version == currentVersion {
+            return installed.assetFingerprint == remoteFingerprint ? nil : .replacedAsset
+        }
+        guard let localBuildDate = UpdateAssetIdentityStore.localBuildDate(), let remoteDate = asset.releaseDate else {
+            log.warning("[Update] same-version asset comparison has no installed fingerprint or usable dates")
+            return nil
+        }
+        let delta = remoteDate.timeIntervalSince(localBuildDate)
+        log.info("[Update] same-version fallback localBuild='\(localBuildDate)' remoteAsset='\(remoteDate)' delta=\(Int(delta))s")
+        return delta > UpdateAssetIdentityStore.initialReleaseUploadTolerance ? .newerSameVersionBuild : nil
+    }
+    private func preferredAsset(in release: GitHubRelease) -> GitHubAsset? {
+        release.assets.first { $0.name.lowercased().hasSuffix(".dmg") }
+            ?? release.assets.first { $0.name.lowercased().hasSuffix(".zip") }
+            ?? release.assets.first
     }
     
     // MARK: - Download Asset

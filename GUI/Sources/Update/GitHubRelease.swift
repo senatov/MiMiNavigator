@@ -14,6 +14,9 @@ struct GitHubRelease: Codable {
     let htmlURL: String
     let publishedAt: String
     let assets: [GitHubAsset]
+    var normalizedVersion: String {
+        tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+    }
     
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
@@ -26,15 +29,24 @@ struct GitHubRelease: Codable {
 }
 
 struct GitHubAsset: Codable {
+    let id: Int?
     let name: String
     let browserDownloadURL: String
     let size: Int
     let digest: String?
+    let createdAt: String?
+    let updatedAt: String?
     
     enum CodingKeys: String, CodingKey {
+        case id
         case name
         case browserDownloadURL = "browser_download_url"
         case size
         case digest
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+    var releaseDate: Date? {
+        ISO8601DateFormatter().date(from: updatedAt ?? createdAt ?? "")
     }
 }

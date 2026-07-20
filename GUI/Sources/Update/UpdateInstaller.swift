@@ -77,6 +77,7 @@ enum UpdateInstaller {
         try verifyApplication(at: sourceAppURL, expectedVersion: expectedVersion)
         status("Preparing installation...")
         let stagedAppURL = try stageApplication(from: sourceAppURL)
+        await UpdateAssetIdentityStore.stageInstallation(release: release, asset: asset, appURL: sourceAppURL)
         let helperURL = try writeInstallerHelper()
         try launchInstaller(helperURL: helperURL, stagedAppURL: stagedAppURL, currentAppURL: currentAppURL)
         NSWorkspace.shared.open(productPageURL)
