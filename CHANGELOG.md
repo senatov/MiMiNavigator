@@ -23,6 +23,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Legacy cache scaling** — the monolithic `dirsize.cache` snapshot is migrated safely and idempotently into SQLite and removed only after successful import, avoiding repeated full-file rewrites.
 - **Memory spike diagnostics** — rapid physical-footprint growth and crossings above 512 MB now produce immediate diagnostic warnings instead of relying only on long monotonic trends.
 
+## [0.9.9.6.5] — 2026-07-20
+
+> **Release notes**
+> Reliable external editing and fast timestamped Temp-Backup archives.
+
+### Added
+- **Temp-Backup** — F3 creates a timestamped ZIP beside the selected file, directory, or marked set while preserving existing custom F3 bindings.
+- **Backup preflight** — large or very large jobs require confirmation and then expose cancellable progress.
+- **External-open diagnostics** — launch method, application state, PID, IPC result, and fallback failures are logged explicitly.
+
+### Changed
+- **Multiple-item ZIP creation** — selected items are archived directly without first duplicating them in a temporary staging directory.
+- **Toolbar presentation** — Temp-Backup uses the native full-color ZIP document icon.
+- **Open With structure** — application discovery, descriptor construction, picker handling, and document launch are split into focused files under the 400-line limit.
+- **Build metadata** — marketing version updated to `0.9.9.6.5`; build number updated to `134`.
+
+### Fixed
+- **Running VS Code delivery** — repeated Open, Open With, and F4 actions deliver the document through VS Code’s reuse-window IPC instead of silently doing nothing.
+- **Launch fallback** — failed editor IPC falls back to Launch Services with detailed logging and visible errors.
+- **Large backup disk use** — multi-item archives no longer require a full temporary copy of every source item.
+
 ## [0.9.9.6.4] — 2026-07-19
 
 > **Release notes**

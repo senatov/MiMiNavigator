@@ -1,39 +1,41 @@
-# MiMiNavigator v0.9.9.6.4
+# MiMiNavigator v0.9.9.6.5
 
-File-conflict clarity, operation progress polish, and dependable menu-bar activation.
+Reliable external editing and fast timestamped Temp-Backup archives.
 
 ## Highlights
 
-- Compare equal-size conflict candidates by their actual contents before interpreting timestamps and sizes.
-- Present file conflicts in a readable native utility panel with clear status messaging and familiar dimensional controls.
-- Restore MiMiNavigator from hidden or minimized states with one primary click on its menu-bar status item.
+- Open documents reliably in an already running Visual Studio Code instance.
+- Create timestamped ZIP backups directly from F3 for selected files and folders.
+- Confirm large backup jobs before they begin and show cancellable progress.
 
 ## Added
 
-- Asynchronous byte comparison for equal-size source and destination files.
-- Compact native memory usage beside the animated menu-bar application icon.
+- `Temp-Backup` replaces the former F3 View action while preserving existing custom F3 bindings.
+- Timestamped archive names in the form `name.extension.YYYY-MM-DD-HHmm.zip` with collision-safe numbering.
+- Size and file-count preflight for backup jobs, including bounded inspection of very large directories.
+- Detailed `[ExternalOpen]` and `[Backup]` diagnostics.
 
 ## Changed
 
-- File-conflict choices use clearer file cards, emphasized apply-to-remaining control, and the dimensional control language used by Network Neighborhood.
-- Operation progress and automatic-close behavior are consistent across copy, move, and delete result windows.
-- The menu-bar status item is dedicated to foregrounding the application and exposes no contextual menu.
-- Release metadata is updated to version `0.9.9.6.4` and build `133`.
+- Multiple selected items are compressed directly with the system ZIP tool instead of being copied into a temporary staging directory first.
+- The bottom toolbar uses the native full-color ZIP document icon for Temp-Backup.
+- Open With responsibilities are separated into focused source files below the project’s 400-line limit.
+- Release metadata is updated to version `0.9.9.6.5` and build `134`.
 
 ## Fixed
 
-- Cancelling from a conflict prompt no longer opens a zero-files-copied result window.
-- Clicking an operation window interrupts its pending automatic close.
-- Matching size and modification time no longer imply identical content without a byte comparison.
-- Primary-click activation reliably unhides, deminiaturizes, and raises the main window.
-- Secondary clicks on the status item no longer trigger toolbar customization or other unintended actions.
+- Repeated Open, Open With, and F4 requests no longer disappear silently when Visual Studio Code is already running.
+- VS Code receives documents through its `--reuse-window` IPC path, with Launch Services retained as a logged fallback.
+- Launch Services failures now produce diagnostics and a visible application error instead of silent failure.
+- Large multi-item backups no longer require nearly twice the source size in temporary disk space.
 
 ## Validation
 
+- Debug build completed successfully before release preparation.
 - The release pipeline performs a clean signed build, custom volume-icon verification, notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.3...v0.9.9.6.4
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.4...v0.9.9.6.5
