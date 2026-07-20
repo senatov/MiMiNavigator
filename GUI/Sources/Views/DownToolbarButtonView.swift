@@ -4,7 +4,6 @@
 //
 //  Created by Iakov Senatov on 21.02.25.
 
-import AppKit
 import SwiftUI
 
 // MARK: -
@@ -13,16 +12,16 @@ import SwiftUI
 struct DownToolbarButtonView: View {
     let title: String
     let systemImage: String
-    let image: NSImage?
+    let imageName: String?
     let action: () -> Void
     @State private var isHovered: Bool = false
 
     // MARK: -
 
-    init(title: String, systemImage: String, image: NSImage? = nil, action: @escaping () -> Void) {
+    init(title: String, systemImage: String, imageName: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.systemImage = systemImage
-        self.image = image
+        self.imageName = imageName
         self.action = action
     }
     var body: some View {
@@ -30,20 +29,21 @@ struct DownToolbarButtonView: View {
             action()
         }) {
             HStack(spacing: 6) {
-                if let image {
-                    Image(nsImage: image)
+                if let imageName {
+                    Image(imageName)
                         .resizable()
+                        .renderingMode(.original)
                         .scaledToFit()
                         .frame(width: 18, height: 18)
                 } else {
                     Image(systemName: systemImage)
+                        .symbolRenderingMode(.hierarchical)
                 }
                 Text(title)
             }
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(minWidth: 90)
-                .symbolRenderingMode(.hierarchical)
         }
         .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered))
         .onHover { hovering in

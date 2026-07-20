@@ -6,9 +6,7 @@
 //  Copyright © 2025 Senatov. All rights reserved.
 //
 
-import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
 
 /// Bottom toolbar with action buttons and optional thumbnail size slider
 struct DuoPanelBottomToolbarSection: View {
@@ -37,7 +35,7 @@ struct DuoPanelBottomToolbarSection: View {
                 DownToolbarButtonView(
                     title: store.buttonLabel(L10n.Toolbar.tempBackup, for: .backupFiles),
                     systemImage: "zipper.page",
-                    image: NSWorkspace.shared.icon(for: .zip),
+                    imageName: "TempBackupZip",
                     action: onBackup
                 )
                 downToolBarButton(title: store.buttonLabel(L10n.Toolbar.edit, for: .editFile), icon: "pencil", action: onEdit)
