@@ -17,39 +17,39 @@ struct TopDropdownLabel: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(tint)
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 12, weight: .regular))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.94))
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(.ultraThinMaterial)
                 .overlay {
                     LinearGradient(
-                        colors: [Color.white.opacity(0.24), Color.white.opacity(0.04)],
+                        colors: [Color.white.opacity(0.32), Color.white.opacity(0.12)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
-                    .clipShape(.rect(cornerRadius: 7))
+                    .clipShape(.rect(cornerRadius: 9))
                 }
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.8)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.38), lineWidth: 0.7)
         }
         .overlay(alignment: .top) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.32), lineWidth: 0.6)
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.48), lineWidth: 0.6)
                 .mask(alignment: .top) {
                     Rectangle()
-                        .frame(height: 9)
+                        .frame(height: 10)
                 }
         }
-        .shadow(color: Color.black.opacity(0.14), radius: 2, y: 1)
+        .shadow(color: Color.black.opacity(0.07), radius: 2, y: 1)
     }
 }
