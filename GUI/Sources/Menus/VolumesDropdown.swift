@@ -6,6 +6,7 @@
 
 import AppKit
 import Combine
+import Darwin
 import SwiftUI
 
 // MARK: - Volume Location
@@ -113,7 +114,7 @@ struct VolumesDropdown: View {
         if isDirectory(iCloudURL) {
             cloud.insert(location(url: iCloudURL, title: "iCloud Drive", kind: .cloud), at: 0)
         }
-        return mounted + cloud
+        return deduplicated(mounted, normalizeCloudTags: false) + deduplicated(cloud, normalizeCloudTags: true)
     }
 
     // MARK: - Directory Children
@@ -141,6 +142,59 @@ struct VolumesDropdown: View {
     // MARK: - Location
     private static func location(url: URL, title: String, kind: VolumeLocation.Kind) -> VolumeLocation {
         VolumeLocation(id: url.absoluteString, title: title, url: url, kind: kind, connectionID: nil)
+    }
+
+    // MARK: - Deduplicate Locations
+    private static func deduplicated(_ locations: [VolumeLocation], normalizeCloudTags: Bool) -> [VolumeLocation] {
+        let grouped = Dictionary(grouping: locations) { location in
+            if normalizeCloudTags { return normalizedCloudTag(location.title).lowercased() }
+            return location.url.resolvingSymlinksInPath().standardizedFileURL.path.lowercased()
+        }
+        return grouped.values.compactMap { candidates in
+            guard let selected = candidates.max(by: { preferredLocation($1, over: $0) }) else { return nil }
+            let title = normalizeCloudTags ? normalizedCloudTag(selected.title) : selected.title
+            return location(url: selected.url, title: title, kind: selected.kind)
+        }
+        .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    // MARK: - Preferred Location
+    private static func preferredLocation(_ candidate: VolumeLocation, over current: VolumeLocation) -> Bool {
+        let candidateAccess = accessScore(for: candidate.url)
+        let currentAccess = accessScore(for: current.url)
+        if candidateAccess != currentAccess { return candidateAccess > currentAccess }
+        let candidateDenials = deniedACLCount(for: candidate.url)
+        let currentDenials = deniedACLCount(for: current.url)
+        if candidateDenials != currentDenials { return candidateDenials < currentDenials }
+        return candidate.title.count < current.title.count
+    }
+
+    // MARK: - Access Score
+    private static func accessScore(for url: URL) -> Int {
+        let fileManager = FileManager.default
+        let path = url.path
+        return [
+            fileManager.isReadableFile(atPath: path),
+            fileManager.isWritableFile(atPath: path),
+            fileManager.isExecutableFile(atPath: path),
+            fileManager.isDeletableFile(atPath: path),
+        ].filter { $0 }.count
+    }
+
+    // MARK: - Denied ACL Count
+    private static func deniedACLCount(for url: URL) -> Int {
+        guard let acl = acl_get_file(url.path, ACL_TYPE_EXTENDED) else { return 0 }
+        defer { acl_free(UnsafeMutableRawPointer(acl)) }
+        guard let text = acl_to_text(acl, nil) else { return 0 }
+        defer { acl_free(UnsafeMutableRawPointer(text)) }
+        return String(cString: text).components(separatedBy: .newlines).filter { $0.contains(":deny:") }.count
+    }
+
+    // MARK: - Normalized Cloud Tag
+    private static func normalizedCloudTag(_ title: String) -> String {
+        let dateSuffix = #" \(\d{2}\.\d{2}\.\d{2,4}(?: [^)]+)?\)$"#
+        guard let range = title.range(of: dateSuffix, options: .regularExpression) else { return title }
+        return String(title[..<range.lowerBound])
     }
 
     // MARK: - Remote Locations

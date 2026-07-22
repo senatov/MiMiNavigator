@@ -112,7 +112,6 @@ struct TopMenuBarView: View {
             commandMenuCategory,
             netMenuCategory,
             showMenuCategory,
-            configMenuCategory,
             startMenuCategory,
             helpMenuCategory,
         ]
