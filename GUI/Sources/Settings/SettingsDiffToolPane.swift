@@ -4,6 +4,8 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 
+import AppKit
+import Combine
 import SwiftUI
 
 // MARK: - ════════════════════════════════════════════
@@ -27,11 +29,11 @@ struct SettingsDiffToolPane: View {
                             help: "Tool launched by Compare button. 'Auto' picks best installed.") {
                     Picker("", selection: Binding(
                         get: { registry.activeToolID },
-                        set: { registry.activeToolID = $0 }
+                        set: { registry.setActiveTool(id: $0) }
                     )) {
                         Text("Auto (best available)").tag("auto")
                         Divider()
-                        ForEach(registry.tools.filter { $0.isEnabled }) { tool in
+                        ForEach(registry.tools.filter(\.isInstalled)) { tool in
                             HStack(spacing: 5) {
                                 Circle()
                                     .fill(tool.isInstalled ? Color.green : Color.secondary.opacity(0.4))
@@ -139,6 +141,12 @@ struct SettingsDiffToolPane: View {
         }
         .sheet(item: $editingTool) { tool in
             DiffToolEditSheet(tool: tool) { registry.update($0) }
+        }
+        .onAppear {
+            registry.refreshAvailability()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            registry.refreshAvailability()
         }
     }
 

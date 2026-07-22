@@ -8,196 +8,7 @@
 //   Active tool is persisted in UserDefaults. Tool list persisted as JSON.
 //   launchDiffTool() in MiMiNavigatorApp reads resolveTool(for:) instead of hardcoded paths.
 
-import AppKit
 import Foundation
-
-// MARK: - DiffToolScope
-
-/// What kinds of comparison the tool supports
-enum DiffToolScope: String, Codable, CaseIterable, Identifiable {
-    case filesOnly = "files"
-    case dirsOnly  = "dirs"
-    case both      = "both"
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .filesOnly: "Files only"
-        case .dirsOnly:  "Directories only"
-        case .both:      "Files & Dirs"
-        }
-    }
-}
-
-// MARK: - DiffTool
-
-struct DiffTool: Identifiable, Codable, Equatable {
-    var id:        String          // stable key — "kdiff3", "bc", uuid for user tools
-    var name:      String
-    var appPath:   String          // .app bundle or CLI binary
-    var arguments: String          // %left / %right placeholders
-    var scope:     DiffToolScope
-    var isBuiltIn: Bool            // built-ins can be disabled but not deleted
-    var isEnabled: Bool
-
-    // MARK: Computed
-
-    var processName: String {
-        if id == "intellij", let path = intellijInstallPath, path.hasSuffix(".app") {
-            return URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
-        }
-        return URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
-    }
-
-    /// Real binary inside .app, or the path as-is for CLIs.
-    /// Prefers CLI launcher (bcomp, ksdiff) over raw GUI binary
-    /// because CLI launchers handle arguments correctly.
-    var resolvedBinary: String {
-        if id == "intellij", let launcher = intellijLauncherPath {
-            return launcher
-        }
-        guard appPath.hasSuffix(".app") else { return appPath }
-        let dir = "\(appPath)/Contents/MacOS"
-        // Known CLI launcher names (preferred over GUI binary)
-        let cliNames = ["bcomp", "ksdiff"]
-        for cli in cliNames {
-            let path = "\(dir)/\(cli)"
-            if FileManager.default.fileExists(atPath: path) { return path }
-        }
-        let appName = URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
-        let candidate = "\(dir)/\(appName)"
-        if FileManager.default.fileExists(atPath: candidate) { return candidate }
-        // Fallback: first executable in MacOS dir
-        if let first = (try? FileManager.default.contentsOfDirectory(atPath: dir))?.first {
-            return "\(dir)/\(first)"
-        }
-        return candidate
-    }
-
-    var isInstalled: Bool {
-        if id == "intellij" { return intellijInstallPath != nil }
-        return FileManager.default.fileExists(atPath: appPath)
-    }
-
-    var displayPath: String {
-        if id == "intellij", let path = intellijInstallPath { return path }
-        return appPath
-    }
-
-    private var intellijInstallPath: String? {
-        intellijCandidates.first { FileManager.default.fileExists(atPath: $0) }
-    }
-
-    private var intellijLauncherPath: String? {
-        let candidates = [
-            "/usr/local/bin/idea",
-            "/opt/homebrew/bin/idea",
-            "\(NSHomeDirectory())/bin/idea",
-        ]
-        if let launcher = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
-            return launcher
-        }
-        guard let app = intellijInstallPath, app.hasSuffix(".app") else { return nil }
-        let macOSDir = "\(app)/Contents/MacOS"
-        let bundled = ["idea", "IntelliJ IDEA"].map { "\(macOSDir)/\($0)" }
-        return bundled.first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
-
-    private var intellijCandidates: [String] {
-        [
-            "/Applications/IntelliJ IDEA CE.app",
-            "/Applications/IntelliJ IDEA.app",
-            "/Applications/IntelliJ IDEA Ultimate.app",
-            "\(NSHomeDirectory())/Applications/IntelliJ IDEA CE.app",
-            "\(NSHomeDirectory())/Applications/IntelliJ IDEA.app",
-            "/usr/local/bin/idea",
-            "/opt/homebrew/bin/idea",
-        ]
-    }
-
-    /// Expand %left / %right into real argument array
-    func buildArgs(left: String, right: String) -> [String] {
-        let expanded = arguments
-            .replacingOccurrences(of: "%left",  with: left)
-            .replacingOccurrences(of: "%right", with: right)
-        return tokenize(expanded)
-    }
-
-    // simple tokenizer: split on unquoted spaces
-    private func tokenize(_ s: String) -> [String] {
-        var tokens: [String] = []
-        var cur = ""
-        var inQ = false
-        var qc: Character = "\""
-        for ch in s {
-            if inQ { if ch == qc { inQ = false } else { cur.append(ch) } }
-            else if ch == "\"" || ch == "'" { inQ = true; qc = ch }
-            else if ch == " " { if !cur.isEmpty { tokens.append(cur); cur = "" } }
-            else { cur.append(ch) }
-        }
-        if !cur.isEmpty { tokens.append(cur) }
-        return tokens
-    }
-}
-
-// MARK: - Built-in presets
-
-extension DiffTool {
-
-    static let kdiff3 = DiffTool(
-        id: "kdiff3", name: "KDiff3",
-        appPath: "/Applications/kdiff3.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let beyondCompare = DiffTool(
-        id: "bc", name: "Beyond Compare",
-        appPath: "/Applications/Beyond Compare.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let fileMerge = DiffTool(
-        id: "filemerge", name: "FileMerge (Xcode)",
-        appPath: "/usr/bin/opendiff",
-        arguments: "\"%left\" \"%right\"",
-        scope: .filesOnly, isBuiltIn: true, isEnabled: true)
-
-    static let kaleidoscope = DiffTool(
-        id: "kscope", name: "Kaleidoscope",
-        appPath: "/Applications/Kaleidoscope 3.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let araxis = DiffTool(
-        id: "araxis", name: "Araxis Merge",
-        appPath: "/Applications/Araxis Merge.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let bbEdit = DiffTool(
-        id: "bbedit", name: "BBEdit",
-        appPath: "/Applications/BBEdit.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .filesOnly, isBuiltIn: true, isEnabled: true)
-
-    static let meld = DiffTool(
-        id: "meld", name: "Meld",
-        appPath: "/Applications/Meld.app",
-        arguments: "\"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let intellij = DiffTool(
-        id: "intellij", name: "IntelliJ IDEA",
-        appPath: "/Applications/IntelliJ IDEA CE.app",
-        arguments: "diff \"%left\" \"%right\"",
-        scope: .both, isBuiltIn: true, isEnabled: true)
-
-    static let allBuiltIns: [DiffTool] = [
-        .kdiff3, .beyondCompare, .fileMerge,
-        .kaleidoscope, .araxis, .bbEdit, .meld, .intellij,
-    ]
-}
 
 // MARK: - DiffToolRegistry
 
@@ -212,12 +23,12 @@ final class DiffToolRegistry {
 
     private(set) var tools: [DiffTool] = []
 
-    var activeToolID: String {
-        get { MiMiDefaults.shared.string(forKey: activeKey) ?? "auto" }
-        set { MiMiDefaults.shared.set(newValue, forKey: activeKey) }
-    }
+    private(set) var activeToolID = "auto"
 
-    private init() { load() }
+    private init() {
+        activeToolID = MiMiDefaults.shared.string(forKey: activeKey) ?? "auto"
+        load()
+    }
 
     // MARK: - Resolve
 
@@ -258,7 +69,7 @@ final class DiffToolRegistry {
     func remove(id: String) {
         guard let t = tools.first(where: { $0.id == id }), !t.isBuiltIn else { return }
         tools.removeAll { $0.id == id }
-        if activeToolID == id { activeToolID = "auto" }
+        if activeToolID == id { setActiveTool(id: "auto") }
         save()
     }
 
@@ -269,7 +80,28 @@ final class DiffToolRegistry {
 
     func toggleEnabled(id: String) {
         if let i = tools.firstIndex(where: { $0.id == id }) { tools[i].isEnabled.toggle() }
+        if activeToolID == id, tools.first(where: { $0.id == id })?.isEnabled == false {
+            setActiveTool(id: "auto")
+        }
         save()
+    }
+
+    // MARK: - Active Tool
+    func setActiveTool(id: String) {
+        guard id == "auto" || tools.contains(where: { $0.id == id && $0.isInstalled }) else { return }
+        if let index = tools.firstIndex(where: { $0.id == id }), !tools[index].isEnabled {
+            tools[index].isEnabled = true
+            save()
+        }
+        activeToolID = id
+        MiMiDefaults.shared.set(id, forKey: activeKey)
+        log.info("[DiffToolRegistry] active tool='\(id)'")
+    }
+
+    // MARK: - Refresh Availability
+    func refreshAvailability() {
+        tools = Array(tools)
+        log.debug("[DiffToolRegistry] refreshed tool availability")
     }
 
     func moveUp(id: String) {
@@ -297,10 +129,10 @@ final class DiffToolRegistry {
         }
         if activeToolID == "diffmerge" {
             activeToolID = "kdiff3"
+            MiMiDefaults.shared.set(activeToolID, forKey: activeKey)
         }
-        // auto-disable not-installed tools so checkboxes don't mislead
-        for i in tools.indices where !tools[i].isInstalled {
-            tools[i].isEnabled = false
+        if activeToolID != "auto", let index = tools.firstIndex(where: { $0.id == activeToolID && $0.isInstalled }) {
+            tools[index].isEnabled = true
         }
         log.info("[DiffToolRegistry] loaded \(tools.count) tools, active='\(activeToolID)'")
     }

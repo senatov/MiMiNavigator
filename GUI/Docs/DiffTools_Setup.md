@@ -2,6 +2,34 @@
 
 MiMiNavigator uses external diff tools depending on what is being compared.
 
+## Tool Discovery and Active Tool
+
+Built-in application presets are resolved dynamically. MiMiNavigator checks the
+configured path and the standard macOS application domains, including:
+
+- `/Applications`
+- `~/Applications`
+- `/Network/Applications`
+- `/System/Applications`
+- the corresponding `Utilities` directories
+
+The resolved path shown in Settings is also the path used to launch the tool.
+Availability is refreshed when the Diff Tools pane opens and whenever
+MiMiNavigator becomes active, so an application installed while Settings is open
+does not require a restart.
+
+`Active Tool` persists the explicit selection. Selecting an installed tool also
+enables it. `Auto (best available)` remains available when automatic priority
+selection is preferred. Uninstalled tools remain visible in the tools list but
+are omitted from the Active Tool picker.
+
+## Files and Directories → Beyond Compare
+
+Beyond Compare may be installed for all users in `/Applications` or only for the
+current user in `~/Applications`. Both locations are detected automatically.
+MiMiNavigator launches the executable from the resolved application bundle and
+supports both file and directory comparison.
+
 
 ## Files → FileMerge (opendiff)
 
