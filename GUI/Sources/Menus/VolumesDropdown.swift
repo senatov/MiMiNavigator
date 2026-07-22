@@ -13,17 +13,20 @@ private struct VolumeLocation: Identifiable {
     enum Kind: Equatable {
         case mounted
         case cloud
+        case remote
     }
+    let id: String
+    let title: String
     let url: URL
     let kind: Kind
-    var id: String { url.path }
-    var title: String { url.lastPathComponent }
+    let connectionID: UUID?
 }
 
 // MARK: - Volumes Dropdown
 struct VolumesDropdown: View {
     let appState: AppState
     @Environment(\.scenePhase) private var scenePhase
+    @State private var manager = RemoteConnectionManager.shared
     @State private var locations: [VolumeLocation] = []
 
     // MARK: - Body
@@ -40,6 +43,9 @@ struct VolumesDropdown: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshLocations() }
         }
+        .onChange(of: manager.connections.map(\.id)) { _, _ in
+            refreshLocations()
+        }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             refreshLocations()
         }
@@ -53,6 +59,7 @@ struct VolumesDropdown: View {
     private var menuContent: some View {
         let mounted = locations.filter { $0.kind == .mounted }
         let cloud = locations.filter { $0.kind == .cloud }
+        let remote = locations.filter { $0.kind == .remote }
         if locations.isEmpty {
             Text("No volumes available")
                 .foregroundStyle(.secondary)
@@ -71,13 +78,20 @@ struct VolumesDropdown: View {
                     }
                 }
             }
+            if !remote.isEmpty {
+                Section("Remote Sessions") {
+                    ForEach(remote) { location in
+                        locationButton(location, systemImage: "network")
+                    }
+                }
+            }
         }
     }
 
     // MARK: - Location Button
     private func locationButton(_ location: VolumeLocation, systemImage: String) -> some View {
         Button {
-            navigate(to: location.url)
+            navigate(to: location)
         } label: {
             Label(location.title, systemImage: systemImage)
         }
@@ -85,7 +99,7 @@ struct VolumesDropdown: View {
 
     // MARK: - Refresh Locations
     private func refreshLocations() {
-        locations = Self.scanLocations()
+        locations = Self.scanLocations() + remoteLocations()
     }
 
     // MARK: - Scan Locations
@@ -93,8 +107,12 @@ struct VolumesDropdown: View {
         let fileManager = FileManager.default
         let volumesRoot = URL(fileURLWithPath: "/Volumes", isDirectory: true)
         let cloudRoot = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage", isDirectory: true)
+        let iCloudURL = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
         let mounted = directoryChildren(of: volumesRoot, kind: .mounted, excludingSystemDirectories: true)
-        let cloud = directoryChildren(of: cloudRoot, kind: .cloud, excludingSystemDirectories: false)
+        var cloud = directoryChildren(of: cloudRoot, kind: .cloud, excludingSystemDirectories: false)
+        if isDirectory(iCloudURL) {
+            cloud.insert(location(url: iCloudURL, title: "iCloud Drive", kind: .cloud), at: 0)
+        }
         return mounted + cloud
     }
 
@@ -109,17 +127,54 @@ struct VolumesDropdown: View {
             guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else { return nil }
             let resolvedPath = url.resolvingSymlinksInPath().standardizedFileURL.path
             guard resolvedPath != "/" else { return nil }
-            return VolumeLocation(url: url, kind: kind)
+            return location(url: url, title: name, kind: kind)
         }
         .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
+    // MARK: - Directory Check
+    private static func isDirectory(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
+    }
+
+    // MARK: - Location
+    private static func location(url: URL, title: String, kind: VolumeLocation.Kind) -> VolumeLocation {
+        VolumeLocation(id: url.absoluteString, title: title, url: url, kind: kind, connectionID: nil)
+    }
+
+    // MARK: - Remote Locations
+    private func remoteLocations() -> [VolumeLocation] {
+        manager.connections.compactMap { connection in
+            guard let url = remoteURL(from: connection.provider.mountPath) else { return nil }
+            return VolumeLocation(
+                id: "remote:\(connection.id)",
+                title: connection.displayName,
+                url: url,
+                kind: .remote,
+                connectionID: connection.id
+            )
+        }
+        .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    // MARK: - Remote URL
+    private func remoteURL(from mountPath: String) -> URL? {
+        guard !mountPath.isEmpty else { return nil }
+        if mountPath.hasPrefix("/") { return URL(fileURLWithPath: mountPath, isDirectory: true) }
+        return URL(string: mountPath)
+    }
+
     // MARK: - Navigate
-    private func navigate(to url: URL) {
+    private func navigate(to location: VolumeLocation) {
         let panel = appState.focusedPanel
+        if let connectionID = location.connectionID {
+            manager.setActive(id: connectionID)
+        }
         Task { @MainActor in
-            await appState.navigateToDirectory(url.path, on: panel)
-            log.info("[VolumesDropdown] navigate panel=\(panel) path='\(url.path)'")
+            let path = AppState.isRemotePath(location.url) ? location.url.absoluteString : location.url.path
+            await appState.navigateToDirectory(path, on: panel)
+            log.info("[VolumesDropdown] navigate panel=\(panel) path='\(path)'")
         }
     }
 }
