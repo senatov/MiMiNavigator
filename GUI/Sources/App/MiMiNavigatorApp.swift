@@ -276,8 +276,8 @@ struct MiMiNavigatorApp: App {
                 ToolbarToggleButton(
                     systemImage: "eye.slash",
                     activeImage: "eye.fill",
-                    helpActive: HotKeyStore.shared.helpText("Hide hidden files", for: .toggleHiddenFiles),
-                    helpInactive: HotKeyStore.shared.helpText("Show hidden files", for: .toggleHiddenFiles),
+                    helpActive: HotKeyStore.shared.helpText("Hidden files are shown — click to hide", for: .toggleHiddenFiles),
+                    helpInactive: HotKeyStore.shared.helpText("Hidden files are hidden — click to show", for: .toggleHiddenFiles),
                     isActive: Binding(get: { showHiddenFiles }, set: { _ in })
                 ) {
                     performToggleHidden()
