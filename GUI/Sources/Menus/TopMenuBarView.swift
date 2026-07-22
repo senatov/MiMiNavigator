@@ -25,6 +25,7 @@ struct TopMenuBarView: View {
                 }
                 RemoteConnectionsDropdown(appState: appState)
                     .padding(.leading, 16)
+                VolumesDropdown(appState: appState)
                 Spacer(minLength: 12)
                 if let helpMenu = menuData.last {
                     menuView(for: helpMenu)
