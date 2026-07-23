@@ -121,8 +121,7 @@ enum ColumnAutoFitMeasurer {
     // MARK: - Clamp Width
     private static func clamped(width: CGFloat, column: ColumnID, meaningfulCount: Int, totalCount: Int) -> CGFloat {
         guard column != .name else { return max(width, ColumnAutoFitMetrics.emptyColumnWidth) }
-        // minWidth is the real minimum — not defaultWidth which is just the initial pre-autofit value
-        let floor = max(column.minWidth, ColumnAutoFitMetrics.emptyColumnWidth)
+        let floor = minimumAutoFitWidth(for: column)
         var clampedWidth = width.clamped(to: floor...ColumnWidthPolicy.effectiveMaxWidth(for: column))
         if column == .size && meaningfulCount < totalCount {
             clampedWidth = max(clampedWidth, ColumnWidthPolicy.sizeColumnFallbackWidth())
@@ -135,14 +134,19 @@ enum ColumnAutoFitMeasurer {
         if column == .size {
             let fallback = ColumnWidthPolicy.sizeColumnFallbackWidth()
             log.verbose("[AutoFit] contentWidth \(column.rawValue) fallback=\(ColumnAutoFitLayout.pt(fallback))")
-            return max(fallback, column.minWidth)
+            return max(fallback, minimumAutoFitWidth(for: column))
         }
         if column.isDateColumn {
             log.verbose("[AutoFit] contentWidth \(column.rawValue) empty date fallback")
-            return max(column.defaultWidth, column.minWidth)
+            return max(column.defaultWidth, minimumAutoFitWidth(for: column))
         }
         log.verbose("[AutoFit] contentWidth \(column.rawValue) empty")
-        return max(ColumnAutoFitMetrics.emptyColumnWidth, column.minWidth)
+        return minimumAutoFitWidth(for: column)
+    }
+
+    // MARK: - Minimum Auto Fit Width
+    static func minimumAutoFitWidth(for column: ColumnID) -> CGFloat {
+        max(max(column.minWidth, column.minHeaderWidth), ColumnAutoFitMetrics.emptyColumnWidth)
     }
 
     // MARK: - Text Samples

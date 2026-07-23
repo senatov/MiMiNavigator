@@ -47,6 +47,10 @@ final class MiMiNavigatorTests: XCTestCase {
             ColumnAutoFitMeasurer.renderedContentInsetWidth(for: .kind),
             padding + ColumnAutoFitMetrics.textRenderingReserve
         )
+        XCTAssertGreaterThanOrEqual(
+            ColumnAutoFitMeasurer.minimumAutoFitWidth(for: .kind),
+            ColumnID.kind.minHeaderWidth
+        )
     }
 
     // MARK: - Cloud Link Alias

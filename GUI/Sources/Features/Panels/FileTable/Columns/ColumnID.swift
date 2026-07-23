@@ -136,12 +136,12 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
     /// Hard drag minimum — 4pt for all columns regardless of content.
     var minDragWidth: CGFloat { 4 }
 
-    /// Header label minimum (informational only — not used as drag floor).
+    /// Full header width used as the auto-fit floor.
     var minHeaderWidth: CGFloat {
-        let f = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let f = NSFont.systemFont(ofSize: 13, weight: .medium)
         let textW = (title as NSString).size(withAttributes: [.font: f]).width
-        let iconW: CGFloat = icon != nil ? 18 : 0
-        return ceil(textW + iconW + 36)   // +16 sort arrow +20 padding
+        let contentWidth: CGFloat = icon == nil ? textW : 18
+        return ceil(contentWidth + 36)   // +16 sort arrow +20 padding
     }
 
     // MARK: - Alignment
