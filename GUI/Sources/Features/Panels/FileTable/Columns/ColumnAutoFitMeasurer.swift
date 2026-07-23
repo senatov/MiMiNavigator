@@ -113,7 +113,7 @@ enum ColumnAutoFitMeasurer {
     }
 
     // MARK: - Rendered Content Insets
-    private static func renderedContentInsetWidth(for column: ColumnID) -> CGFloat {
+    static func renderedContentInsetWidth(for column: ColumnID) -> CGFloat {
         let padding = column.contentPadding.leading + column.contentPadding.trailing
         return max(2 * ColumnAutoFitMetrics.measuredContentInset, padding + ColumnAutoFitMetrics.textRenderingReserve)
     }

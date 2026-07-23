@@ -39,6 +39,16 @@ final class MiMiNavigatorTests: XCTestCase {
         }
     }
 
+    // MARK: - Column Auto Fit
+
+    func testKindWidthIncludesRenderedPaddingAndTextReserve() {
+        let padding = ColumnID.kind.contentPadding.leading + ColumnID.kind.contentPadding.trailing
+        XCTAssertEqual(
+            ColumnAutoFitMeasurer.renderedContentInsetWidth(for: .kind),
+            padding + ColumnAutoFitMetrics.textRenderingReserve
+        )
+    }
+
     // MARK: - Cloud Link Alias
 
     func testCloudLinkAliasesAreLongRandomAndURLSafe() {
