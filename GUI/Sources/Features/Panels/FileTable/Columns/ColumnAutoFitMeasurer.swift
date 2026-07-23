@@ -86,7 +86,7 @@ enum ColumnAutoFitMeasurer {
         let p85Index = min(Int(ceil(Double(sorted.count) * 0.85)) - 1, sorted.count - 1)
         let percentileWidth = sorted[max(0, p85Index)]
         let extraWidth = ColumnWidthPolicy.extraReserveWidth(for: column)
-        return ceil(percentileWidth + 2 * ColumnAutoFitMetrics.measuredContentInset + extraWidth)
+        return ceil(percentileWidth + renderedContentInsetWidth(for: column) + extraWidth)
     }
 
     // MARK: - Name Content Width
@@ -108,8 +108,14 @@ enum ColumnAutoFitMeasurer {
         case .owner:
             return ceil(measuredWidth + 2 * ColumnAutoFitMetrics.measuredContentInset + ColumnAutoFitMetrics.ownerColumnInsetBoost)
         default:
-            return ceil(measuredWidth + 2 * ColumnAutoFitMetrics.measuredContentInset + ColumnWidthPolicy.extraReserveWidth(for: column))
+            return ceil(measuredWidth + renderedContentInsetWidth(for: column) + ColumnWidthPolicy.extraReserveWidth(for: column))
         }
+    }
+
+    // MARK: - Rendered Content Insets
+    private static func renderedContentInsetWidth(for column: ColumnID) -> CGFloat {
+        let padding = column.contentPadding.leading + column.contentPadding.trailing
+        return max(2 * ColumnAutoFitMetrics.measuredContentInset, padding + ColumnAutoFitMetrics.textRenderingReserve)
     }
 
     // MARK: - Clamp Width
