@@ -29,6 +29,16 @@ private struct FilePublishFingerprint: Equatable {
     let sizeInBytes: Int64
     let sizeIsExact: Bool
     let modifiedTimestamp: TimeInterval?
+    let creationTimestamp: TimeInterval?
+    let lastOpenedTimestamp: TimeInterval?
+    let dateAddedTimestamp: TimeInterval?
+    let fileExtension: String
+    let permissions: Int16
+    let owner: String
+    let group: String
+    let isAlias: Bool
+    let isSymbolicLink: Bool
+    let isOSHidden: Bool
     let securityState: String
 
     // MARK: - Init
@@ -45,6 +55,16 @@ private struct FilePublishFingerprint: Equatable {
         sizeInBytes = file.sizeInBytes
         sizeIsExact = file.sizeIsExact
         modifiedTimestamp = file.modifiedDate?.timeIntervalSince1970
+        creationTimestamp = file.creationDate?.timeIntervalSince1970
+        lastOpenedTimestamp = file.lastOpenedDate?.timeIntervalSince1970
+        dateAddedTimestamp = file.dateAdded?.timeIntervalSince1970
+        fileExtension = file.fileExtension
+        permissions = file.posixPermissions
+        owner = file.ownerName
+        group = file.groupName
+        isAlias = file.isAlias
+        isSymbolicLink = file.isSymbolicLink
+        isOSHidden = file.isOSHidden
         securityState = String(describing: file.securityState)
     }
 }
@@ -222,6 +242,16 @@ extension DualDirectoryScanner {
             hasher.combine(file.sizeInBytes)
             hasher.combine(file.sizeIsExact)
             hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
+            hasher.combine(file.creationDate?.timeIntervalSince1970 ?? 0)
+            hasher.combine(file.lastOpenedDate?.timeIntervalSince1970 ?? 0)
+            hasher.combine(file.dateAdded?.timeIntervalSince1970 ?? 0)
+            hasher.combine(file.fileExtension)
+            hasher.combine(file.posixPermissions)
+            hasher.combine(file.ownerName)
+            hasher.combine(file.groupName)
+            hasher.combine(file.isAlias)
+            hasher.combine(file.isSymbolicLink)
+            hasher.combine(file.isOSHidden)
             hasher.combine(String(describing: file.securityState))
         }
         return hasher.finalize()

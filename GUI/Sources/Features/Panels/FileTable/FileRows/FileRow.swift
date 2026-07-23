@@ -64,6 +64,7 @@ struct FileRow: View, Equatable {
             && lhs.file.cachedShallowSize == rhs.file.cachedShallowSize
             && lhs.file.cachedChildCount == rhs.file.cachedChildCount
             && lhs.file.modifiedDate?.timeIntervalSince1970 == rhs.file.modifiedDate?.timeIntervalSince1970
+            && FileRowMetadataFingerprint(file: lhs.file) == FileRowMetadataFingerprint(file: rhs.file)
     }
 
     var isParentEntry: Bool {
@@ -103,6 +104,7 @@ struct FileRow: View, Equatable {
                 ^ (file.cachedShallowSize ?? Int64.min).hashValue
                 ^ (file.cachedChildCount ?? Int.min).hashValue
                 ^ Int(file.modifiedDate?.timeIntervalSince1970 ?? 0).hashValue
+                ^ FileRowMetadataFingerprint(file: file).hashValue
                 ^ themeVersion.hashValue
         ) {
             rowContent
@@ -293,7 +295,8 @@ struct FileRow: View, Equatable {
                 file: file,
                 layout: layout,
                 isParentEntry: isParentEntry,
-                colorStore: colorStore
+                colorStore: colorStore,
+                showSizeInKB: appState.showSizeInKB
             )
         }
     }

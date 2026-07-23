@@ -10,6 +10,7 @@ struct FileRowMetadataColumnsView: View {
     let layout: ColumnLayoutModel
     let isParentEntry: Bool
     let colorStore: ColorThemeStore
+    let showSizeInKB: Bool
 
     private var fixedColumns: [ColumnSpec] {
         layout.visibleColumns.filter { $0.id != .name }
@@ -89,7 +90,7 @@ struct FileRowMetadataColumnsView: View {
     private func cellText(for column: ColumnID) -> String {
         switch column {
         case .dateModified: file.modifiedDateFormatted
-        case .size: file.displaySizeFormatted
+        case .size: sizeText
         case .kind: file.kindFormatted
         case .permissions: file.permissionsFormatted
         case .owner: file.ownerFormatted
@@ -108,7 +109,7 @@ struct FileRowMetadataColumnsView: View {
     private func cellContent(for column: ColumnID) -> some View {
         switch column {
         case .dateModified: Text(file.modifiedDateFormatted)
-        case .size: Text(file.displaySizeFormatted)
+        case .size: Text(sizeText)
         case .kind: KindCell(file: file)
         case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
         case .owner: Text(file.ownerFormatted)
@@ -119,6 +120,16 @@ struct FileRowMetadataColumnsView: View {
         case .group: Text(file.groupNameFormatted)
         case .name: EmptyView()
         }
+    }
+
+    // MARK: - Size Text
+    private var sizeText: String {
+        guard showSizeInKB else { return file.displaySizeFormatted }
+        if file.isDirectory && file.cachedDirectorySize == nil && file.cachedShallowSize == nil { return "—" }
+        let bytes = file.displaySize
+        if bytes < 0 { return "—" }
+        if bytes == 0 { return "0 KB" }
+        return "\(max(1, (bytes + 1_023) / 1_024)) KB"
     }
 
     // MARK: - Cell Font
