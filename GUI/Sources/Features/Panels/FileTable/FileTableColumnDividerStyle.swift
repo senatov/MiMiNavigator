@@ -100,19 +100,20 @@ private final class TableColumnDividerProbeView: NSView {
     }
 
     private func applyBodyOverlay(to tableView: NSTableView) {
-        let overlay = bodyOverlay(in: tableView) ?? TableBodyColumnDividerOverlay()
+        guard let clipView = tableView.enclosingScrollView?.contentView else { return }
+        let overlay = bodyOverlay(in: clipView) ?? TableBodyColumnDividerOverlay()
         overlay.observe(tableView)
         overlay.color = color
-        overlay.frame = tableView.bounds
+        overlay.frame = clipView.bounds
         overlay.autoresizingMask = [.width, .height]
         if overlay.superview == nil {
-            tableView.addSubview(overlay, positioned: .above, relativeTo: nil)
+            clipView.addSubview(overlay, positioned: .above, relativeTo: tableView)
         }
         overlay.needsDisplay = true
     }
 
-    private func bodyOverlay(in tableView: NSTableView) -> TableBodyColumnDividerOverlay? {
-        tableView.subviews.first { $0 is TableBodyColumnDividerOverlay } as? TableBodyColumnDividerOverlay
+    private func bodyOverlay(in clipView: NSClipView) -> TableBodyColumnDividerOverlay? {
+        clipView.subviews.first { $0 is TableBodyColumnDividerOverlay } as? TableBodyColumnDividerOverlay
     }
 
     private func applyHeaderOverlay(to tableView: NSTableView) {
@@ -192,9 +193,21 @@ private final class TableBodyColumnDividerOverlay: NSView {
                 object: tableView
             )
         }
+        if let clipView = tableView.enclosingScrollView?.contentView {
+            clipView.postsBoundsChangedNotifications = true
+            center.addObserver(
+                self,
+                selector: #selector(tableLayoutDidChange),
+                name: NSView.boundsDidChangeNotification,
+                object: clipView
+            )
+        }
     }
 
     @objc private func tableLayoutDidChange(_: Notification) {
+        if let clipView = superview as? NSClipView {
+            frame = clipView.bounds
+        }
         needsDisplay = true
     }
 
@@ -202,7 +215,8 @@ private final class TableBodyColumnDividerOverlay: NSView {
         guard let tableView else { return }
         color.setStroke()
         for index in 0 ..< max(tableView.numberOfColumns - 1, 0) {
-            let x = tableView.rect(ofColumn: index).maxX.rounded() - 0.5
+            let tableX = tableView.rect(ofColumn: index).maxX
+            let x = convert(NSPoint(x: tableX, y: 0), from: tableView).x.rounded() - 0.5
             let path = NSBezierPath()
             path.move(to: NSPoint(x: x, y: bounds.minY))
             path.line(to: NSPoint(x: x, y: bounds.maxY))
