@@ -194,6 +194,14 @@ struct FindFilesGeneralTab: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(isOn.wrappedValue ? iconColor.opacity(0.10) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(isOn.wrappedValue ? iconColor.opacity(0.65) : Color.clear, lineWidth: 1)
+        )
     }
 
     // MARK: - Browse

@@ -6,11 +6,9 @@
 // Description: Advanced tab of Find Files.
 
 import SwiftUI
-
 // MARK: - Advanced Tab
 struct FindFilesAdvancedTab: View {
     @Bindable var viewModel: FindFilesViewModel
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
@@ -31,29 +29,28 @@ struct FindFilesAdvancedTab: View {
             }
         }
     }
-
     private var presetSection: some View {
         advancedCard(icon: "shippingbox.fill", title: "Templates", tint: .blue) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 8) {
-                    Button {
-                        viewModel.applyLargeStaleFilesPreset()
-                    } label: {
-                        Label("Large stale files", systemImage: "externaldrive.fill.badge.exclamationmark")
-                    }
-                    .buttonStyle(ThemedButtonStyle())
-                    Button {
-                        viewModel.applyApplicationLeftoversPreset()
-                    } label: {
-                        Label("App leftovers", systemImage: "app.dashed")
-                    }
-                    .buttonStyle(ThemedButtonStyle())
-                    Button {
-                        viewModel.applyEmptyStaleFoldersPreset()
-                    } label: {
-                        Label("Empty old folders", systemImage: "folder.badge.minus")
-                    }
-                    .buttonStyle(ThemedButtonStyle())
+                    presetButton(
+                        "Large stale files",
+                        icon: "externaldrive.fill.badge.exclamationmark",
+                        preset: .largeStaleFiles,
+                        action: viewModel.applyLargeStaleFilesPreset
+                    )
+                    presetButton(
+                        "App leftovers",
+                        icon: "app.dashed",
+                        preset: .applicationLeftovers,
+                        action: viewModel.applyApplicationLeftoversPreset
+                    )
+                    presetButton(
+                        "Empty old folders",
+                        icon: "folder.badge.minus",
+                        preset: .emptyStaleFolders,
+                        action: viewModel.applyEmptyStaleFoldersPreset
+                    )
                 }
                 Text("Templates set safe scopes and editable age/size filters; every result is only a candidate for review.")
                     .font(.system(size: 11))
@@ -61,7 +58,6 @@ struct FindFilesAdvancedTab: View {
             }
         }
     }
-
     private var scopeSection: some View {
         advancedCard(icon: "folder.badge.gearshape", title: "Scope", tint: .teal) {
             VStack(spacing: 0) {
@@ -85,7 +81,6 @@ struct FindFilesAdvancedTab: View {
             }
         }
     }
-
     private var sizeSection: some View {
         advancedCard(icon: "ruler.fill", title: "File Size", tint: .orange) {
             VStack(spacing: 8) {
@@ -96,7 +91,6 @@ struct FindFilesAdvancedTab: View {
                     tint: .orange,
                     isOn: $viewModel.useSizeFilter
                 )
-
                 if viewModel.useSizeFilter {
                     HStack(spacing: 8) {
                         Text("From")
@@ -125,7 +119,6 @@ struct FindFilesAdvancedTab: View {
             }
         }
     }
-
     private var dateSection: some View {
         advancedCard(icon: "calendar", title: "Dates", tint: .red) {
             VStack(spacing: 10) {
@@ -242,6 +235,14 @@ struct FindFilesAdvancedTab: View {
                         }
                         .buttonStyle(ThemedButtonStyle())
                         .controlSize(.small)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(isSelectedYear(years) ? Color.accentColor.opacity(0.18) : Color.clear)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(isSelectedYear(years) ? Color.accentColor : Color.clear, lineWidth: 1.5)
+                        )
                     }
                     Spacer()
                 }
@@ -320,23 +321,34 @@ struct FindFilesAdvancedTab: View {
                 .controlSize(.small)
         }
         .padding(.vertical, 2)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(isOn.wrappedValue ? tint.opacity(0.10) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(isOn.wrappedValue ? tint.opacity(0.65) : Color.clear, lineWidth: 1)
+        )
     }
 
     private func itemTypeRow() -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: "doc.on.folder")
-                .font(.system(size: 14))
-                .foregroundStyle(.teal)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Item type")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.primary)
-                Text("Choose whether folders can appear in the results")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.on.folder")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.teal)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Item type")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.primary)
+                    Text("Choose which item types appear in the results")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
             }
-            Spacer()
             Picker("", selection: $viewModel.itemTypeFilter) {
                 ForEach(FindFilesItemTypeFilter.allCases) { value in
                     Text(value.label).tag(value)
@@ -344,9 +356,38 @@ struct FindFilesAdvancedTab: View {
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .frame(width: 330)
+            .frame(maxWidth: 430)
+            .padding(.leading, 32)
         }
         .padding(.vertical, 2)
+    }
+
+    private func presetButton(
+        _ title: String,
+        icon: String,
+        preset: FindFilesPreset,
+        action: @escaping () -> Void
+    ) -> some View {
+        let selected = viewModel.isPresetActive(preset)
+        return Button(action: action) {
+            Label(title, systemImage: selected ? "checkmark.circle.fill" : icon)
+        }
+        .buttonStyle(ThemedButtonStyle())
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(selected ? Color.accentColor.opacity(0.20) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2)
+        )
+    }
+
+    private func isSelectedYear(_ years: Int) -> Bool {
+        viewModel.useStaleItemFilter
+            && viewModel.staleCriterionMode == .age
+            && viewModel.staleAgeUnit == .years
+            && viewModel.staleAgeAmount == String(years)
     }
 
     private func rowDivider() -> some View {

@@ -79,6 +79,13 @@ enum FindFilesSearchBackend: String, Sendable {
     case find
 }
 
+// MARK: - Search Preset
+enum FindFilesPreset: String {
+    case largeStaleFiles
+    case applicationLeftovers
+    case emptyStaleFolders
+}
+
 // MARK: - Size Unit
 enum FindFilesSizeUnit: String, CaseIterable, Codable, Identifiable {
     case bytes = "B"

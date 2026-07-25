@@ -46,7 +46,7 @@ extension L10n {
         static let ready = String(localized: "Ready", comment: "Search ready status")
         static let searching = String(localized: "Searching…", comment: "Searching status")
         static let cancelled = String(localized: "Cancelled", comment: "Search cancelled status")
-        static let newSearch = String(localized: "New Search", comment: "New search button")
+        static let clearResults = String(localized: "Clear Results", comment: "Clear search results button")
         static let search = String(localized: "Search", comment: "Search button")
 
         // Archive password

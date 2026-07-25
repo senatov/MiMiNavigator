@@ -12,6 +12,8 @@ struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState?
     @State private var selectedTab: FindFilesTab = .general
+    @State private var criteriaHeight: CGFloat = 390
+    @State private var didRestoreLayout = false
 
     private var dialogBgColor: Color {
         let store = ColorThemeStore.shared
@@ -22,10 +24,74 @@ struct FindFilesWindowContent: View {
     }
 
     var body: some View {
-        ZStack {
-            dialogBgColor.ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                dialogBgColor.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    criteriaPane
+                        .frame(height: clampedCriteriaHeight(totalHeight: geometry.size.height))
+                    FindFilesSplitDivider(
+                        criteriaHeight: $criteriaHeight,
+                        totalHeight: geometry.size.height
+                    )
+                    FindFilesResultsView(viewModel: viewModel, appState: appState)
+                        .frame(maxHeight: .infinity)
+                    Rectangle()
+                        .fill(Color(nsColor: .separatorColor))
+                        .frame(height: 1)
+                    statusBar
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 5)
+                }
+                .font(.system(size: 12))
+                .keyboardFocusSection()
+            }
+        }
+        .onAppear {
+            guard !didRestoreLayout else { return }
+            didRestoreLayout = true
+            let storedHeight = MiMiDefaults.shared.double(forKey: "findFiles.criteriaPaneHeight")
+            if storedHeight > 0 { criteriaHeight = CGFloat(storedHeight) }
+            if let rawTab = MiMiDefaults.shared.string(forKey: "findFiles.selectedTab"),
+               let restoredTab = FindFilesTab(rawValue: rawTab)
+            {
+                selectedTab = restoredTab
+            }
+        }
+        .onChange(of: selectedTab) {
+            MiMiDefaults.shared.set(selectedTab.rawValue, forKey: "findFiles.selectedTab")
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel.showPasswordDialog },
+            set: { viewModel.showPasswordDialog = $0 }
+        )) {
+            ArchivePasswordDialog(
+                archiveName: viewModel.passwordArchiveName,
+                password: Binding(
+                    get: { viewModel.archivePassword },
+                    set: { viewModel.archivePassword = $0 }
+                ),
+                onSubmit: { viewModel.submitArchivePassword() },
+                onSkip: { viewModel.skipArchive() }
+            )
+        }
+        .alert("Search Error", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+        .onDisappear {
+            viewModel.savePreferences()
+        }
+    }
 
-            VStack(spacing: 0) {
+    // MARK: - Criteria Pane
+
+    private var criteriaPane: some View {
+        VStack(spacing: 0) {
                 // MARK: - Tab Picker
                 Picker("", selection: $selectedTab) {
                     Text("General").tag(FindFilesTab.general)
@@ -36,6 +102,8 @@ struct FindFilesWindowContent: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 4)
+
+                FindFilesCriteriaHeader(criteria: viewModel.activeCriteriaSummary)
 
                 // MARK: - Input Area with visible border + spinner overlay
                 ZStack {
@@ -55,55 +123,7 @@ struct FindFilesWindowContent: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .padding(.horizontal, 10)
                     .padding(.top, 6)
-                    .padding(.bottom, 6)
-
-                // MARK: - Sharp separator line
-                Rectangle()
-                    .fill(Color(nsColor: .separatorColor))
-                    .frame(height: 1)
-
-                // MARK: - Results Table (fills all remaining space)
-                FindFilesResultsView(viewModel: viewModel, appState: appState)
-                    .frame(maxHeight: .infinity)
-
-                Rectangle()
-                    .fill(Color(nsColor: .separatorColor))
-                    .frame(height: 1)
-
-                // MARK: - Status Bar
-                statusBar
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 5)
-            }
-            .font(.system(size: 12))
-            .keyboardFocusSection()
-            // Archive password dialog
-            .sheet(isPresented: Binding(
-                get: { viewModel.showPasswordDialog },
-                set: { viewModel.showPasswordDialog = $0 }
-            )) {
-                ArchivePasswordDialog(
-                    archiveName: viewModel.passwordArchiveName,
-                    password: Binding(
-                        get: { viewModel.archivePassword },
-                        set: { viewModel.archivePassword = $0 }
-                    ),
-                    onSubmit: { viewModel.submitArchivePassword() },
-                    onSkip: { viewModel.skipArchive() }
-                )
-            }
-            // Error alert
-            .alert("Search Error", isPresented: Binding(
-                get: { viewModel.errorMessage != nil },
-                set: { if !$0 { viewModel.errorMessage = nil } }
-            )) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
-        }
-        .onDisappear {
-            viewModel.savePreferences()
+                .padding(.bottom, 6)
         }
     }
 
@@ -118,8 +138,7 @@ struct FindFilesWindowContent: View {
                 FindFilesAdvancedTab(viewModel: viewModel)
             }
         }
-        .fixedSize(horizontal: false, vertical: selectedTab == .general)
-        .frame(height: selectedTab == .advanced ? 360 : nil)
+        .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(DialogColors.light.opacity(0.98))
@@ -165,14 +184,14 @@ struct FindFilesWindowContent: View {
                 .help("Display search results in the focused panel")
             }
 
-            // macOS canonical layout: secondary buttons left, primary button rightmost
-            // New Search (secondary)
-            Button("New Search") {
-                viewModel.newSearch()
+            Button {
+                viewModel.clearResults()
+            } label: {
+                Label("Clear Results", systemImage: "xmark.bin")
             }
             .buttonStyle(ThemedButtonStyle())
             .controlSize(.regular)
-            .disabled(viewModel.searchState == .idle && viewModel.results.isEmpty)
+            .disabled(viewModel.results.isEmpty || viewModel.searchState == .searching)
 
             // Primary: Search / Stop (rightmost)
             if viewModel.searchState == .searching {
@@ -204,6 +223,10 @@ struct FindFilesWindowContent: View {
     private var actionBarBorder: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
             .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
+    }
+
+    private func clampedCriteriaHeight(totalHeight: CGFloat) -> CGFloat {
+        min(max(criteriaHeight, 210), max(210, totalHeight - 190))
     }
 
     // MARK: - Status Bar

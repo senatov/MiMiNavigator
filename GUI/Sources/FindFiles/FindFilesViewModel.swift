@@ -312,9 +312,9 @@ final class FindFilesViewModel {
         statsUpdateTask = nil
     }
 
-    // MARK: - New Search (reset)
+    // MARK: - Clear Results
 
-    func newSearch() {
+    func clearResults() {
         stopStatsPolling()
         cancelSearch()
         results.removeAll()
