@@ -24,7 +24,7 @@ extension ProgressPanel {
                 string: value,
                 attributes: [
                     .font: NSFontManager.shared.convert(appearance.logFont, toHaveTrait: .boldFontMask),
-                    .foregroundColor: #colorLiteral(red: 0.02, green: 0.12, blue: 0.38, alpha: 1),
+                    .foregroundColor: appearance.logColor,
                 ]))
         appendAttributedLog(entry)
     }

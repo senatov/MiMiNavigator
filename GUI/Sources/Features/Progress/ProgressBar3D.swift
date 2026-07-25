@@ -63,9 +63,10 @@ import AppKit
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         let barRect = bounds.insetBy(dx: 1.5, dy: 2.5)
+        let fillRect = currentFillRect(in: barRect)
         drawTrack(in: barRect)
-        drawFill(in: barRect)
-        drawLabel(in: barRect)
+        drawFill(fillRect, clippedTo: barRect)
+        drawLabel(in: barRect, fillRect: fillRect)
     }
 
     // MARK: - Draw Track
@@ -86,15 +87,16 @@ import AppKit
     }
 
     // MARK: - Draw Fill
-    private func drawFill(in rect: NSRect) {
-        let fillRect: NSRect
+    private func currentFillRect(in rect: NSRect) -> NSRect {
         if let fraction {
-            fillRect = NSRect(x: rect.minX, y: rect.minY, width: rect.width * fraction, height: rect.height)
-        } else {
-            let segmentWidth = max(70, rect.width * 0.28)
-            let travel = rect.width + segmentWidth
-            fillRect = NSRect(x: rect.minX - segmentWidth + travel * animationPhase, y: rect.minY, width: segmentWidth, height: rect.height)
+            return NSRect(x: rect.minX, y: rect.minY, width: rect.width * fraction, height: rect.height)
         }
+        let segmentWidth = max(70, rect.width * 0.28)
+        let travel = rect.width + segmentWidth
+        return NSRect(x: rect.minX - segmentWidth + travel * animationPhase, y: rect.minY, width: segmentWidth, height: rect.height)
+    }
+
+    private func drawFill(_ fillRect: NSRect, clippedTo rect: NSRect) {
         let clippedRect = fillRect.intersection(rect)
         guard clippedRect.width > 0 else { return }
         let radius = min(rect.height / 2, clippedRect.width / 2)
@@ -118,18 +120,29 @@ import AppKit
     }
 
     // MARK: - Draw Label
-    private func drawLabel(in rect: NSRect) {
+    private func drawLabel(in rect: NSRect, fillRect: NSRect) {
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = .center
-        let attributes: [NSAttributedString.Key: Any] = [
+        let baseAttributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold),
-            .foregroundColor: NSColor.white,
+            .foregroundColor: NSColor.controlTextColor,
+            .paragraphStyle: paragraph
+        ]
+        let selectedAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: NSColor.selectedControlTextColor,
             .paragraphStyle: paragraph,
             .shadow: labelShadow
         ]
-        let size = detailText.size(withAttributes: attributes)
+        let size = detailText.size(withAttributes: baseAttributes)
         let textRect = NSRect(x: rect.minX + 4, y: rect.midY - size.height / 2, width: rect.width - 8, height: size.height)
-        detailText.draw(in: textRect, withAttributes: attributes)
+        detailText.draw(in: textRect, withAttributes: baseAttributes)
+        let clippedFill = fillRect.intersection(rect)
+        guard clippedFill.width > 0 else { return }
+        NSGraphicsContext.saveGraphicsState()
+        NSBezierPath(rect: clippedFill).addClip()
+        detailText.draw(in: textRect, withAttributes: selectedAttributes)
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     private var labelShadow: NSShadow {
