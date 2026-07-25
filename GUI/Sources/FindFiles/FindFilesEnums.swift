@@ -60,6 +60,7 @@ enum FindFilesTimestampFilter: String, CaseIterable, Identifiable {
 enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
     case filesAndFolders
     case filesOnly
+    case foldersOnly
 
     var id: String { rawValue }
 
@@ -67,8 +68,15 @@ enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
         switch self {
         case .filesAndFolders: return "Files and folders"
         case .filesOnly: return "Files only"
+        case .foldersOnly: return "Folders only"
         }
     }
+}
+
+// MARK: - Search Backend
+enum FindFilesSearchBackend: String, Sendable {
+    case spotlight
+    case find
 }
 
 // MARK: - Size Unit

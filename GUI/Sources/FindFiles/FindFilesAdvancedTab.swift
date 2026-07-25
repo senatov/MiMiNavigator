@@ -23,36 +23,41 @@ struct FindFilesAdvancedTab: View {
             .padding(12)
         }
         .background(DialogColors.base.opacity(0.96))
+        .onChange(of: viewModel.itemTypeFilter) {
+            if viewModel.itemTypeFilter == .foldersOnly {
+                viewModel.useSizeFilter = false
+            } else {
+                viewModel.emptyFoldersOnly = false
+            }
+        }
     }
 
     private var presetSection: some View {
         advancedCard(icon: "shippingbox.fill", title: "Templates", tint: .blue) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
                     Button {
-                        viewModel.applyPotentialBallastPreset()
+                        viewModel.applyLargeStaleFilesPreset()
                     } label: {
-                        Label("Potential user ballast", systemImage: "wand.and.stars")
+                        Label("Large stale files", systemImage: "externaldrive.fill.badge.exclamationmark")
                     }
                     .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-                    .help("Configure a whole-disk ballast search and enable the editable age fields below.")
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Searches from /, includes files and folders, skips protected OS roots.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                        Text("Fill the age fields here before starting the search.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.tertiary)
+                    Button {
+                        viewModel.applyApplicationLeftoversPreset()
+                    } label: {
+                        Label("App leftovers", systemImage: "app.dashed")
                     }
-                    Spacer(minLength: 0)
+                    .buttonStyle(ThemedButtonStyle())
+                    Button {
+                        viewModel.applyEmptyStaleFoldersPreset()
+                    } label: {
+                        Label("Empty old folders", systemImage: "folder.badge.minus")
+                    }
+                    .buttonStyle(ThemedButtonStyle())
                 }
-
-                if viewModel.useStaleItemFilter {
-                    staleCriteriaControls
-                    .padding(.leading, 34)
-                }
+                Text("Templates set safe scopes and editable age/size filters; every result is only a candidate for review.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -319,7 +324,7 @@ struct FindFilesAdvancedTab: View {
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .frame(width: 220)
+            .frame(width: 330)
         }
         .padding(.vertical, 2)
     }

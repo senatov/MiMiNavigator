@@ -19,6 +19,7 @@ actor FindFilesEngine {
     private var currentTask: Task<Void, Never>?
     private var currentProcess: Process?
     private(set) var stats = FindFilesStats()
+    private var deliveredResultCount = 0
     /// Archives already scanned during the main find pass (avoid double-scanning)
     private var scannedArchivePaths = Set<String>()
 
@@ -42,6 +43,7 @@ actor FindFilesEngine {
         stats.isRunning = true
         stats.startTime = Date()
         scannedArchivePaths.removeAll()
+        deliveredResultCount = 0
 
         log.info("[FindEngine] Starting search: pattern='\(criteria.fileNamePattern)' dir='\(criteria.searchDirectory.lastPathComponent)' archives=\(criteria.searchInArchives)")
 
@@ -73,6 +75,13 @@ actor FindFilesEngine {
     // MARK: - Stats
 
     func getStats() -> FindFilesStats { stats }
+
+    // MARK: - Result Limit
+    func reachResultLimit() {
+        stats.resultLimitReached = true
+        currentTask?.cancel()
+        terminateProcess()
+    }
 
     /// Update current path from archive searcher callback
     func updateCurrentPath(_ path: String) {
@@ -248,8 +257,44 @@ actor FindFilesEngine {
             return
         }
 
-        // Normal search — use /usr/bin/find for accurate streaming results
+        if FindFilesSpotlightQuery.supports(criteria) {
+            let completed = await runSpotlightCommand(criteria: criteria, continuation: continuation)
+            if completed { return }
+            log.info("[FindEngine] Spotlight unavailable; falling back to find")
+        }
+        stats.backend = .find
         await runFindCommand(criteria: criteria, continuation: continuation, passwordCallback: passwordCallback)
+    }
+
+    // MARK: - Spotlight Runner
+
+    private func runSpotlightCommand(
+        criteria: FindFilesCriteria,
+        continuation: AsyncStream<FindFilesResult>.Continuation
+    ) async -> Bool {
+        let process = FindFilesSpotlightQuery.makeProcess(criteria: criteria)
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            log.warning("[FindEngine] Spotlight launch failed: \(error.localizedDescription)")
+            return false
+        }
+        stats.backend = .spotlight
+        currentProcess = process
+        log.info("[FindEngine] Running Spotlight search in \(criteria.searchDirectory.path)")
+        await readLinesAsync(from: pipe.fileHandleForReading) { path in
+            await processFoundPath(
+                path, criteria: criteria, continuation: continuation,
+                nameRegex: nil, contentPattern: nil, passwordCallback: nil
+            )
+        }
+        let succeeded = process.terminationStatus == 0
+        currentProcess = nil
+        log.info("[FindEngine] Spotlight exited, matched \(stats.matchesFound)")
+        return succeeded
     }
 
     // MARK: - /usr/bin/find runner
@@ -275,8 +320,16 @@ actor FindFilesEngine {
         args += Self.buildPruneArgs(criteria: criteria)
 
         // Name matching (after -prune -o)
-        if criteria.filesOnly {
+        switch criteria.itemType {
+        case .filesAndFolders:
+            break
+        case .filesOnly:
             args += ["-type", "f"]
+        case .foldersOnly:
+            args += ["-type", "d"]
+        }
+        if criteria.emptyFoldersOnly {
+            args.append("-empty")
         }
         if let minSize = criteria.fileSizeMin {
             args += ["-size", "+\(max(minSize - 1, 0))c"]
@@ -377,11 +430,20 @@ actor FindFilesEngine {
         contentPattern: NSRegularExpression?,
         passwordCallback: ArchivePasswordCallback?
     ) async {
+        guard deliveredResultCount < criteria.resultLimit else {
+            stats.resultLimitReached = true
+            terminateProcess()
+            return
+        }
         let fileURL = URL(fileURLWithPath: line)
-
-        var isDir: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: line, isDirectory: &isDir)
-        guard exists else { return }
+        let attrs = try? FileManager.default.attributesOfItem(atPath: line)
+        var fallbackIsDir: ObjCBool = false
+        let fallbackExists = attrs == nil
+            ? FileManager.default.fileExists(atPath: line, isDirectory: &fallbackIsDir)
+            : true
+        guard fallbackExists else { return }
+        let isDirectory = (attrs?[.type] as? FileAttributeType) == .typeDirectory
+            || fallbackIsDir.boolValue
         if criteria.deletableOnly, !Self.isUserDeletable(path: line) {
             return
         }
@@ -390,12 +452,12 @@ actor FindFilesEngine {
         // Show the actual file/directory being scanned, not just the parent
         stats.currentPath = fileURL.path
 
-        if isDir.boolValue {
+        if isDirectory {
             stats.directoriesScanned += 1
-            let dirAttrs = try? FileManager.default.attributesOfItem(atPath: line)
-            let dirDate = dirAttrs?[.modificationDate] as? Date
+            let dirDate = attrs?[.modificationDate] as? Date
             let result = FindFilesResult(fileURL: fileURL, knownSize: 0, knownDate: dirDate)
             continuation.yield(result)
+            deliveredResultCount += 1
             stats.matchesFound += 1
             return
         }
@@ -419,7 +481,6 @@ actor FindFilesEngine {
         }
 
         // Read file attributes here (off-MainActor) to avoid stat() on MainActor later
-        let attrs = try? FileManager.default.attributesOfItem(atPath: line)
         let knownSize = (attrs?[.size] as? NSNumber)?.int64Value ?? 0
         let knownDate = attrs?[.modificationDate] as? Date
 
@@ -439,11 +500,13 @@ actor FindFilesEngine {
                     knownDate: knownDate
                 )
                 continuation.yield(enriched)
+                deliveredResultCount += 1
                 stats.matchesFound += 1
             }
         } else {
             let result = FindFilesResult(fileURL: fileURL, knownSize: knownSize, knownDate: knownDate)
             continuation.yield(result)
+            deliveredResultCount += 1
             stats.matchesFound += 1
         }
     }

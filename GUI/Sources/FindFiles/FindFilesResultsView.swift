@@ -20,6 +20,7 @@ struct FindFilesResultsView: View {
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
     @State private var userHasSelected: Bool = false // stops auto-scroll when user clicks
+    @State private var sortTask: Task<Void, Never>?
 
     // MARK: - Fonts (static - same as FileRow)
 
@@ -56,7 +57,7 @@ struct FindFilesResultsView: View {
         }
         .frame(minHeight: 150, idealHeight: 250)
         .onChange(of: viewModel.results.count) {
-            rebuildSort()
+            scheduleSort()
             lastResultCount = viewModel.results.count
             if viewModel.searchState == .searching && !userHasSelected,
                let last = cachedSorted.last
@@ -67,13 +68,36 @@ struct FindFilesResultsView: View {
         .onChange(of: sortOrder) { rebuildSort() }
         .onChange(of: viewModel.searchState) {
             if viewModel.searchState == .searching { userHasSelected = false }
+            if viewModel.searchState != .searching {
+                sortTask?.cancel()
+                sortTask = nil
+                rebuildSort()
+            }
         }
+        .onDisappear { sortTask?.cancel() }
     }
 
     // MARK: - Sort
 
     private func rebuildSort() {
         cachedSorted = viewModel.results.sorted(using: sortOrder)
+    }
+
+    private func scheduleSort() {
+        if cachedSorted.isEmpty {
+            rebuildSort()
+            return
+        }
+        guard sortTask == nil else { return }
+        sortTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else {
+                sortTask = nil
+                return
+            }
+            rebuildSort()
+            sortTask = nil
+        }
     }
 
     // MARK: - Empty State

@@ -27,6 +27,7 @@ final class FindFilesViewModel {
     var itemTypeFilter: FindFilesItemTypeFilter = .filesAndFolders
     var excludeSystemLocations: Bool = false
     var deletableOnly: Bool = false
+    var emptyFoldersOnly: Bool = false
 
     // Size filter
     var useSizeFilter: Bool = false
@@ -127,6 +128,7 @@ final class FindFilesViewModel {
         useDateFilter = false
         excludeSystemLocations = false
         deletableOnly = false
+        emptyFoldersOnly = false
     }
 
 
@@ -193,13 +195,14 @@ final class FindFilesViewModel {
         criteria.useRegex = useRegex
         criteria.searchInSubdirectories = searchInSubdirectories
         criteria.searchInArchives = searchInArchives
-        criteria.filesOnly = itemTypeFilter == .filesOnly
+        criteria.itemType = itemTypeFilter
         criteria.excludeSystemLocations = excludeSystemLocations
         criteria.deletableOnly = deletableOnly
+        criteria.emptyFoldersOnly = emptyFoldersOnly
         criteria.isArchiveOnlySearch = isArchiveTarget
         criteria.isSingleFileContentSearch = isSingleFileTarget
 
-        if useSizeFilter {
+        if useSizeFilter && itemTypeFilter != .foldersOnly {
             let mult = fileSizeUnit.multiplier
             if let v = Int64(fileSizeMin) { criteria.fileSizeMin = v * mult }
             if let v = Int64(fileSizeMax) { criteria.fileSizeMax = v * mult }
@@ -210,10 +213,8 @@ final class FindFilesViewModel {
         }
         applyStaleCriteria(to: &criteria, staleAgeDays: staleAgeDays)
 
-        // Start async search — detached task to keep for-await loop OFF MainActor.
-        // Results accumulate in FindFilesResultBuffer actor and flush to MainActor in batches.
+        // Start async search — detached task keeps stream consumption off MainActor.
         let engine = self.engine
-        let buffer = FindFilesResultBuffer()
 
         // Start high-frequency stats polling for live currentPath display
         startStatsPolling()
@@ -229,11 +230,20 @@ final class FindFilesViewModel {
                 }
             )
 
+            var batch: [FindFilesResult] = []
+            batch.reserveCapacity(500)
+            var receivedCount = 0
             for await result in stream {
                 guard !Task.isCancelled else { break }
-                await buffer.append(result)
-                if await buffer.shouldFlush() {
-                    let chunk = await buffer.drainPending()
+                batch.append(result)
+                receivedCount += 1
+                if receivedCount >= criteria.resultLimit {
+                    await engine.reachResultLimit()
+                    break
+                }
+                if batch.count >= 500 {
+                    let chunk = batch
+                    batch.removeAll(keepingCapacity: true)
                     let currentStats = await engine.getStats()
                     await MainActor.run { [weak self] in
                         guard let self else { return }
@@ -243,8 +253,8 @@ final class FindFilesViewModel {
                 }
             }
 
-            // Final flush — drain any remaining results
-            let remaining = await buffer.drainPending()
+            // Final flush — append any remaining results
+            let remaining = batch
             let finalStats = await engine.getStats()
             await MainActor.run { [weak self] in
                 guard let self else { return }
@@ -260,7 +270,11 @@ final class FindFilesViewModel {
                         self.searchState = .cancelled
                     } else {
                         self.searchState = .completed
-                        self.saveResults()
+                        if self.results.count <= 10_000 {
+                            self.saveResults()
+                        } else {
+                            log.info("[FindFiles] Skipped automatic JSON save for \(self.results.count) results")
+                        }
                     }
                 }
                 MemoryDiagnostics.shared.checkpoint("search.after")
@@ -330,25 +344,73 @@ final class FindFilesViewModel {
     // MARK: - Advanced Presets
 
     func applyPotentialBallastPreset() {
+        applyLargeStaleFilesPreset()
+    }
+
+    func applyLargeStaleFilesPreset() {
         fileNamePattern = "*"
         searchText = ""
-        searchDirectory = "/"
+        searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
         caseSensitive = false
         useRegex = false
         searchInSubdirectories = true
         searchInArchives = false
-        itemTypeFilter = .filesAndFolders
+        itemTypeFilter = .filesOnly
         excludeSystemLocations = true
         deletableOnly = true
-        useSizeFilter = false
-        fileSizeMin = ""
+        emptyFoldersOnly = false
+        useSizeFilter = true
+        fileSizeMin = "100"
         fileSizeMax = ""
         fileSizeUnit = .megabytes
         useDateFilter = false
         useStaleItemFilter = true
         staleCriterionMode = .age
         staleTimestampFilter = .both
-        staleAgeAmount = ""
+        staleAgeAmount = "12"
+        staleAgeUnit = .months
+    }
+
+    func applyApplicationLeftoversPreset() {
+        fileNamePattern = "*"
+        searchText = ""
+        searchDirectory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library", isDirectory: true).path
+        caseSensitive = false
+        useRegex = false
+        searchInSubdirectories = true
+        searchInArchives = false
+        itemTypeFilter = .filesAndFolders
+        excludeSystemLocations = false
+        deletableOnly = true
+        emptyFoldersOnly = false
+        useSizeFilter = false
+        useDateFilter = false
+        useStaleItemFilter = true
+        staleCriterionMode = .age
+        staleTimestampFilter = .modified
+        staleAgeAmount = "24"
+        staleAgeUnit = .months
+    }
+
+    func applyEmptyStaleFoldersPreset() {
+        fileNamePattern = "*"
+        searchText = ""
+        searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+        caseSensitive = false
+        useRegex = false
+        searchInSubdirectories = true
+        searchInArchives = false
+        itemTypeFilter = .foldersOnly
+        excludeSystemLocations = true
+        deletableOnly = true
+        emptyFoldersOnly = true
+        useSizeFilter = false
+        useDateFilter = false
+        useStaleItemFilter = true
+        staleCriterionMode = .age
+        staleTimestampFilter = .modified
+        staleAgeAmount = "12"
         staleAgeUnit = .months
     }
 

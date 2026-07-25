@@ -134,7 +134,9 @@ struct FindFilesWindowContent: View {
         HStack(spacing: 10) {
             // Result count badge (left side)
             if !viewModel.results.isEmpty {
-                Text("\(viewModel.results.count) found")
+                Text(viewModel.stats.resultLimitReached
+                    ? "\(viewModel.results.count)+ found · refine search"
+                    : "\(viewModel.results.count) found")
                     .font(.subheadline.weight(.medium))
                     .monospacedDigit()
                     .padding(.horizontal, 8)
@@ -253,6 +255,12 @@ struct FindFilesWindowContent: View {
                         }
                         Text("\u{00B7}")
                         Text(viewModel.stats.formattedElapsed)
+                        Text("\u{00B7}")
+                        Text(viewModel.stats.backend == .spotlight ? "Spotlight" : "find")
+                        if viewModel.stats.resultLimitReached {
+                            Text("\u{00B7} result limit reached")
+                                .foregroundStyle(.orange)
+                        }
                     }
                     .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)

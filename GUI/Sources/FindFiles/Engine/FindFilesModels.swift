@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Search Result
 /// Single search result representing a found file or content match
 struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
-    let id: UUID
+    let id: String
     let fileURL: URL
     let fileName: String
     let filePath: String
@@ -54,7 +54,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(UUID.self, forKey: .id)
+        id = try c.decode(String.self, forKey: .id)
         let urlString = try c.decode(String.self, forKey: .fileURLString)
         fileURL = URL(string: urlString) ?? URL(fileURLWithPath: urlString)
         fileName = try c.decode(String.self, forKey: .fileName)
@@ -78,7 +78,11 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
         knownDate: Date? = nil,
         isPasswordProtected: Bool = false
     ) {
-        self.id = UUID()
+        self.id = [
+            archivePath ?? "",
+            fileURL.path,
+            lineNumber.map(String.init) ?? ""
+        ].joined(separator: "\u{1F}")
         self.fileURL = fileURL
         self.fileName = fileURL.lastPathComponent
         self.filePath = fileURL.path
@@ -121,7 +125,7 @@ struct FindFilesCriteria: Sendable {
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
     var maxDepth: Int = 100
-    var filesOnly: Bool = false
+    var itemType: FindFilesItemTypeFilter = .filesAndFolders
     var excludeSystemLocations: Bool = false
     var deletableOnly: Bool = false
     var fileSizeMin: Int64? = nil
@@ -132,6 +136,8 @@ struct FindFilesCriteria: Sendable {
     var accessBeforeDate: Date? = nil
     var modificationOlderThanDays: Int? = nil
     var accessOlderThanDays: Int? = nil
+    var resultLimit: Int = 50_000
+    var emptyFoldersOnly: Bool = false
 
     /// If true, searchDirectory is a single archive file (not a directory).
     /// Engine should search only inside that archive.
@@ -153,6 +159,8 @@ struct FindFilesStats: Sendable {
     var filesScanned: Int = 0
     var matchesFound: Int = 0
     var archivesScanned: Int = 0
+    var backend: FindFilesSearchBackend = .find
+    var resultLimitReached: Bool = false
     var startTime: Date = Date()
     var isRunning: Bool = false
     /// Currently scanned path (for progress display)
