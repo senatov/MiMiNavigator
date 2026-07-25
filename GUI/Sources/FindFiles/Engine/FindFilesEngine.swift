@@ -20,6 +20,7 @@ actor FindFilesEngine {
     private var currentProcess: Process?
     private(set) var stats = FindFilesStats()
     private var deliveredResultCount = 0
+    private var installedApplicationIdentities = Set<String>()
     /// Archives already scanned during the main find pass (avoid double-scanning)
     private var scannedArchivePaths = Set<String>()
 
@@ -309,14 +310,14 @@ actor FindFilesEngine {
         continuation: AsyncStream<FindFilesResult>.Continuation,
         passwordCallback: ArchivePasswordCallback?
     ) async {
-        let searchRoot = criteria.searchDirectory.path
+        let searchRoots = criteria.effectiveSearchDirectories
         let pattern = criteria.fileNamePattern.isEmpty ? "*" : criteria.fileNamePattern
-
-        // Build find arguments
-        var args: [String] = [searchRoot]
-
-        // Depth
-        if !criteria.searchInSubdirectories {
+        var args = searchRoots.map(\.path)
+        if criteria.applicationLeftoversOnly {
+            args += ["-mindepth", "1", "-maxdepth", "1"]
+            installedApplicationIdentities = FindFilesLeftoverSafety.installedApplicationIdentities()
+            log.info("[FindEngine] App leftovers roots=\(searchRoots.count) installed identities=\(installedApplicationIdentities.count)")
+        } else if !criteria.searchInSubdirectories {
             args += ["-maxdepth", "1"]
         }
 
@@ -414,6 +415,7 @@ actor FindFilesEngine {
             kill(process.processIdentifier, SIGKILL)
         }
         currentProcess = nil
+        installedApplicationIdentities.removeAll()
         log.info("[FindEngine] find process exited, matched \(stats.matchesFound)")
         // Second pass: search inside archive files if enabled
         if criteria.searchInArchives && !Task.isCancelled {
@@ -449,10 +451,13 @@ actor FindFilesEngine {
         guard fallbackExists else { return }
         let isDirectory = (attrs?[.type] as? FileAttributeType) == .typeDirectory
             || fallbackIsDir.boolValue
-        guard !isDirectory
-            || fileURL.standardizedFileURL != criteria.searchDirectory.standardizedFileURL
-        else { return }
-        if criteria.applicationLeftoversOnly, FindFilesLeftoverSafety.isProtectedAppSupportItem(fileURL) {
+        let standardizedURL = fileURL.standardizedFileURL
+        guard !isDirectory || !criteria.effectiveSearchDirectories.contains(where: {
+            $0.standardizedFileURL == standardizedURL
+        }) else { return }
+        if criteria.applicationLeftoversOnly,
+           !FindFilesLeftoverSafety.isCandidate(fileURL, installedIdentities: installedApplicationIdentities)
+        {
             return
         }
         if criteria.deletableOnly, !Self.isUserDeletable(path: line) {

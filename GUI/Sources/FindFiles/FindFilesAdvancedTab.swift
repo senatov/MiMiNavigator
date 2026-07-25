@@ -55,6 +55,11 @@ struct FindFilesAdvancedTab: View {
                 Text("Templates set safe scopes and editable age/size filters; every result is only a candidate for review.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                if viewModel.isPresetActive(.applicationLeftovers) {
+                    Text("Scans Application Support, Caches, Preferences, Logs, Saved Application State, and LaunchAgents; installed apps are excluded.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -64,8 +69,8 @@ struct FindFilesAdvancedTab: View {
                 itemTypeRow()
                 rowDivider()
                 optionRow(
-                    title: "Exclude macOS and app-support locations",
-                    detail: "Skip protected OS roots, but keep user-controlled app data locations",
+                    title: "Exclude protected system locations",
+                    detail: "Skip macOS, cloud, and sandbox-managed locations",
                     icon: "macwindow.badge.plus",
                     tint: .indigo,
                     isOn: $viewModel.excludeSystemLocations

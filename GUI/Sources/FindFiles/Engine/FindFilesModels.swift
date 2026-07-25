@@ -117,6 +117,7 @@ struct FindFilesResult: Identifiable, Hashable, Sendable, Codable {
 /// All parameters for a file search operation
 struct FindFilesCriteria: Sendable {
     var searchDirectory: URL
+    var searchDirectories: [URL] = []
     var fileNamePattern: String = "*"
     var invertFileNamePattern: Bool = false
     var searchText: String = ""
@@ -150,6 +151,10 @@ struct FindFilesCriteria: Sendable {
     /// Whether we need content search (not just filename matching)
     var isContentSearch: Bool {
         !searchText.isEmpty
+    }
+
+    var effectiveSearchDirectories: [URL] {
+        searchDirectories.isEmpty ? [searchDirectory] : searchDirectories
     }
 }
 

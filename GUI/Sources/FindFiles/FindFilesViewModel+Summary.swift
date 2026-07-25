@@ -14,7 +14,9 @@ extension FindFilesViewModel {
         values.append(invertFileNamePattern ? "Name ≠ \(pattern)" : "Name: \(pattern)")
         if !searchText.isEmpty { values.append("Text: \(searchText)") }
         if !searchDirectory.isEmpty {
-            values.append("In: \(URL(fileURLWithPath: searchDirectory).lastPathComponent.isEmpty ? searchDirectory : URL(fileURLWithPath: searchDirectory).lastPathComponent)")
+            values.append(isPresetActive(.applicationLeftovers)
+                ? "In: Library app data"
+                : "In: \(URL(fileURLWithPath: searchDirectory).lastPathComponent.isEmpty ? searchDirectory : URL(fileURLWithPath: searchDirectory).lastPathComponent)")
         }
         values.append(itemTypeFilter.label)
         if searchInSubdirectories { values.append("Subfolders") }
@@ -40,8 +42,8 @@ extension FindFilesViewModel {
                 && staleTimestampFilter == .both && staleAgeAmount == "12"
                 && staleAgeUnit == .months
         case .applicationLeftovers:
-            return searchDirectory.hasSuffix("/Library/Application Support")
-                && !searchInSubdirectories && itemTypeFilter == .foldersOnly
+            return searchDirectory.hasSuffix("/Library")
+                && !searchInSubdirectories && itemTypeFilter == .filesAndFolders
                 && excludeSystemLocations && deletableOnly
                 && useStaleItemFilter && staleTimestampFilter == .modified
                 && staleAgeAmount == "24" && staleAgeUnit == .months

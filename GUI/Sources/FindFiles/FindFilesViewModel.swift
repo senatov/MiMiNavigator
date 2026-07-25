@@ -181,6 +181,9 @@ final class FindFilesViewModel {
         criteria.excludeSystemLocations = excludeSystemLocations
         criteria.deletableOnly = deletableOnly
         criteria.applicationLeftoversOnly = isPresetActive(.applicationLeftovers)
+        if criteria.applicationLeftoversOnly {
+            criteria.searchDirectories = FindFilesLeftoverSafety.searchDirectories
+        }
         criteria.emptyFoldersOnly = emptyFoldersOnly
         criteria.isArchiveOnlySearch = isArchiveTarget
         criteria.isSingleFileContentSearch = isSingleFileTarget
@@ -360,12 +363,12 @@ final class FindFilesViewModel {
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support", isDirectory: true).path
+            .appendingPathComponent("Library", isDirectory: true).path
         caseSensitive = false
         useRegex = false
         searchInSubdirectories = false
         searchInArchives = false
-        itemTypeFilter = .foldersOnly
+        itemTypeFilter = .filesAndFolders
         excludeSystemLocations = true
         deletableOnly = true
         emptyFoldersOnly = false
