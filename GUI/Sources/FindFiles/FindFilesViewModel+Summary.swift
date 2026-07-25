@@ -33,26 +33,7 @@ extension FindFilesViewModel {
     }
 
     func isPresetActive(_ preset: FindFilesPreset) -> Bool {
-        switch preset {
-        case .largeStaleFiles:
-            return itemTypeFilter == .filesOnly
-                && excludeSystemLocations && deletableOnly && useSizeFilter
-                && fileSizeMin == "100" && fileSizeUnit == .megabytes
-                && useStaleItemFilter && staleCriterionMode == .age
-                && staleTimestampFilter == .both && staleAgeAmount == "12"
-                && staleAgeUnit == .months
-        case .applicationLeftovers:
-            return searchDirectory.hasSuffix("/Library")
-                && !searchInSubdirectories && itemTypeFilter == .filesAndFolders
-                && excludeSystemLocations && deletableOnly
-                && useStaleItemFilter && staleTimestampFilter == .modified
-                && staleAgeAmount == "24" && staleAgeUnit == .months
-        case .emptyStaleFolders:
-            return itemTypeFilter == .foldersOnly
-                && excludeSystemLocations && deletableOnly && emptyFoldersOnly
-                && useStaleItemFilter && staleTimestampFilter == .modified
-                && staleAgeAmount == "12" && staleAgeUnit == .months
-        }
+        activePreset == preset
     }
 
     private var sizeSummary: String {

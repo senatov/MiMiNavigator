@@ -28,6 +28,7 @@ final class FindFilesViewModel {
     var excludeSystemLocations: Bool = false
     var deletableOnly: Bool = false
     var emptyFoldersOnly: Bool = false
+    var activePreset: FindFilesPreset?
 
     // Size filter
     var useSizeFilter: Bool = false
@@ -336,6 +337,7 @@ final class FindFilesViewModel {
     }
 
     func applyLargeStaleFilesPreset() {
+        activePreset = .largeStaleFiles
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
@@ -360,6 +362,7 @@ final class FindFilesViewModel {
     }
 
     func applyApplicationLeftoversPreset() {
+        activePreset = .applicationLeftovers
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser
@@ -382,6 +385,7 @@ final class FindFilesViewModel {
     }
 
     func applyEmptyStaleFoldersPreset() {
+        activePreset = .emptyStaleFolders
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path

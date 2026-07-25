@@ -72,7 +72,7 @@ struct FindFilesAdvancedTab: View {
                     title: "Exclude protected system locations",
                     detail: "Skip macOS, cloud, and sandbox-managed locations",
                     icon: "macwindow.badge.plus",
-                    tint: .indigo,
+                    tint: .blue,
                     isOn: $viewModel.excludeSystemLocations
                 )
                 rowDivider()
@@ -80,7 +80,7 @@ struct FindFilesAdvancedTab: View {
                     title: "Return deletable items only",
                     detail: "Skip matches that the current user cannot remove",
                     icon: "trash",
-                    tint: .red,
+                    tint: .orange,
                     isOn: $viewModel.deletableOnly
                 )
             }
@@ -125,13 +125,13 @@ struct FindFilesAdvancedTab: View {
         }
     }
     private var dateSection: some View {
-        advancedCard(icon: "calendar", title: "Dates", tint: .red) {
+        advancedCard(icon: "calendar", title: "Dates", tint: .orange) {
             VStack(spacing: 10) {
                 optionRow(
                     title: "Filter by modification date",
                     detail: "Only match files modified within the date range",
                     icon: "calendar.badge.clock",
-                    tint: .purple,
+                    tint: .blue,
                     isOn: $viewModel.useDateFilter
                 )
 
@@ -158,7 +158,7 @@ struct FindFilesAdvancedTab: View {
                     title: "Unused item age",
                     detail: "Choose date or age, then apply it to modified time, access time, or both",
                     icon: "clock.badge.xmark",
-                    tint: .red,
+                    tint: .orange,
                     isOn: $viewModel.useStaleItemFilter
                 )
 
@@ -329,11 +329,14 @@ struct FindFilesAdvancedTab: View {
         .padding(.horizontal, 6)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(isOn.wrappedValue ? tint.opacity(0.10) : Color.clear)
+                .fill(isOn.wrappedValue ? Color.primary.opacity(0.025) : Color.clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(isOn.wrappedValue ? tint.opacity(0.65) : Color.clear, lineWidth: 1)
+                .strokeBorder(
+                    isOn.wrappedValue ? Color(nsColor: .separatorColor).opacity(0.35) : Color.clear,
+                    lineWidth: 0.5
+                )
         )
     }
 
@@ -380,11 +383,11 @@ struct FindFilesAdvancedTab: View {
         .buttonStyle(ThemedButtonStyle())
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(selected ? Color.accentColor.opacity(0.20) : Color.clear)
+                .fill(selected ? Color.accentColor.opacity(0.08) : Color.clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2)
+                .strokeBorder(selected ? Color.accentColor.opacity(0.35) : Color.clear, lineWidth: 1)
         )
     }
 
