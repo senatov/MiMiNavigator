@@ -81,20 +81,20 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview0.png" alt="Main Interface" width="100%"></td>
+    <td><img src="GUI/Docs/Preview0.png" alt="MiMiNavigator dual-panel interface" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>Preview</em></td>
+    <td align="center"><em>Dual-panel file management with list and thumbnail views</em></td>
   </tr>
 </table>
 
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview2.png" alt="Main Interface" width="100%"></td>
+    <td><img src="GUI/Docs/Preview2.png" alt="Advanced Find Files interface" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>History</em></td>
+    <td align="center"><em>Advanced search templates with safe App leftovers discovery</em></td>
   </tr>
 </table>
 
@@ -102,10 +102,10 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview1.png" alt="Main Interface" width="100%"></td>
+    <td><img src="GUI/Docs/Preview1.png" alt="Customizable keyboard shortcuts" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>History</em></td>
+    <td align="center"><em>Customizable keyboard shortcuts and command groups</em></td>
   </tr>
 </table>
 
