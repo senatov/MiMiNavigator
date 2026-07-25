@@ -31,7 +31,7 @@ extension AppState {
         multiSelectionManager?.markByPattern(shouldMark: false)
     }
 
-    /// Mark all files (Ctrl+A)
+    /// Mark all files (Command+A)
     func markAll() {
         multiSelectionManager?.markAll()
     }

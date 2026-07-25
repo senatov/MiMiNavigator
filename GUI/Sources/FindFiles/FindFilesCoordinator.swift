@@ -58,12 +58,15 @@ final class FindFilesCoordinator {
         let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
             .frame(minWidth: 680, minHeight: 500)
         let hostingView = NSHostingView(rootView: contentView)
-        let window = NSPanel(
+        let window = FindFilesPanel(
             contentRect: .zero,
             styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow],
             backing: .buffered,
             defer: false
         )
+        window.onSelectAll = { [weak viewModel] in
+            viewModel?.selectAllResults()
+        }
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 680, height: 500)
@@ -137,6 +140,27 @@ final class FindFilesCoordinator {
             return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
         }
         return NSRect(origin: .zero, size: size)
+    }
+}
+
+// MARK: - Find Files Panel
+@MainActor
+private final class FindFilesPanel: NSPanel {
+    var onSelectAll: (() -> Void)?
+
+    // MARK: - Perform Key Equivalent
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let modifiers = event.modifierFlags
+            .intersection(.deviceIndependentFlagsMask)
+            .subtracting([.function, .numericPad])
+        guard modifiers == .command, event.charactersIgnoringModifiers?.lowercased() == "a" else {
+            return super.performKeyEquivalent(with: event)
+        }
+        if let responder = firstResponder, responder is NSTextView || responder is NSTextField {
+            return super.performKeyEquivalent(with: event)
+        }
+        onSelectAll?()
+        return true
     }
 }
 

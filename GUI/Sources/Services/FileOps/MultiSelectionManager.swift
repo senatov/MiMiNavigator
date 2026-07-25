@@ -203,7 +203,7 @@ final class MultiSelectionManager {
         }
     }
 
-    // MARK: - Mark All (Ctrl+A / Cmd+A)
+    // MARK: - Mark All (Command+A)
     /// Mark all files in focused panel
     func markAll() {
         guard let state = appState else { return }

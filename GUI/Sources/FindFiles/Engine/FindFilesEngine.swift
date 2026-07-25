@@ -102,9 +102,7 @@ actor FindFilesEngine {
         "prefPane", "saver", "driver", "codex"
     ]
 
-    /// System roots skipped by the "user-controlled ballast" preset.
-    /// Do not prune /Library, ~/Library, /Applications, Caches, Group Containers or CloudStorage here:
-    /// user-controlled leftovers often live there and are filtered later by deletability.
+    /// System roots skipped when "System locations excluded" is enabled.
     private static let systemPrunePaths = [
         "/System",
         "/private",
@@ -135,11 +133,18 @@ actor FindFilesEngine {
     /// Build prune arguments for /usr/bin/find: ( ... ) -prune -o
     private static func buildPruneArgs(criteria: FindFilesCriteria) -> [String] {
         var expressions: [[String]] = baselinePruneNames.map { ["-name", $0, "-type", "d"] }
-        // Always skip macOS bundles — opaque containers
         expressions += bundlePruneExtensions.map { ["-name", "*.\($0)", "-type", "d"] }
         if criteria.excludeSystemLocations {
+            let userLibrary = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library")
+            let protectedUserPaths = [
+                userLibrary.appendingPathComponent("Mobile Documents").path,
+                userLibrary.appendingPathComponent("CloudStorage").path,
+                userLibrary.appendingPathComponent("Containers").path,
+                userLibrary.appendingPathComponent("Group Containers").path
+            ]
             expressions += systemPrunePaths.map { ["-path", $0, "-type", "d"] }
             expressions += installedPackagePrunePaths.map { ["-path", $0, "-type", "d"] }
+            expressions += protectedUserPaths.map { ["-path", $0, "-type", "d"] }
             expressions += [
                 ["-name", "node_modules", "-type", "d"],
                 ["-name", ".git", "-type", "d"],

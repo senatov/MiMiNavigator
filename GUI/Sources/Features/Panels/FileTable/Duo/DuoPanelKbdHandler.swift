@@ -56,6 +56,7 @@ final class DuoFilePanelKeyboardHandler {
 
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         guard let appState else { return event }
+        guard event.window === NSApp.mainWindow else { return event }
 
         // When a modal dialog is active, pass ALL events to SwiftUI
         // so that TextField, buttons (.keyboardShortcut(.defaultAction)),

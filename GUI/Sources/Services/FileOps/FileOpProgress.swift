@@ -150,10 +150,11 @@ final class FileOpProgress {
         guard !isCancelled else { return }
         isCompleted = true
         endTime = Date()
+        let succeededFiles = processedFiles - errors.count
         if usesProgressPanel {
             ProgressPanel.shared.finish(success: errors.isEmpty, message: completionSummary)
         }
-        log.info("[FileOpProgress] done: \(processedFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
+        log.info("[FileOpProgress] done: \(succeededFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
     }
 
     func updateStatusOnly(_ text: String) {
