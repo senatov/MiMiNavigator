@@ -285,6 +285,13 @@ struct FindFilesResultsView: View {
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .fileTableColumnDividerStyle()
+        .background(
+            FindFilesResultsTableStyle(
+                selectionVersion: viewModel.selectedResultIDs.hashValue,
+                themeVersion: colorStore.themeVersion
+            )
+        )
     }
 
     // MARK: - Row Background Helper
