@@ -11,6 +11,12 @@ import Foundation
 /// Converts glob patterns (*.txt, report?) to regex and matches file names
 enum FindFilesNameMatcher {
 
+    // MARK: - Normalize Pattern
+    /// Treats the traditional "*.*" all-items mask the same as "*" on macOS.
+    static func normalizedPattern(_ pattern: String) -> String {
+        pattern.isEmpty || pattern == "*.*" ? "*" : pattern
+    }
+
     /// Build NSRegularExpression from glob pattern. Returns nil for "*" or empty patterns.
     static func buildRegex(pattern: String, caseSensitive: Bool) -> NSRegularExpression? {
         if pattern.isEmpty || pattern == "*" || pattern == "*.*" { return nil }

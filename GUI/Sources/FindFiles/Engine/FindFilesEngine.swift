@@ -311,7 +311,7 @@ actor FindFilesEngine {
         passwordCallback: ArchivePasswordCallback?
     ) async {
         let searchRoots = criteria.effectiveSearchDirectories
-        let pattern = criteria.fileNamePattern.isEmpty ? "*" : criteria.fileNamePattern
+        let pattern = FindFilesNameMatcher.normalizedPattern(criteria.fileNamePattern)
         var args = searchRoots.map(\.path)
         if criteria.applicationLeftoversOnly {
             args += ["-mindepth", "1", "-maxdepth", "1"]
@@ -418,7 +418,7 @@ actor FindFilesEngine {
         installedApplicationIdentities.removeAll()
         log.info("[FindEngine] find process exited, matched \(stats.matchesFound)")
         // Second pass: search inside archive files if enabled
-        if criteria.searchInArchives && !Task.isCancelled {
+        if criteria.searchInArchives && !criteria.emptyFoldersOnly && !Task.isCancelled {
             await scanArchivesInDirectory(
                 criteria: criteria, continuation: continuation,
                 nameRegex: nameRegex, contentPattern: contentPattern,
