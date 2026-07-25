@@ -444,6 +444,12 @@ actor FindFilesEngine {
         guard fallbackExists else { return }
         let isDirectory = (attrs?[.type] as? FileAttributeType) == .typeDirectory
             || fallbackIsDir.boolValue
+        guard !isDirectory
+            || fileURL.standardizedFileURL != criteria.searchDirectory.standardizedFileURL
+        else { return }
+        if criteria.applicationLeftoversOnly, FindFilesLeftoverSafety.isProtectedAppSupportItem(fileURL) {
+            return
+        }
         if criteria.deletableOnly, !Self.isUserDeletable(path: line) {
             return
         }

@@ -56,7 +56,7 @@ final class FindFilesCoordinator {
             return
         }
         let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
-            .frame(minWidth: 520, minHeight: 400)
+            .frame(minWidth: 680, minHeight: 500)
         let hostingView = NSHostingView(rootView: contentView)
         let window = NSPanel(
             contentRect: .zero,
@@ -66,12 +66,12 @@ final class FindFilesCoordinator {
         )
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
-        window.minSize = NSSize(width: 520, height: 400)
+        window.minSize = NSSize(width: 680, height: 500)
         window.titlebarAppearsTransparent = false
         PanelTitleHelper.applyIconTitle(to: window, systemImage: "magnifyingglass", title: "Find Files")
         window.toolbarStyle = .unified
         window.animationBehavior = .utilityWindow
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         // Follow main window: rise when app activates, stay visible when app is active
         window.hidesOnDeactivate = false
         window.level = .normal

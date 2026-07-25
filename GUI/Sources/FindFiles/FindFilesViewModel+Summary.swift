@@ -40,8 +40,9 @@ extension FindFilesViewModel {
                 && staleTimestampFilter == .both && staleAgeAmount == "12"
                 && staleAgeUnit == .months
         case .applicationLeftovers:
-            return searchDirectory.hasSuffix("/Library")
-                && itemTypeFilter == .filesAndFolders && deletableOnly
+            return searchDirectory.hasSuffix("/Library/Application Support")
+                && !searchInSubdirectories && itemTypeFilter == .foldersOnly
+                && excludeSystemLocations && deletableOnly
                 && useStaleItemFilter && staleTimestampFilter == .modified
                 && staleAgeAmount == "24" && staleAgeUnit == .months
         case .emptyStaleFolders:

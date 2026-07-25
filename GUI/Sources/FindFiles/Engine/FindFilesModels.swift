@@ -128,6 +128,7 @@ struct FindFilesCriteria: Sendable {
     var itemType: FindFilesItemTypeFilter = .filesAndFolders
     var excludeSystemLocations: Bool = false
     var deletableOnly: Bool = false
+    var applicationLeftoversOnly: Bool = false
     var fileSizeMin: Int64? = nil
     var fileSizeMax: Int64? = nil
     var dateFrom: Date? = nil

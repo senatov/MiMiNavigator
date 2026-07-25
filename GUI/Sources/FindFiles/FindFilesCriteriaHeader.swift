@@ -11,38 +11,26 @@ struct FindFilesCriteriaHeader: View {
     let criteria: [String]
 
     var body: some View {
-        HStack(spacing: 8) {
-            Label("Active", systemImage: "line.3.horizontal.decrease.circle.fill")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
+        HStack(spacing: 6) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .foregroundStyle(.tertiary)
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 5) {
+                HStack(spacing: 4) {
                     ForEach(criteria, id: \.self) { value in
                         Text(value)
-                            .font(.system(size: 10.5, weight: .medium))
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(Color.accentColor.opacity(0.12))
-                            )
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 0.75)
-                            )
+                        if value != criteria.last {
+                            Text("·")
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 5)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
-        }
+        .frame(maxWidth: 520)
+        .help("Active search criteria")
     }
 }
 
@@ -67,11 +55,12 @@ struct FindFilesSplitDivider: View {
             isHovered = hovering
             hovering ? NSCursor.resizeUpDown.push() : NSCursor.pop()
         }
-        .gesture(
-            DragGesture(minimumDistance: 0)
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
                 .onChanged { value in
-                    if dragStartHeight == nil { dragStartHeight = criteriaHeight }
-                    criteriaHeight = clamped((dragStartHeight ?? criteriaHeight) + value.translation.height)
+                    if dragStartHeight == nil { dragStartHeight = clamped(criteriaHeight) }
+                    let updatedHeight = clamped((dragStartHeight ?? criteriaHeight) + value.translation.height)
+                    if criteriaHeight != updatedHeight { criteriaHeight = updatedHeight }
                 }
                 .onEnded { _ in
                     dragStartHeight = nil
@@ -83,6 +72,6 @@ struct FindFilesSplitDivider: View {
     }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
-        min(max(value, 210), max(210, totalHeight - 190))
+        min(max(value, 250), max(250, totalHeight - 190))
     }
 }

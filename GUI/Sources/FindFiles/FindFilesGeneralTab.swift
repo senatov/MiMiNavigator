@@ -11,12 +11,27 @@ struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            // ── Search Criteria ──────────────────────────────────────
-            sectionHeader(title: "Search Criteria", icon: "magnifyingglass", color: .blue)
+        HStack(spacing: 0) {
+            searchCriteria
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor))
+                .frame(width: 1)
+                .padding(.vertical, 10)
+            ScrollView {
+                options
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(DialogColors.base.opacity(0.96))
+    }
 
+    // MARK: - Search Criteria
+    private var searchCriteria: some View {
+        VStack(spacing: 0) {
+            sectionHeader(title: "Search Criteria", icon: "magnifyingglass", color: .blue)
             VStack(spacing: 10) {
-                fieldRow(label: "Search for:", icon: "doc.text", iconColor: .orange) {
+                compactField(label: "Search for:", icon: "doc.text", iconColor: .orange) {
                     HStack(spacing: 6) {
                         Toggle("NOT", isOn: $viewModel.invertFileNamePattern)
                             .toggleStyle(.checkbox)
@@ -37,8 +52,7 @@ struct FindFilesGeneralTab: View {
                         .help("Pattern syntax help")
                     }
                 }
-
-                fieldRow(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
+                compactField(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
                     HStack(spacing: 6) {
                         SearchHistoryComboBox(
                             text: $viewModel.searchDirectory,
@@ -55,8 +69,7 @@ struct FindFilesGeneralTab: View {
                         .help("Browse…")
                     }
                 }
-
-                fieldRow(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
+                compactField(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
                     SearchHistoryComboBox(
                         text: $viewModel.searchText,
                         historyKey: .searchText,
@@ -68,12 +81,14 @@ struct FindFilesGeneralTab: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
+            Spacer(minLength: 0)
+        }
+    }
 
-            sectionDivider()
-
-            // ── Options ──────────────────────────────────────────────
+    // MARK: - Options
+    private var options: some View {
+        VStack(spacing: 0) {
             sectionHeader(title: "Options", icon: "gearshape", color: .secondary)
-
             VStack(spacing: 0) {
                 optionToggle(
                     title: "Case sensitive",
@@ -114,7 +129,6 @@ struct FindFilesGeneralTab: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
-        .background(DialogColors.base.opacity(0.96))
     }
 
     // MARK: - Section Header
@@ -132,15 +146,6 @@ struct FindFilesGeneralTab: View {
         .padding(.bottom, 8)
     }
 
-    // MARK: - Section Divider (between sections)
-    private func sectionDivider() -> some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor))
-            .frame(height: 1)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-    }
-
     // MARK: - Option Row Divider (inside options block)
     private func optionDivider() -> some View {
         Rectangle()
@@ -149,25 +154,23 @@ struct FindFilesGeneralTab: View {
             .padding(.leading, 44)
     }
 
-    // MARK: - Field Row (label + content)
-    private func fieldRow<Content: View>(
+    // MARK: - Compact Field
+    private func compactField<Content: View>(
         label: String,
         icon: String,
         iconColor: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        HStack(alignment: .center, spacing: 10) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 14))
                     .foregroundStyle(iconColor)
                     .frame(width: 18, alignment: .center)
                 Text(label)
-                    .font(.system(size: 14))
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
-            .frame(width: 118, alignment: .leading)
-
             content()
         }
     }

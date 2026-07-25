@@ -39,7 +39,7 @@ extension FindFilesViewModel {
 
     func trashResults(_ selected: [FindFilesResult]) {
         let actionable = actionableResults(selected)
-        guard !actionable.isEmpty, confirmTrash(count: actionable.count) else { return }
+        guard !actionable.isEmpty, confirmTrash(actionable) else { return }
         let urls = actionable.map(\.fileURL)
         Task { @MainActor [weak self] in
             do {
@@ -72,10 +72,21 @@ extension FindFilesViewModel {
     }
 
     private func actionableResults(_ selected: [FindFilesResult]) -> [FindFilesResult] {
-        selected.filter {
+        let existing = selected.filter {
             !$0.isInsideArchive
                 && !$0.isPasswordProtected
                 && FileManager.default.fileExists(atPath: $0.fileURL.path)
+        }
+        let ordered = existing.sorted {
+            $0.fileURL.standardizedFileURL.pathComponents.count
+                < $1.fileURL.standardizedFileURL.pathComponents.count
+        }
+        var acceptedPaths: [String] = []
+        return ordered.filter { result in
+            let path = result.fileURL.standardizedFileURL.path
+            let isNested = acceptedPaths.contains { path == $0 || path.hasPrefix($0 + "/") }
+            if !isNested { acceptedPaths.append(path) }
+            return !isNested
         }
     }
 
@@ -90,10 +101,12 @@ extension FindFilesViewModel {
         return panel.runModal() == .OK ? panel.url : nil
     }
 
-    private func confirmTrash(count: Int) -> Bool {
+    private func confirmTrash(_ results: [FindFilesResult]) -> Bool {
+        let paths = results.prefix(8).map { "• \($0.fileURL.path)" }.joined(separator: "\n")
+        let remainder = results.count > 8 ? "\n…and \(results.count - 8) more" : ""
         let alert = NSAlert()
-        alert.messageText = "Move \(count) item\(count == 1 ? "" : "s") to Trash?"
-        alert.informativeText = "The selected search results will be removed from their original locations."
+        alert.messageText = "Move \(results.count) item\(results.count == 1 ? "" : "s") to Trash?"
+        alert.informativeText = "Review the actual top-level paths before continuing:\n\n\(paths)\(remainder)"
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Move to Trash")
         alert.addButton(withTitle: "Cancel")

@@ -94,7 +94,7 @@ struct FindFilesWindowContent: View {
         VStack(spacing: 0) {
                 // MARK: - Tab Picker
                 Picker("", selection: $selectedTab) {
-                    Text("General").tag(FindFilesTab.general)
+                    Text("Search").tag(FindFilesTab.general)
                     Text("Advanced").tag(FindFilesTab.advanced)
                 }
                 .pickerStyle(.segmented)
@@ -102,8 +102,6 @@ struct FindFilesWindowContent: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 4)
-
-                FindFilesCriteriaHeader(criteria: viewModel.activeCriteriaSummary)
 
                 // MARK: - Input Area with visible border + spinner overlay
                 ZStack {
@@ -226,16 +224,14 @@ struct FindFilesWindowContent: View {
     }
 
     private func clampedCriteriaHeight(totalHeight: CGFloat) -> CGFloat {
-        min(max(criteriaHeight, 210), max(210, totalHeight - 190))
+        min(max(criteriaHeight, 250), max(250, totalHeight - 190))
     }
 
     // MARK: - Status Bar
     /// HIG-compliant status bar: system colors, readable font, live path display during search
     private var statusBar: some View {
         VStack(alignment: .leading, spacing: 3) {
-            // Top row: state indicator + statistics
             HStack(spacing: 10) {
-                // State indicator with system-appropriate styling
                 HStack(spacing: 4) {
                     switch viewModel.searchState {
                     case .idle:
@@ -265,11 +261,10 @@ struct FindFilesWindowContent: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .font(.callout)
+                .font(.system(size: 11))
 
+                FindFilesCriteriaHeader(criteria: viewModel.activeCriteriaSummary)
                 Spacer()
-
-                // Statistics (right side)
                 if viewModel.stats.filesScanned > 0 {
                     HStack(spacing: 6) {
                         Text("\(viewModel.stats.directoriesScanned) dirs")
@@ -288,12 +283,10 @@ struct FindFilesWindowContent: View {
                                 .foregroundStyle(.orange)
                         }
                     }
-                    .font(.callout.monospacedDigit())
+                    .font(.system(size: 11).monospacedDigit())
                     .foregroundStyle(.secondary)
                 }
             }
-
-            // Bottom row: current path (visible during search)
             if viewModel.searchState == .searching, !viewModel.stats.currentPath.isEmpty {
                 Text(viewModel.stats.currentPath)
                     .font(.system(size: 11, weight: .regular, design: .monospaced))

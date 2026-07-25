@@ -335,7 +335,7 @@ struct FindFilesAdvancedTab: View {
     private func itemTypeRow() -> some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 10) {
-                Image(systemName: "doc.on.folder")
+                Image(systemName: "square.grid.2x2")
                     .font(.system(size: 14))
                     .foregroundStyle(.teal)
                     .frame(width: 22)
