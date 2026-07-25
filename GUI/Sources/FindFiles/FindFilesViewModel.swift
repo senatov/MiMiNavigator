@@ -90,6 +90,7 @@ final class FindFilesViewModel {
     ///   - searchPath: Current directory of the active panel
     ///   - selectedFile: Currently selected file (optional)
     func configure(searchPath: String, selectedFile: CustomFile? = nil) {
+        activePreset = nil
         // Check if selected file is an archive
         if let file = selectedFile,
             !file.isDirectory,
@@ -132,10 +133,14 @@ final class FindFilesViewModel {
     func startSearch() {
         guard searchState != .searching else { return }
         MemoryDiagnostics.shared.checkpoint("search.before")
-        log.info("[FindFiles] Starting search: name='\(fileNamePattern)' text='\(searchText)' dir='\(searchDirectory)'")
+        let applicationLeftoversOnly = activePreset == .applicationLeftovers
+        let targetPath = applicationLeftoversOnly
+            ? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library", isDirectory: true).path
+            : searchDirectory
+        log.info("[FindFiles] Starting search: preset='\(activePreset?.rawValue ?? "none")' name='\(fileNamePattern)' text='\(searchText)' dir='\(targetPath)'")
         errorMessage = nil
         // Validate target path
-        let targetURL = URL(fileURLWithPath: searchDirectory)
+        let targetURL = URL(fileURLWithPath: targetPath)
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
         // Check if it's a single archive file to search (not a directory)
@@ -143,14 +148,14 @@ final class FindFilesViewModel {
         // Check if it's a single regular file (not archive, not directory)
         let isSingleFileTarget = exists && !isDir.boolValue && !isArchiveTarget
         guard exists && (isDir.boolValue || isArchiveTarget || isSingleFileTarget) else {
-            errorMessage = "Path not found: \(searchDirectory)"
+            errorMessage = "Path not found: \(targetPath)"
             return
         }
         let staleAgeDays = staleAgeDaysIfNeeded()
         guard errorMessage == nil else { return }
         // Save to history
         SearchHistoryManager.shared.add(fileNamePattern, for: .fileNamePattern)
-        SearchHistoryManager.shared.add(searchDirectory, for: .searchDirectory)
+        SearchHistoryManager.shared.add(targetPath, for: .searchDirectory)
         if !searchText.isEmpty {
             SearchHistoryManager.shared.add(searchText, for: .searchText)
         }
@@ -166,7 +171,7 @@ final class FindFilesViewModel {
             summaryParts.append("Name: \(nameOperator)\(fileNamePattern)")
         }
         if !searchText.isEmpty { summaryParts.append("Text: \(searchText)") }
-        summaryParts.append("In: \(searchDirectory)")
+        summaryParts.append(applicationLeftoversOnly ? "In: Library app data" : "In: \(targetPath)")
         lastSearchSummary = summaryParts.joined(separator: " | ")
 
         // Build criteria
@@ -181,7 +186,7 @@ final class FindFilesViewModel {
         criteria.itemType = itemTypeFilter
         criteria.excludeSystemLocations = excludeSystemLocations
         criteria.deletableOnly = deletableOnly
-        criteria.applicationLeftoversOnly = isPresetActive(.applicationLeftovers)
+        criteria.applicationLeftoversOnly = applicationLeftoversOnly
         if criteria.applicationLeftoversOnly {
             criteria.searchDirectories = FindFilesLeftoverSafety.searchDirectories
         }
@@ -338,6 +343,7 @@ final class FindFilesViewModel {
 
     func applyLargeStaleFilesPreset() {
         activePreset = .largeStaleFiles
+        log.info("[FindFiles] Applied preset: \(FindFilesPreset.largeStaleFiles.rawValue)")
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
@@ -363,6 +369,7 @@ final class FindFilesViewModel {
 
     func applyApplicationLeftoversPreset() {
         activePreset = .applicationLeftovers
+        log.info("[FindFiles] Applied preset: \(FindFilesPreset.applicationLeftovers.rawValue)")
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser
@@ -386,6 +393,7 @@ final class FindFilesViewModel {
 
     func applyEmptyStaleFoldersPreset() {
         activePreset = .emptyStaleFolders
+        log.info("[FindFiles] Applied preset: \(FindFilesPreset.emptyStaleFolders.rawValue)")
         fileNamePattern = "*"
         searchText = ""
         searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
