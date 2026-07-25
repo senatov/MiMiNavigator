@@ -71,9 +71,8 @@ private final class TableColumnDividerProbeView: NSView {
 
     private func apply() {
         guard let tableView = matchingTableView() else { return }
-        tableView.gridColor = color
-        tableView.gridStyleMask.insert(.solidVerticalGridLineMask)
         applyZebraBackground(to: tableView)
+        applyBodyOverlay(to: tableView)
         applyHeaderOverlay(to: tableView)
         tableView.needsDisplay = true
         tableView.headerView?.needsDisplay = true
@@ -100,10 +99,26 @@ private final class TableColumnDividerProbeView: NSView {
         tableView.subviews.first { $0 is NSTableZebraBackgroundView } as? NSTableZebraBackgroundView
     }
 
+    private func applyBodyOverlay(to tableView: NSTableView) {
+        let overlay = bodyOverlay(in: tableView) ?? TableBodyColumnDividerOverlay()
+        overlay.observe(tableView)
+        overlay.color = color
+        overlay.frame = tableView.bounds
+        overlay.autoresizingMask = [.width, .height]
+        if overlay.superview == nil {
+            tableView.addSubview(overlay, positioned: .above, relativeTo: nil)
+        }
+        overlay.needsDisplay = true
+    }
+
+    private func bodyOverlay(in tableView: NSTableView) -> TableBodyColumnDividerOverlay? {
+        tableView.subviews.first { $0 is TableBodyColumnDividerOverlay } as? TableBodyColumnDividerOverlay
+    }
+
     private func applyHeaderOverlay(to tableView: NSTableView) {
         guard let headerView = tableView.headerView else { return }
         let overlay = headerOverlay(in: headerView) ?? TableHeaderColumnDividerOverlay()
-        overlay.tableView = tableView
+        overlay.observe(tableView)
         overlay.color = color
         overlay.frame = headerView.bounds
         overlay.autoresizingMask = [.width, .height]
@@ -147,17 +162,40 @@ private final class TableColumnDividerProbeView: NSView {
     }
 }
 
-// MARK: - Table Header Column Divider Overlay
+// MARK: - Table Body Column Divider Overlay
 
-private final class TableHeaderColumnDividerOverlay: NSView {
-    weak var tableView: NSTableView?
+private final class TableBodyColumnDividerOverlay: NSView {
+    private weak var tableView: NSTableView?
     var color: NSColor = .separatorColor
     override var isFlipped: Bool {
         true
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     override func hitTest(_: NSPoint) -> NSView? {
         nil
+    }
+
+    func observe(_ tableView: NSTableView) {
+        guard self.tableView !== tableView else { return }
+        NotificationCenter.default.removeObserver(self)
+        self.tableView = tableView
+        let center = NotificationCenter.default
+        for name in [NSTableView.columnDidResizeNotification, NSTableView.columnDidMoveNotification] {
+            center.addObserver(
+                self,
+                selector: #selector(tableLayoutDidChange),
+                name: name,
+                object: tableView
+            )
+        }
+    }
+
+    @objc private func tableLayoutDidChange(_: Notification) {
+        needsDisplay = true
     }
 
     override func draw(_: NSRect) {
@@ -165,6 +203,66 @@ private final class TableHeaderColumnDividerOverlay: NSView {
         color.setStroke()
         for index in 0 ..< max(tableView.numberOfColumns - 1, 0) {
             let x = tableView.rect(ofColumn: index).maxX.rounded() - 0.5
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: x, y: bounds.minY))
+            path.line(to: NSPoint(x: x, y: bounds.maxY))
+            path.lineWidth = 1
+            path.stroke()
+        }
+    }
+}
+
+// MARK: - Table Header Column Divider Overlay
+
+private final class TableHeaderColumnDividerOverlay: NSView {
+    private weak var tableView: NSTableView?
+    var color: NSColor = .separatorColor
+    override var isFlipped: Bool {
+        true
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func hitTest(_: NSPoint) -> NSView? {
+        nil
+    }
+
+    func observe(_ tableView: NSTableView) {
+        guard self.tableView !== tableView else { return }
+        NotificationCenter.default.removeObserver(self)
+        self.tableView = tableView
+        let center = NotificationCenter.default
+        for name in [NSTableView.columnDidResizeNotification, NSTableView.columnDidMoveNotification] {
+            center.addObserver(
+                self,
+                selector: #selector(tableLayoutDidChange),
+                name: name,
+                object: tableView
+            )
+        }
+        if let clipView = tableView.enclosingScrollView?.contentView {
+            clipView.postsBoundsChangedNotifications = true
+            center.addObserver(
+                self,
+                selector: #selector(tableLayoutDidChange),
+                name: NSView.boundsDidChangeNotification,
+                object: clipView
+            )
+        }
+    }
+
+    @objc private func tableLayoutDidChange(_: Notification) {
+        needsDisplay = true
+    }
+
+    override func draw(_: NSRect) {
+        guard let tableView, let headerView = tableView.headerView else { return }
+        color.setStroke()
+        for index in 0 ..< max(tableView.numberOfColumns - 1, 0) {
+            let tableX = tableView.rect(ofColumn: index).maxX
+            let x = headerView.convert(NSPoint(x: tableX, y: 0), from: tableView).x.rounded() - 0.5
             let path = NSBezierPath()
             path.move(to: NSPoint(x: x, y: bounds.minY))
             path.line(to: NSPoint(x: x, y: bounds.maxY))
