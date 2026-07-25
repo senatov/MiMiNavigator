@@ -57,8 +57,10 @@ struct FindFilesWindowContent: View {
             {
                 selectedTab = restoredTab
             }
+            viewModel.activeModule = selectedTab
         }
         .onChange(of: selectedTab) {
+            viewModel.activeModule = selectedTab
             MiMiDefaults.shared.set(selectedTab.rawValue, forKey: "findFiles.selectedTab")
         }
         .sheet(isPresented: Binding(
@@ -318,11 +320,4 @@ struct FindFilesWindowContent: View {
         .allowsHitTesting(false)
         .transition(.opacity.animation(.easeInOut(duration: 0.2)))
     }
-}
-
-// MARK: - Tab Enum
-enum FindFilesTab: String, Identifiable {
-    case general
-    case advanced
-    var id: String { rawValue }
 }

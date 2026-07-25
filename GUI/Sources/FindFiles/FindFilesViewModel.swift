@@ -24,28 +24,8 @@ final class FindFilesViewModel {
     var useRegex: Bool = false
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
-    var itemTypeFilter: FindFilesItemTypeFilter = .filesAndFolders
-    var excludeSystemLocations: Bool = false
-    var deletableOnly: Bool = false
-    var emptyFoldersOnly: Bool = false
-    var activePreset: FindFilesPreset?
-
-    // Size filter
-    var useSizeFilter: Bool = false
-    var fileSizeMin: String = ""
-    var fileSizeMax: String = ""
-    var fileSizeUnit: FindFilesSizeUnit = .megabytes
-
-    // Date filter
-    var useDateFilter: Bool = false
-    var dateFrom: Date = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-    var dateTo: Date = Date()
-    var useStaleItemFilter: Bool = false
-    var staleCriterionMode: FindFilesStaleCriterionMode = .age
-    var staleTimestampFilter: FindFilesTimestampFilter = .both
-    var staleAgeAmount: String = ""
-    var staleAgeUnit: FindFilesAgeUnit = .months
-    var staleSinceDate: Date = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+    var activeModule: FindFilesTab = .general
+    var advancedSettings = FindFilesSearchSettings()
 
     // MARK: - Results & State
     var results: [FindFilesResult] = []
@@ -90,7 +70,9 @@ final class FindFilesViewModel {
     ///   - searchPath: Current directory of the active panel
     ///   - selectedFile: Currently selected file (optional)
     func configure(searchPath: String, selectedFile: CustomFile? = nil) {
-        activePreset = nil
+        if advancedSettings.searchDirectory.isEmpty {
+            advancedSettings.searchDirectory = searchPath
+        }
         // Check if selected file is an archive
         if let file = selectedFile,
             !file.isDirectory,
@@ -133,11 +115,12 @@ final class FindFilesViewModel {
     func startSearch() {
         guard searchState != .searching else { return }
         MemoryDiagnostics.shared.checkpoint("search.before")
-        let applicationLeftoversOnly = activePreset == .applicationLeftovers
+        let settings = activeSearchSettings
+        let applicationLeftoversOnly = settings.activePreset == .applicationLeftovers
         let targetPath = applicationLeftoversOnly
             ? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library", isDirectory: true).path
-            : searchDirectory
-        log.info("[FindFiles] Starting search: preset='\(activePreset?.rawValue ?? "none")' name='\(fileNamePattern)' text='\(searchText)' dir='\(targetPath)'")
+            : settings.searchDirectory
+        log.info("[FindFiles] Starting \(activeModule.rawValue) search: preset='\(settings.activePreset?.rawValue ?? "none")' name='\(settings.fileNamePattern)' text='\(settings.searchText)' dir='\(targetPath)'")
         errorMessage = nil
         // Validate target path
         let targetURL = URL(fileURLWithPath: targetPath)
@@ -154,10 +137,10 @@ final class FindFilesViewModel {
         let staleAgeDays = staleAgeDaysIfNeeded()
         guard errorMessage == nil else { return }
         // Save to history
-        SearchHistoryManager.shared.add(fileNamePattern, for: .fileNamePattern)
+        SearchHistoryManager.shared.add(settings.fileNamePattern, for: .fileNamePattern)
         SearchHistoryManager.shared.add(targetPath, for: .searchDirectory)
-        if !searchText.isEmpty {
-            SearchHistoryManager.shared.add(searchText, for: .searchText)
+        if !settings.searchText.isEmpty {
+            SearchHistoryManager.shared.add(settings.searchText, for: .searchText)
         }
         // Clear previous results
         results.removeAll()
@@ -166,44 +149,44 @@ final class FindFilesViewModel {
         searchState = .searching
         // Build search summary for export header
         var summaryParts: [String] = []
-        if !fileNamePattern.isEmpty && fileNamePattern != "*" && fileNamePattern != "*.*" {
-            let nameOperator = invertFileNamePattern ? "NOT " : ""
-            summaryParts.append("Name: \(nameOperator)\(fileNamePattern)")
+        if !settings.fileNamePattern.isEmpty && settings.fileNamePattern != "*" && settings.fileNamePattern != "*.*" {
+            let nameOperator = settings.invertFileNamePattern ? "NOT " : ""
+            summaryParts.append("Name: \(nameOperator)\(settings.fileNamePattern)")
         }
-        if !searchText.isEmpty { summaryParts.append("Text: \(searchText)") }
+        if !settings.searchText.isEmpty { summaryParts.append("Text: \(settings.searchText)") }
         summaryParts.append(applicationLeftoversOnly ? "In: Library app data" : "In: \(targetPath)")
         lastSearchSummary = summaryParts.joined(separator: " | ")
 
         // Build criteria
         var criteria = FindFilesCriteria(searchDirectory: targetURL)
-        criteria.fileNamePattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
-        criteria.invertFileNamePattern = invertFileNamePattern
-        criteria.searchText = searchText
-        criteria.caseSensitive = caseSensitive
-        criteria.useRegex = useRegex
-        criteria.searchInSubdirectories = searchInSubdirectories
-        criteria.searchInArchives = searchInArchives
-        criteria.itemType = itemTypeFilter
-        criteria.excludeSystemLocations = excludeSystemLocations
-        criteria.deletableOnly = deletableOnly
+        criteria.fileNamePattern = settings.fileNamePattern.isEmpty ? "*" : settings.fileNamePattern
+        criteria.invertFileNamePattern = settings.invertFileNamePattern
+        criteria.searchText = settings.searchText
+        criteria.caseSensitive = settings.caseSensitive
+        criteria.useRegex = settings.useRegex
+        criteria.searchInSubdirectories = settings.searchInSubdirectories
+        criteria.searchInArchives = settings.searchInArchives
+        criteria.itemType = activeModule == .general ? .filesAndFolders : settings.itemTypeFilter
+        criteria.excludeSystemLocations = activeModule == .advanced && settings.excludeSystemLocations
+        criteria.deletableOnly = activeModule == .advanced && settings.deletableOnly
         criteria.applicationLeftoversOnly = applicationLeftoversOnly
         if criteria.applicationLeftoversOnly {
             criteria.searchDirectories = FindFilesLeftoverSafety.searchDirectories
         }
-        criteria.emptyFoldersOnly = emptyFoldersOnly
+        criteria.emptyFoldersOnly = activeModule == .advanced && settings.emptyFoldersOnly
         criteria.isArchiveOnlySearch = isArchiveTarget
         criteria.isSingleFileContentSearch = isSingleFileTarget
 
-        if useSizeFilter && itemTypeFilter != .foldersOnly {
-            let mult = fileSizeUnit.multiplier
-            if let v = Int64(fileSizeMin) { criteria.fileSizeMin = v * mult }
-            if let v = Int64(fileSizeMax) { criteria.fileSizeMax = v * mult }
+        if activeModule == .advanced && settings.useSizeFilter && settings.itemTypeFilter != .foldersOnly {
+            let mult = settings.fileSizeUnit.multiplier
+            if let v = Int64(settings.fileSizeMin) { criteria.fileSizeMin = v * mult }
+            if let v = Int64(settings.fileSizeMax) { criteria.fileSizeMax = v * mult }
         }
-        if useDateFilter {
-            criteria.dateFrom = dateFrom
-            criteria.dateTo = dateTo
+        if activeModule == .advanced && settings.useDateFilter {
+            criteria.dateFrom = settings.dateFrom
+            criteria.dateTo = settings.dateTo
         }
-        applyStaleCriteria(to: &criteria, staleAgeDays: staleAgeDays)
+        applyStaleCriteria(to: &criteria, settings: settings, staleAgeDays: staleAgeDays)
 
         // Start async search — detached task keeps stream consumption off MainActor.
         let engine = self.engine
@@ -342,76 +325,76 @@ final class FindFilesViewModel {
     }
 
     func applyLargeStaleFilesPreset() {
-        activePreset = .largeStaleFiles
+        advancedSettings.activePreset = .largeStaleFiles
         log.info("[FindFiles] Applied preset: \(FindFilesPreset.largeStaleFiles.rawValue)")
-        fileNamePattern = "*"
-        searchText = ""
-        searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
-        caseSensitive = false
-        useRegex = false
-        searchInSubdirectories = true
-        searchInArchives = false
-        itemTypeFilter = .filesOnly
-        excludeSystemLocations = true
-        deletableOnly = true
-        emptyFoldersOnly = false
-        useSizeFilter = true
-        fileSizeMin = "100"
-        fileSizeMax = ""
-        fileSizeUnit = .megabytes
-        useDateFilter = false
-        useStaleItemFilter = true
-        staleCriterionMode = .age
-        staleTimestampFilter = .both
-        staleAgeAmount = "12"
-        staleAgeUnit = .months
+        advancedSettings.fileNamePattern = "*"
+        advancedSettings.searchText = ""
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+        advancedSettings.caseSensitive = false
+        advancedSettings.useRegex = false
+        advancedSettings.searchInSubdirectories = true
+        advancedSettings.searchInArchives = false
+        advancedSettings.itemTypeFilter = .filesOnly
+        advancedSettings.excludeSystemLocations = true
+        advancedSettings.deletableOnly = true
+        advancedSettings.emptyFoldersOnly = false
+        advancedSettings.useSizeFilter = true
+        advancedSettings.fileSizeMin = "100"
+        advancedSettings.fileSizeMax = ""
+        advancedSettings.fileSizeUnit = .megabytes
+        advancedSettings.useDateFilter = false
+        advancedSettings.useStaleItemFilter = true
+        advancedSettings.staleCriterionMode = .age
+        advancedSettings.staleTimestampFilter = .both
+        advancedSettings.staleAgeAmount = "12"
+        advancedSettings.staleAgeUnit = .months
     }
 
     func applyApplicationLeftoversPreset() {
-        activePreset = .applicationLeftovers
+        advancedSettings.activePreset = .applicationLeftovers
         log.info("[FindFiles] Applied preset: \(FindFilesPreset.applicationLeftovers.rawValue)")
-        fileNamePattern = "*"
-        searchText = ""
-        searchDirectory = FileManager.default.homeDirectoryForCurrentUser
+        advancedSettings.fileNamePattern = "*"
+        advancedSettings.searchText = ""
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library", isDirectory: true).path
-        caseSensitive = false
-        useRegex = false
-        searchInSubdirectories = false
-        searchInArchives = false
-        itemTypeFilter = .filesAndFolders
-        excludeSystemLocations = true
-        deletableOnly = true
-        emptyFoldersOnly = false
-        useSizeFilter = false
-        useDateFilter = false
-        useStaleItemFilter = true
-        staleCriterionMode = .age
-        staleTimestampFilter = .modified
-        staleAgeAmount = "24"
-        staleAgeUnit = .months
+        advancedSettings.caseSensitive = false
+        advancedSettings.useRegex = false
+        advancedSettings.searchInSubdirectories = false
+        advancedSettings.searchInArchives = false
+        advancedSettings.itemTypeFilter = .filesAndFolders
+        advancedSettings.excludeSystemLocations = true
+        advancedSettings.deletableOnly = true
+        advancedSettings.emptyFoldersOnly = false
+        advancedSettings.useSizeFilter = false
+        advancedSettings.useDateFilter = false
+        advancedSettings.useStaleItemFilter = true
+        advancedSettings.staleCriterionMode = .age
+        advancedSettings.staleTimestampFilter = .modified
+        advancedSettings.staleAgeAmount = "24"
+        advancedSettings.staleAgeUnit = .months
     }
 
     func applyEmptyStaleFoldersPreset() {
-        activePreset = .emptyStaleFolders
+        advancedSettings.activePreset = .emptyStaleFolders
         log.info("[FindFiles] Applied preset: \(FindFilesPreset.emptyStaleFolders.rawValue)")
-        fileNamePattern = "*"
-        searchText = ""
-        searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
-        caseSensitive = false
-        useRegex = false
-        searchInSubdirectories = true
-        searchInArchives = false
-        itemTypeFilter = .foldersOnly
-        excludeSystemLocations = true
-        deletableOnly = true
-        emptyFoldersOnly = true
-        useSizeFilter = false
-        useDateFilter = false
-        useStaleItemFilter = true
-        staleCriterionMode = .age
-        staleTimestampFilter = .modified
-        staleAgeAmount = "12"
-        staleAgeUnit = .months
+        advancedSettings.fileNamePattern = "*"
+        advancedSettings.searchText = ""
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+        advancedSettings.caseSensitive = false
+        advancedSettings.useRegex = false
+        advancedSettings.searchInSubdirectories = true
+        advancedSettings.searchInArchives = false
+        advancedSettings.itemTypeFilter = .foldersOnly
+        advancedSettings.excludeSystemLocations = true
+        advancedSettings.deletableOnly = true
+        advancedSettings.emptyFoldersOnly = true
+        advancedSettings.useSizeFilter = false
+        advancedSettings.useDateFilter = false
+        advancedSettings.useStaleItemFilter = true
+        advancedSettings.staleCriterionMode = .age
+        advancedSettings.staleTimestampFilter = .modified
+        advancedSettings.staleAgeAmount = "12"
+        advancedSettings.staleAgeUnit = .months
     }
 
     private func ageInDays(amount: String, unit: FindFilesAgeUnit) -> Int? {
@@ -428,27 +411,46 @@ final class FindFilesViewModel {
         }
     }
 
+    private var activeSearchSettings: FindFilesSearchSettings {
+        if activeModule == .advanced { return advancedSettings }
+        var settings = FindFilesSearchSettings()
+        settings.fileNamePattern = fileNamePattern
+        settings.invertFileNamePattern = invertFileNamePattern
+        settings.searchText = searchText
+        settings.searchDirectory = searchDirectory
+        settings.caseSensitive = caseSensitive
+        settings.useRegex = useRegex
+        settings.searchInSubdirectories = searchInSubdirectories
+        settings.searchInArchives = searchInArchives
+        return settings
+    }
+
     private func staleAgeDaysIfNeeded() -> Int? {
-        guard useStaleItemFilter, staleCriterionMode == .age else { return nil }
-        guard let days = ageInDays(amount: staleAgeAmount, unit: staleAgeUnit) else {
+        let settings = activeSearchSettings
+        guard activeModule == .advanced, settings.useStaleItemFilter, settings.staleCriterionMode == .age else { return nil }
+        guard let days = ageInDays(amount: settings.staleAgeAmount, unit: settings.staleAgeUnit) else {
             errorMessage = "Enter a positive age value."
             return nil
         }
         return days
     }
 
-    private func applyStaleCriteria(to criteria: inout FindFilesCriteria, staleAgeDays: Int?) {
-        guard useStaleItemFilter else { return }
-        let appliesToModified = staleTimestampFilter == .modified || staleTimestampFilter == .both
-        let appliesToAccessed = staleTimestampFilter == .accessed || staleTimestampFilter == .both
+    private func applyStaleCriteria(
+        to criteria: inout FindFilesCriteria,
+        settings: FindFilesSearchSettings,
+        staleAgeDays: Int?
+    ) {
+        guard activeModule == .advanced, settings.useStaleItemFilter else { return }
+        let appliesToModified = settings.staleTimestampFilter == .modified || settings.staleTimestampFilter == .both
+        let appliesToAccessed = settings.staleTimestampFilter == .accessed || settings.staleTimestampFilter == .both
 
-        switch staleCriterionMode {
+        switch settings.staleCriterionMode {
         case .age:
             if appliesToModified { criteria.modificationOlderThanDays = staleAgeDays }
             if appliesToAccessed { criteria.accessOlderThanDays = staleAgeDays }
         case .date:
-            if appliesToModified { criteria.modificationBeforeDate = staleSinceDate }
-            if appliesToAccessed { criteria.accessBeforeDate = staleSinceDate }
+            if appliesToModified { criteria.modificationBeforeDate = settings.staleSinceDate }
+            if appliesToAccessed { criteria.accessBeforeDate = settings.staleSinceDate }
         }
     }
 

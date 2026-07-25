@@ -265,7 +265,7 @@ actor FindFilesEngine {
 
         if FindFilesSpotlightQuery.supports(criteria) {
             let completed = await runSpotlightCommand(criteria: criteria, continuation: continuation)
-            if completed { return }
+            if completed || Task.isCancelled || stats.resultLimitReached { return }
             log.info("[FindEngine] Spotlight unavailable; falling back to find")
         }
         stats.backend = .find
@@ -297,6 +297,10 @@ actor FindFilesEngine {
                 nameRegex: nil, contentPattern: nil, passwordCallback: nil
             )
         }
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
+        process.waitUntilExit()
         let succeeded = process.terminationStatus == 0
         currentProcess = nil
         log.info("[FindEngine] Spotlight exited, matched \(stats.matchesFound)")
@@ -418,7 +422,11 @@ actor FindFilesEngine {
         installedApplicationIdentities.removeAll()
         log.info("[FindEngine] find process exited, matched \(stats.matchesFound)")
         // Second pass: search inside archive files if enabled
-        if criteria.searchInArchives && !criteria.emptyFoldersOnly && !Task.isCancelled {
+        if criteria.searchInArchives
+            && !criteria.emptyFoldersOnly
+            && !stats.resultLimitReached
+            && !Task.isCancelled
+        {
             await scanArchivesInDirectory(
                 criteria: criteria, continuation: continuation,
                 nameRegex: nameRegex, contentPattern: contentPattern,

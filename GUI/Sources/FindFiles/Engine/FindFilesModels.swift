@@ -138,7 +138,7 @@ struct FindFilesCriteria: Sendable {
     var accessBeforeDate: Date? = nil
     var modificationOlderThanDays: Int? = nil
     var accessOlderThanDays: Int? = nil
-    var resultLimit: Int = 50_000
+    var resultLimit: Int = 10_000
     var emptyFoldersOnly: Bool = false
 
     /// If true, searchDirectory is a single archive file (not a directory).

@@ -2,54 +2,92 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Human-readable active criteria summary and preset matching.
+// Description: Human-readable criteria summaries for independent search modules.
 
 import Foundation
 
 // MARK: - Active Criteria Summary
 extension FindFilesViewModel {
     var activeCriteriaSummary: [String] {
-        var values: [String] = []
-        let pattern = fileNamePattern.isEmpty ? "*" : fileNamePattern
-        values.append(invertFileNamePattern ? "Name ≠ \(pattern)" : "Name: \(pattern)")
-        if !searchText.isEmpty { values.append("Text: \(searchText)") }
-        if !searchDirectory.isEmpty {
-            values.append(isPresetActive(.applicationLeftovers)
-                ? "In: Library app data"
-                : "In: \(URL(fileURLWithPath: searchDirectory).lastPathComponent.isEmpty ? searchDirectory : URL(fileURLWithPath: searchDirectory).lastPathComponent)")
-        }
-        values.append(itemTypeFilter.label)
-        if searchInSubdirectories { values.append("Subfolders") }
-        if searchInArchives { values.append("Archives") }
-        if caseSensitive { values.append("Case-sensitive") }
-        if useRegex { values.append("Regex") }
-        if excludeSystemLocations { values.append("System locations excluded") }
-        if deletableOnly { values.append("Deletable only") }
-        if emptyFoldersOnly { values.append("Empty folders") }
-        if useSizeFilter { values.append(sizeSummary) }
-        if useDateFilter { values.append("Modified: \(Self.shortDate(dateFrom))–\(Self.shortDate(dateTo))") }
-        if useStaleItemFilter { values.append(staleSummary) }
-        return values
+        activeModule == .general ? searchCriteriaSummary : advancedCriteriaSummary
     }
 
     func isPresetActive(_ preset: FindFilesPreset) -> Bool {
-        activePreset == preset
+        advancedSettings.activePreset == preset
     }
 
-    private var sizeSummary: String {
-        let minimum = fileSizeMin.isEmpty ? "0" : fileSizeMin
-        let maximum = fileSizeMax.isEmpty ? "∞" : fileSizeMax
-        return "Size: \(minimum)–\(maximum) \(fileSizeUnit.label)"
+    private var searchCriteriaSummary: [String] {
+        var values = baseSummary(
+            pattern: fileNamePattern,
+            inverted: invertFileNamePattern,
+            text: searchText,
+            directory: searchDirectory,
+            subdirectories: searchInSubdirectories,
+            archives: searchInArchives
+        )
+        if caseSensitive { values.append("Case-sensitive") }
+        if useRegex { values.append("Regex") }
+        return values
     }
 
-    private var staleSummary: String {
-        let target = staleTimestampFilter.label
-        switch staleCriterionMode {
+    private var advancedCriteriaSummary: [String] {
+        let settings = advancedSettings
+        var values = baseSummary(
+            pattern: settings.fileNamePattern,
+            inverted: settings.invertFileNamePattern,
+            text: settings.searchText,
+            directory: settings.searchDirectory,
+            subdirectories: settings.searchInSubdirectories,
+            archives: settings.searchInArchives
+        )
+        values.append(settings.itemTypeFilter.label)
+        if settings.caseSensitive { values.append("Case-sensitive") }
+        if settings.useRegex { values.append("Regex") }
+        if settings.excludeSystemLocations { values.append("System locations excluded") }
+        if settings.deletableOnly { values.append("Deletable only") }
+        if settings.emptyFoldersOnly { values.append("Empty folders") }
+        if settings.useSizeFilter { values.append(sizeSummary(settings)) }
+        if settings.useDateFilter {
+            values.append("Modified: \(Self.shortDate(settings.dateFrom))–\(Self.shortDate(settings.dateTo))")
+        }
+        if settings.useStaleItemFilter { values.append(staleSummary(settings)) }
+        return values
+    }
+
+    private func baseSummary(
+        pattern: String,
+        inverted: Bool,
+        text: String,
+        directory: String,
+        subdirectories: Bool,
+        archives: Bool
+    ) -> [String] {
+        let effectivePattern = pattern.isEmpty ? "*" : pattern
+        var values = [inverted ? "Name ≠ \(effectivePattern)" : "Name: \(effectivePattern)"]
+        if !text.isEmpty { values.append("Text: \(text)") }
+        if !directory.isEmpty {
+            let name = URL(fileURLWithPath: directory).lastPathComponent
+            values.append("In: \(name.isEmpty ? directory : name)")
+        }
+        if subdirectories { values.append("Subfolders") }
+        if archives { values.append("Archives") }
+        return values
+    }
+
+    private func sizeSummary(_ settings: FindFilesSearchSettings) -> String {
+        let minimum = settings.fileSizeMin.isEmpty ? "0" : settings.fileSizeMin
+        let maximum = settings.fileSizeMax.isEmpty ? "∞" : settings.fileSizeMax
+        return "Size: \(minimum)–\(maximum) \(settings.fileSizeUnit.label)"
+    }
+
+    private func staleSummary(_ settings: FindFilesSearchSettings) -> String {
+        let target = settings.staleTimestampFilter.label
+        switch settings.staleCriterionMode {
         case .date:
-            return "\(target) before \(Self.shortDate(staleSinceDate))"
+            return "\(target) before \(Self.shortDate(settings.staleSinceDate))"
         case .age:
-            let amount = staleAgeAmount.isEmpty ? "?" : staleAgeAmount
-            return "\(target) older than \(amount) \(staleAgeUnit.label.lowercased())"
+            let amount = settings.staleAgeAmount.isEmpty ? "?" : settings.staleAgeAmount
+            return "\(target) older than \(amount) \(settings.staleAgeUnit.label.lowercased())"
         }
     }
 

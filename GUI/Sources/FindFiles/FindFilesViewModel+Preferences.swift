@@ -2,80 +2,86 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Persistent Find Files criteria stored in MiMiDefaults.
+// Description: Independent persistence for Search and Advanced Search.
 
 import Foundation
 
 // MARK: - Find Files Preferences
 extension FindFilesViewModel {
-    private static var preferencesKey: String { "findFiles.preferences.v2" }
+    private static var searchPreferencesKey: String { "findFiles.search.preferences.v1" }
+    private static var advancedPreferencesKey: String { "findFiles.advanced.preferences.v1" }
+    private static var legacyPreferencesKey: String { "findFiles.preferences.v2" }
 
     func savePreferences() {
-        let preferences = FindFilesPreferences(
-            fileNamePattern: fileNamePattern,
-            invertFileNamePattern: invertFileNamePattern,
-            searchText: searchText,
-            searchDirectory: searchDirectory,
-            caseSensitive: caseSensitive,
-            useRegex: useRegex,
-            searchInSubdirectories: searchInSubdirectories,
-            searchInArchives: searchInArchives,
-            itemTypeFilter: itemTypeFilter,
-            excludeSystemLocations: excludeSystemLocations,
-            deletableOnly: deletableOnly,
-            emptyFoldersOnly: emptyFoldersOnly,
-            useSizeFilter: useSizeFilter,
-            fileSizeMin: fileSizeMin,
-            fileSizeMax: fileSizeMax,
-            fileSizeUnit: fileSizeUnit,
-            useDateFilter: useDateFilter,
-            dateFrom: dateFrom,
-            dateTo: dateTo,
-            useStaleItemFilter: useStaleItemFilter,
-            staleCriterionMode: staleCriterionMode,
-            staleTimestampFilter: staleTimestampFilter,
-            staleAgeAmount: staleAgeAmount,
-            staleAgeUnit: staleAgeUnit,
-            staleSinceDate: staleSinceDate
-        )
-        guard let data = try? JSONEncoder().encode(preferences) else { return }
-        MiMiDefaults.shared.set(data, forKey: Self.preferencesKey)
+        saveSearchPreferences()
+        if let data = try? JSONEncoder().encode(advancedSettings) {
+            MiMiDefaults.shared.set(data, forKey: Self.advancedPreferencesKey)
+        }
     }
 
     func loadPreferences() {
-        guard let data = MiMiDefaults.shared.data(forKey: Self.preferencesKey),
-              let value = try? JSONDecoder().decode(FindFilesPreferences.self, from: data)
-        else { return }
-        fileNamePattern = value.fileNamePattern
-        invertFileNamePattern = value.invertFileNamePattern
-        searchText = value.searchText
-        searchDirectory = value.searchDirectory
-        caseSensitive = value.caseSensitive
-        useRegex = value.useRegex
-        searchInSubdirectories = value.searchInSubdirectories
-        searchInArchives = value.searchInArchives
-        itemTypeFilter = value.itemTypeFilter
-        excludeSystemLocations = value.excludeSystemLocations
-        deletableOnly = value.deletableOnly
-        emptyFoldersOnly = value.emptyFoldersOnly
-        useSizeFilter = value.useSizeFilter
-        fileSizeMin = value.fileSizeMin
-        fileSizeMax = value.fileSizeMax
-        fileSizeUnit = value.fileSizeUnit
-        useDateFilter = value.useDateFilter
-        dateFrom = value.dateFrom
-        dateTo = value.dateTo
-        useStaleItemFilter = value.useStaleItemFilter
-        staleCriterionMode = value.staleCriterionMode
-        staleTimestampFilter = value.staleTimestampFilter
-        staleAgeAmount = value.staleAgeAmount
-        staleAgeUnit = value.staleAgeUnit
-        staleSinceDate = value.staleSinceDate
+        let legacy = loadLegacyPreferences()
+        if let data = MiMiDefaults.shared.data(forKey: Self.searchPreferencesKey),
+           let settings = try? JSONDecoder().decode(FindFilesSearchSettings.self, from: data)
+        {
+            applySearchSettings(settings)
+        } else if let legacy {
+            applyLegacySearchSettings(legacy)
+        }
+        if let data = MiMiDefaults.shared.data(forKey: Self.advancedPreferencesKey),
+           let settings = try? JSONDecoder().decode(FindFilesSearchSettings.self, from: data)
+        {
+            advancedSettings = settings
+        } else if let legacy {
+            advancedSettings = legacy.advancedSettings
+        }
+    }
+
+    private func saveSearchPreferences() {
+        var settings = FindFilesSearchSettings()
+        settings.fileNamePattern = fileNamePattern
+        settings.invertFileNamePattern = invertFileNamePattern
+        settings.searchText = searchText
+        settings.searchDirectory = searchDirectory
+        settings.caseSensitive = caseSensitive
+        settings.useRegex = useRegex
+        settings.searchInSubdirectories = searchInSubdirectories
+        settings.searchInArchives = searchInArchives
+        if let data = try? JSONEncoder().encode(settings) {
+            MiMiDefaults.shared.set(data, forKey: Self.searchPreferencesKey)
+        }
+    }
+
+    private func applySearchSettings(_ settings: FindFilesSearchSettings) {
+        fileNamePattern = settings.fileNamePattern
+        invertFileNamePattern = settings.invertFileNamePattern
+        searchText = settings.searchText
+        searchDirectory = settings.searchDirectory
+        caseSensitive = settings.caseSensitive
+        useRegex = settings.useRegex
+        searchInSubdirectories = settings.searchInSubdirectories
+        searchInArchives = settings.searchInArchives
+    }
+
+    private func applyLegacySearchSettings(_ legacy: LegacyFindFilesPreferences) {
+        fileNamePattern = legacy.fileNamePattern
+        invertFileNamePattern = legacy.invertFileNamePattern
+        searchText = legacy.searchText
+        searchDirectory = legacy.searchDirectory
+        caseSensitive = legacy.caseSensitive
+        useRegex = legacy.useRegex
+        searchInSubdirectories = legacy.searchInSubdirectories
+        searchInArchives = legacy.searchInArchives
+    }
+
+    private func loadLegacyPreferences() -> LegacyFindFilesPreferences? {
+        guard let data = MiMiDefaults.shared.data(forKey: Self.legacyPreferencesKey) else { return nil }
+        return try? JSONDecoder().decode(LegacyFindFilesPreferences.self, from: data)
     }
 }
 
-// MARK: - Stored Preferences
-private struct FindFilesPreferences: Codable {
+// MARK: - Legacy Find Files Preferences
+private struct LegacyFindFilesPreferences: Codable {
     let fileNamePattern: String
     let invertFileNamePattern: Bool
     let searchText: String
@@ -101,4 +107,34 @@ private struct FindFilesPreferences: Codable {
     let staleAgeAmount: String
     let staleAgeUnit: FindFilesAgeUnit
     let staleSinceDate: Date
+
+    var advancedSettings: FindFilesSearchSettings {
+        var settings = FindFilesSearchSettings()
+        settings.fileNamePattern = fileNamePattern
+        settings.invertFileNamePattern = invertFileNamePattern
+        settings.searchText = searchText
+        settings.searchDirectory = searchDirectory
+        settings.caseSensitive = caseSensitive
+        settings.useRegex = useRegex
+        settings.searchInSubdirectories = searchInSubdirectories
+        settings.searchInArchives = searchInArchives
+        settings.itemTypeFilter = itemTypeFilter
+        settings.excludeSystemLocations = excludeSystemLocations
+        settings.deletableOnly = deletableOnly
+        settings.emptyFoldersOnly = emptyFoldersOnly
+        settings.useSizeFilter = useSizeFilter
+        settings.fileSizeMin = fileSizeMin
+        settings.fileSizeMax = fileSizeMax
+        settings.fileSizeUnit = fileSizeUnit
+        settings.useDateFilter = useDateFilter
+        settings.dateFrom = dateFrom
+        settings.dateTo = dateTo
+        settings.useStaleItemFilter = useStaleItemFilter
+        settings.staleCriterionMode = staleCriterionMode
+        settings.staleTimestampFilter = staleTimestampFilter
+        settings.staleAgeAmount = staleAgeAmount
+        settings.staleAgeUnit = staleAgeUnit
+        settings.staleSinceDate = staleSinceDate
+        return settings
+    }
 }

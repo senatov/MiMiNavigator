@@ -63,7 +63,8 @@ enum FindFilesSpotlightQuery {
     }
 
     private static func namePredicate(criteria: FindFilesCriteria) -> String? {
-        let patterns = criteria.fileNamePattern
+        let normalizedPattern = FindFilesNameMatcher.normalizedPattern(criteria.fileNamePattern)
+        let patterns = normalizedPattern
             .split(separator: ";", omittingEmptySubsequences: true)
             .map { escape(String($0)) }
         let effectivePatterns = patterns.isEmpty ? ["*"] : patterns

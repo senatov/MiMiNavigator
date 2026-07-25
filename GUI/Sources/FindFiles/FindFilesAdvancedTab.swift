@@ -12,6 +12,7 @@ struct FindFilesAdvancedTab: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
+                FindFilesAdvancedCriteriaSection(viewModel: viewModel)
                 presetSection
                 scopeSection
                 sizeSection
@@ -21,11 +22,11 @@ struct FindFilesAdvancedTab: View {
             .padding(12)
         }
         .background(DialogColors.base.opacity(0.96))
-        .onChange(of: viewModel.itemTypeFilter) {
-            if viewModel.itemTypeFilter == .foldersOnly {
-                viewModel.useSizeFilter = false
+        .onChange(of: viewModel.advancedSettings.itemTypeFilter) {
+            if viewModel.advancedSettings.itemTypeFilter == .foldersOnly {
+                viewModel.advancedSettings.useSizeFilter = false
             } else {
-                viewModel.emptyFoldersOnly = false
+                viewModel.advancedSettings.emptyFoldersOnly = false
             }
         }
     }
@@ -73,7 +74,7 @@ struct FindFilesAdvancedTab: View {
                     detail: "Skip macOS, cloud, and sandbox-managed locations",
                     icon: "macwindow.badge.plus",
                     tint: .blue,
-                    isOn: $viewModel.excludeSystemLocations
+                    isOn: $viewModel.advancedSettings.excludeSystemLocations
                 )
                 rowDivider()
                 optionRow(
@@ -81,8 +82,18 @@ struct FindFilesAdvancedTab: View {
                     detail: "Skip matches that the current user cannot remove",
                     icon: "trash",
                     tint: .orange,
-                    isOn: $viewModel.deletableOnly
+                    isOn: $viewModel.advancedSettings.deletableOnly
                 )
+                if viewModel.advancedSettings.itemTypeFilter == .foldersOnly {
+                    rowDivider()
+                    optionRow(
+                        title: "Empty folders only",
+                        detail: "Return folders that contain no items",
+                        icon: "folder.badge.minus",
+                        tint: .orange,
+                        isOn: $viewModel.advancedSettings.emptyFoldersOnly
+                    )
+                }
             }
         }
     }
@@ -94,21 +105,21 @@ struct FindFilesAdvancedTab: View {
                     detail: "Only match files within the size range",
                     icon: "arrow.up.arrow.down",
                     tint: .orange,
-                    isOn: $viewModel.useSizeFilter
+                    isOn: $viewModel.advancedSettings.useSizeFilter
                 )
-                if viewModel.useSizeFilter {
+                if viewModel.advancedSettings.useSizeFilter {
                     HStack(spacing: 8) {
                         Text("From")
                             .foregroundStyle(.secondary)
-                        TextField("min", text: $viewModel.fileSizeMin)
+                        TextField("min", text: $viewModel.advancedSettings.fileSizeMin)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 80)
                         Text("to")
                             .foregroundStyle(.secondary)
-                        TextField("max", text: $viewModel.fileSizeMax)
+                        TextField("max", text: $viewModel.advancedSettings.fileSizeMax)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 80)
-                        Picker("", selection: $viewModel.fileSizeUnit) {
+                        Picker("", selection: $viewModel.advancedSettings.fileSizeUnit) {
                             ForEach(FindFilesSizeUnit.allCases) { unit in
                                 Text(unit.label).tag(unit)
                             }
@@ -132,20 +143,20 @@ struct FindFilesAdvancedTab: View {
                     detail: "Only match files modified within the date range",
                     icon: "calendar.badge.clock",
                     tint: .blue,
-                    isOn: $viewModel.useDateFilter
+                    isOn: $viewModel.advancedSettings.useDateFilter
                 )
 
-                if viewModel.useDateFilter {
+                if viewModel.advancedSettings.useDateFilter {
                     HStack(spacing: 8) {
                         Text("From")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
-                        DatePicker("", selection: $viewModel.dateFrom, displayedComponents: .date)
+                        DatePicker("", selection: $viewModel.advancedSettings.dateFrom, displayedComponents: .date)
                             .labelsHidden()
                         Text("to")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
-                        DatePicker("", selection: $viewModel.dateTo, displayedComponents: .date)
+                        DatePicker("", selection: $viewModel.advancedSettings.dateTo, displayedComponents: .date)
                             .labelsHidden()
                         Spacer()
                     }
@@ -159,10 +170,10 @@ struct FindFilesAdvancedTab: View {
                     detail: "Choose date or age, then apply it to modified time, access time, or both",
                     icon: "clock.badge.xmark",
                     tint: .orange,
-                    isOn: $viewModel.useStaleItemFilter
+                    isOn: $viewModel.advancedSettings.useStaleItemFilter
                 )
 
-                if viewModel.useStaleItemFilter {
+                if viewModel.advancedSettings.useStaleItemFilter {
                     staleCriteriaControls
                     .padding(.leading, 34)
                 }
@@ -177,7 +188,7 @@ struct FindFilesAdvancedTab: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(width: 64, alignment: .trailing)
-                Picker("", selection: $viewModel.staleTimestampFilter) {
+                Picker("", selection: $viewModel.advancedSettings.staleTimestampFilter) {
                     ForEach(FindFilesTimestampFilter.allCases) { value in
                         Text(value.label).tag(value)
                     }
@@ -193,7 +204,7 @@ struct FindFilesAdvancedTab: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(width: 64, alignment: .trailing)
-                Picker("", selection: $viewModel.staleCriterionMode) {
+                Picker("", selection: $viewModel.advancedSettings.staleCriterionMode) {
                     ForEach(FindFilesStaleCriterionMode.allCases) { value in
                         Text(value.label).tag(value)
                     }
@@ -202,21 +213,21 @@ struct FindFilesAdvancedTab: View {
                 .pickerStyle(.segmented)
                 .frame(width: 150)
 
-                switch viewModel.staleCriterionMode {
+                switch viewModel.advancedSettings.staleCriterionMode {
                 case .date:
                     Text("since")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
-                    DatePicker("", selection: $viewModel.staleSinceDate, displayedComponents: .date)
+                    DatePicker("", selection: $viewModel.advancedSettings.staleSinceDate, displayedComponents: .date)
                         .labelsHidden()
                 case .age:
                     Text("older than")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
-                    TextField("amount", text: $viewModel.staleAgeAmount)
+                    TextField("amount", text: $viewModel.advancedSettings.staleAgeAmount)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 82)
-                    Picker("", selection: $viewModel.staleAgeUnit) {
+                    Picker("", selection: $viewModel.advancedSettings.staleAgeUnit) {
                         ForEach(FindFilesAgeUnit.allCases) { value in
                             Text(value.label).tag(value)
                         }
@@ -227,7 +238,7 @@ struct FindFilesAdvancedTab: View {
                 }
                 Spacer()
             }
-            if viewModel.staleCriterionMode == .age {
+            if viewModel.advancedSettings.staleCriterionMode == .age {
                 HStack(spacing: 6) {
                     Text("Quick")
                         .font(.system(size: 12))
@@ -235,8 +246,8 @@ struct FindFilesAdvancedTab: View {
                         .frame(width: 64, alignment: .trailing)
                     ForEach([1, 2, 3], id: \.self) { years in
                         Button("\(years) year\(years == 1 ? "" : "s")") {
-                            viewModel.staleAgeAmount = String(years)
-                            viewModel.staleAgeUnit = .years
+                            viewModel.advancedSettings.staleAgeAmount = String(years)
+                            viewModel.advancedSettings.staleAgeUnit = .years
                         }
                         .buttonStyle(ThemedButtonStyle())
                         .controlSize(.small)
@@ -357,7 +368,7 @@ struct FindFilesAdvancedTab: View {
                 }
                 Spacer()
             }
-            Picker("", selection: $viewModel.itemTypeFilter) {
+            Picker("", selection: $viewModel.advancedSettings.itemTypeFilter) {
                 ForEach(FindFilesItemTypeFilter.allCases) { value in
                     Text(value.label).tag(value)
                 }
@@ -392,10 +403,10 @@ struct FindFilesAdvancedTab: View {
     }
 
     private func isSelectedYear(_ years: Int) -> Bool {
-        viewModel.useStaleItemFilter
-            && viewModel.staleCriterionMode == .age
-            && viewModel.staleAgeUnit == .years
-            && viewModel.staleAgeAmount == String(years)
+        viewModel.advancedSettings.useStaleItemFilter
+            && viewModel.advancedSettings.staleCriterionMode == .age
+            && viewModel.advancedSettings.staleAgeUnit == .years
+            && viewModel.advancedSettings.staleAgeAmount == String(years)
     }
 
     private func rowDivider() -> some View {

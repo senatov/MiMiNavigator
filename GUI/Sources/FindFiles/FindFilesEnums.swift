@@ -80,10 +80,17 @@ enum FindFilesSearchBackend: String, Sendable {
 }
 
 // MARK: - Search Preset
-enum FindFilesPreset: String {
+enum FindFilesPreset: String, Codable {
     case largeStaleFiles
     case applicationLeftovers
     case emptyStaleFolders
+}
+
+// MARK: - Find Files Module
+enum FindFilesTab: String, Codable, Identifiable {
+    case general
+    case advanced
+    var id: String { rawValue }
 }
 
 // MARK: - Size Unit
