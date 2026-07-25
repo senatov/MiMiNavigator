@@ -212,6 +212,9 @@ struct FindFilesAdvancedTab: View {
                     DatePicker("", selection: $viewModel.staleSinceDate, displayedComponents: .date)
                         .labelsHidden()
                 case .age:
+                    Text("older than")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
                     TextField("amount", text: $viewModel.staleAgeAmount)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 82)
@@ -222,9 +225,26 @@ struct FindFilesAdvancedTab: View {
                     }
                     .labelsHidden()
                     .pickerStyle(.segmented)
-                    .frame(width: 230)
+                    .frame(width: 190)
                 }
                 Spacer()
+            }
+            if viewModel.staleCriterionMode == .age {
+                HStack(spacing: 6) {
+                    Text("Quick")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 64, alignment: .trailing)
+                    ForEach([1, 2, 3], id: \.self) { years in
+                        Button("\(years) year\(years == 1 ? "" : "s")") {
+                            viewModel.staleAgeAmount = String(years)
+                            viewModel.staleAgeUnit = .years
+                        }
+                        .buttonStyle(ThemedButtonStyle())
+                        .controlSize(.small)
+                    }
+                    Spacer()
+                }
             }
         }
     }

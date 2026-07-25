@@ -102,6 +102,9 @@ struct FindFilesWindowContent: View {
                 Text(viewModel.errorMessage ?? "")
             }
         }
+        .onDisappear {
+            viewModel.savePreferences()
+        }
     }
 
     // MARK: - Input Area with Border

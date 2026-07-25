@@ -17,7 +17,7 @@ enum FindFilesState: Equatable {
 }
 
 // MARK: - Age Unit
-enum FindFilesAgeUnit: String, CaseIterable, Identifiable {
+enum FindFilesAgeUnit: String, CaseIterable, Codable, Identifiable {
     case days = "days"
     case months = "months"
     case years = "years"
@@ -26,7 +26,7 @@ enum FindFilesAgeUnit: String, CaseIterable, Identifiable {
     var label: String { rawValue.capitalized }
 }
 // MARK: - Stale Criterion Mode
-enum FindFilesStaleCriterionMode: String, CaseIterable, Identifiable {
+enum FindFilesStaleCriterionMode: String, CaseIterable, Codable, Identifiable {
     case date
     case age
 
@@ -41,7 +41,7 @@ enum FindFilesStaleCriterionMode: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Timestamp Filter
-enum FindFilesTimestampFilter: String, CaseIterable, Identifiable {
+enum FindFilesTimestampFilter: String, CaseIterable, Codable, Identifiable {
     case modified
     case accessed
     case both
@@ -57,7 +57,7 @@ enum FindFilesTimestampFilter: String, CaseIterable, Identifiable {
     }
 }
 // MARK: - Item Type Filter
-enum FindFilesItemTypeFilter: String, CaseIterable, Identifiable {
+enum FindFilesItemTypeFilter: String, CaseIterable, Codable, Identifiable {
     case filesAndFolders
     case filesOnly
     case foldersOnly
@@ -80,7 +80,7 @@ enum FindFilesSearchBackend: String, Sendable {
 }
 
 // MARK: - Size Unit
-enum FindFilesSizeUnit: String, CaseIterable, Identifiable {
+enum FindFilesSizeUnit: String, CaseIterable, Codable, Identifiable {
     case bytes = "B"
     case kilobytes = "KB"
     case megabytes = "MB"

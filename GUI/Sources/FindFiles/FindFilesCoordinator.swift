@@ -96,6 +96,7 @@ final class FindFilesCoordinator {
     // MARK: - Close
 
     func close() {
+        viewModel.savePreferences()
         viewModel.cancelSearch()
         findWindow?.makeFirstResponder(nil)
         findWindow?.close()
@@ -113,6 +114,7 @@ final class FindFilesCoordinator {
 
     func windowDidClose(_ closedWindow: NSWindow) {
         guard findWindow === closedWindow else { return }
+        viewModel.savePreferences()
         closedWindow.contentView = nil
         closedWindow.delegate = nil
         findWindow = nil

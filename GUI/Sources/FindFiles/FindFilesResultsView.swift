@@ -13,7 +13,7 @@ import SwiftUI
 
 struct FindFilesResultsView: View {
     @Bindable var viewModel: FindFilesViewModel
-    var appState: AppState? = nil
+    var appState: AppState?
     private let colorStore = ColorThemeStore.shared // @Observable singleton - no @State needed
 
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
@@ -21,6 +21,18 @@ struct FindFilesResultsView: View {
     @State private var lastResultCount: Int = 0
     @State private var userHasSelected: Bool = false // stops auto-scroll when user clicks
     @State private var sortTask: Task<Void, Never>?
+    @State private var columnCustomization: TableColumnCustomization<FindFilesResult>
+    private static let columnsKey = "findFiles.columns.v1"
+
+    init(viewModel: FindFilesViewModel, appState: AppState? = nil) {
+        self.viewModel = viewModel
+        self.appState = appState
+        let stored = MiMiDefaults.shared.data(forKey: Self.columnsKey)
+        let decoded = stored.flatMap {
+            try? JSONDecoder().decode(TableColumnCustomization<FindFilesResult>.self, from: $0)
+        }
+        _columnCustomization = State(initialValue: decoded ?? TableColumnCustomization())
+    }
 
     // MARK: - Fonts (static - same as FileRow)
 
@@ -52,6 +64,7 @@ struct FindFilesResultsView: View {
             if viewModel.results.isEmpty && viewModel.searchState != .searching {
                 emptyState
             } else {
+                resultsToolbar
                 resultsList
             }
         }
@@ -66,6 +79,18 @@ struct FindFilesResultsView: View {
             }
         }
         .onChange(of: sortOrder) { rebuildSort() }
+        .onChange(of: viewModel.selectedResultIDs) {
+            viewModel.selectedResult = viewModel.results.first {
+                viewModel.selectedResultIDs.contains($0.id)
+            }
+            if viewModel.searchState == .searching {
+                userHasSelected = !viewModel.selectedResultIDs.isEmpty
+            }
+        }
+        .onChange(of: columnCustomization) {
+            guard let data = try? JSONEncoder().encode(columnCustomization) else { return }
+            MiMiDefaults.shared.set(data, forKey: Self.columnsKey)
+        }
         .onChange(of: viewModel.searchState) {
             if viewModel.searchState == .searching { userHasSelected = false }
             if viewModel.searchState != .searching {
@@ -123,19 +148,40 @@ struct FindFilesResultsView: View {
 
     // MARK: - Results Table
 
+    private var resultsToolbar: some View {
+        HStack(spacing: 8) {
+            Text("\(viewModel.selectedResultIDs.count) selected")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+            Spacer()
+            Menu {
+                columnToggle("Number", id: "number")
+                columnToggle("Name", id: "name")
+                columnToggle("Path", id: "path")
+                columnToggle("Date Modified", id: "date")
+                columnToggle("Size", id: "size")
+                columnToggle("Match", id: "match")
+                Divider()
+                Button("Reset Columns") {
+                    columnCustomization = TableColumnCustomization()
+                }
+            } label: {
+                Label("Columns", systemImage: "rectangle.split.3x1")
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
     private var resultsList: some View {
         Table(
             cachedSorted,
-            selection: Binding(
-                get: { viewModel.selectedResult?.id },
-                set: { newID in
-                    viewModel.selectedResult = viewModel.results.first { $0.id == newID }
-                    if let name = viewModel.selectedResult?.fileName {
-                        log.debug("[FindFilesResults] selected '\(name)'")
-                    }
-                    if viewModel.searchState == .searching { userHasSelected = true }
-                }
-            ), sortOrder: $sortOrder
+            selection: $viewModel.selectedResultIDs,
+            sortOrder: $sortOrder,
+            columnCustomization: $columnCustomization
         ) {
             TableColumn("#") { result in
                 rowCell(result) {
@@ -147,11 +193,13 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 30, ideal: 36, max: 50)
+            .customizationID("number")
 
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
             .width(min: 50, ideal: 320)
+            .customizationID("name")
 
             TableColumn("Path", value: \.filePath) { result in
                 rowCell(result) {
@@ -178,6 +226,7 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 50, ideal: 180)
+            .customizationID("path")
 
             TableColumn("Date Mod.", value: \.sortableDate) { result in
                 rowCell(result) {
@@ -187,6 +236,7 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 50, ideal: 180)
+            .customizationID("date")
 
             TableColumn("Size", value: \.fileSize) { result in
                 rowCell(result) {
@@ -196,6 +246,7 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 30, ideal: 75)
+            .customizationID("size")
 
             TableColumn("Match") { result in
                 rowCell(result) {
@@ -221,6 +272,7 @@ struct FindFilesResultsView: View {
                 }
             }
             .width(min: 50, ideal: 220)
+            .customizationID("match")
         }
         .contextMenu(forSelectionType: FindFilesResult.ID.self) { selection in
             resultContextMenu(selection: selection)
@@ -281,29 +333,51 @@ struct FindFilesResultsView: View {
 
     @ViewBuilder
     private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
-        if let id = selection.first,
-           let result = viewModel.results.first(where: { $0.id == id })
-        {
+        let selected = viewModel.results.filter { selection.contains($0.id) }
+        let actionable = selected.filter { !$0.isInsideArchive && !$0.isPasswordProtected }
+        if selected.count == 1, let result = selected.first {
             Button("Go to File") {
                 if let state = appState { viewModel.goToFile(result: result, appState: state) }
             }
-            Button("Open") {}.disabled(true)
+            .disabled(appState == nil)
             Button("Reveal in Finder") { viewModel.revealInFinder(result: result) }
-            Divider()
-            Button("Copy Path") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.filePath, forType: .string)
-            }
-            Button("Copy as Pathname") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(result.fileURL.path, forType: .string)
-            }
+        }
+        Button(selected.count == 1 ? "Open" : "Open \(selected.count) Items") {
+            viewModel.openResults(actionable)
+        }
+        .disabled(actionable.isEmpty)
+        Divider()
+        Button(selected.count == 1 ? "Copy to Folder…" : "Copy \(selected.count) Items to Folder…") {
+            viewModel.copyResults(actionable)
+        }
+        .disabled(actionable.isEmpty)
+        Button(selected.count == 1 ? "Move to Folder…" : "Move \(selected.count) Items to Folder…") {
+            viewModel.moveResults(actionable)
+        }
+        .disabled(actionable.isEmpty)
+        Button(selected.count == 1 ? "Move to Trash" : "Move \(selected.count) Items to Trash", role: .destructive) {
+            viewModel.trashResults(actionable)
+        }
+        .disabled(actionable.isEmpty)
+        Divider()
+        Button(selected.count == 1 ? "Copy Path" : "Copy \(selected.count) Paths") {
+            viewModel.copyPaths(for: selected)
         }
         Divider()
+        Button("Select All") { viewModel.selectAllResults() }
         Button("Copy All Paths") { viewModel.copyResultPaths() }
             .disabled(viewModel.results.isEmpty)
-        Button("Export ResultsÉ") { viewModel.exportResults() }
+        Button("Export Results…") { viewModel.exportResults() }
             .disabled(viewModel.results.isEmpty)
+    }
+
+    // MARK: - Column Customization
+
+    private func columnToggle(_ title: String, id: String) -> some View {
+        Toggle(title, isOn: Binding(
+            get: { columnCustomization[visibility: id] != .hidden },
+            set: { columnCustomization[visibility: id] = $0 ? .visible : .hidden }
+        ))
     }
 
     // MARK: - Helpers
