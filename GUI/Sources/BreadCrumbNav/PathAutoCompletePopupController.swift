@@ -49,11 +49,6 @@ final class AutoCompletePopupModel {
         onSelect?(item)
     }
 
-    // MARK: - Accept Selected Item
-    func acceptSelectedItem() {
-        guard items.indices.contains(selectedIndex) else { return }
-        acceptItem(id: items[selectedIndex].id)
-    }
 }
 
 // MARK: - Auto Complete Popup Controller
@@ -136,10 +131,6 @@ final class AutoCompletePopupController {
         model.selectRow(index)
     }
 
-    // MARK: - Accept Selected Row
-    func acceptSelectedRow() {
-        model.acceptSelectedItem()
-    }
 
     // MARK: - Target Frame
     private func targetFrame(panelSize: NSSize, window: NSWindow) -> NSRect {
@@ -301,7 +292,7 @@ private struct AutoCompletePopupView: View {
             keyHint("⇥", label: "Complete")
             keyHint("↩", label: "Open")
             Spacer()
-            keyHint("esc", label: "Close")
+            keyHint("esc", label: "Cancel")
         }
         .padding(.horizontal, 10)
         .frame(height: 34)

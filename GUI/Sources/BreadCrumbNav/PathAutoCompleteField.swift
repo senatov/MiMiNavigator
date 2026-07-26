@@ -49,19 +49,12 @@ struct PathAutoCompleteField: View {
                     updateSuggestions(for: newValue)
                 }
                 .onSubmit {
-                    if showSuggestions {
-                        popupController.acceptSelectedRow()
-                    } else {
-                        dismissPopup()
-                        onSubmit()
-                    }
+                    dismissPopup()
+                    onSubmit()
                 }
                 .onExitCommand {
-                    if showSuggestions {
-                        dismissPopup()
-                    } else {
-                        onCancel()
-                    }
+                    dismissPopup()
+                    onCancel()
                 }
                 .onKeyPress(.downArrow) {
                     if showSuggestions, !suggestions.isEmpty {
@@ -233,13 +226,7 @@ struct PathAutoCompleteField: View {
 
     // MARK: - Accept Completion
     private func acceptCompletion() {
-        if !ghostSuffix.isEmpty {
-            suppressOnChange = true
-            text = text + ghostSuffix
-            ghostSuffix = ""
-            suppressOnChange = false
-            updateSuggestions(for: text)
-        } else if showSuggestions, !suggestions.isEmpty,
+        if showSuggestions, !suggestions.isEmpty,
             selectedIndex >= 0, selectedIndex < suggestions.count
         {
             applySuggestion(suggestions[selectedIndex])

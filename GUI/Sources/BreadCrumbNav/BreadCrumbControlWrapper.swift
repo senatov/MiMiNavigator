@@ -124,61 +124,25 @@ struct BreadCrumbControlWrapper: View {
 
     // MARK: - Editing View
     private var editingView: some View {
-        HStack(spacing: 8) {
-            PathAutoCompleteField(
-                text: $editedPathStr,
-                isFocused: $isTextFieldFocused,
-                recentDirectories: { parentURL in
-                    appState.navigationHistory(for: panelSide).recentChildren(of: parentURL)
-                },
-                onSubmit: {
-                    log.info("Submitted new path: \(editedPathStr)")
-                    applyPathUpdate()
-                },
-                onCancel: {
-                    log.info("Exit command received (Escape)")
-                    exitEditingMode()
-                }
-            )
-            .onAppear {
-                setupEditingMode()
+        PathAutoCompleteField(
+            text: $editedPathStr,
+            isFocused: $isTextFieldFocused,
+            recentDirectories: { parentURL in
+                appState.navigationHistory(for: panelSide).recentChildren(of: parentURL)
+            },
+            onSubmit: {
+                log.info("Submitted new path: \(editedPathStr)")
+                applyPathUpdate()
+            },
+            onCancel: {
+                log.info("Exit command received (Escape)")
+                exitEditingMode()
             }
-            confirmButton
-            cancelButton
+        )
+        .onAppear {
+            setupEditingMode()
         }
         .transition(.opacity)
-    }
-
-    // MARK: - Confirm Button
-    private var confirmButton: some View {
-        Button {
-            log.info("Confirmed path editing with checkmark")
-            applyPathUpdate()
-        } label: {
-            Image(systemName: "checkmark.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, Color(#colorLiteral(red: 0.2, green: 0.78, blue: 0.35, alpha: 1.0)))
-                .font(.system(size: 18, weight: .light))
-                .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
-        }
-        .buttonStyle(.plain)
-        .help(L10n.PathInput.applyChangesHelp)
-    }
-
-    // MARK: - Cancel Button
-    private var cancelButton: some View {
-        Button {
-            log.info("Cancelled path editing with X button")
-            exitEditingMode()
-        } label: {
-            Image(systemName: "xmark.circle.fill")
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, Color(#colorLiteral(red: 0.9, green: 0.25, blue: 0.2, alpha: 1.0)))
-                .font(.system(size: 18, weight: .light))
-                .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
-        }
-        .buttonStyle(.plain)
-        .help(L10n.PathInput.cancelHelp)
     }
 
     // MARK: - Setup Editing Mode
