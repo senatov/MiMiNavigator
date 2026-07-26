@@ -12,6 +12,7 @@ import SwiftUI
 // MARK: - Auto Complete Item
 struct AutoCompleteItem: Identifiable, Equatable {
     let file: CustomFile
+    let isRecent: Bool
     let matchPrefix: String
 
     var id: String { file.id }
@@ -336,6 +337,12 @@ private struct AutoCompletePopupRow: View {
                 .allowsHitTesting(false)
             highlightedName
             Spacer(minLength: 8)
+            if item.isRecent {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .help("Recently visited here")
+            }
             if isSelected {
                 Text("↩")
                     .font(.caption.weight(.medium))

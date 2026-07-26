@@ -104,10 +104,11 @@ final class PanelNavigationHistory {
         }
 
         if record {
+            history.removeAll { $0.standardizedFileURL == normalized }
             history.append(normalized)
             currentIndex = history.count - 1
 
-            let maxEntries = 100
+            let maxEntries = 256
             if history.count > maxEntries {
                 let removeCount = history.count - maxEntries
                 history.removeFirst(removeCount)
@@ -201,6 +202,14 @@ final class PanelNavigationHistory {
         return Array(history[start..<end])
     }
 
+    // MARK: - Recent Children
+    func recentChildren(of parentURL: URL, limit: Int = 4) -> [URL] {
+        let parent = parentURL.standardizedFileURL
+        return history.reversed().filter {
+            $0.deletingLastPathComponent().standardizedFileURL == parent
+        }.prefix(limit).map(\.self)
+    }
+
     /// Jump to specific path in history (for dropdown menu)
     func jumpTo(_ url: URL) -> Bool {
         let normalized = url.standardizedFileURL
@@ -232,7 +241,7 @@ final class PanelNavigationHistory {
         }
 
         // Validate paths exist (allow remote paths through)
-        history = hist.compactMap { path in
+        let loadedHistory = hist.compactMap { path in
             let url = URL(fileURLWithPath: path)
             if AppState.isRemotePath(url) {
                 return url
@@ -243,18 +252,27 @@ final class PanelNavigationHistory {
             }
             return nil
         }
+        let loadedCurrentPath = loadedHistory.indices.contains(idx) ? loadedHistory[idx].standardizedFileURL : nil
+        history = Self.deduplicatedKeepingLatest(loadedHistory)
 
         // Adjust index if needed
         if history.isEmpty {
             currentIndex = -1
-        } else if idx >= history.count {
-            currentIndex = history.count - 1
-        } else if idx < 0 {
-            currentIndex = 0
+        } else if let loadedCurrentPath,
+                  let restoredIndex = history.firstIndex(where: { $0.standardizedFileURL == loadedCurrentPath }) {
+            currentIndex = restoredIndex
         } else {
-            currentIndex = idx
+            currentIndex = history.count - 1
         }
         updateNavigationState()
+    }
+
+    // MARK: - Deduplicate History
+    private static func deduplicatedKeepingLatest(_ urls: [URL]) -> [URL] {
+        var seen = Set<String>()
+        return urls.reversed().filter {
+            seen.insert($0.standardizedFileURL.path).inserted
+        }.reversed()
     }
 
     /// Clear history (for testing or reset)

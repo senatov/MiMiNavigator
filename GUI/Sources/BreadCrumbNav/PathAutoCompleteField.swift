@@ -13,6 +13,7 @@ import SwiftUI
 struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
+    let recentDirectories: (URL) -> [URL]
     let onSubmit: () -> Void
     let onCancel: () -> Void
 
@@ -137,7 +138,7 @@ struct PathAutoCompleteField: View {
 
         do {
             let contents = try loadDirectoryContents(at: dirURL)
-            let matches = buildSuggestions(from: contents, prefix: prefix)
+            let matches = buildSuggestions(from: contents, prefix: prefix, directoryURL: dirURL)
 
             applySuggestions(matches, prefix: prefix, directoryURL: dirURL)
         } catch {
@@ -167,19 +168,29 @@ struct PathAutoCompleteField: View {
         )
     }
 
-    private func buildSuggestions(from contents: [URL], prefix: String) -> [String] {
+    private func buildSuggestions(from contents: [URL], prefix: String, directoryURL: URL) -> [String] {
         let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
-
-        let result =
-            contents
+        let recentRanks = Dictionary(
+            uniqueKeysWithValues: recentDirectories(directoryURL).enumerated().map {
+                ($0.element.standardizedFileURL.path, $0.offset)
+            }
+        )
+        let result = contents
             .filter { isDirAtURL($0) }
-            .map(\.lastPathComponent)
-            .filter { name in
+            .filter { url in
+                let name = url.lastPathComponent
                 if !showHidden && name.hasPrefix(".") { return false }
                 return prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
             }
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-        return result
+            .sorted { lhs, rhs in
+                let lhsRank = recentRanks[lhs.standardizedFileURL.path]
+                let rhsRank = recentRanks[rhs.standardizedFileURL.path]
+                if let lhsRank, let rhsRank { return lhsRank < rhsRank }
+                if lhsRank != nil { return true }
+                if rhsRank != nil { return false }
+                return lhs.lastPathComponent.localizedCaseInsensitiveCompare(rhs.lastPathComponent) == .orderedAscending
+            }
+        return result.map(\.lastPathComponent)
     }
 
     private func applySuggestions(_ matches: [String], prefix: String, directoryURL: URL) {
@@ -193,9 +204,12 @@ struct PathAutoCompleteField: View {
         updateGhostFromSelection()
 
         if showSuggestions {
+            let recentPaths = Set(recentDirectories(directoryURL).map { $0.standardizedFileURL.path })
             let items = matches.map {
-                AutoCompleteItem(
-                    file: CustomFile(name: $0, path: directoryURL.appendingPathComponent($0).path),
+                let url = directoryURL.appendingPathComponent($0)
+                return AutoCompleteItem(
+                    file: CustomFile(name: $0, path: url.path),
+                    isRecent: recentPaths.contains(url.standardizedFileURL.path),
                     matchPrefix: prefix
                 )
             }
@@ -209,7 +223,7 @@ struct PathAutoCompleteField: View {
                     updateGhostFromSelection()
                 },
                 onSelect: { item in
-                    executeSuggestion(path: item.file.pathStr)
+                    drillIntoSuggestion(path: item.file.pathStr)
                 }
             )
         } else {
@@ -248,14 +262,13 @@ struct PathAutoCompleteField: View {
         updateSuggestions(for: text)
     }
 
-    // MARK: - Execute Suggestion
-    private func executeSuggestion(path: String) {
-        log.debug("[PathAutoComplete] executing exact path='\(path)'")
+    // MARK: - Drill Into Suggestion
+    private func drillIntoSuggestion(path: String) {
+        log.debug("[PathAutoComplete] drilling into path='\(path)'")
         suppressOnChange = true
-        text = path
+        text = path.hasSuffix("/") ? path : path + "/"
         suppressOnChange = false
-        dismissPopup()
-        onSubmit()
+        updateSuggestions(for: text)
     }
 
     // MARK: - Dismiss
