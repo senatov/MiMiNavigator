@@ -239,7 +239,7 @@ final class PanelNavigationHistory {
         else {
             return
         }
-
+        let storedCurrentPath = hist.indices.contains(idx) ? hist[idx] : nil
         // Validate paths exist (allow remote paths through)
         let loadedHistory = hist.compactMap { path in
             let url = URL(fileURLWithPath: path)
@@ -252,7 +252,9 @@ final class PanelNavigationHistory {
             }
             return nil
         }
-        let loadedCurrentPath = loadedHistory.indices.contains(idx) ? loadedHistory[idx].standardizedFileURL : nil
+        let loadedCurrentPath = storedCurrentPath.flatMap { storedPath in
+            loadedHistory.first { $0.path == storedPath }?.standardizedFileURL
+        }
         history = Self.deduplicatedKeepingLatest(loadedHistory)
 
         // Adjust index if needed

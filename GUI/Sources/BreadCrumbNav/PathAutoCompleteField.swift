@@ -24,6 +24,7 @@ struct PathAutoCompleteField: View {
     @State private var ghostSuffix: String = ""
     @State private var suppressOnChange = false
     @State private var popupController = AutoCompletePopupController()
+    @State private var suggestionTask: Task<Void, Never>?
 
     // MARK: - Body
     var body: some View {
@@ -108,6 +109,7 @@ struct PathAutoCompleteField: View {
                     }
                 }
                 .onDisappear {
+                    suggestionTask?.cancel()
                     popupController.hide()
                 }
         }
@@ -115,32 +117,28 @@ struct PathAutoCompleteField: View {
 
     // MARK: - Update Suggestions
     private func updateSuggestions(for path: String) {
+        suggestionTask?.cancel()
         guard let resolvedPath = expandedPath(path),
               isValidAbsolutePath(resolvedPath)
         else {
             dismissPopup()
             return
         }
-
-        let exactURL = URL(fileURLWithPath: resolvedPath)
-        let browseExactDirectory = !path.hasSuffix("/") && directoryExists(exactURL)
-        let (parentURL, _) = splitPathAndPrefix(resolvedPath)
-        let dirURL = browseExactDirectory ? exactURL : parentURL
-        let prefix = browseExactDirectory ? "" : splitDisplayPathAndPrefix(path).prefix
-
-        guard directoryExists(dirURL) else {
-            dismissPopup()
-            return
-        }
-
-        do {
-            let contents = try loadDirectoryContents(at: dirURL)
-            let matches = buildSuggestions(from: contents, prefix: prefix, directoryURL: dirURL)
-
-            applySuggestions(matches, prefix: prefix, directoryURL: dirURL)
-        } catch {
-            log.verbose("[PathAutoComplete] scan failed: \(error.localizedDescription)")
-            dismissPopup()
+        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+        suggestionTask = Task {
+            let result = await Self.scanSuggestions(
+                displayPath: path,
+                resolvedPath: resolvedPath,
+                showHidden: showHidden
+            )
+            guard !Task.isCancelled, text == path else { return }
+            guard let result else {
+                dismissPopup()
+                return
+            }
+            let directoryURL = URL(fileURLWithPath: result.directoryPath)
+            let matches = prioritizeRecent(result.matches, in: directoryURL)
+            applySuggestions(matches, prefix: result.prefix, directoryURL: directoryURL)
         }
     }
 
@@ -153,41 +151,20 @@ struct PathAutoCompleteField: View {
         return (resolved.expanded as NSString).expandingTildeInPath
     }
 
-    private func directoryExists(_ url: URL) -> Bool {
-        FileManager.default.fileExists(atPath: url.path)
-    }
-
-    private func loadDirectoryContents(at url: URL) throws -> [URL] {
-        try FileManager.default.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: []
-        )
-    }
-
-    private func buildSuggestions(from contents: [URL], prefix: String, directoryURL: URL) -> [String] {
-        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+    private func prioritizeRecent(_ matches: [String], in directoryURL: URL) -> [String] {
         let recentRanks = Dictionary(
             uniqueKeysWithValues: recentDirectories(directoryURL).enumerated().map {
                 ($0.element.standardizedFileURL.path, $0.offset)
             }
         )
-        let result = contents
-            .filter { isDirAtURL($0) }
-            .filter { url in
-                let name = url.lastPathComponent
-                if !showHidden && name.hasPrefix(".") { return false }
-                return prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
-            }
-            .sorted { lhs, rhs in
-                let lhsRank = recentRanks[lhs.standardizedFileURL.path]
-                let rhsRank = recentRanks[rhs.standardizedFileURL.path]
+        return matches.sorted { lhs, rhs in
+                let lhsRank = recentRanks[directoryURL.appendingPathComponent(lhs).standardizedFileURL.path]
+                let rhsRank = recentRanks[directoryURL.appendingPathComponent(rhs).standardizedFileURL.path]
                 if let lhsRank, let rhsRank { return lhsRank < rhsRank }
                 if lhsRank != nil { return true }
                 if rhsRank != nil { return false }
-                return lhs.lastPathComponent.localizedCaseInsensitiveCompare(rhs.lastPathComponent) == .orderedAscending
+                return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
             }
-        return result.map(\.lastPathComponent)
     }
 
     private func applySuggestions(_ matches: [String], prefix: String, directoryURL: URL) {
@@ -244,8 +221,8 @@ struct PathAutoCompleteField: View {
         suppressOnChange = true
         text = completedPath
         suppressOnChange = false
-        updateSuggestions(for: text)
         onNavigate(completedPath)
+        updateSuggestions(for: text)
     }
 
     // MARK: - Dismiss
@@ -296,9 +273,77 @@ struct PathAutoCompleteField: View {
     }
 
     private func currentPrefix() -> String { splitDisplayPathAndPrefix(text).prefix }
+}
 
-    private func isDirAtURL(_ url: URL) -> Bool {
-        var isDir: ObjCBool = false
-        return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue
+// MARK: - Suggestion Scan
+private extension PathAutoCompleteField {
+    struct SuggestionScanResult: Sendable {
+        let directoryPath: String
+        let prefix: String
+        let matches: [String]
+    }
+
+    nonisolated static func scanSuggestions(
+        displayPath: String,
+        resolvedPath: String,
+        showHidden: Bool
+    ) async -> SuggestionScanResult? {
+        await Task.detached(priority: .userInitiated) {
+            let fileManager = FileManager.default
+            let exactURL = URL(fileURLWithPath: resolvedPath)
+            let browseExactDirectory = !displayPath.hasSuffix("/") && isDirectory(exactURL, fileManager: fileManager)
+            let directoryURL = browseExactDirectory ? exactURL : exactURL.deletingLastPathComponent()
+            let prefix = browseExactDirectory || displayPath.hasSuffix("/")
+                ? ""
+                : (displayPath as NSString).lastPathComponent
+            guard isDirectory(directoryURL, fileManager: fileManager) else { return nil }
+            do {
+                let contents = try directoryContents(at: directoryURL, fileManager: fileManager)
+                var matches: [String] = []
+                for url in contents {
+                    guard !Task.isCancelled else { return nil }
+                    let name = url.lastPathComponent
+                    guard (showHidden || !name.hasPrefix(".")),
+                          (prefix.isEmpty
+                              || name.range(of: prefix, options: [.caseInsensitive, .anchored]) != nil),
+                          isDirectory(url, fileManager: fileManager)
+                    else { continue }
+                    matches.append(name)
+                }
+                matches.sort { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+                return SuggestionScanResult(
+                    directoryPath: directoryURL.path,
+                    prefix: prefix,
+                    matches: matches
+                )
+            } catch {
+                log.verbose("[PathAutoComplete] scan failed: \(error.localizedDescription)")
+                return nil
+            }
+        }.value
+    }
+
+    nonisolated static func directoryContents(at url: URL, fileManager: FileManager) throws -> [URL] {
+        do {
+            return try fileManager.contentsOfDirectory(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: []
+            )
+        } catch {
+            let nsError = error as NSError
+            guard nsError.code == NSFileReadNoPermissionError else { throw error }
+            let names = try fileManager.contentsOfDirectory(atPath: url.path)
+            log.debug("[PathAutoComplete] metadata prefetch denied, using name-only fallback: \(url.path)")
+            return names.map { url.appendingPathComponent($0) }
+        }
+    }
+
+    nonisolated static func isDirectory(_ url: URL, fileManager: FileManager) -> Bool {
+        if let values = try? url.resourceValues(forKeys: [.isDirectoryKey]), values.isDirectory == true {
+            return true
+        }
+        var isDirectory: ObjCBool = false
+        return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 }

@@ -261,10 +261,10 @@ private struct AutoCompletePopupView: View {
         HStack(spacing: 7) {
             Image(systemName: "folder.fill")
                 .foregroundStyle(.tint)
-            Text("Folders")
+            Text(L10n.PathInput.folders)
                 .font(.system(size: 12, weight: .semibold))
             Spacer()
-            Text("\(model.items.count) \(model.items.count == 1 ? "result" : "results")")
+            Text(L10n.PathInput.resultsCount(model.items.count))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -318,11 +318,11 @@ private struct AutoCompletePopupView: View {
 
     private var footer: some View {
         HStack(spacing: 12) {
-            keyHint("↑↓", label: "Select")
-            keyHint("⇥", label: "Complete")
-            keyHint("↩", label: "Open")
+            keyHint("↑↓", label: L10n.PathInput.select)
+            keyHint("⇥", label: L10n.PathInput.complete)
+            keyHint("↩", label: L10n.PathInput.open)
             Spacer()
-            keyHint("esc", label: "Cancel")
+            keyHint("esc", label: L10n.Button.cancel)
         }
         .padding(.horizontal, 10)
         .frame(height: 34)

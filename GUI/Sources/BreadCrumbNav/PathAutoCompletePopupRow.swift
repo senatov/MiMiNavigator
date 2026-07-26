@@ -26,7 +26,7 @@ struct AutoCompletePopupRow: View {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.caption2)
                     .foregroundStyle(Color.accentColor.opacity(0.8))
-                    .help("Recently visited here")
+                    .help(L10n.PathInput.recentlyVisited)
             }
             if isSelected {
                 Text("↩")

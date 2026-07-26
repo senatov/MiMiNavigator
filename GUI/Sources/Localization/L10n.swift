@@ -137,6 +137,14 @@ enum L10n {
         static let cancelHelp = String(localized: "Cancel (⎋)", comment: "Cancel tooltip")
         static let pathLabel = String(localized: "Path", comment: "Path label")
         static let nameLabel = String(localized: "Name", comment: "Name label")
+        static let folders = String(localized: "Folders", comment: "Path autocomplete section title")
+        static let select = String(localized: "Select", comment: "Path autocomplete keyboard hint")
+        static let complete = String(localized: "Complete", comment: "Path autocomplete keyboard hint")
+        static let open = String(localized: "Open", comment: "Path autocomplete keyboard hint")
+        static let recentlyVisited = String(localized: "Recently visited here", comment: "Recent path tooltip")
+        static func resultsCount(_ count: Int) -> String {
+            String(localized: "\(count) results", comment: "Path autocomplete result count")
+        }
     }
     
     // MARK: - Items Description
