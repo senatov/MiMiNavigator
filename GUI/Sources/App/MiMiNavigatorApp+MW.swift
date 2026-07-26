@@ -55,6 +55,9 @@ extension MiMiNavigatorApp {
             .sheet(isPresented: $showFullDiskOnboarding) {
                 FullDiskAccessOnboarding(isPresented: $showFullDiskOnboarding)
             }
+            .sheet(isPresented: $showGitHubStarPrompt) {
+                GitHubStarPromptView(isPresented: $showGitHubStarPrompt, store: gitHubStarStore)
+            }
     }
     
     // MARK: - Bindings
@@ -81,6 +84,24 @@ extension MiMiNavigatorApp {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 showAutomationOnboarding = true
             }
+        }
+        scheduleGitHubStarPromptIfNeeded()
+    }
+
+    // MARK: - GitHub Star Prompt
+
+    private func scheduleGitHubStarPromptIfNeeded(after delay: TimeInterval = 2.5) {
+        guard !didScheduleGitHubStarPrompt, gitHubStarStore.shouldAutoPrompt else { return }
+        didScheduleGitHubStarPrompt = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            if showFullDiskOnboarding || showAutomationOnboarding {
+                didScheduleGitHubStarPrompt = false
+                scheduleGitHubStarPromptIfNeeded(after: 1.5)
+                return
+            }
+            guard !gitHubStarStore.isAcknowledged else { return }
+            gitHubStarStore.recordPromptShown()
+            showGitHubStarPrompt = true
         }
     }
 }

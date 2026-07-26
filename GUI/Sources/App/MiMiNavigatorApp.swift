@@ -23,13 +23,16 @@ struct MiMiNavigatorApp: App {
     @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State var showAutomationOnboarding = false
     @State var showFullDiskOnboarding = false
+    @State var showGitHubStarPrompt = false
     @State var isFinderSidebarVisible = false
+    @State var gitHubStarStore = GitHubStarAcknowledgementStore.shared
 
     // MARK: - Lifecycle State
 
     @State var didBindAppState = false
     @State var didWireCoordinatorCallbacks = false
     @State var didRestoreStartupConnection = false
+    @State var didScheduleGitHubStarPrompt = false
 
     // MARK: - Environment
 
@@ -54,6 +57,14 @@ struct MiMiNavigatorApp: App {
                 .sharedBackgroundVisibility(.hidden)
             AppBuildInfo.toolBarItem()
                 .sharedBackgroundVisibility(.hidden)
+            if !gitHubStarStore.isAcknowledged {
+                ToolbarItem(placement: .status) {
+                    GitHubStarBadge {
+                        showGitHubStarPrompt = true
+                    }
+                }
+                .sharedBackgroundVisibility(.hidden)
+            }
         }
     }
 
