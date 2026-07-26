@@ -121,8 +121,11 @@ struct PathAutoCompleteField: View {
             return
         }
 
-        let (dirURL, _) = splitPathAndPrefix(resolvedPath)
-        let prefix = splitDisplayPathAndPrefix(path).prefix
+        let exactURL = URL(fileURLWithPath: resolvedPath)
+        let browseExactDirectory = !path.hasSuffix("/") && directoryExists(exactURL)
+        let (parentURL, _) = splitPathAndPrefix(resolvedPath)
+        let dirURL = browseExactDirectory ? exactURL : parentURL
+        let prefix = browseExactDirectory ? "" : splitDisplayPathAndPrefix(path).prefix
 
         guard directoryExists(dirURL) else {
             dismissPopup()
@@ -229,24 +232,8 @@ struct PathAutoCompleteField: View {
         if showSuggestions, !suggestions.isEmpty,
             selectedIndex >= 0, selectedIndex < suggestions.count
         {
-            applySuggestion(suggestions[selectedIndex])
+            popupController.acceptSelectedRow()
         }
-    }
-
-    // MARK: - Apply Suggestion
-    private func applySuggestion(_ name: String) {
-        let displayParts = splitDisplayPathAndPrefix(text)
-        let fullPath = appendDisplayComponent(name, to: displayParts.directory)
-        let resolvedFullPath = expandedPath(fullPath) ?? fullPath
-        suppressOnChange = true
-        if isDirAtURL(URL(fileURLWithPath: resolvedFullPath)) {
-            text = fullPath + "/"
-        } else {
-            text = fullPath
-        }
-        ghostSuffix = ""
-        suppressOnChange = false
-        updateSuggestions(for: text)
     }
 
     // MARK: - Drill Into Suggestion
@@ -294,12 +281,6 @@ struct PathAutoCompleteField: View {
         let nsPath = path as NSString
         let directory = nsPath.deletingLastPathComponent
         return (directory == "." ? "" : directory, nsPath.lastPathComponent)
-    }
-
-    private func appendDisplayComponent(_ component: String, to directory: String) -> String {
-        guard !directory.isEmpty else { return component }
-        guard directory != "/" else { return "/" + component }
-        return directory + "/" + component
     }
 
     private func splitPathAndPrefix(_ path: String) -> (URL, String) {

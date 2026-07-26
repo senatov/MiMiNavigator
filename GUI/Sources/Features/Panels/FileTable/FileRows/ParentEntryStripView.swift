@@ -19,7 +19,7 @@ struct ParentEntryStripView: View {
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
     @State private var keyboardPulse = false
-    private var label: String { "\(parentName)   (\(rowsCount) dirs)" }
+    private var label: String { "Parent: \(parentName)   (\(rowsCount) dirs)" }
     private var textColor: Color {
         isActive ? Self.activeContentColor : Color.black
     }

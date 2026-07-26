@@ -49,6 +49,12 @@ final class AutoCompletePopupModel {
         onSelect?(item)
     }
 
+    // MARK: - Accept Selected Item
+    func acceptSelectedItem() {
+        guard items.indices.contains(selectedIndex) else { return }
+        acceptItem(id: items[selectedIndex].id)
+    }
+
 }
 
 // MARK: - Auto Complete Popup Controller
@@ -129,6 +135,11 @@ final class AutoCompletePopupController {
     // MARK: - Select Row
     func selectRow(_ index: Int) {
         model.selectRow(index)
+    }
+
+    // MARK: - Accept Selected Row
+    func acceptSelectedRow() {
+        model.acceptSelectedItem()
     }
 
 
