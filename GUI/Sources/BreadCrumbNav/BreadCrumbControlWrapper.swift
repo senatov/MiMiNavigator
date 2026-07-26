@@ -130,6 +130,9 @@ struct BreadCrumbControlWrapper: View {
             recentDirectories: { parentURL in
                 appState.navigationHistory(for: panelSide).recentChildren(of: parentURL)
             },
+            onNavigate: { path in
+                submitPathUpdate(path)
+            },
             onSubmit: {
                 log.info("Submitted new path: \(editedPathStr)")
                 applyPathUpdate()

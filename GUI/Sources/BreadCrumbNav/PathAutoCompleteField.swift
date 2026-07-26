@@ -14,6 +14,7 @@ struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
     let recentDirectories: (URL) -> [URL]
+    let onNavigate: (String) -> Void
     let onSubmit: () -> Void
     let onCancel: () -> Void
 
@@ -239,10 +240,12 @@ struct PathAutoCompleteField: View {
     // MARK: - Drill Into Suggestion
     private func drillIntoSuggestion(path: String) {
         log.debug("[PathAutoComplete] drilling into path='\(path)'")
+        let completedPath = path.hasSuffix("/") ? path : path + "/"
         suppressOnChange = true
-        text = path.hasSuffix("/") ? path : path + "/"
+        text = completedPath
         suppressOnChange = false
         updateSuggestions(for: text)
+        onNavigate(completedPath)
     }
 
     // MARK: - Dismiss

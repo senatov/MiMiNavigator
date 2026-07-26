@@ -69,6 +69,7 @@ final class AutoCompletePopupController {
     private let rowHeight: CGFloat = 34
     private let maxVisibleRows = 8
     private let popupChromeHeight: CGFloat = 76
+    private let recentSeparatorHeight: CGFloat = 7
 
     // MARK: - Show
     func show(
@@ -86,7 +87,9 @@ final class AutoCompletePopupController {
         model.onHighlight = onHighlight
         model.onSelect = onSelect
         let visibleRows = min(items.count, maxVisibleRows)
-        let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight
+        let hasRecentSeparator = items.contains(where: \.isRecent) && items.contains { !$0.isRecent }
+        let separatorHeight = hasRecentSeparator ? recentSeparatorHeight : 0
+        let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight + separatorHeight
         let panelWidth = max(anchorFrame.width, 420)
         if panel == nil {
             createPanel()
@@ -234,6 +237,7 @@ private struct AutoCompletePopupView: View {
         static let rowCornerRadius: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let rowHeight: CGFloat = 34
+        static let recentSeparatorHeight: CGFloat = 7
     }
 
     var body: some View {
@@ -273,6 +277,13 @@ private struct AutoCompletePopupView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
+                        if index > 0, model.items[index - 1].isRecent, !item.isRecent {
+                            Rectangle()
+                                .fill(.primary.opacity(0.16))
+                                .frame(height: 1)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                        }
                         AutoCompletePopupRow(
                             item: item,
                             isSelected: index == model.selectedIndex,
@@ -294,7 +305,15 @@ private struct AutoCompletePopupView: View {
                 proxy.scrollTo(items[model.selectedIndex].id, anchor: .top)
             }
         }
-        .frame(height: CGFloat(min(model.items.count, 8)) * Layout.rowHeight + 8)
+        .frame(
+            height: CGFloat(min(model.items.count, 8)) * Layout.rowHeight
+                + 8
+                + (hasRecentSeparator ? Layout.recentSeparatorHeight : 0)
+        )
+    }
+
+    private var hasRecentSeparator: Bool {
+        model.items.contains(where: \.isRecent) && model.items.contains { !$0.isRecent }
     }
 
     private var footer: some View {
@@ -321,75 +340,5 @@ private struct AutoCompletePopupView: View {
             Text(label)
                 .font(.caption2)
         }
-    }
-}
-
-// MARK: - Auto Complete Popup Row
-private struct AutoCompletePopupRow: View {
-    let item: AutoCompleteItem
-    let isSelected: Bool
-    let selectionNamespace: Namespace.ID
-    let onAccept: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            AsyncSmartIconView(file: item.file)
-                .frame(width: 18, height: 18)
-                .allowsHitTesting(false)
-            highlightedName
-            Spacer(minLength: 8)
-            if item.isRecent {
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .help("Recently visited here")
-            }
-            if isSelected {
-                Text("↩")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.tertiary)
-                    .transition(.opacity)
-            }
-        }
-        .padding(.horizontal, 8)
-        .frame(height: 34)
-        .contentShape(.rect)
-        .background {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.14))
-                    .matchedGeometryEffect(id: "selection", in: selectionNamespace)
-            } else if isHovered {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.primary.opacity(0.055))
-            }
-        }
-        .onHover { isHovered = $0 }
-        .onTapGesture(perform: onAccept)
-        .animation(.easeOut(duration: 0.12), value: isHovered)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private var highlightedName: some View {
-        HStack(spacing: 0) {
-            Text(matchedPrefix)
-                .fontWeight(.semibold)
-            Text(unmatchedSuffix)
-        }
-        .font(.system(size: 13))
-        .lineLimit(1)
-        .truncationMode(.middle)
-    }
-
-    private var matchedPrefix: String {
-        guard !item.matchPrefix.isEmpty,
-              item.name.range(of: item.matchPrefix, options: [.caseInsensitive, .anchored]) != nil
-        else { return "" }
-        return String(item.name.prefix(item.matchPrefix.count))
-    }
-
-    private var unmatchedSuffix: String {
-        String(item.name.dropFirst(matchedPrefix.count))
     }
 }
