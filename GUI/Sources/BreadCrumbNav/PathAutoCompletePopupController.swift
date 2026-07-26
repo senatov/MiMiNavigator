@@ -5,16 +5,18 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import AppKit
+import FileModelKit
 import Observation
 import SwiftUI
 
 // MARK: - Auto Complete Item
 struct AutoCompleteItem: Identifiable, Equatable {
-    let name: String
-    let isDirectory: Bool
+    let file: CustomFile
     let matchPrefix: String
 
-    var id: String { name }
+    var id: String { file.id }
+    var name: String { file.nameStr }
+    var isDirectory: Bool { file.isDirectory }
 }
 
 // MARK: - Auto Complete Popup Model
@@ -309,10 +311,9 @@ private struct AutoCompletePopupRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: item.isDirectory ? "folder.fill" : "doc.fill")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(item.isDirectory ? Color.accentColor : Color.secondary)
-                .frame(width: 18)
+            AsyncSmartIconView(file: item.file)
+                .frame(width: 18, height: 18)
+                .allowsHitTesting(false)
             highlightedName
             Spacer(minLength: 8)
             if isSelected {

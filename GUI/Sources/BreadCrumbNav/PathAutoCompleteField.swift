@@ -6,6 +6,7 @@
 // Description: Text field with directory autocomplete — NSPanel-based dropdown + inline ghost completion.
 
 import AppKit
+import FileModelKit
 import SwiftUI
 
 // MARK: - Path Auto Complete Field
@@ -136,7 +137,7 @@ struct PathAutoCompleteField: View {
             let contents = try loadDirectoryContents(at: dirURL)
             let matches = buildSuggestions(from: contents, prefix: prefix)
 
-            applySuggestions(matches, prefix: prefix)
+            applySuggestions(matches, prefix: prefix, directoryURL: dirURL)
         } catch {
             log.verbose("[PathAutoComplete] scan failed: \(error.localizedDescription)")
             dismissPopup()
@@ -184,7 +185,7 @@ struct PathAutoCompleteField: View {
         return result
     }
 
-    private func applySuggestions(_ matches: [String], prefix: String) {
+    private func applySuggestions(_ matches: [String], prefix: String, directoryURL: URL) {
         suggestions = matches
         selectedIndex = 0
         showSuggestions = !matches.isEmpty
@@ -193,7 +194,10 @@ struct PathAutoCompleteField: View {
 
         if showSuggestions {
             let items = matches.map {
-                AutoCompleteItem(name: $0, isDirectory: true, matchPrefix: prefix)
+                AutoCompleteItem(
+                    file: CustomFile(name: $0, path: directoryURL.appendingPathComponent($0).path),
+                    matchPrefix: prefix
+                )
             }
 
             popupController.show(items: items, selectedIndex: 0) { idx in
@@ -267,7 +271,7 @@ struct PathAutoCompleteField: View {
     // MARK: - Helpers
     private func splitDisplayPathAndPrefix(_ path: String) -> (directory: String, prefix: String) {
         if path.hasSuffix("/") {
-            return (String(path.dropLast()), "")
+            return (path == "/" ? "/" : String(path.dropLast()), "")
         }
 
         let nsPath = path as NSString
