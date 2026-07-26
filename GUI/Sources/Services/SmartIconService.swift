@@ -25,9 +25,12 @@ enum SmartIconService {
     // MARK: - Primary API: icon for CustomFile
     @MainActor
     static func icon(for file: CustomFile) -> NSImage {
-        let extKey = (file.urlValue.pathExtension.lowercased()
-            + (file.isDirectory ? "_dir" : "")
-            + (file.isSymbolicLink ? "_sym" : "")) as NSString
+        let extKey =
+            (
+                file.isDirectory
+                    ? "dir:\(file.urlValue.standardizedFileURL.path)"
+                    : file.urlValue.pathExtension.lowercased() + (file.isSymbolicLink ? "_sym" : "")
+            ) as NSString
         if let cached = iconCache.object(forKey: extKey) {
             return cached
         }
@@ -43,10 +46,13 @@ enum SmartIconService {
         if file.isDirectory {
             // OS-hidden dirs (~/Library etc.) — eye.slash badge
             if file.isOSHiddenOnly {
-                return OSHiddenIconComposer.compose(url: url, size: iconSize)
+                let icon = OSHiddenIconComposer.compose(url: url, size: iconSize)
+                iconCache.setObject(icon, forKey: extKey)
+                return icon
             }
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
+            iconCache.setObject(icon, forKey: extKey)
             return icon
         }
         let pathExtension = url.pathExtension.lowercased()

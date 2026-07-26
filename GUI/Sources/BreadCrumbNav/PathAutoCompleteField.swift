@@ -23,8 +23,6 @@ struct PathAutoCompleteField: View {
     @State private var suppressOnChange = false
     @State private var popupController = AutoCompletePopupController()
 
-    private let maxSuggestions = 12
-
     // MARK: - Body
     var body: some View {
         ZStack(alignment: .leading) {
@@ -168,7 +166,7 @@ struct PathAutoCompleteField: View {
     private func buildSuggestions(from contents: [URL], prefix: String) -> [String] {
         let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
 
-        var result =
+        let result =
             contents
             .filter { isDirAtURL($0) }
             .map(\.lastPathComponent)
@@ -177,15 +175,13 @@ struct PathAutoCompleteField: View {
                 return prefix.isEmpty || name.lowercased().hasPrefix(prefix.lowercased())
             }
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-
-        if result.count > maxSuggestions {
-            result = Array(result.prefix(maxSuggestions))
-        }
-
         return result
     }
 
     private func applySuggestions(_ matches: [String], prefix: String, directoryURL: URL) {
+        log.debug(
+            "[PathAutoComplete] suggestions base='\(directoryURL.path)' prefix='\(prefix)' count=\(matches.count)"
+        )
         suggestions = matches
         selectedIndex = 0
         showSuggestions = !matches.isEmpty
@@ -200,11 +196,19 @@ struct PathAutoCompleteField: View {
                 )
             }
 
-            popupController.show(items: items, selectedIndex: 0) { idx in
-                if idx >= 0, idx < suggestions.count {
-                    applySuggestion(suggestions[idx])
+            popupController.show(
+                items: items,
+                selectedIndex: 0,
+                onHighlight: { idx in
+                    guard suggestions.indices.contains(idx) else { return }
+                    selectedIndex = idx
+                    updateGhostFromSelection()
+                },
+                onSelect: { item in
+                    log.debug("[PathAutoComplete] applying path='\(item.file.pathStr)'")
+                    applySuggestion(item.name)
                 }
-            }
+            )
         } else {
             popupController.hide()
         }

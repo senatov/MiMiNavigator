@@ -25,19 +25,27 @@ struct AutoCompleteItem: Identifiable, Equatable {
 final class AutoCompletePopupModel {
     var items: [AutoCompleteItem] = []
     var selectedIndex = 0
-    var onSelect: ((Int) -> Void)?
+    var onHighlight: ((Int) -> Void)?
+    var onSelect: ((AutoCompleteItem) -> Void)?
 
     // MARK: - Select Row
     func selectRow(_ index: Int) {
         guard items.indices.contains(index) else { return }
         selectedIndex = index
+        onHighlight?(index)
     }
 
-    // MARK: - Accept Row
-    func acceptRow(_ index: Int) {
-        guard items.indices.contains(index) else { return }
+    // MARK: - Accept Item
+    func acceptItem(id: String) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else {
+            log.debug("[PathAutoComplete] ignored stale click id='\(id)'")
+            return
+        }
+        let item = items[index]
         selectedIndex = index
-        onSelect?(index)
+        onHighlight?(index)
+        log.debug("[PathAutoComplete] accepted id='\(item.id)' index=\(index)")
+        onSelect?(item)
     }
 }
 
@@ -55,13 +63,19 @@ final class AutoCompletePopupController {
     private let popupChromeHeight: CGFloat = 76
 
     // MARK: - Show
-    func show(items: [AutoCompleteItem], selectedIndex: Int, onSelect: @escaping (Int) -> Void) {
+    func show(
+        items: [AutoCompleteItem],
+        selectedIndex: Int,
+        onHighlight: @escaping (Int) -> Void,
+        onSelect: @escaping (AutoCompleteItem) -> Void
+    ) {
         guard !items.isEmpty else {
             hide()
             return
         }
         model.items = items
         model.selectedIndex = selectedIndex
+        model.onHighlight = onHighlight
         model.onSelect = onSelect
         let visibleRows = min(items.count, maxVisibleRows)
         let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight
@@ -150,12 +164,7 @@ final class AutoCompletePopupController {
 
     // MARK: - Update Visible Panel
     private func updateVisiblePanel(_ panel: NSPanel, frame: NSRect) {
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.08 : 0.18
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            context.allowsImplicitAnimation = true
-            panel.animator().setFrame(frame, display: true)
-        }
+        panel.setFrame(frame, display: true)
     }
 
     // MARK: - Install Monitors
@@ -228,7 +237,6 @@ private struct AutoCompletePopupView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
         .padding(1)
-        .animation(.spring(duration: 0.22, bounce: 0.08), value: model.items)
     }
 
     private var header: some View {
@@ -255,19 +263,21 @@ private struct AutoCompletePopupView: View {
                             item: item,
                             isSelected: index == model.selectedIndex,
                             selectionNamespace: selectionNamespace,
-                            onSelect: { model.selectRow(index) },
-                            onAccept: { model.acceptRow(index) }
+                            onAccept: { model.acceptItem(id: item.id) }
                         )
-                        .id(index)
+                        .id(item.id)
                     }
                 }
                 .padding(.vertical, 4)
                 .padding(.horizontal, Layout.horizontalPadding)
             }
             .onChange(of: model.selectedIndex) { _, index in
-                withAnimation(.easeOut(duration: 0.14)) {
-                    proxy.scrollTo(index, anchor: .center)
-                }
+                guard model.items.indices.contains(index) else { return }
+                proxy.scrollTo(model.items[index].id, anchor: .center)
+            }
+            .onChange(of: model.items) { _, items in
+                guard items.indices.contains(model.selectedIndex) else { return }
+                proxy.scrollTo(items[model.selectedIndex].id, anchor: .top)
             }
         }
         .frame(height: CGFloat(min(model.items.count, 8)) * Layout.rowHeight + 8)
@@ -305,7 +315,6 @@ private struct AutoCompletePopupRow: View {
     let item: AutoCompleteItem
     let isSelected: Bool
     let selectionNamespace: Namespace.ID
-    let onSelect: () -> Void
     let onAccept: () -> Void
     @State private var isHovered = false
 
@@ -337,8 +346,7 @@ private struct AutoCompletePopupRow: View {
             }
         }
         .onHover { isHovered = $0 }
-        .onTapGesture(count: 2, perform: onAccept)
-        .onTapGesture(count: 1, perform: onSelect)
+        .onTapGesture(perform: onAccept)
         .animation(.easeOut(duration: 0.12), value: isHovered)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
