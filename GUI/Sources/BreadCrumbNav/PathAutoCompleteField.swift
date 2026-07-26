@@ -48,8 +48,12 @@ struct PathAutoCompleteField: View {
                     updateSuggestions(for: newValue)
                 }
                 .onSubmit {
-                    dismissPopup()
-                    onSubmit()
+                    if showSuggestions {
+                        popupController.acceptSelectedRow()
+                    } else {
+                        dismissPopup()
+                        onSubmit()
+                    }
                 }
                 .onExitCommand {
                     if showSuggestions {
@@ -205,8 +209,7 @@ struct PathAutoCompleteField: View {
                     updateGhostFromSelection()
                 },
                 onSelect: { item in
-                    log.debug("[PathAutoComplete] applying path='\(item.file.pathStr)'")
-                    applySuggestion(item.name)
+                    executeSuggestion(path: item.file.pathStr)
                 }
             )
         } else {
@@ -243,6 +246,16 @@ struct PathAutoCompleteField: View {
         ghostSuffix = ""
         suppressOnChange = false
         updateSuggestions(for: text)
+    }
+
+    // MARK: - Execute Suggestion
+    private func executeSuggestion(path: String) {
+        log.debug("[PathAutoComplete] executing exact path='\(path)'")
+        suppressOnChange = true
+        text = path
+        suppressOnChange = false
+        dismissPopup()
+        onSubmit()
     }
 
     // MARK: - Dismiss
