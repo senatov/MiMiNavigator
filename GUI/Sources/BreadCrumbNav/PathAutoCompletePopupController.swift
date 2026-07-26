@@ -5,146 +5,98 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import AppKit
+import Observation
+import SwiftUI
 
-struct AutoCompleteItem {
+// MARK: - Auto Complete Item
+struct AutoCompleteItem: Identifiable, Equatable {
     let name: String
     let isDirectory: Bool
     let matchPrefix: String
+
+    var id: String { name }
 }
 
+// MARK: - Auto Complete Popup Model
+@MainActor
+@Observable
+final class AutoCompletePopupModel {
+    var items: [AutoCompleteItem] = []
+    var selectedIndex = 0
+    var onSelect: ((Int) -> Void)?
+
+    // MARK: - Select Row
+    func selectRow(_ index: Int) {
+        guard items.indices.contains(index) else { return }
+        selectedIndex = index
+    }
+
+    // MARK: - Accept Row
+    func acceptRow(_ index: Int) {
+        guard items.indices.contains(index) else { return }
+        selectedIndex = index
+        onSelect?(index)
+    }
+}
+
+// MARK: - Auto Complete Popup Controller
 @MainActor
 final class AutoCompletePopupController {
     private var panel: NSPanel?
-    private var tableView: NSTableView?
-    private(set) var items: [AutoCompleteItem] = []
-    var onSelect: ((Int) -> Void)?
-    var anchorFrame: CGRect = .zero
+    private let model = AutoCompletePopupModel()
     private var monitors = PopupEventMonitors()
+    var anchorFrame: CGRect = .zero
     var onDismissedByClickOutside: (() -> Void)?
 
-    private let rowHeight: CGFloat = 32
-    private let maxVisibleRows = 12
-    private let minPanelHeight: CGFloat = 72
-    private let panelPadding: CGFloat = 12
+    private let rowHeight: CGFloat = 34
+    private let maxVisibleRows = 8
+    private let popupChromeHeight: CGFloat = 76
 
+    // MARK: - Show
     func show(items: [AutoCompleteItem], selectedIndex: Int, onSelect: @escaping (Int) -> Void) {
-        self.items = items
-        self.onSelect = onSelect
         guard !items.isEmpty else {
             hide()
             return
         }
-
+        model.items = items
+        model.selectedIndex = selectedIndex
+        model.onSelect = onSelect
         let visibleRows = min(items.count, maxVisibleRows)
-        let panelHeight = max(CGFloat(visibleRows) * rowHeight + panelPadding, minPanelHeight)
-        let panelWidth = max(anchorFrame.width, 300)
-
+        let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight
+        let panelWidth = max(anchorFrame.width, 420)
         if panel == nil {
             createPanel()
         }
-
         guard let panel, let window = NSApp.keyWindow else { return }
-
-        let windowHeight = window.frame.height
-        let appKitX = anchorFrame.minX
-        let appKitY = windowHeight - anchorFrame.maxY
-        let pointInScreen = window.convertPoint(toScreen: NSPoint(x: appKitX, y: appKitY))
-        let targetFrame = NSRect(
-            x: pointInScreen.x,
-            y: pointInScreen.y - panelHeight - 2,
-            width: panelWidth,
-            height: panelHeight
+        let targetFrame = targetFrame(
+            panelSize: NSSize(width: panelWidth, height: panelHeight),
+            window: window
         )
-
-        tableView?.reloadData()
-        selectRow(selectedIndex)
-
-        if !panel.isVisible {
-            let startFrame = NSRect(
-                x: targetFrame.origin.x,
-                y: targetFrame.origin.y + 8,
-                width: targetFrame.width,
-                height: targetFrame.height
-            )
-
-            panel.setFrame(startFrame, display: false)
-            panel.alphaValue = 0
-            window.addChildWindow(panel, ordered: .above)
-            panel.orderFront(nil)
-
-            panel.contentView?.wantsLayer = true
-            guard let layer = panel.contentView?.layer else { return }
-
-            layer.transform = CATransform3DMakeScale(0.92, 0.92, 1)
-
-            let spring = CASpringAnimation(keyPath: "transform.scale")
-            spring.fromValue = 0.92
-            spring.toValue = 1.0
-            spring.damping = 14
-            spring.stiffness = 180
-            spring.mass = 1
-            spring.initialVelocity = 0
-            spring.duration = spring.settlingDuration
-            layer.add(spring, forKey: "springScale")
-
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.22
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                context.allowsImplicitAnimation = true
-
-                panel.animator().setFrame(targetFrame, display: true)
-                panel.animator().alphaValue = 1
-                CATransaction.begin()
-                CATransaction.setAnimationDuration(0.22)
-                layer.transform = CATransform3DIdentity
-                CATransaction.commit()
-            }
-
-            installMonitors(for: panel)
+        if panel.isVisible {
+            updateVisiblePanel(panel, frame: targetFrame)
         } else {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.12
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                context.allowsImplicitAnimation = true
-                panel.animator().setFrame(targetFrame, display: true)
-            }
+            presentPanel(panel, from: window, frame: targetFrame)
         }
     }
 
+    // MARK: - Hide
     func hide() {
         monitors.remove()
         guard let panel, panel.isVisible else {
-            items = []
+            model.items = []
             return
         }
-
         let parentWindow = panel.parent
-        let shrunkFrame = NSRect(
-            x: panel.frame.origin.x,
-            y: panel.frame.origin.y + 6,
-            width: panel.frame.width,
-            height: panel.frame.height
-        )
-
-        panel.contentView?.wantsLayer = true
-        let layer = panel.contentView?.layer
-
-        let springOut = CASpringAnimation(keyPath: "transform.scale")
-        springOut.fromValue = 1.0
-        springOut.toValue = 0.96
-        springOut.damping = 16
-        springOut.stiffness = 160
-        springOut.mass = 1
-        springOut.duration = springOut.settlingDuration
-        layer?.add(springOut, forKey: "springOut")
-
+        let targetFrame = panel.frame.offsetBy(dx: 0, dy: 4)
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup(
             { context in
-                context.duration = 0.14
+                context.duration = reduceMotion ? 0.08 : 0.14
                 context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-                context.allowsImplicitAnimation = true
                 panel.animator().alphaValue = 0
-                panel.animator().setFrame(shrunkFrame, display: true)
+                if !reduceMotion {
+                    panel.animator().setFrame(targetFrame, display: true)
+                }
             },
             completionHandler: {
                 Task { @MainActor in
@@ -153,16 +105,58 @@ final class AutoCompletePopupController {
                 }
             }
         )
-
-        items = []
+        model.items = []
     }
 
+    // MARK: - Select Row
     func selectRow(_ index: Int) {
-        guard let tableView, index >= 0, index < items.count else { return }
-        tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
-        tableView.scrollRowToVisible(index)
+        model.selectRow(index)
     }
 
+    // MARK: - Target Frame
+    private func targetFrame(panelSize: NSSize, window: NSWindow) -> NSRect {
+        let windowHeight = window.frame.height
+        let anchorOrigin = window.convertPoint(
+            toScreen: NSPoint(x: anchorFrame.minX, y: windowHeight - anchorFrame.maxY)
+        )
+        let screenFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
+        let gap: CGFloat = 6
+        let belowY = anchorOrigin.y - panelSize.height - gap
+        let aboveY = anchorOrigin.y + anchorFrame.height + gap
+        let y = belowY >= screenFrame.minY ? belowY : min(aboveY, screenFrame.maxY - panelSize.height)
+        let x = min(max(anchorOrigin.x, screenFrame.minX), screenFrame.maxX - panelSize.width)
+        return NSRect(origin: NSPoint(x: x, y: y), size: panelSize)
+    }
+
+    // MARK: - Present Panel
+    private func presentPanel(_ panel: NSPanel, from window: NSWindow, frame: NSRect) {
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let startFrame = reduceMotion ? frame : frame.offsetBy(dx: 0, dy: 4)
+        panel.setFrame(startFrame, display: false)
+        panel.alphaValue = 0
+        window.addChildWindow(panel, ordered: .above)
+        panel.orderFront(nil)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = reduceMotion ? 0.10 : 0.20
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.allowsImplicitAnimation = true
+            panel.animator().alphaValue = 1
+            panel.animator().setFrame(frame, display: true)
+        }
+        installMonitors(for: panel)
+    }
+
+    // MARK: - Update Visible Panel
+    private func updateVisiblePanel(_ panel: NSPanel, frame: NSRect) {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.08 : 0.18
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            context.allowsImplicitAnimation = true
+            panel.animator().setFrame(frame, display: true)
+        }
+    }
+
+    // MARK: - Install Monitors
     private func installMonitors(for panel: NSPanel) {
         monitors.install(
             panel: panel,
@@ -170,42 +164,26 @@ final class AutoCompletePopupController {
             onClickOutside: { [weak self] in self?.onDismissedByClickOutside?() },
             shouldDismissOnClick: { [weak self] _ in
                 guard let self else { return true }
-                if let rect = self.anchorScreenRect(), rect.contains(NSEvent.mouseLocation) {
-                    return false
-                }
-                return true
+                return !(self.anchorScreenRect()?.contains(NSEvent.mouseLocation) ?? false)
             },
             installResignObserver: false
         )
     }
 
+    // MARK: - Anchor Screen Rect
     private func anchorScreenRect() -> NSRect? {
         guard let window = NSApp.keyWindow else { return nil }
         let windowHeight = window.frame.height
-        let appKitY = windowHeight - anchorFrame.maxY
-        let origin = window.convertPoint(toScreen: NSPoint(x: anchorFrame.minX, y: appKitY))
-        return NSRect(x: origin.x, y: origin.y, width: anchorFrame.width, height: anchorFrame.height)
+        let origin = window.convertPoint(
+            toScreen: NSPoint(x: anchorFrame.minX, y: windowHeight - anchorFrame.maxY)
+        )
+        return NSRect(origin: origin, size: anchorFrame.size)
     }
 
+    // MARK: - Create Panel
     private func createPanel() {
-        let panel = makePanel()
-        let effectView = makeEffectView()
-        panel.contentView = effectView
-
-        let scrollView = makeScrollView()
-        effectView.addSubview(scrollView)
-        setupScrollConstraints(scrollView, in: effectView)
-
-        let tableView = makeTableView()
-        scrollView.documentView = tableView
-
-        self.panel = panel
-        self.tableView = tableView
-    }
-
-    private func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 200),
             styleMask: [.nonactivatingPanel],
             backing: .buffered,
             defer: true
@@ -213,172 +191,176 @@ final class AutoCompletePopupController {
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = true
         panel.hasShadow = true
-        panel.backgroundColor = .controlBackgroundColor
+        panel.backgroundColor = .clear
         panel.isOpaque = false
         panel.level = .floating
-        return panel
+        panel.contentView = NSHostingView(rootView: AutoCompletePopupView(model: model))
+        self.panel = panel
+    }
+}
+
+// MARK: - Auto Complete Popup View
+private struct AutoCompletePopupView: View {
+    let model: AutoCompletePopupModel
+    @Namespace private var selectionNamespace
+
+    private enum Layout {
+        static let cornerRadius: CGFloat = 14
+        static let rowCornerRadius: CGFloat = 8
+        static let horizontalPadding: CGFloat = 8
+        static let rowHeight: CGFloat = 34
     }
 
-    private func makeEffectView() -> NSVisualEffectView {
-        let effectView = NSVisualEffectView()
-        effectView.material = .popover
-        effectView.state = .active
-        effectView.blendingMode = .behindWindow
-        effectView.wantsLayer = true
-        effectView.layer?.cornerRadius = 10
-        effectView.layer?.masksToBounds = true
-        return effectView
-    }
-
-    private func makeScrollView() -> NSScrollView {
-        let scrollView = NSScrollView()
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers = true
-        scrollView.drawsBackground = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        return scrollView
-    }
-
-    private func setupScrollConstraints(_ scrollView: NSScrollView, in effectView: NSView) {
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: effectView.topAnchor, constant: 6),
-            scrollView.bottomAnchor.constraint(equalTo: effectView.bottomAnchor, constant: -6),
-            scrollView.leadingAnchor.constraint(equalTo: effectView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: effectView.trailingAnchor),
-        ])
-    }
-
-    private func makeTableView() -> NSTableView {
-        let tableView = NSTableView()
-        tableView.headerView = nil
-        tableView.rowHeight = rowHeight
-        tableView.backgroundColor = .clear
-        tableView.selectionHighlightStyle = .regular
-        tableView.intercellSpacing = NSSize(width: 0, height: 0)
-        tableView.target = self
-        tableView.doubleAction = #selector(tableDoubleClick)
-
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
-        column.isEditable = false
-        column.resizingMask = .autoresizingMask
-        tableView.addTableColumn(column)
-        tableView.sizeLastColumnToFit()
-
-        let delegate = AutoCompleteTableDelegate(controller: self)
-        tableView.dataSource = delegate
-        tableView.delegate = delegate
-        objc_setAssociatedObject(tableView, "delegate", delegate, .OBJC_ASSOCIATION_RETAIN)
-
-        return tableView
-    }
-
-    final class CustomSelectionRowView: NSTableRowView {
-        override var isEmphasized: Bool {
-            get { false }
-            set {}
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider().opacity(0.55)
+            suggestions
+            Divider().opacity(0.55)
+            footer
         }
-
-        override func drawSelection(in dirtyRect: NSRect) {
-            let rect = bounds.insetBy(dx: 2, dy: 2)
-            let path = NSBezierPath(roundedRect: rect, xRadius: 6, yRadius: 6)
-
-            NSColor(calibratedRed: 1.0, green: 0.96, blue: 0.72, alpha: 0.55).setFill()
-            path.fill()
-
-            NSColor(calibratedRed: 0.12, green: 0.20, blue: 0.44, alpha: 0.95).setStroke()
-            path.lineWidth = 1
-            path.stroke()
+        .glassEffect(.regular, in: .rect(cornerRadius: Layout.cornerRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
+                .strokeBorder(.quaternary, lineWidth: 0.8)
         }
+        .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
+        .padding(1)
+        .animation(.spring(duration: 0.22, bounce: 0.08), value: model.items)
     }
 
-    @objc private func tableDoubleClick() {
-        guard let tableView else { return }
-        let row = tableView.clickedRow
-        if row >= 0, row < items.count {
-            onSelect?(row)
+    private var header: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "folder.fill")
+                .foregroundStyle(.tint)
+            Text("Folders")
+                .font(.system(size: 12, weight: .semibold))
+            Spacer()
+            Text("\(model.items.count) \(model.items.count == 1 ? "result" : "results")")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+    }
+
+    private var suggestions: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
+                        AutoCompletePopupRow(
+                            item: item,
+                            isSelected: index == model.selectedIndex,
+                            selectionNamespace: selectionNamespace,
+                            onSelect: { model.selectRow(index) },
+                            onAccept: { model.acceptRow(index) }
+                        )
+                        .id(index)
+                    }
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, Layout.horizontalPadding)
+            }
+            .onChange(of: model.selectedIndex) { _, index in
+                withAnimation(.easeOut(duration: 0.14)) {
+                    proxy.scrollTo(index, anchor: .center)
+                }
+            }
+        }
+        .frame(height: CGFloat(min(model.items.count, 8)) * Layout.rowHeight + 8)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 12) {
+            keyHint("↑↓", label: "Select")
+            keyHint("⇥", label: "Complete")
+            keyHint("↩", label: "Open")
+            Spacer()
+            keyHint("esc", label: "Close")
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 34)
+        .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Key Hint
+    private func keyHint(_ key: String, label: String) -> some View {
+        HStack(spacing: 4) {
+            Text(key)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 5)
+                .frame(minHeight: 18)
+                .background(.primary.opacity(0.07), in: .rect(cornerRadius: 5))
+            Text(label)
+                .font(.caption2)
         }
     }
 }
 
-@MainActor
-final class AutoCompleteTableDelegate: NSObject, NSTableViewDataSource, NSTableViewDelegate {
-    private unowned let controller: AutoCompletePopupController
+// MARK: - Auto Complete Popup Row
+private struct AutoCompletePopupRow: View {
+    let item: AutoCompleteItem
+    let isSelected: Bool
+    let selectionNamespace: Namespace.ID
+    let onSelect: () -> Void
+    let onAccept: () -> Void
+    @State private var isHovered = false
 
-    init(controller: AutoCompletePopupController) {
-        self.controller = controller
-    }
-
-    func numberOfRows(in tableView: NSTableView) -> Int {
-        controller.items.count
-    }
-
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard row < controller.items.count else { return nil }
-
-        let item = controller.items[row]
-        let cellID = NSUserInterfaceItemIdentifier("AutoCompleteCell")
-        var cell = tableView.makeView(withIdentifier: cellID, owner: nil) as? NSTableCellView
-        if cell == nil {
-            cell = makeCell(identifier: cellID)
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: item.isDirectory ? "folder.fill" : "doc.fill")
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(item.isDirectory ? Color.accentColor : Color.secondary)
+                .frame(width: 18)
+            highlightedName
+            Spacer(minLength: 8)
+            if isSelected {
+                Text("↩")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.tertiary)
+                    .transition(.opacity)
+            }
         }
-
-        let iconName = item.isDirectory ? NSImage.folderName : NSImage.Name("NSDocument")
-        cell?.imageView?.image =
-            NSImage(named: iconName)
-            ?? NSImage(systemSymbolName: item.isDirectory ? "folder.fill" : "doc", accessibilityDescription: nil)
-
-        let attrString = NSMutableAttributedString(
-            string: item.name,
-            attributes: [
-                .font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-            ]
-        )
-
-        if !item.matchPrefix.isEmpty,
-           let range = item.name.range(of: item.matchPrefix, options: [.caseInsensitive, .anchored]) {
-            let nsRange = NSRange(range, in: item.name)
-            attrString.addAttribute(
-                .font,
-                value: NSFont.monospacedSystemFont(ofSize: 13, weight: .bold),
-                range: nsRange
-            )
+        .padding(.horizontal, 8)
+        .frame(height: 34)
+        .contentShape(.rect)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.14))
+                    .matchedGeometryEffect(id: "selection", in: selectionNamespace)
+            } else if isHovered {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(.primary.opacity(0.055))
+            }
         }
-
-        cell?.textField?.attributedStringValue = attrString
-        return cell
+        .onHover { isHovered = $0 }
+        .onTapGesture(count: 2, perform: onAccept)
+        .onTapGesture(count: 1, perform: onSelect)
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-        AutoCompletePopupController.CustomSelectionRowView()
+    private var highlightedName: some View {
+        HStack(spacing: 0) {
+            Text(matchedPrefix)
+                .fontWeight(.semibold)
+            Text(unmatchedSuffix)
+        }
+        .font(.system(size: 13))
+        .lineLimit(1)
+        .truncationMode(.middle)
     }
 
-    private func makeCell(identifier: NSUserInterfaceItemIdentifier) -> NSTableCellView {
-        let cell = NSTableCellView()
-        cell.identifier = identifier
+    private var matchedPrefix: String {
+        guard !item.matchPrefix.isEmpty,
+              item.name.range(of: item.matchPrefix, options: [.caseInsensitive, .anchored]) != nil
+        else { return "" }
+        return String(item.name.prefix(item.matchPrefix.count))
+    }
 
-        let imageView = NSImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        cell.addSubview(imageView)
-        cell.imageView = imageView
-
-        let textField = NSTextField(labelWithString: "")
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.lineBreakMode = .byTruncatingTail
-        textField.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-        cell.addSubview(textField)
-        cell.textField = textField
-
-        NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
-            imageView.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
-            imageView.widthAnchor.constraint(equalToConstant: 16),
-            imageView.heightAnchor.constraint(equalToConstant: 16),
-            textField.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 6),
-            textField.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -6),
-            textField.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
-        ])
-
-        return cell
+    private var unmatchedSuffix: String {
+        String(item.name.dropFirst(matchedPrefix.count))
     }
 }
