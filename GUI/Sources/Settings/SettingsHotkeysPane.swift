@@ -15,7 +15,7 @@ struct SettingsHotkeysPane: View {
         HotKeySettingsView()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                .regularMaterial,
+                SettingsVisualStyle.insetFill,
                 in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
             )
             .padding(.horizontal, 24)

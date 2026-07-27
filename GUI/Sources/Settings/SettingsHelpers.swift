@@ -66,7 +66,7 @@ struct SettingsGroupBox<Content: View>: View {
         }
         .padding(16)
         .background(
-            .regularMaterial,
+            SettingsVisualStyle.insetFill,
             in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
         .overlay {
@@ -89,7 +89,7 @@ struct SettingsFluentGroupBoxStyle: GroupBoxStyle {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            .regularMaterial,
+            SettingsVisualStyle.insetFill,
             in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
         .overlay {

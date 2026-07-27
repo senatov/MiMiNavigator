@@ -26,7 +26,7 @@ struct SettingsPermissionsRestartBanner: View {
         }
         .padding(12)
         .background(
-            .regularMaterial,
+            SettingsVisualStyle.insetFill,
             in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
         .overlay {

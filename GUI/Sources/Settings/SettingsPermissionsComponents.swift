@@ -20,7 +20,7 @@ struct PermissionsGlassCard<Content: View>: View {
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                .regularMaterial,
+                SettingsVisualStyle.insetFill,
                 in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
             )
             .overlay {

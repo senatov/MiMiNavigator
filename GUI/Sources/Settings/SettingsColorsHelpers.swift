@@ -65,7 +65,7 @@ extension ColorPaneHelpers {
         VStack(alignment: .leading, spacing: 0) { content() }
             .padding(16)
             .background(
-                .regularMaterial,
+                SettingsVisualStyle.insetFill,
                 in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
             )
             .overlay {
@@ -99,10 +99,17 @@ extension ColorPaneHelpers {
     // MARK: - sliderRow
     func sliderRow(_ label: String, help: String, value: Binding<Double>, range: ClosedRange<Double>, step: Double,
                    displayFormat: String = "%.2f", unit: String = "", onChange: @escaping () -> Void) -> some View {
-        rowLabel(label + ":", help: help) {
+        let controlledValue = Binding(
+            get: { value.wrappedValue },
+            set: { newValue in
+                guard newValue != value.wrappedValue else { return }
+                value.wrappedValue = newValue
+                onChange()
+            }
+        )
+        return rowLabel(label + ":", help: help) {
             HStack(spacing: 10) {
-                Slider(value: value, in: range, step: step).frame(width: 130)
-                    .onChange(of: value.wrappedValue) { _, _ in onChange() }
+                Slider(value: controlledValue, in: range, step: step).frame(width: 130)
                 Text(String(format: displayFormat, value.wrappedValue) + unit)
                     .monospacedDigit().foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
             }

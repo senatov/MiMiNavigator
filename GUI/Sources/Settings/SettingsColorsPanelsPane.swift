@@ -59,13 +59,10 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                 VStack(spacing: 0) {
                     rowLabel("Theme preset:", help: "Built-in color theme as starting point") {
                         HStack(spacing: 10) {
-                            Picker("", selection: $selectedPresetID) {
+                            Picker("", selection: presetSelection) {
                                 ForEach(ColorTheme.allPresets) { t in Text(t.name).tag(t.id) }
                             }
                             .labelsHidden().frame(width: 150)
-                            .onChange(of: selectedPresetID) { _, id in
-                                store.applyPreset(ColorTheme.allPresets.first { $0.id == id } ?? .defaultTheme)
-                            }
                             HStack(spacing: 4) {
                                 swatch(preset.panelBackground, label: "BG")
                                 swatch(preset.panelText, label: "Txt")
@@ -77,9 +74,8 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                     }
                     Divider()
                     rowLabel("Dark variant:", help: "Separate dark-mode color set") {
-                        Toggle("Use separate dark-mode colors", isOn: $useDarkVariant)
+                        Toggle("Use separate dark-mode colors", isOn: darkVariantSelection)
                             .toggleStyle(.checkbox)
-                            .onChange(of: useDarkVariant) { _, v in store.useDarkVariant = v }
                     }
                 }
             }
@@ -204,6 +200,32 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
         }
     }
 
+    // MARK: - Preset Selection
+
+    private var presetSelection: Binding<String> {
+        Binding(
+            get: { selectedPresetID },
+            set: { id in
+                guard id != selectedPresetID else { return }
+                selectedPresetID = id
+                store.applyPreset(ColorTheme.allPresets.first { $0.id == id } ?? .defaultTheme)
+            }
+        )
+    }
+
+    // MARK: - Dark Variant Selection
+
+    private var darkVariantSelection: Binding<Bool> {
+        Binding(
+            get: { useDarkVariant },
+            set: { value in
+                guard value != useDarkVariant else { return }
+                useDarkVariant = value
+                store.useDarkVariant = value
+            }
+        )
+    }
+
     private func selectionColorRow(_ item: SelectionColorItem) -> some View {
         rowLabel("\(item.title):", help: item.help) {
             HStack(spacing: 10) {
@@ -234,18 +256,28 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
     private var selectionLineWidthRow: some View {
         rowLabel("Line width:", help: "Selection border thickness") {
             HStack(spacing: 10) {
-                Slider(value: $selLineWidth, in: 0.5 ... 4.0, step: 0.5)
+                Slider(value: selectionLineWidth, in: 0.5 ... 4.0, step: 0.5)
                     .frame(width: 130)
-                    .onChange(of: selLineWidth) { _, newValue in
-                        store.updateSelectionDefaults(lineWidth: newValue)
-                        store.reloadOverrides()
-                    }
                 Text(String(format: "%.1f", selLineWidth))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .frame(width: 30)
             }
         }
+    }
+
+    // MARK: - Selection Line Width
+
+    private var selectionLineWidth: Binding<Double> {
+        Binding(
+            get: { selLineWidth },
+            set: { newValue in
+                guard newValue != selLineWidth else { return }
+                selLineWidth = newValue
+                store.updateSelectionDefaults(lineWidth: newValue)
+                store.reloadOverrides()
+            }
+        )
     }
 
     private func selectionColorBinding(hex: Binding<String>, fallback: Color) -> Binding<Color> {
