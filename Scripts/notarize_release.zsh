@@ -124,7 +124,7 @@ if [[ ! -f "${NOTES_FILE}" ]]; then
     echo "❌ Release notes not found: ${NOTES_FILE}"
     exit 1
 fi
-if ! grep -Fqx "# MiMiNavigator ${TAG}" "${NOTES_FILE}"; then
+if ! sed 's/\r$//' "${NOTES_FILE}" | grep -Fqx "# MiMiNavigator ${TAG}"; then
     echo "❌ ${NOTES_FILE} does not describe ${TAG}."
     exit 1
 fi
