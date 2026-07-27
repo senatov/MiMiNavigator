@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NetworkKit
 
 // MARK: - Remote Path Helpers
 extension RemoteConnectionManager {
@@ -30,10 +31,18 @@ extension RemoteConnectionManager {
 // MARK: - SMB Mount Helpers
 extension RemoteConnectionManager {
 
-    func expectedSMBMountPointPath(for server: RemoteServer) -> String? {
-        guard let decodedShare = Self.firstSMBShareComponent(in: server.remotePath) else { return nil }
-        guard !decodedShare.isEmpty else { return nil }
-        return "/Volumes/" + decodedShare
+    func expectedSMBMountPointPaths(for server: RemoteServer) -> [String] {
+        guard let decodedShare = Self.firstSMBShareComponent(in: server.remotePath) else { return [] }
+        guard !decodedShare.isEmpty else { return [] }
+        let systemPath = URL(fileURLWithPath: "/Volumes", isDirectory: true)
+            .appendingPathComponent(decodedShare, isDirectory: true)
+            .path
+        let managedPath = SMBMountPath.mountPointURL(
+            host: server.host,
+            user: server.user,
+            shareName: decodedShare
+        ).path
+        return [managedPath, systemPath]
     }
 
     static func firstSMBShareComponent(in remotePath: String) -> String? {

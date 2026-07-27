@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NetworkKit
 
 // MARK: - Managed Mount Detection
 extension AppState {
@@ -69,13 +70,7 @@ extension AppState {
 
     // MARK: - Mount Root
     nonisolated static func appManagedMountRootURL() -> URL? {
-        guard let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        return supportURL
-            .appendingPathComponent("MiMiNavigator", isDirectory: true)
-            .appendingPathComponent("Mounts", isDirectory: true)
-            .standardizedFileURL
+        SMBMountPath.rootURL()
     }
 
     nonisolated private static func appManagedMountRootPath() -> String? {

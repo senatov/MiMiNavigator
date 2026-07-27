@@ -164,13 +164,8 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
     }
 
     // MARK: - Normalize name for dedup
-    // strips .local .local. .fritz.box; dots→dashes so fritz.box == fritz-box
     func normalizedName(_ raw: String) -> String {
-        raw.lowercased()
-            .replacingOccurrences(of: ".local.", with: "")
-            .replacingOccurrences(of: ".local", with: "")
-            .replacingOccurrences(of: ".fritz.box", with: "")
-            .replacingOccurrences(of: ".", with: "-")
+        NetworkHostIdentity.normalized(raw)
     }
 
     // MARK: - Add or update host (dedup by normalized name)
@@ -189,8 +184,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             return
         }
 
-        let norm = normalizedName(name)
-        if let idx = hosts.firstIndex(where: { normalizedName($0.name) == norm }) {
+        if let idx = hosts.firstIndex(where: {
+            NetworkHostIdentity.matches($0, name: name, hostName: hostName)
+        }) {
             if let bt = bonjourType { hosts[idx].bonjourServices.insert(bt) }
             // Update hostName only if new one is usable for connections or Web UI.
             let newHNBetter =

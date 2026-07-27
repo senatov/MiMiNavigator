@@ -9,6 +9,7 @@
 
 import Foundation
 import FileModelKit
+import NetworkKit
 
 #if canImport(UniformTypeIdentifiers)
 import UniformTypeIdentifiers
@@ -294,10 +295,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
     private static func makeMountPointURL(host: String, user: String, shareRootPath: String) throws -> URL {
         let shareName = shareRootPath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !shareName.isEmpty else { throw SMBProviderError.invalidMountURL }
-        let decodedShareName = shareName.removingPercentEncoding ?? shareName
-        let mountRootURL = try appMountRootURL()
-        let mountName = sanitizeMountName("\(host)-\(user)-\(decodedShareName)")
-        return mountRootURL.appendingPathComponent(mountName, isDirectory: true)
+        return SMBMountPath.mountPointURL(host: host, user: user, shareName: shareName)
     }
 
     private static func createDirectoryIfNeeded(at url: URL) throws {
@@ -341,15 +339,4 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
         }
     }
 
-    private static func appMountRootURL() throws -> URL {
-        let supportURL = try FileManager.default.url(
-            for: .applicationSupportDirectory,
-            in: .userDomainMask,
-            appropriateFor: nil,
-            create: true
-        )
-        return supportURL
-            .appendingPathComponent("MiMiNavigator", isDirectory: true)
-            .appendingPathComponent("Mounts", isDirectory: true)
-    }
 }

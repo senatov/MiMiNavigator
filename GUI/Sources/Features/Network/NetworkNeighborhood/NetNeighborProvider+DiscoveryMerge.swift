@@ -11,7 +11,9 @@ extension NetworkNeighborhoodProvider {
     // MARK: - Merge SSDP devices
     func mergeSSDPDevices(_ devices: [SSDPDevice]) {
         for device in devices where !isLocalhostIP(device.address) {
-            if let index = hosts.firstIndex(where: { $0.hostName == device.address || normalizedName($0.name) == normalizedName(device.name) }) {
+            if let index = hosts.firstIndex(where: {
+                NetworkHostIdentity.matches($0, name: device.name, hostName: device.address)
+            }) {
                 hosts[index].bonjourServices.formUnion(device.services)
                 if hosts[index].deviceClass == .unknown { hosts[index].deviceClass = device.deviceClass }
                 continue
@@ -71,11 +73,10 @@ extension NetworkNeighborhoodProvider {
     }
 
     private func findExistingHostIndex(for fritzHost: FritzBoxHost, ipToIdx: [String: Int]) -> Int? {
-        let normalizedFritzName = normalizedName(fritzHost.name)
         let isFritzMobile = isLikelyMobileFritzHostName(fritzHost.name.lowercased())
         if let index = ipToIdx[fritzHost.ip] { return index }
         return hosts.firstIndex { host in
-            if normalizedName(host.name) == normalizedFritzName { return true }
+            if NetworkHostIdentity.matches(host, name: fritzHost.name, hostName: fritzHost.ip) { return true }
             return isFritzMobile && isMobilePlaceholderHostName(host.name)
         }
     }

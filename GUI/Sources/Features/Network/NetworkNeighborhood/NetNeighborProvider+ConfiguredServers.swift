@@ -80,22 +80,9 @@ extension NetworkNeighborhoodProvider {
     }
 
     private func existingConfiguredHostIndex(displayName: String, hostName: String) -> Int? {
-        let normalizedDisplayName = normalizedConfiguredKey(displayName)
-        let normalizedHostName = normalizedConfiguredKey(hostName)
-        return hosts.firstIndex { host in
-            normalizedConfiguredKey(host.name) == normalizedDisplayName
-                || normalizedConfiguredKey(host.hostName) == normalizedHostName
-                || normalizedConfiguredKey(host.name) == normalizedHostName
-                || normalizedConfiguredKey(host.hostName) == normalizedDisplayName
+        hosts.firstIndex {
+            NetworkHostIdentity.matches($0, name: displayName, hostName: hostName)
         }
-    }
-
-    private func normalizedConfiguredKey(_ value: String) -> String {
-        value.trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: ".local.", with: "")
-            .replacingOccurrences(of: ".local", with: "")
-            .replacingOccurrences(of: ".fritz.box", with: "")
     }
 
     // MARK: - Shares from configured server

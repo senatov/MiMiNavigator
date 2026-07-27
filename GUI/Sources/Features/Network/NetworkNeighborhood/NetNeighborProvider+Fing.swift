@@ -30,9 +30,10 @@ extension NetworkNeighborhoodProvider {
         {
             return index
         }
-        if let index = hosts.firstIndex(where: { $0.hostName == ip || $0.hostIP == ip }) { return index }
-        guard let name = device.name, !name.isEmpty else { return nil }
-        return hosts.firstIndex(where: { normalizedName($0.name) == normalizedName(name) })
+        let name = device.name ?? ""
+        return hosts.firstIndex {
+            $0.hostIP == ip || NetworkHostIdentity.matches($0, name: name, hostName: ip)
+        }
     }
 
     // MARK: - Update Host

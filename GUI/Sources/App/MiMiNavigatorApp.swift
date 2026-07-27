@@ -175,8 +175,11 @@ struct MiMiNavigatorApp: App {
     }
 
     private func connectMountedShare(_ url: URL, for side: FavPanelSide) async {
-        if let mountedURL = await SMBMounter.shared.mountShare(url) {
+        do {
+            let mountedURL = try await SMBMounter.shared.mountShareResult(url)
             await navigatePanel(to: mountedURL, for: side)
+        } catch {
+            log.error("[SMB] mount failed host='\(url.host ?? "")' path='\(url.path)' error='\(error.localizedDescription)'")
         }
     }
 
@@ -202,11 +205,13 @@ struct MiMiNavigatorApp: App {
             return
         }
 
-        if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
+        do {
+            let mountedURL = try await SMBMounter.shared.mountShareResult(shareURL)
             await navigatePanel(to: mountedURL, for: side)
             NetworkNeighborhoodCoordinator.shared.close()
-        } else {
-            NetworkNeighborhoodCoordinator.shared.showMountFailure(for: shareURL)
+        } catch {
+            log.error("[Network] mount failed host='\(shareURL.host ?? "")' path='\(shareURL.path)' error='\(error.localizedDescription)'")
+            NetworkNeighborhoodCoordinator.shared.showMountFailure(for: shareURL, error: error)
         }
     }
 

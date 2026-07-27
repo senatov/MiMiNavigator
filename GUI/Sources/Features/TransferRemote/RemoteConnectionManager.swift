@@ -349,8 +349,7 @@ final class RemoteConnectionManager {
 
     private func hasMountedSystemConnection(for server: RemoteServer) -> Bool {
         guard server.remoteProtocol == .smb else { return false }
-        guard let mountPointPath = expectedSMBMountPointPath(for: server) else { return false }
-        return Self.isSMBMounted(atPath: mountPointPath)
+        return expectedSMBMountPointPaths(for: server).contains(where: Self.isSMBMounted(atPath:))
     }
 
     // MARK: - Remote operations
