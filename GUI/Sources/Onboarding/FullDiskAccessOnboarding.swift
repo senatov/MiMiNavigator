@@ -3,9 +3,8 @@
 //
 // Created by Iakov Senatov on 09.04.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: First-launch sheet — requests full-disk access via a single
-//   NSOpenPanel pointed at "/". One click grants the file manager access to
-//   the entire filesystem instead of spamming per-folder TCC dialogs.
+// Description: First-launch sheet — explains why Full Disk Access is needed
+//   and opens the matching Privacy & Security pane for explicit user consent.
 //   Remembers completion so it never shows again.
 
 import AppKit
@@ -19,8 +18,6 @@ import SwiftUI
 struct FullDiskAccessOnboarding: View {
 
     @Binding var isPresented: Bool
-    @State private var accessGranted = false
-    @State private var showError     = false
 
     private static let completedKey = "FullDiskAccessOnboardingCompleted"
 
@@ -29,12 +26,10 @@ struct FullDiskAccessOnboarding: View {
         VStack(spacing: 20) {
             header
             explanation
-            statusBadge
             buttons
         }
         .padding(28)
         .frame(width: 460)
-        .onAppear { checkExistingAccess() }
     }
 
 
@@ -62,11 +57,11 @@ struct FullDiskAccessOnboarding: View {
     private var explanation: some View {
         VStack(alignment: .leading, spacing: 8) {
             infoRow("folder.badge.gearshape",
-                    "Grant access once to the root folder — covers everything.")
+                    "Open System Settings and enable MiMiNavigator in Full Disk Access.")
             infoRow("lock.shield",
-                    "You can revoke access anytime in System Settings → Privacy.")
+                    "Only you can grant or revoke this permission in macOS.")
             infoRow("exclamationmark.triangle",
-                    "Without access, macOS will ask permission for each protected folder separately.")
+                    "Restart MiMiNavigator after changing the permission.")
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -76,52 +71,16 @@ struct FullDiskAccessOnboarding: View {
     }
 
 
-    // MARK: - Status badge
-
-    private var statusBadge: some View {
-        Group {
-            if accessGranted {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Text("Full disk access granted")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.green)
-                }
-            } else if showError {
-                HStack(spacing: 6) {
-                    Image(systemName: "xmark.circle")
-                        .foregroundStyle(.orange)
-                    Text("Access was not granted — you can try again or skip for now.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.orange)
-                }
-            }
-        }
-    }
-
-
     // MARK: - Buttons
 
     private var buttons: some View {
         HStack(spacing: 12) {
-            DownToolbarButtonView(title: "System Settings", systemImage: "gearshape") {
-                openFullDiskAccessSettings()
-            }
-            .help("Open Privacy → Full Disk Access in System Settings")
             Spacer()
-            if accessGranted {
-                DownToolbarButtonView(title: "Done", systemImage: "checkmark.circle") {
-                    markComplete()
-                    isPresented = false
-                }
-                .keyboardShortcut(.return)
-            } else {
-                DownToolbarButtonView(title: "Grant Access…", systemImage: "lock.open") {
-                    requestFullDiskAccess()
-                }
-                .keyboardShortcut(.return)
+            DownToolbarButtonView(title: "Grant Access…", systemImage: "lock.open") {
+                requestFullDiskAccess()
             }
+            .help("Open Privacy & Security → Full Disk Access in System Settings")
+            .keyboardShortcut(.return)
             DownToolbarButtonView(title: "Skip", systemImage: "forward") {
                 markComplete()
                 isPresented = false
@@ -147,48 +106,12 @@ struct FullDiskAccessOnboarding: View {
     }
 
 
-    private func checkExistingAccess() {
-        let rootURL = URL(fileURLWithPath: "/")
-        Task {
-            let has = await BookmarkStore.shared.hasAccess(to: rootURL)
-            accessGranted = has
-        }
-    }
-
+    // MARK: - Request Full Disk Access
 
     private func requestFullDiskAccess() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: "/")
-        panel.message = "Select the root folder '/' to grant MiMiNavigator full disk access"
-        panel.prompt = "Grant Access"
-        panel.treatsFilePackagesAsDirectories = true
-        let response = panel.runModal()
-        guard response == .OK, let picked = panel.url else {
-            showError = true
-            return
-        }
-        Task {
-            let ok = await BookmarkStore.shared.persistAccess(for: picked)
-            if ok {
-                accessGranted = true
-                showError = false
-                log.info("[FullDiskAccess] user granted access to \(picked.path)")
-            } else {
-                showError = true
-                log.warning("[FullDiskAccess] persistAccess failed for \(picked.path)")
-            }
-        }
-    }
-
-
-    private func openFullDiskAccessSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-            NSWorkspace.shared.open(url)
-        }
+        markComplete()
+        isPresented = false
+        SystemSettingsHelper.openFullDiskAccess()
     }
 
 
