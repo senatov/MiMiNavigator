@@ -205,6 +205,8 @@ struct MiMiNavigatorApp: App {
         if let mountedURL = await SMBMounter.shared.mountShare(shareURL) {
             await navigatePanel(to: mountedURL, for: side)
             NetworkNeighborhoodCoordinator.shared.close()
+        } else {
+            NetworkNeighborhoodCoordinator.shared.showMountFailure(for: shareURL)
         }
     }
 

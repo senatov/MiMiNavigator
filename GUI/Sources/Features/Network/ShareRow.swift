@@ -91,7 +91,6 @@ struct ShareRow: View {
             Text(share.name)
                 .font(.callout)
                 .lineLimit(1)
-                .textSelection(.enabled)
             Spacer()
             trailingIndicator
         }

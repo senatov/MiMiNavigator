@@ -107,6 +107,18 @@ final class NetworkNeighborhoodCoordinator {
         window?.orderFront(nil)
     }
 
+    // MARK: - Mount Failure
+    func showMountFailure(for shareURL: URL) {
+        guard let window, window.attachedSheet == nil else { return }
+        let shareName = shareURL.pathComponents.last ?? shareURL.host ?? "network share"
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "Could Not Open “\(shareName)”"
+        alert.informativeText = "MiMiNavigator could not connect to this network disk. Check that the device is online and sign in to the host if authentication is required."
+        alert.addButton(withTitle: "OK")
+        alert.beginSheetModal(for: window)
+    }
+
     // MARK: - Default frame: centered over main window
     private func computeDefaultFrame() -> NSRect {
         let size = NSSize(width: defaultWidth, height: defaultHeight)
