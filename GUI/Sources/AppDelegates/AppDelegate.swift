@@ -26,6 +26,7 @@ import LogKit
     private var isTerminationCleanupRunning = false
     private var didReplyToTermination = false
     private var isUpdateReplacementTermination = false
+    private var isDuplicateInstance = false
     private let standardTerminationCleanupTimeout: TimeInterval = 4.0
     private let updateTerminationCleanupTimeout: TimeInterval = 1.5
 
@@ -41,7 +42,17 @@ import LogKit
         self.appState = appState
     }
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        guard SingleInstanceController.shared.acquire() else {
+            isDuplicateInstance = true
+            SingleInstanceController.shared.activateExistingInstance()
+            NSApp.terminate(nil)
+            return
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !isDuplicateInstance else { return }
         logStartupStep("applicationDidFinishLaunching begin")
 
         // Ensure app is a regular Dock citizen from the very start
@@ -185,6 +196,9 @@ import LogKit
     /// Returns .terminateLater so we can do async cleanup before exit.
     /// All work must complete and call reply(.now) within the OS timeout (~5 s).
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if isDuplicateInstance {
+            return .terminateNow
+        }
         if isTerminationCleanupRunning {
             log.info("[AppDelegate] applicationShouldTerminate — cleanup already running")
             return .terminateLater
@@ -258,6 +272,7 @@ import LogKit
     // MARK: - applicationWillTerminate — key monitor cleanup only
 
     func applicationWillTerminate(_ notification: Notification) {
+        SingleInstanceController.shared.release()
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
         NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)

@@ -11,25 +11,33 @@ import AppKit
 
 // MARK: - NSApplication+Relaunch
 extension NSApplication {
-    /// Relaunch the app: spawn a new instance then terminate this one.
-    /// The new instance picks up all newly saved security-scoped bookmarks.
+    // MARK: - Relaunch
     func relaunch() {
-        guard let executableURL = Bundle.main.executableURL else {
-            log.error("[Relaunch] cannot resolve executableURL")
+        let bundlePath = Bundle.main.bundlePath
+        guard !bundlePath.isEmpty else {
+            log.error("[Relaunch] cannot resolve bundle path")
             return
         }
-        log.info("[Relaunch] relaunching from \(executableURL.path)")
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-n", Bundle.main.bundlePath]
+        let processIdentifier = ProcessInfo.processInfo.processIdentifier
+        let script = """
+        old_pid="$1"
+        app_path="$2"
+        while /bin/kill -0 "$old_pid" 2>/dev/null; do
+            /bin/sleep 0.1
+        done
+        exec /usr/bin/open "$app_path"
+        """
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        helper.arguments = ["-c", script, "mimi-relaunch", String(processIdentifier), bundlePath]
         do {
-            try task.run()
+            try helper.run()
         } catch {
-            log.error("[Relaunch] open failed: \(error.localizedDescription)")
+            log.error("[Relaunch] helper launch failed: \(error.localizedDescription)")
             return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            NSApplication.shared.terminate(nil)
-        }
+        log.info("[Relaunch] helper started oldProcess=\(processIdentifier) bundle='\(bundlePath)'")
+        SettingsCoordinator.shared.close()
+        terminate(nil)
     }
 }
