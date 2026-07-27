@@ -14,9 +14,9 @@ struct SettingsHotkeysPane: View {
     var body: some View {
         HotKeySettingsView()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .glassEffect(
-                .regular.tint(SettingsVisualStyle.cardTint),
-                in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+            .background(
+                .regularMaterial,
+                in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
             )
             .padding(.horizontal, 24)
             .padding(.bottom, 24)

@@ -19,10 +19,14 @@ struct PermissionsGlassCard<Content: View>: View {
         content
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(
-                .regular.tint(SettingsVisualStyle.cardTint),
-                in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+            .background(
+                .regularMaterial,
+                in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
+                    .stroke(SettingsVisualStyle.hairline, lineWidth: 0.5)
+            }
     }
 }
 

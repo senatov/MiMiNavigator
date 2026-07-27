@@ -23,8 +23,20 @@ enum SettingsVisualStyle {
 struct SettingsRow<Content: View>: View {
     let label: String
     let help: String
-    var labelWidth: CGFloat = 200
-    @ViewBuilder let content: () -> Content
+    let labelWidth: CGFloat
+    let content: Content
+
+    init(
+        label: String,
+        help: String,
+        labelWidth: CGFloat = 200,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.label = label
+        self.help = help
+        self.labelWidth = labelWidth
+        self.content = content()
+    }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
@@ -34,7 +46,7 @@ struct SettingsRow<Content: View>: View {
                 .frame(width: labelWidth, alignment: .trailing)
                 .help(help)
             Spacer().frame(width: 16)
-            content()
+            content
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 5)
@@ -42,17 +54,25 @@ struct SettingsRow<Content: View>: View {
 }
 
 struct SettingsGroupBox<Content: View>: View {
-    @ViewBuilder let content: () -> Content
+    let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            content()
+            content
         }
         .padding(16)
-        .glassEffect(
-            .regular.tint(SettingsVisualStyle.cardTint),
-            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+        .background(
+            .regularMaterial,
+            in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
+                .stroke(SettingsVisualStyle.hairline, lineWidth: 0.5)
+        }
     }
 }
 
@@ -68,9 +88,13 @@ struct SettingsFluentGroupBoxStyle: GroupBoxStyle {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(
-            .regular.tint(SettingsVisualStyle.cardTint),
-            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+        .background(
+            .regularMaterial,
+            in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
+                .stroke(SettingsVisualStyle.hairline, lineWidth: 0.5)
+        }
     }
 }

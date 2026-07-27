@@ -25,9 +25,13 @@ struct SettingsPermissionsRestartBanner: View {
                 .disabled(isRestarting)
         }
         .padding(12)
-        .glassEffect(
-            .regular.tint(SettingsVisualStyle.cardTint),
-            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+        .background(
+            .regularMaterial,
+            in: RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: SettingsVisualStyle.cornerRadius, style: .continuous)
+                .stroke(SettingsVisualStyle.hairline, lineWidth: 0.5)
+        }
     }
 }

@@ -204,7 +204,7 @@ struct SettingsExternalToolsPane: View {
 
     private func paneGroupBox<C: View>(
         title: String,
-        @ViewBuilder content: @escaping () -> C
+        @ViewBuilder content: () -> C
     ) -> some View {
         SettingsGroupBox {
             VStack(alignment: .leading, spacing: 10) {
