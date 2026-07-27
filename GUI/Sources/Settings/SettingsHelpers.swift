@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Shared helpers for settings panes
 
+import AppKit
 import SwiftUI
 
 // MARK: - Shared style helpers
@@ -12,9 +13,11 @@ import SwiftUI
 enum SettingsVisualStyle {
     static let accent = Color.accentColor
     static let cardTint = Color.primary.opacity(0.025)
-    static let insetFill = Color.primary.opacity(0.035)
-    static let hairline = Color.primary.opacity(0.10)
+    static let insetFill = Color(nsColor: .controlBackgroundColor).opacity(0.92)
+    static let hairline = Color.primary.opacity(0.18)
     static let sidebarFill = Color.primary.opacity(0.025)
+    static let labelText = Color.primary.opacity(0.90)
+    static let secondaryText = Color.primary.opacity(0.72)
     static let cornerRadius: CGFloat = 16
 }
 
@@ -41,8 +44,8 @@ struct SettingsRow<Content: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(SettingsVisualStyle.labelText)
                 .frame(width: labelWidth, alignment: .trailing)
                 .help(help)
             Spacer().frame(width: 16)

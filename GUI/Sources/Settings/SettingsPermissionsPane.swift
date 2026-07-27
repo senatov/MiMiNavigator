@@ -55,7 +55,7 @@ struct SettingsPermissionsPane: View {
                     }
                     Text("Allows MiMiNavigator to work with protected data across your Mac. macOS does not let apps enable this permission or reliably read its switch state.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                     PermissionsFeatureGrid(items: [
                         ("desktopcomputer", "Desktop & Documents"),
@@ -104,7 +104,7 @@ struct SettingsPermissionsPane: View {
                         }
                         Text("Optional folder-specific access stored as secure bookmarks. Use this for least-privilege access or when Full Disk Access is not enabled.")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(SettingsVisualStyle.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
@@ -120,7 +120,7 @@ struct SettingsPermissionsPane: View {
                 HStack {
                     Label("Folder permissions are independent from Full Disk Access.", systemImage: "info.circle")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                     Spacer()
                     Button("Remove", systemImage: "minus") {
                         removeSelectedFolder()

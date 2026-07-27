@@ -113,7 +113,7 @@ struct SettingsGeneralPane: View {
                         HStack(spacing: 12) {
                             Image(systemName: "eye")
                                 .font(.system(size: 14))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SettingsVisualStyle.secondaryText)
                             Text("Default interface scale")
                                 .font(.system(size: 14))
                             Spacer()
@@ -157,7 +157,7 @@ struct SettingsGeneralPane: View {
                                 .frame(width: 140)
                             Text("\(Int(prefs.snapshot.panelFontSize)) pt")
                                 .monospacedDigit()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SettingsVisualStyle.secondaryText)
                                 .frame(width: 36)
                         }
                     }

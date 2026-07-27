@@ -146,7 +146,7 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                             .font(.system(size: 10))
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .help("Reset to default")
                 }
             }

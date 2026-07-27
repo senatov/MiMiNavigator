@@ -100,7 +100,7 @@ struct PermissionsFeatureGrid: View {
             ForEach(items, id: \.1) { item in
                 Label(item.1, systemImage: item.0)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -117,13 +117,13 @@ struct PermissionsEmptyFoldersView: View {
             Image(systemName: "folder.badge.questionmark")
                 .symbolRenderingMode(.hierarchical)
                 .font(.system(size: 28, weight: .light))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
             VStack(alignment: .leading, spacing: 2) {
                 Text("No authorized folders")
                     .font(.system(size: 12, weight: .semibold))
                 Text("Add only the locations you want to expose to MiMiNavigator.")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
             }
             Spacer()
         }
@@ -204,7 +204,7 @@ struct PermissionsAccessComparison: View {
             Label(title, systemImage: icon)
                 .fontWeight(.semibold)
             Text(detail)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
             Text(owner)
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity, alignment: .trailing)

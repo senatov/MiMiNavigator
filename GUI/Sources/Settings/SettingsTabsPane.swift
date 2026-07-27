@@ -76,7 +76,7 @@ struct SettingsTabsPane: View {
                             Slider(value: prefBinding(\.tabsMaxTabs), in: 2...64, step: 1)
                                 .frame(width: 140)
                             Text("\(Int(prefs.snapshot.tabsMaxTabs))").monospacedDigit()
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(SettingsVisualStyle.secondaryText)
                                 .frame(width: 28)
                         }
                     }

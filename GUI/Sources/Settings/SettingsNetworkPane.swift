@@ -36,7 +36,7 @@ struct SettingsNetworkPane: View {
                             Slider(value: prefBinding(\.networkTimeoutSec), in: 5...60, step: 5)
                                 .frame(width: 140)
                             Text("\(Int(prefs.snapshot.networkTimeoutSec)) s")
-                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 36)
+                                .monospacedDigit().foregroundStyle(SettingsVisualStyle.secondaryText).frame(width: 36)
                         }
                     }
                     Divider()
@@ -45,7 +45,7 @@ struct SettingsNetworkPane: View {
                             Slider(value: prefBinding(\.networkRetryCount), in: 0...10, step: 1)
                                 .frame(width: 140)
                             Text("\(Int(prefs.snapshot.networkRetryCount))×")
-                                .monospacedDigit().foregroundStyle(.secondary).frame(width: 28)
+                                .monospacedDigit().foregroundStyle(SettingsVisualStyle.secondaryText).frame(width: 28)
                         }
                     }
                     Divider()
@@ -87,7 +87,7 @@ struct SettingsNetworkPane: View {
                             if isTestingFing {
                                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                                     .symbolEffect(.pulse, isActive: true)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                                     .accessibilityLabel("Testing Fing connection")
                             }
                             if !fingStatus.isEmpty {
@@ -118,11 +118,11 @@ struct SettingsNetworkPane: View {
             // Info row
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .font(.system(size: 11))
                 Text("Detailed server configuration is available in Connect to Server (⌘K)")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
             }
             .padding(.top, 4)
         }

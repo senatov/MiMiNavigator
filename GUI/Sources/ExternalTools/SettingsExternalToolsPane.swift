@@ -40,7 +40,7 @@ struct SettingsExternalToolsPane: View {
                 .font(.system(size: 15, weight: .semibold))
             Text("MiMiNavigator uses these CLI tools for archives, network, search and diff. Missing tools disable related features — click ⓘ for install instructions.")
                 .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -64,7 +64,7 @@ struct SettingsExternalToolsPane: View {
             if doctor.isChecking || doctor.isRepairing {
                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                     .symbolEffect(.pulse, isActive: true)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .accessibilityLabel("Checking external tools")
             }
             Spacer()
@@ -113,7 +113,7 @@ struct SettingsExternalToolsPane: View {
                         Text(showSystemTools ? "Hide system tools" : "Show \(systemStatuses.count) system tools")
                             .font(.system(size: 12))
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                 }
                 .buttonStyle(.plain)
                 if showSystemTools {
@@ -156,13 +156,13 @@ struct SettingsExternalToolsPane: View {
                 if let path = status.resolvedPath {
                     Text(path)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 } else {
                     Text(status.tool.purpose)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                 }
             }
             Spacer()

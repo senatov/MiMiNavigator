@@ -246,7 +246,7 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                         Image(systemName: "arrow.uturn.backward").font(.system(size: 10))
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .help("Reset to preset default")
                 }
             }
@@ -260,7 +260,7 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
                     .frame(width: 130)
                 Text(String(format: "%.1f", selLineWidth))
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .frame(width: 30)
             }
         }

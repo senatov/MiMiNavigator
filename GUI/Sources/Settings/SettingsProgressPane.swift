@@ -49,7 +49,7 @@ struct SettingsProgressPane: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 50)
                         Text("pt")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(SettingsVisualStyle.secondaryText)
                     }
                     .font(.system(size: 12))
 
@@ -91,7 +91,7 @@ struct SettingsProgressPane: View {
                             .frame(width: 60)
                     }
                     Text("px")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                 }
                 .font(.system(size: 12))
                 .padding(.vertical, 4)
@@ -110,12 +110,12 @@ struct SettingsProgressPane: View {
                         }
                         .frame(width: 150)
                         Text("after operation finish")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(SettingsVisualStyle.secondaryText)
                     }
                     .font(.system(size: 12))
                     Text("The remaining seconds are shown on the green OK button.")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                         .padding(.leading, 96)
                 }
                 .padding(.vertical, 4)
@@ -127,7 +127,7 @@ struct SettingsProgressPane: View {
                     if appearance.framesByOperation.isEmpty {
                         Text("No saved ProgressPanel positions yet.")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(SettingsVisualStyle.secondaryText)
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 8)], alignment: .leading, spacing: 8) {
                             ForEach(appearance.framesByOperation.keys.sorted(), id: \.self) { key in

@@ -89,12 +89,12 @@ struct SettingsArchivesPane: View {
                     Divider()
                     SettingsRow(label: "Compression:", help: "Compression level: 1 = fastest, 9 = smallest file") {
                         HStack(spacing: 10) {
-                            Text("Fast").font(.system(size: 11)).foregroundStyle(.secondary)
+                            Text("Fast").font(.system(size: 11)).foregroundStyle(SettingsVisualStyle.secondaryText)
                             Slider(value: prefBinding(\.archiveCompressionLevel), in: 1...9, step: 1)
                                 .frame(width: 120)
-                            Text("Best").font(.system(size: 11)).foregroundStyle(.secondary)
+                            Text("Best").font(.system(size: 11)).foregroundStyle(SettingsVisualStyle.secondaryText)
                             Text("\(Int(prefs.snapshot.archiveCompressionLevel))").monospacedDigit()
-                                .foregroundStyle(.secondary).frame(width: 18)
+                                .foregroundStyle(SettingsVisualStyle.secondaryText).frame(width: 18)
                         }
                     }
                 }

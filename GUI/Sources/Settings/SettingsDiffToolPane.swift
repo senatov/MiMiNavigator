@@ -55,7 +55,7 @@ struct SettingsDiffToolPane: View {
 
                     Text("AVAILABLE TOOLS")
                         .font(.system(size: 10, weight: .light))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                         .kerning(0.5)
 
                     VStack(spacing: 0) {
@@ -95,14 +95,14 @@ struct SettingsDiffToolPane: View {
                         Button { if let id = selectedID { registry.moveUp(id: id) } } label: {
                             Image(systemName: "chevron.up").frame(width: 20, height: 20)
                         }
-                        .buttonStyle(.plain).foregroundStyle(.secondary)
+                        .buttonStyle(.plain).foregroundStyle(SettingsVisualStyle.secondaryText)
                         .disabled(selectedID == nil || registry.tools.first?.id == selectedID)
                         .help("Higher priority")
 
                         Button { if let id = selectedID { registry.moveDown(id: id) } } label: {
                             Image(systemName: "chevron.down").frame(width: 20, height: 20)
                         }
-                        .buttonStyle(.plain).foregroundStyle(.secondary)
+                        .buttonStyle(.plain).foregroundStyle(SettingsVisualStyle.secondaryText)
                         .disabled(selectedID == nil || registry.tools.last?.id == selectedID)
                         .help("Lower priority")
 
@@ -122,7 +122,7 @@ struct SettingsDiffToolPane: View {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
                     Text("No diff tool installed. Install KDiff3 (free) or Beyond Compare.")
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .font(.system(size: 11)).foregroundStyle(SettingsVisualStyle.secondaryText)
                     Spacer()
                     Button("Install KDiff3") {
                         DiffToolLauncher.offerInstallKDiff3()
@@ -247,7 +247,7 @@ struct SettingsDiffToolPane: View {
         HStack(alignment: .top, spacing: 6) {
             Text(label)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .frame(width: 70, alignment: .trailing)
             Text(value)
                 .font(.system(size: 11, design: .monospaced))
@@ -311,7 +311,7 @@ struct DiffToolEditSheet: View {
             labeledField("Name:", placeholder: "e.g. Beyond Compare", text: $name)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Application or binary:").font(.system(size: 12)).foregroundStyle(.secondary)
+                Text("Application or binary:").font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
                 HStack(spacing: 8) {
                     TextField("/Applications/MyTool.app", text: $appPath)
                         .textFieldStyle(.roundedBorder)
@@ -332,7 +332,7 @@ struct DiffToolEditSheet: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Arguments  (use %left and %right):")
-                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
                 TextField(#""%left" "%right""#, text: $arguments)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
@@ -341,7 +341,7 @@ struct DiffToolEditSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Supports:").font(.system(size: 12)).foregroundStyle(.secondary)
+                Text("Supports:").font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
                 Picker("", selection: $scope) {
                     ForEach(DiffToolScope.allCases) { s in Text(s.label).tag(s) }
                 }
@@ -376,7 +376,7 @@ struct DiffToolEditSheet: View {
 
     private func labeledField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label).font(.system(size: 12)).foregroundStyle(.secondary)
+            Text(label).font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
             TextField(placeholder, text: text).textFieldStyle(.roundedBorder)
         }
     }

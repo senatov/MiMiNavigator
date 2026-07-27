@@ -23,7 +23,7 @@ extension ColorPaneHelpers {
                 .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color.black.opacity(0.1), lineWidth: 0.5))
             Text(label)
                 .font(.system(size: 8))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
         }
     }
 
@@ -32,7 +32,7 @@ extension ColorPaneHelpers {
         HStack(spacing: 0) {
             Text(title)
                 .font(.system(size: 10, weight: .light))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .tracking(0.6)
                 .textCase(.uppercase)
             Spacer()
@@ -49,8 +49,8 @@ extension ColorPaneHelpers {
     func rowLabel<C: View>(_ label: String, help: String, @ViewBuilder content: () -> C) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(SettingsVisualStyle.labelText)
                 .frame(width: 190, alignment: .trailing)
                 .help(help)
             Spacer().frame(width: 14)
@@ -90,7 +90,7 @@ extension ColorPaneHelpers {
                     Button { hex.wrappedValue = ""; store.reloadOverrides() } label: {
                         Image(systemName: "arrow.uturn.backward").font(.system(size: 10))
                     }
-                    .buttonStyle(.plain).foregroundStyle(.secondary).help("Reset to preset default")
+                    .buttonStyle(.plain).foregroundStyle(SettingsVisualStyle.secondaryText).help("Reset to preset default")
                 }
             }
         }
@@ -111,7 +111,7 @@ extension ColorPaneHelpers {
             HStack(spacing: 10) {
                 Slider(value: controlledValue, in: range, step: step).frame(width: 130)
                 Text(String(format: displayFormat, value.wrappedValue) + unit)
-                    .monospacedDigit().foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
+                    .monospacedDigit().foregroundStyle(SettingsVisualStyle.secondaryText).frame(width: 48, alignment: .leading)
             }
         }
     }

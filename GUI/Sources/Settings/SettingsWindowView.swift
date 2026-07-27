@@ -63,10 +63,10 @@ struct SettingsWindowView: View {
             // Header bar
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .font(.system(size: 12))
                 Text("Settings")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
                     .font(.system(size: 12, weight: .medium))
                 Spacer()
             }
@@ -96,7 +96,7 @@ struct SettingsWindowView: View {
                     // reserved: import/export/reset settings
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
                 }
                 .buttonStyle(.plain)
                 .padding(10)
@@ -112,10 +112,10 @@ struct SettingsWindowView: View {
         HStack(spacing: 6) {
             Image(systemName: "paintpalette")
                 .font(.system(size: 10, weight: .light))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
             Text(title.uppercased())
                 .font(.system(size: 10, weight: .light))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .tracking(0.8)
             Spacer()
         }
@@ -232,8 +232,8 @@ struct SettingsWindowView: View {
                 Text(selectedSection.rawValue)
                     .font(.system(size: 17, weight: .semibold))
                 Text(selectedSection.summary)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
             }
             Spacer()
         }

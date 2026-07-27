@@ -67,11 +67,11 @@ struct SettingsCloudLinkPane: View {
     private var statusRow: some View {
         HStack(spacing: 8) {
             Image(systemName: statusMessage.hasPrefix("Saved") ? "checkmark.circle" : "info.circle")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .font(.system(size: 11))
             Text(statusMessage.isEmpty ? "Credentials are read from ~/.mimi before Keychain." : statusMessage)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .textSelection(.enabled)
         }
         .padding(.top, 4)
