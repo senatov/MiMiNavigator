@@ -9,6 +9,17 @@ import SwiftUI
 
 // MARK: - Shared style helpers
 
+enum SettingsVisualStyle {
+    static let accent = Color.accentColor
+    static let cardTint = Color.primary.opacity(0.025)
+    static let insetFill = Color.primary.opacity(0.035)
+    static let hairline = Color.primary.opacity(0.10)
+    static let sidebarFill = Color.primary.opacity(0.025)
+    static let cornerRadius: CGFloat = 16
+}
+
+// MARK: - Settings Row
+
 struct SettingsRow<Content: View>: View {
     let label: String
     let help: String
@@ -37,15 +48,29 @@ struct SettingsGroupBox<Content: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             content()
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(DialogColors.light)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(DialogColors.border.opacity(0.75), lineWidth: 1)
+        .padding(16)
+        .glassEffect(
+            .regular.tint(SettingsVisualStyle.cardTint),
+            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
         )
     }
 }
 
+// MARK: - Settings Fluent Group Box Style
+
+struct SettingsFluentGroupBoxStyle: GroupBoxStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            configuration.label
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.primary)
+            configuration.content
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(
+            .regular.tint(SettingsVisualStyle.cardTint),
+            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+        )
+    }
+}

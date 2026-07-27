@@ -9,11 +9,9 @@ import SwiftUI
 // MARK: - Permissions Glass Card
 
 struct PermissionsGlassCard<Content: View>: View {
-    let tint: Color
     let content: Content
 
-    init(tint: Color, @ViewBuilder content: () -> Content) {
-        self.tint = tint
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
@@ -21,7 +19,10 @@ struct PermissionsGlassCard<Content: View>: View {
         content
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(.regular.tint(tint.opacity(0.08)), in: .rect(cornerRadius: 20))
+            .glassEffect(
+                .regular.tint(SettingsVisualStyle.cardTint),
+                in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+            )
     }
 }
 
@@ -140,7 +141,7 @@ struct PermissionsFolderRow: View {
                 Image(systemName: "folder.fill")
                     .symbolRenderingMode(.hierarchical)
                     .font(.system(size: 20))
-                    .foregroundStyle(isSelected ? .white : .indigo)
+                    .foregroundStyle(isSelected ? .white : SettingsVisualStyle.accent)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(folder.displayName)

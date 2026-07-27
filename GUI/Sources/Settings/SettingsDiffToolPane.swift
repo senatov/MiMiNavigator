@@ -132,8 +132,10 @@ struct SettingsDiffToolPane: View {
                     }.controlSize(.small)
                 }
                 .padding(10)
-                .background(Color.orange.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .background(
+                    SettingsVisualStyle.insetFill,
+                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                )
             }
         }
         .sheet(isPresented: $showAddSheet) {

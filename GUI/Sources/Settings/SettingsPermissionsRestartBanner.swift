@@ -20,17 +20,14 @@ struct SettingsPermissionsRestartBanner: View {
                 .foregroundStyle(.primary)
             Spacer()
             Button("Restart Now", action: onRestart)
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 .controlSize(.small)
-                .tint(.orange)
                 .disabled(isRestarting)
         }
-        .padding(10)
-        .background(Color.orange.opacity(0.10))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.orange.opacity(0.55), lineWidth: 1)
+        .padding(12)
+        .glassEffect(
+            .regular.tint(SettingsVisualStyle.cardTint),
+            in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
         )
     }
 }

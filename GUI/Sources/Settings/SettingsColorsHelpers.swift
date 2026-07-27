@@ -63,10 +63,11 @@ extension ColorPaneHelpers {
     // MARK: - paneGroupBox
     func paneGroupBox<C: View>(@ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 0) { content() }
-            .padding(14)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(DialogColors.light))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(DialogColors.border.opacity(0.75), lineWidth: 1))
+            .padding(16)
+            .glassEffect(
+                .regular.tint(SettingsVisualStyle.cardTint),
+                in: .rect(cornerRadius: SettingsVisualStyle.cornerRadius)
+            )
     }
 
     // MARK: - colorRow

@@ -56,7 +56,7 @@ struct HotKeySettingsView: View {
             HotKeyFooterBar(store: store, onResetAll: { showResetConfirmation = true })
         }
         .frame(minWidth: 640, maxWidth: .infinity, minHeight: 440, maxHeight: .infinity)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(.clear)
         .alert("Shortcut Conflict", isPresented: conflictAlertPresented) {
             Button("Replace") {
                 guard let info = conflictAlert else { return }
@@ -114,15 +114,7 @@ struct HotKeySettingsView: View {
     }
 
     private func categoryColor(_ category: HotKeyCategory?) -> Color {
-        guard let category else { return .secondary }
-        switch category {
-        case .fileOperations: return .blue
-        case .navigation: return .orange
-        case .selection: return .green
-        case .search: return .purple
-        case .network: return .teal
-        case .application: return .gray
-        }
+        category == nil ? .secondary : SettingsVisualStyle.accent
     }
 
     private func updateHoveredAction(_ action: HotKeyAction?) {

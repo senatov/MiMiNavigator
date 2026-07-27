@@ -71,4 +71,24 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .hotkeys:           return "keyboard"
         }
     }
+
+    var summary: String {
+        switch self {
+        case .general: return "Appearance, language, file display and startup behavior"
+        case .colorsPanels: return "File panels, rows, metadata and selection colors"
+        case .colorsChrome: return "Window chrome, separators and structural surfaces"
+        case .colorsBreadcrumb: return "Path navigation, segments and interaction states"
+        case .colorsButtons: return "Toolbar and command button appearance"
+        case .panels: return "Panel layout, columns and file presentation"
+        case .tabs: return "Tab behavior, sizing and navigation"
+        case .archives: return "Archive formats, extraction and compression"
+        case .network: return "Network discovery and remote connection behavior"
+        case .cloudLink: return "Cloud providers, sharing and shortened links"
+        case .diffTool: return "Comparison tools, paths and launch behavior"
+        case .progress: return "Operation progress window appearance and behavior"
+        case .externalTools: return "Command-line dependencies and diagnostics"
+        case .permissions: return "Protected locations and authorized folders"
+        case .hotkeys: return "Keyboard shortcuts, presets and conflict management"
+        }
+    }
 }

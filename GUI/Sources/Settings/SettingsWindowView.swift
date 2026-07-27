@@ -36,7 +36,8 @@ struct SettingsWindowView: View {
         }
         .frame(minWidth: 600, minHeight: 440)
         .keyboardFocusSection()
-        .background(dialogBgColor.ignoresSafeArea())
+        .background(.ultraThinMaterial)
+        .background(dialogBgColor.opacity(0.72).ignoresSafeArea())
         .onAppear {
             if let pending = coordinator.pendingSection {
                 selectedSection = pending
@@ -71,7 +72,7 @@ struct SettingsWindowView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(.ultraThinMaterial)
             .overlay(alignment: .bottom) { Divider() }
 
             // Section list
@@ -103,7 +104,7 @@ struct SettingsWindowView: View {
             }
             .overlay(alignment: .top) { Divider() }
         }
-        .background(DialogColors.base.opacity(0.96))
+        .background(.regularMaterial)
     }
 
     // MARK: - Group label (Nova-style section divider)
@@ -145,7 +146,7 @@ struct SettingsWindowView: View {
             .padding(.vertical, section.isSubItem ? 4 : 6)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isSelected ? Color.accentColor : Color.clear)
+                .fill(isSelected ? Color.accentColor.opacity(0.88) : Color.clear)
             )
             .contentShape(Rectangle())
         }
@@ -193,6 +194,7 @@ struct SettingsWindowView: View {
                             }
                         }
                         .keyboardFocusSection()
+                        .groupBoxStyle(SettingsFluentGroupBoxStyle())
                         .padding(.horizontal, 24)
                         .padding(.bottom, 24)
                     }
@@ -202,17 +204,42 @@ struct SettingsWindowView: View {
     }
 
     private var sectionTitleBar: some View {
-        HStack {
-            Image(systemName: selectedSection.icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(DialogColors.accent)
-            Text(selectedSection.rawValue)
-                .font(.system(size: 17, weight: .light))
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                SettingsVisualStyle.accent.opacity(0.82),
+                                SettingsVisualStyle.accent.opacity(0.52)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(.white.opacity(0.42), lineWidth: 0.5)
+                    }
+                    .shadow(color: SettingsVisualStyle.accent.opacity(0.18), radius: 6, y: 3)
+                Image(systemName: selectedSection.icon)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 36, height: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(selectedSection.rawValue)
+                    .font(.system(size: 17, weight: .semibold))
+                Text(selectedSection.summary)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
         }
         .padding(.horizontal, 24)
-        .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
     }
 
     // MARK: - State Persistence

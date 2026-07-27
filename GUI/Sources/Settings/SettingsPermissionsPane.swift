@@ -36,11 +36,11 @@ struct SettingsPermissionsPane: View {
     // MARK: - Full Disk Access Card
 
     private var fullDiskAccessCard: some View {
-        PermissionsGlassCard(tint: .blue) {
+        PermissionsGlassCard {
             HStack(alignment: .top, spacing: 16) {
                 PermissionsDimensionalIcon(
                     systemName: "lock.shield.fill",
-                    tint: .blue,
+                    tint: SettingsVisualStyle.accent,
                     badgeSystemName: "gearshape.fill"
                 )
                 VStack(alignment: .leading, spacing: 8) {
@@ -84,12 +84,12 @@ struct SettingsPermissionsPane: View {
     // MARK: - Authorized Folders Card
 
     private var authorizedFoldersCard: some View {
-        PermissionsGlassCard(tint: .indigo) {
+        PermissionsGlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top, spacing: 16) {
                     PermissionsDimensionalIcon(
                         systemName: "folder.fill",
-                        tint: .indigo,
+                        tint: SettingsVisualStyle.accent,
                         badgeSystemName: "checkmark.seal.fill"
                     )
                     VStack(alignment: .leading, spacing: 5) {
@@ -161,7 +161,7 @@ struct SettingsPermissionsPane: View {
     // MARK: - Access Guide Card
 
     private var accessGuideCard: some View {
-        PermissionsGlassCard(tint: .mint) {
+        PermissionsGlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Label("How access works", systemImage: "questionmark.circle.fill")
                     .font(.system(size: 14, weight: .semibold))

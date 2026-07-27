@@ -84,7 +84,12 @@ struct SettingsNetworkPane: View {
                         HStack(spacing: 10) {
                             Button("Save & Test") { testFingConnection() }
                                 .disabled(isTestingFing || fingAPIKey.isEmpty || Int(fingPort) == nil)
-                            if isTestingFing { ProgressView().controlSize(.small) }
+                            if isTestingFing {
+                                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                                    .symbolEffect(.pulse, isActive: true)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel("Testing Fing connection")
+                            }
                             if !fingStatus.isEmpty {
                                 Text(fingStatus)
                                     .font(.system(size: 11))

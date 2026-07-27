@@ -62,8 +62,10 @@ struct SettingsExternalToolsPane: View {
             }
             .disabled(doctor.isChecking || doctor.isRepairing || !registry.brewAvailable)
             if doctor.isChecking || doctor.isRepairing {
-                ProgressView()
-                    .controlSize(.small)
+                Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                    .symbolEffect(.pulse, isActive: true)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Checking external tools")
             }
             Spacer()
         }
@@ -200,16 +202,16 @@ struct SettingsExternalToolsPane: View {
 
     // MARK: - Group Box
 
-    private func paneGroupBox<C: View>(title: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.system(size: 13, weight: .light))
-            VStack(alignment: .leading, spacing: 0) { content() }
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor)))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1))
+    private func paneGroupBox<C: View>(
+        title: String,
+        @ViewBuilder content: @escaping () -> C
+    ) -> some View {
+        SettingsGroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                VStack(alignment: .leading, spacing: 0) { content() }
+            }
         }
     }
 }
