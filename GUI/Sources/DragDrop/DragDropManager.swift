@@ -37,6 +37,9 @@ final class DragDropManager {
     /// Currently highlighted drop target folder
     var dropTargetPath: URL?
 
+    /// Explicit destination supplied by a SwiftUI drop zone outside the file table.
+    var dropDestinationOverride: URL?
+
     private func transferURLs(from files: [CustomFile]) -> [URL] {
         files.map(\.urlValue)
     }
@@ -92,6 +95,7 @@ final class DragDropManager {
         dragSourcePanelSide = nil
         dragAppState = nil
         dropTargetPath = nil
+        dropDestinationOverride = nil
     }
 
     private func scheduleStaleDragCleanup() {
@@ -164,6 +168,10 @@ final class DragDropManager {
     // MARK: - Set Drop Target
     func setDropTarget(_ url: URL?) {
         dropTargetPath = url
+    }
+
+    func setDropDestinationOverride(_ url: URL?) {
+        dropDestinationOverride = url
     }
 
     // MARK: - Resolve Row Under Cursor

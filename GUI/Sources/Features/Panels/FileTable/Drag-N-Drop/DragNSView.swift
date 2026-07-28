@@ -241,7 +241,7 @@ final class DragNSView: NSView, NSDraggingSource {
             appState: appState,
             panelFrame: panelFrame
         )
-        return (dropSide, dirUnderCursor)
+        return (dropSide, dirUnderCursor ?? dragDropManager.dropDestinationOverride)
     }
 
     private func resolveDropDestination(side: FavPanelSide, targetURL: URL?, appState: AppState) -> URL {
@@ -286,6 +286,11 @@ final class DragNSView: NSView, NSDraggingSource {
         guard let dragDropManager, let appState, let panelSide, let window else {
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended op=0, no window context")
+            return
+        }
+        if dragDropManager.pendingOperation != nil || dragDropManager.showConfirmationDialog {
+            dragDropManager.endDrag()
+            log.debug("[DragNSView] internal drop already handled by SwiftUI destination")
             return
         }
         let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)

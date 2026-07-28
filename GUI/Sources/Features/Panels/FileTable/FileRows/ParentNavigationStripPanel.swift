@@ -151,7 +151,12 @@ struct ParentNavigationStripPanel: View {
         return true
     }
     private func handleDropTargetChange(_ targeted: Bool) {
-        guard targeted else { return }
-        dragDropManager.setDropTarget(transferDestinationURL)
+        let destination = transferDestinationURL
+        if targeted {
+            dragDropManager.setDropTarget(destination)
+            dragDropManager.setDropDestinationOverride(destination)
+        } else if dragDropManager.dropDestinationOverride == destination {
+            dragDropManager.setDropDestinationOverride(nil)
+        }
     }
 }
