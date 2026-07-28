@@ -18,6 +18,7 @@ import SwiftUI
 /// Not a file row — has no context menu, no row selection, no keyboard nav index.
 struct ParentNavigationStripPanel: View {
     @Environment(AppState.self) private var appState
+    @Environment(DragDropManager.self) private var dragDropManager
 
     let panelSide: FavPanelSide
     let isHighlighted: Bool
@@ -71,6 +72,15 @@ struct ParentNavigationStripPanel: View {
         parentFile.urlValue
     }
 
+    private var transferDestinationURL: URL {
+        let state = appState.archiveState(for: panelSide)
+        if state.isInsideArchive,
+           state.isAtArchiveRoot(currentPath: currentPath),
+           let archiveURL = state.archiveURL {
+            return archiveURL.deletingLastPathComponent()
+        }
+        return parentURL
+    }
 
     var body: some View {
         ZStack(alignment: .trailing) {
@@ -98,7 +108,9 @@ struct ParentNavigationStripPanel: View {
                 isSelected: isHighlighted,
                 parentURL: parentURL,
                 onSelect: onSelect,
-                onActivate: activateParent
+                onActivate: activateParent,
+                onDrop: handleDrop,
+                onDropTargetChange: handleDropTargetChange
             )
         } else {
             Color.clear
@@ -125,5 +137,21 @@ struct ParentNavigationStripPanel: View {
             return
         }
         onActivate(file)
+    }
+    // MARK: - Drop Handling
+    private func handleDrop(_ files: [CustomFile]) -> Bool {
+        guard !files.isEmpty else { return false }
+        let destination = transferDestinationURL
+        dragDropManager.prepareTransfer(
+            files: files,
+            to: destination,
+            from: dragDropManager.dragSourcePanelSide
+        )
+        log.info("[ToParent] \(files.count) file(s) → \(destination.path)")
+        return true
+    }
+    private func handleDropTargetChange(_ targeted: Bool) {
+        guard targeted else { return }
+        dragDropManager.setDropTarget(transferDestinationURL)
     }
 }

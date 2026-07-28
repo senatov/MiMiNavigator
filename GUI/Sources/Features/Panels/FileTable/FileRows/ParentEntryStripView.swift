@@ -16,9 +16,12 @@ struct ParentEntryStripView: View {
     let parentURL: URL
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
+    let onDrop: (([CustomFile]) -> Bool)? = nil
+    let onDropTargetChange: ((Bool) -> Void)? = nil
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
     @State private var keyboardPulse = false
+    @State private var isDropTargeted = false
     private var label: String { "Parent: \(parentName)   (\(rowsCount) dirs)" }
     private var textColor: Color {
         isActive ? Self.activeContentColor : Color.black
@@ -29,7 +32,7 @@ struct ParentEntryStripView: View {
             : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
     private static let activeContentColor = Color(#colorLiteral(red: 0.02, green: 0.16, blue: 0.72, alpha: 1))
-    private var isActive: Bool { isSelected || isHovering }
+    private var isActive: Bool { isSelected || isHovering || isDropTargeted }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
     private var parentName: String { parentURL.path == "/" ? "/Root" : parentURL.path }
     private var countTaskID: String { "\(parentURL.path)-\(showHidden)" }
@@ -37,6 +40,24 @@ struct ParentEntryStripView: View {
         static let stripHeight: CGFloat = 25
         static let buttonInset: CGFloat = 1
         static let buttonHeight: CGFloat = 24
+    }
+    // MARK: - Initialization
+    init(
+        file: CustomFile,
+        isSelected: Bool,
+        parentURL: URL,
+        onSelect: @escaping (CustomFile) -> Void,
+        onActivate: @escaping (CustomFile) -> Void,
+        onDrop: (([CustomFile]) -> Bool)? = nil,
+        onDropTargetChange: ((Bool) -> Void)? = nil
+    ) {
+        self.file = file
+        self.isSelected = isSelected
+        self.parentURL = parentURL
+        self.onSelect = onSelect
+        self.onActivate = onActivate
+        self.onDrop = onDrop
+        self.onDropTargetChange = onDropTargetChange
     }
     // MARK: - Body
     var body: some View {
@@ -59,13 +80,28 @@ struct ParentEntryStripView: View {
         .onChange(of: isSelected) { _, selected in
             triggerKeyboardPulse(selected)
         }
+        .modifier(
+            DropTargetModifier(
+                isValidTarget: onDrop != nil,
+                isDropTargeted: $isDropTargeted,
+                onDrop: handleDrop,
+                onTargetChange: handleDropTargetChange
+            )
+        )
+        .animation(.spring(response: 0.28, dampingFraction: 0.68), value: isDropTargeted)
     }
     // MARK: - Strip Content
     private func stripContent(geo: GeometryProxy) -> some View {
         ZStack(alignment: .leading) {
             Color.white
+            if isDropTargeted {
+                PulsingDropHighlight()
+                    .padding(.horizontal, UI.buttonInset)
+                    .allowsHitTesting(false)
+            }
             fullWidthButton(geo: geo)
         }
+        .scaleEffect(isDropTargeted ? 1.015 : 1)
     }
     // MARK: - Full Width Button
     private func fullWidthButton(geo: GeometryProxy) -> some View {
@@ -114,6 +150,15 @@ struct ParentEntryStripView: View {
             log.debug("[ParentEntryStripView] navigate parent path=\(parentURL.path)")
             onActivate(file)
         }
+    }
+    // MARK: - Drop Handling
+    private func handleDrop(_ files: [CustomFile]) -> Bool {
+        guard let onDrop else { return false }
+        return onDrop(files)
+    }
+    private func handleDropTargetChange(_ targeted: Bool) {
+        isDropTargeted = targeted
+        onDropTargetChange?(targeted)
     }
     // MARK: - Load Parent Directory Count
     private func loadParentCount() async {
