@@ -110,7 +110,8 @@ struct ParentNavigationStripPanel: View {
                 onSelect: onSelect,
                 onActivate: activateParent,
                 onDrop: handleDrop,
-                onDropTargetChange: handleDropTargetChange
+                onDropTargetChange: handleDropTargetChange,
+                isExternalDropContact: dragDropManager.dropDestinationOverride == transferDestinationURL
             )
         } else {
             Color.clear

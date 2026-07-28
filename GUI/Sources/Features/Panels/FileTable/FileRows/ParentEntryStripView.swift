@@ -18,6 +18,7 @@ struct ParentEntryStripView: View {
     let onActivate: (CustomFile) -> Void
     let onDrop: (([CustomFile]) -> Bool)?
     let onDropTargetChange: ((Bool) -> Void)?
+    let isExternalDropContact: Bool
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
     @State private var keyboardPulse = false
@@ -32,7 +33,8 @@ struct ParentEntryStripView: View {
             : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
     private static let activeContentColor = Color(#colorLiteral(red: 0.02, green: 0.16, blue: 0.72, alpha: 1))
-    private var isActive: Bool { isSelected || isHovering || isDropTargeted }
+    private var isActive: Bool { isSelected || isHovering || isContactActive }
+    private var isContactActive: Bool { isDropTargeted || isExternalDropContact }
     private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
     private var parentName: String { parentURL.path == "/" ? "/Root" : parentURL.path }
     private var countTaskID: String { "\(parentURL.path)-\(showHidden)" }
@@ -49,7 +51,8 @@ struct ParentEntryStripView: View {
         onSelect: @escaping (CustomFile) -> Void,
         onActivate: @escaping (CustomFile) -> Void,
         onDrop: (([CustomFile]) -> Bool)? = nil,
-        onDropTargetChange: ((Bool) -> Void)? = nil
+        onDropTargetChange: ((Bool) -> Void)? = nil,
+        isExternalDropContact: Bool = false
     ) {
         self.file = file
         self.isSelected = isSelected
@@ -58,6 +61,7 @@ struct ParentEntryStripView: View {
         self.onActivate = onActivate
         self.onDrop = onDrop
         self.onDropTargetChange = onDropTargetChange
+        self.isExternalDropContact = isExternalDropContact
     }
     // MARK: - Body
     var body: some View {
@@ -88,20 +92,20 @@ struct ParentEntryStripView: View {
                 onTargetChange: handleDropTargetChange
             )
         )
-        .animation(.spring(response: 0.28, dampingFraction: 0.68), value: isDropTargeted)
+        .animation(.spring(response: 0.28, dampingFraction: 0.68), value: isContactActive)
     }
     // MARK: - Strip Content
     private func stripContent(geo: GeometryProxy) -> some View {
         ZStack(alignment: .leading) {
             Color.white
-            if isDropTargeted {
+            if isContactActive {
                 PulsingDropHighlight()
                     .padding(.horizontal, UI.buttonInset)
                     .allowsHitTesting(false)
             }
             fullWidthButton(geo: geo)
         }
-        .scaleEffect(isDropTargeted ? 1.015 : 1)
+        .scaleEffect(isContactActive ? 1.015 : 1)
     }
     // MARK: - Full Width Button
     private func fullWidthButton(geo: GeometryProxy) -> some View {

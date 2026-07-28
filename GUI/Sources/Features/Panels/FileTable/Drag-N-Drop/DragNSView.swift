@@ -19,6 +19,7 @@ final class DragNSView: NSView, NSDraggingSource {
     private var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
+    private var isToParentContact = false
 
     init(appState: AppState) {
         self.appState = appState
@@ -156,21 +157,30 @@ final class DragNSView: NSView, NSDraggingSource {
         let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
         let hoverSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
         let panelFrame = panelFrameInWindowCoordinates()
+        let toParentDestination = resolveToParentDestination(
+            windowPoint: window.convertPoint(fromScreen: cursorScreenPoint),
+            panelSide: hoverSide,
+            appState: appState,
+            panelFrame: panelFrame
+        )
         let dirURL = dragDropManager.resolveDirectoryUnderCursor(
             windowPoint: dragContext.windowPoint,
             panelSide: hoverSide,
             appState: appState,
             panelFrame: panelFrame
         )
+        let targetURL = toParentDestination ?? dirURL
 
         logDragMove(
             dragImageScreenPoint: screenPoint,
             context: dragContext,
             hoverSide: hoverSide,
             panelFrame: panelFrame,
-            targetURL: dirURL
+            targetURL: targetURL
         )
-        dragDropManager.setDropTarget(dirURL)
+        dragDropManager.setDropTarget(targetURL)
+        dragDropManager.setDropDestinationOverride(toParentDestination)
+        updateToParentContact(toParentDestination != nil, session: session)
     }
 
     func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
@@ -246,6 +256,49 @@ final class DragNSView: NSView, NSDraggingSource {
 
     private func resolveDropDestination(side: FavPanelSide, targetURL: URL?, appState: AppState) -> URL {
         targetURL ?? appState.url(for: side)
+    }
+
+    private func resolveToParentDestination(
+        windowPoint: NSPoint,
+        panelSide: FavPanelSide,
+        appState: AppState,
+        panelFrame: NSRect
+    ) -> URL? {
+        guard panelSide == self.panelSide else { return nil }
+        let stripFrame = NSRect(
+            x: panelFrame.minX,
+            y: panelFrame.maxY - ParentEntryStripView.rowHeight,
+            width: max(0, panelFrame.width - 69),
+            height: ParentEntryStripView.rowHeight
+        )
+        guard stripFrame.contains(windowPoint) else { return nil }
+        let state = appState.archiveState(for: panelSide)
+        guard state.isInsideArchive else { return nil }
+        let currentURL = appState.url(for: panelSide)
+        if state.isAtArchiveRoot(currentPath: currentURL.path), let archiveURL = state.archiveURL {
+            return archiveURL.deletingLastPathComponent()
+        }
+        return currentURL.deletingLastPathComponent()
+    }
+
+    private func updateToParentContact(_ contact: Bool, session: NSDraggingSession) {
+        guard isToParentContact != contact, let firstFile = cachedSelection.first else { return }
+        isToParentContact = contact
+        let preview = DragSessionBuilder.makePreviewImage(
+            firstURL: firstFile.urlValue,
+            itemCount: cachedSelection.count,
+            isContact: contact
+        )
+        session.enumerateDraggingItems(
+            options: [],
+            for: nil,
+            classes: [NSURL.self],
+            searchOptions: [:]
+        ) { item, index, _ in
+            guard index == 0 else { return }
+            item.setDraggingFrame(item.draggingFrame, contents: preview)
+        }
+        log.debug("[ToParent] contact=\(contact)")
     }
 
     private func shouldIgnoreInternalDrop(
@@ -378,6 +431,7 @@ final class DragNSView: NSView, NSDraggingSource {
     private func resetDragState() {
         dragState = DragState(startPoint: nil, didStart: false, isResize: false)
         cachedSelection = []
+        isToParentContact = false
     }
 
     // MARK: - Helpers

@@ -15,7 +15,7 @@ struct DragSessionBuilder {
     /// `mouseLocation` is in the source view's coordinate system.
     static func makeDraggingItems(from urls: [URL], at mouseLocation: NSPoint) -> [NSDraggingItem] {
         guard let firstURL = urls.first else { return [] }
-        let previewImage = makePreviewImage(firstURL: firstURL, itemCount: urls.count)
+        let previewImage = makePreviewImage(firstURL: firstURL, itemCount: urls.count, isContact: false)
         let previewFrame = draggingFrame(for: previewImage.size, at: mouseLocation)
         let hiddenImage = makeHiddenImage()
         return urls.enumerated().map { index, fileURL in
@@ -30,14 +30,17 @@ struct DragSessionBuilder {
     }
 
     // MARK: - Preview Image
-    private static func makePreviewImage(firstURL: URL, itemCount: Int) -> NSImage {
+    static func makePreviewImage(firstURL: URL, itemCount: Int, isContact: Bool) -> NSImage {
         let size = NSSize(width: itemCount > 1 ? 58 : 42, height: 42)
         let image = NSImage(size: size)
         image.lockFocus()
-        drawPreviewBackground(in: NSRect(origin: .zero, size: size))
+        drawPreviewBackground(in: NSRect(origin: .zero, size: size), isContact: isContact)
         drawIcon(for: firstURL, in: size)
         if itemCount > 1 {
-            drawCountBadge(itemCount, in: size)
+            drawCountBadge(itemCount, in: size, isContact: isContact)
+        }
+        if isContact {
+            drawContactBadge(in: size)
         }
         image.unlockFocus()
         image.isTemplate = false
@@ -45,12 +48,14 @@ struct DragSessionBuilder {
     }
 
     // MARK: - Preview Background
-    private static func drawPreviewBackground(in rect: NSRect) {
-        NSColor.windowBackgroundColor.withAlphaComponent(0.82).setFill()
+    private static func drawPreviewBackground(in rect: NSRect, isContact: Bool) {
+        let fillColor = isContact ? NSColor.systemGreen : NSColor.windowBackgroundColor
+        fillColor.withAlphaComponent(isContact ? 0.42 : 0.82).setFill()
         NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 9, yRadius: 9).fill()
-        NSColor.separatorColor.withAlphaComponent(0.55).setStroke()
+        let borderColor = isContact ? NSColor.systemBlue : NSColor.separatorColor
+        borderColor.withAlphaComponent(isContact ? 0.95 : 0.55).setStroke()
         let border = NSBezierPath(roundedRect: rect.insetBy(dx: 1.5, dy: 1.5), xRadius: 8, yRadius: 8)
-        border.lineWidth = 1
+        border.lineWidth = isContact ? 2.5 : 1
         border.stroke()
     }
 
@@ -62,7 +67,7 @@ struct DragSessionBuilder {
     }
 
     // MARK: - Count Badge
-    private static func drawCountBadge(_ count: Int, in size: NSSize) {
+    private static func drawCountBadge(_ count: Int, in size: NSSize, isContact: Bool) {
         let text = count > 999 ? "999+" : "\(count)"
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
@@ -76,7 +81,7 @@ struct DragSessionBuilder {
             width: badgeWidth,
             height: 17
         )
-        NSColor.systemRed.setFill()
+        (isContact ? NSColor.systemGreen : NSColor.systemRed).setFill()
         NSBezierPath(roundedRect: badgeRect, xRadius: 8.5, yRadius: 8.5).fill()
         let textRect = NSRect(
             x: badgeRect.midX - textSize.width / 2,
@@ -85,6 +90,15 @@ struct DragSessionBuilder {
             height: textSize.height
         )
         (text as NSString).draw(in: textRect, withAttributes: attributes)
+    }
+
+    // MARK: - Contact Badge
+    private static func drawContactBadge(in size: NSSize) {
+        let badgeRect = NSRect(x: 2, y: 2, width: 14, height: 14)
+        NSColor.systemBlue.setFill()
+        NSBezierPath(ovalIn: badgeRect).fill()
+        let symbol = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)
+        symbol?.draw(in: badgeRect.insetBy(dx: 3, dy: 3))
     }
 
     // MARK: - Dragging Frames
