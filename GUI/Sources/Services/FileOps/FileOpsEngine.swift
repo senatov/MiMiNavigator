@@ -44,7 +44,14 @@ extension FileOpsEngine {
     @discardableResult
     func copy(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] copy \(items.count) items → \(destination.path)")
-        return try await performCopy(items: items, to: destination)
+        do {
+            let progress = try await performCopy(items: items, to: destination)
+            await DirectorySizeService.shared.invalidateCache(affectedBy: [destination])
+            return progress
+        } catch {
+            await DirectorySizeService.shared.invalidateCache(affectedBy: [destination])
+            throw error
+        }
     }
 
 
@@ -52,7 +59,15 @@ extension FileOpsEngine {
     @discardableResult
     func move(items: [URL], to destination: URL) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] move \(items.count) items → \(destination.path)")
-        return try await performMove(items: items, to: destination)
+        let affectedURLs = items + [destination]
+        do {
+            let progress = try await performMove(items: items, to: destination)
+            await DirectorySizeService.shared.invalidateCache(affectedBy: affectedURLs)
+            return progress
+        } catch {
+            await DirectorySizeService.shared.invalidateCache(affectedBy: affectedURLs)
+            throw error
+        }
     }
 
 
@@ -60,7 +75,14 @@ extension FileOpsEngine {
     @discardableResult
     func delete(items: [URL]) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] delete \(items.count) items")
-        return try await performDelete(items: items)
+        do {
+            let progress = try await performDelete(items: items)
+            await DirectorySizeService.shared.invalidateCache(affectedBy: items)
+            return progress
+        } catch {
+            await DirectorySizeService.shared.invalidateCache(affectedBy: items)
+            throw error
+        }
     }
 }
 

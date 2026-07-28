@@ -44,26 +44,26 @@ actor DirectorySizeService {
 
     // MARK: - Cache
     /// In‑memory cache
-    private var memoryCache: [String: CacheEntry] = [:]
+    var memoryCache: [String: CacheEntry] = [:]
 
     /// Paths confirmed unreadable (no perms / sandbox / virtual FS).
     /// Never retry these — they won't become readable without a restart.
-    private var permanentlyUnavailable: Set<String> = []
+    var permanentlyUnavailable: Set<String> = []
 
     /// Tracks directory size calculations currently in progress
     /// Prevents the same directory from being scanned multiple times simultaneously.
-    private var inFlightTasks: [String: Task<Int64, Never>] = [:]
-    private var inFlightCancellation: [String: DirectorySizeCancellationState] = [:]
+    var inFlightTasks: [String: Task<Int64, Never>] = [:]
+    var inFlightCancellation: [String: DirectorySizeCancellationState] = [:]
 
-    private let persistentCache = ApplicationPersistentCache.shared
+    let persistentCache = ApplicationPersistentCache.shared
     private let legacyCacheURL: URL
-    private let cacheNamespace = "directory-size-v1"
+    let cacheNamespace = "directory-size-v1"
     private let cacheEntryLimit = 512
     private let cacheMaxIdleAge: TimeInterval = 30 * 60
     private let persistentLifetime: TimeInterval = 7 * 24 * 60 * 60
 
     // MARK: - Cache Entry
-    private struct CacheEntry: Codable {
+    struct CacheEntry: Codable {
         let size: Int64
         let mtime: TimeInterval
         var lastAccess: TimeInterval?
@@ -150,7 +150,7 @@ actor DirectorySizeService {
 
     // MARK: - Request helpers
 
-    private func resolveURLForSizing(_ url: URL) -> URL {
+    func resolveURLForSizing(_ url: URL) -> URL {
         // Resolve symlinks for consistent cache keys and calculation
         return url.resolvingSymlinksInPath()
     }

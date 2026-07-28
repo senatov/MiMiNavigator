@@ -16,8 +16,8 @@ struct ParentEntryStripView: View {
     let parentURL: URL
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
-    let onDrop: (([CustomFile]) -> Bool)? = nil
-    let onDropTargetChange: ((Bool) -> Void)? = nil
+    let onDrop: (([CustomFile]) -> Bool)?
+    let onDropTargetChange: ((Bool) -> Void)?
     @State private var rowsCount: Int = 0
     @State private var isHovering = false
     @State private var keyboardPulse = false
