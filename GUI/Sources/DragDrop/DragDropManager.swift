@@ -309,10 +309,19 @@ final class DragDropManager {
                 case .abort: return
             }
             if kind == .move && progress.errors.isEmpty && !progress.isCancelled {
-                for file in files {
-                    await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                if let sourceSide = operation.sourcePanelSide,
+                   let archiveURL = appState.archiveState(for: sourceSide).archiveURL {
+                    let marked = await ArchiveManager.shared.markDirty(archivePath: archiveURL.path)
+                    log.info("[DnD] archive dirty after move=\(marked): \(archiveURL.lastPathComponent)")
+                } else {
+                    var markedCount = 0
+                    for url in urls {
+                        if await ArchiveManager.shared.markDirtyByTempPath(url.path) {
+                            markedCount += 1
+                        }
+                    }
+                    log.info("[DnD] archive dirty by source URL: \(markedCount)/\(urls.count)")
                 }
-                log.info("[DnD] marked archive dirty after moving \(files.count) item(s)")
             }
         } catch {
             log.error("[DnD] \(kind) failed: \(error.localizedDescription)")

@@ -290,14 +290,24 @@ actor ArchiveManager {
 
     // MARK: - Dirty
 
-    func markDirty(archivePath: String) {
+    @discardableResult
+    func markDirty(archivePath: String) -> Bool {
+        guard sessions[archivePath] != nil else {
+            log.warning("[ArchiveManager] markDirty ignored — session not found: \(archivePath)")
+            return false
+        }
         sessions[archivePath]?.isDirty = true
+        return true
     }
 
-    func markDirtyByTempPath(_ tempPath: String) {
+    @discardableResult
+    func markDirtyByTempPath(_ tempPath: String) -> Bool {
         for (key, session) in sessions where tempPath.hasPrefix(session.tempDirectory.path) {
             sessions[key]?.isDirty = true
+            return true
         }
+        log.warning("[ArchiveManager] markDirtyByTempPath ignored — session not found: \(tempPath)")
+        return false
     }
 
     func isDirty(archiveURL: URL) -> Bool {
