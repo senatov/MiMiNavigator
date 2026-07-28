@@ -294,10 +294,17 @@ final class DragDropManager {
 
         log.info("[DnD] \(kind) \(urls.count) item(s) → \(dest.lastPathComponent)")
         do {
+            let progress: FileOpProgress
             switch kind {
-                case .move: try await FileOpsEngine.shared.move(items: urls, to: dest)
-                case .copy: try await FileOpsEngine.shared.copy(items: urls, to: dest)
+                case .move: progress = try await FileOpsEngine.shared.move(items: urls, to: dest)
+                case .copy: progress = try await FileOpsEngine.shared.copy(items: urls, to: dest)
                 case .abort: return
+            }
+            if kind == .move && progress.errors.isEmpty && !progress.isCancelled {
+                for file in files {
+                    await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
+                }
+                log.info("[DnD] marked archive dirty after moving \(files.count) item(s)")
             }
         } catch {
             log.error("[DnD] \(kind) failed: \(error.localizedDescription)")
