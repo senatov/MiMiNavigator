@@ -10,20 +10,26 @@ import SwiftUI
 // MARK: - PulsingDropHighlight
 /// Yellow background highlight for drop target directory rows.
 struct PulsingDropHighlight: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
-
     private let cornerRadius: CGFloat = 6
-    private let fillRange: ClosedRange<Double> = 0.18...0.32
 
     var body: some View {
-        log.debug(#function)
-
-        return RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.yellow.opacity(pulse ? fillRange.upperBound : fillRange.lowerBound))
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.accentColor.opacity(pulse && !reduceMotion ? 0.26 : 0.16))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.accentColor.opacity(0.82), lineWidth: pulse && !reduceMotion ? 2 : 1)
+            }
+            .scaleEffect(pulse && !reduceMotion ? 1.008 : 1)
             .onAppear {
-                withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                guard !reduceMotion else { return }
+                withAnimation(.smooth(duration: 0.7).repeatForever(autoreverses: true)) {
                     pulse = true
                 }
+            }
+            .onDisappear {
+                pulse = false
             }
     }
 }

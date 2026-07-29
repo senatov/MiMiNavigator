@@ -16,10 +16,12 @@ final class DragNSView: NSView, NSDraggingSource {
     weak var dragDropManager: DragDropManager?
     weak var appState: AppState?
     private var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
-    private var cachedSelection: [CustomFile] = []
+    var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
     private var isToParentContact = false
+    private var lastLoggedHoverSide: FavPanelSide?
+    private var lastLoggedTargetPath: String?
 
     init(appState: AppState) {
         self.appState = appState
@@ -128,74 +130,6 @@ final class DragNSView: NSView, NSDraggingSource {
         configureDraggingSession(session)
     }
 
-    private func configureDraggingSession(_ session: NSDraggingSession) {
-        session.animatesToStartingPositionsOnCancelOrFail = false
-        log.debug("[DragNSView] drag session configured: animatesToStartingPositionsOnCancelOrFail=false")
-    }
-
-    // MARK: - helper NSDraggingSource
-    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
-        switch context {
-            case .outsideApplication:
-                if dragContainsAppManagedNetworkMount { return [.copy] }
-                return [.copy, .move]
-            case .withinApplication: return [.move]
-            @unknown default: return [.copy]
-        }
-    }
-
-    func ignoreModifierKeys(for session: NSDraggingSession) -> Bool { false }
-
-    func draggingSession(_ session: NSDraggingSession, movedTo screenPoint: NSPoint) {
-        guard let dragDropManager, let appState, let window else { return }
-        let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
-        guard DragDestinationWindowResolver.isWindowTopmost(window, at: cursorScreenPoint) else {
-            dragDropManager.setDropTarget(nil)
-            return
-        }
-
-        let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
-        let hoverSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
-        let panelFrame = panelFrameInWindowCoordinates()
-        let toParentDestination = resolveToParentDestination(
-            windowPoint: window.convertPoint(fromScreen: cursorScreenPoint),
-            panelSide: hoverSide,
-            appState: appState,
-            panelFrame: panelFrame
-        )
-        let dirURL = dragDropManager.resolveDirectoryUnderCursor(
-            windowPoint: dragContext.windowPoint,
-            panelSide: hoverSide,
-            appState: appState,
-            panelFrame: panelFrame
-        )
-        let targetURL = toParentDestination ?? dirURL
-
-        logDragMove(
-            dragImageScreenPoint: screenPoint,
-            context: dragContext,
-            hoverSide: hoverSide,
-            panelFrame: panelFrame,
-            targetURL: targetURL
-        )
-        dragDropManager.setDropTarget(targetURL)
-        dragDropManager.setDropDestinationOverride(toParentDestination)
-        updateToParentContact(toParentDestination != nil, session: session)
-    }
-
-    func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
-        defer {
-            session.animatesToStartingPositionsOnCancelOrFail = false
-            resetDragState()
-        }
-
-        if handleExternalDragEnd(screenPoint: screenPoint, operation: operation) {
-            return
-        }
-
-        handleInternalDragEnd(screenPoint: screenPoint)
-    }
-
     private func hasWindowContext(for event: NSEvent) -> Bool {
         guard let window = self.window else { return false }
         return event.window === window
@@ -214,11 +148,7 @@ final class DragNSView: NSView, NSDraggingSource {
 
     private func registerDragStart(files: [CustomFile]) {
         guard let panelSide, let appState else { return }
-        if appState.focusedPanel != panelSide {
-            appState.focusedPanel = panelSide
-            log.debug("[DnD] focus → \(panelSide) at drag start")
-        }
-        dragDropManager?.startDrag(files: files, from: panelSide)
+        dragDropManager?.startDrag(files: files, from: panelSide, appState: appState)
     }
 
     private func makeDraggingItems(from files: [CustomFile], at mouseInView: NSPoint) -> [NSDraggingItem] {
@@ -236,7 +166,7 @@ final class DragNSView: NSView, NSDraggingSource {
         }
     }
 
-    private var dragContainsAppManagedNetworkMount: Bool {
+    var dragContainsAppManagedNetworkMount: Bool {
         cachedSelection.contains { AppState.isAppManagedNetworkMountPath($0.urlValue) }
     }
 
@@ -247,7 +177,7 @@ final class DragNSView: NSView, NSDraggingSource {
         dragDropManager: DragDropManager
     ) -> (side: FavPanelSide, target: URL?) {
         let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
-        let dropSide = resolvePanelSide(for: dragContext.windowPoint, in: window)
+        let dropSide = dragDropManager.panelSide(atWindowX: dragContext.windowPoint.x)
         let panelFrame = panelFrameInWindowCoordinates()
         let dirUnderCursor = dragDropManager.resolveDirectoryUnderCursor(
             windowPoint: dragContext.windowPoint,
@@ -262,7 +192,7 @@ final class DragNSView: NSView, NSDraggingSource {
         targetURL ?? appState.url(for: side)
     }
 
-    private func resolveToParentDestination(
+    func resolveToParentDestination(
         windowPoint: NSPoint,
         panelSide: FavPanelSide,
         appState: AppState,
@@ -285,7 +215,7 @@ final class DragNSView: NSView, NSDraggingSource {
         return currentURL.deletingLastPathComponent()
     }
 
-    private func updateToParentContact(_ contact: Bool, session: NSDraggingSession) {
+    func updateToParentContact(_ contact: Bool, session: NSDraggingSession) {
         guard isToParentContact != contact, let firstFile = cachedSelection.first else { return }
         isToParentContact = contact
         let preview = DragSessionBuilder.makePreviewImage(
@@ -331,7 +261,7 @@ final class DragNSView: NSView, NSDraggingSource {
         return panelFrame.contains(endWindowPoint)
     }
 
-    private func handleExternalDragEnd(screenPoint: NSPoint, operation: NSDragOperation) -> Bool {
+    func handleExternalDragEnd(screenPoint: NSPoint, operation: NSDragOperation) -> Bool {
         guard operation != [] else { return false }
 
         dragDropManager?.endDrag()
@@ -339,7 +269,7 @@ final class DragNSView: NSView, NSDraggingSource {
         return true
     }
 
-    private func handleInternalDragEnd(screenPoint: NSPoint) {
+    func handleInternalDragEnd(screenPoint: NSPoint) {
         guard let dragDropManager, let appState, let panelSide, let window else {
             dragDropManager?.endDrag()
             log.debug("[DragNSView] drag ended op=0, no window context")
@@ -392,7 +322,7 @@ final class DragNSView: NSView, NSDraggingSource {
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)
     }
 
-    private func makeDragLocationContext(screenPoint: NSPoint, window: NSWindow) -> DragLocationContext {
+    func makeDragLocationContext(screenPoint: NSPoint, window: NSWindow) -> DragLocationContext {
         let cursorScreenPoint = currentMouseScreenPoint(fallback: screenPoint)
         let probeScreenPoint = dropTargetProbeScreenPoint(from: cursorScreenPoint)
         let windowPoint = window.convertPoint(fromScreen: probeScreenPoint)
@@ -403,48 +333,36 @@ final class DragNSView: NSView, NSDraggingSource {
         )
     }
 
-    private func resolvePanelSide(for windowPoint: NSPoint, in window: NSWindow) -> FavPanelSide {
-        let contentWidth = window.contentView?.frame.width ?? window.frame.width
-        let midX = contentWidth / 2
-        return windowPoint.x < midX ? .left : .right
-    }
-
     private func dragMoveTargetName(_ targetURL: URL?) -> String {
         targetURL?.lastPathComponent ?? "nil"
     }
 
-    private func logDragMove(
-        dragImageScreenPoint: NSPoint,
-        context: DragLocationContext,
+    func logDragMove(
         hoverSide: FavPanelSide,
-        panelFrame: NSRect,
         targetURL: URL?
     ) {
-        let targetName = dragMoveTargetName(targetURL)
-        let logMessage =
-            "[DragNSView] movedTo dragImageScreen=\(dragImageScreenPoint) "
-            + "cursorScreen=\(context.cursorScreenPoint) "
-            + "probeScreen=\(context.probeScreenPoint) "
-            + "window=\(context.windowPoint) "
-            + "hoverSide=\(hoverSide) "
-            + "panelFrame=\(panelFrame) "
-            + "target=\(targetName)"
-        log.debug(logMessage)
+        let targetPath = targetURL?.standardizedFileURL.path
+        guard lastLoggedHoverSide != hoverSide || lastLoggedTargetPath != targetPath else { return }
+        lastLoggedHoverSide = hoverSide
+        lastLoggedTargetPath = targetPath
+        log.debug("[DragNSView] hover panel=\(hoverSide) target=\(dragMoveTargetName(targetURL))")
     }
 
-    private func resetDragState() {
+    func resetDragState() {
         dragState = DragState(startPoint: nil, didStart: false, isResize: false)
         cachedSelection = []
         isToParentContact = false
+        lastLoggedHoverSide = nil
+        lastLoggedTargetPath = nil
     }
 
     // MARK: - Helpers
-    private func panelFrameInWindowCoordinates() -> NSRect {
+    func panelFrameInWindowCoordinates() -> NSRect {
         guard self.window != nil else { return .zero }
         return convert(bounds, to: nil)
     }
 
-    private func currentMouseScreenPoint(fallback: NSPoint) -> NSPoint {
+    func currentMouseScreenPoint(fallback: NSPoint) -> NSPoint {
         let mouseLocation = NSEvent.mouseLocation
         if mouseLocation == .zero {
             return fallback

@@ -99,6 +99,8 @@ struct FilePanelView: View {
         }
         .background(DesignTokens.panelBg)
         .overlay { navigationOverlay }
+        .dragPreviewsFormation(.stack)
+        .dropPreviewsFormation(.stack)
         .controlSize(.regular)
         .contentShape(Rectangle())
         .onChange(of: currentMode) { _, _ in

@@ -14,17 +14,12 @@ struct DragSessionBuilder {
     /// Create dragging items positioned at the mouse location.
     /// `mouseLocation` is in the source view's coordinate system.
     static func makeDraggingItems(from urls: [URL], at mouseLocation: NSPoint) -> [NSDraggingItem] {
-        guard let firstURL = urls.first else { return [] }
-        let previewImage = makePreviewImage(firstURL: firstURL, itemCount: urls.count, isContact: false)
-        let previewFrame = draggingFrame(for: previewImage.size, at: mouseLocation)
-        let hiddenImage = makeHiddenImage()
+        guard !urls.isEmpty else { return [] }
         return urls.enumerated().map { index, fileURL in
             let item = NSDraggingItem(pasteboardWriter: fileURL as NSURL)
-            if index == 0 {
-                item.setDraggingFrame(previewFrame, contents: previewImage)
-            } else {
-                item.setDraggingFrame(hiddenDraggingFrame(at: mouseLocation), contents: hiddenImage)
-            }
+            let itemCount = index == 0 ? urls.count : 1
+            let preview = makePreviewImage(firstURL: fileURL, itemCount: itemCount, isContact: false)
+            item.setDraggingFrame(draggingFrame(for: preview.size, at: mouseLocation), contents: preview)
             return item
         }
     }
@@ -32,17 +27,17 @@ struct DragSessionBuilder {
     // MARK: - Preview Image
     static func makePreviewImage(firstURL: URL, itemCount: Int, isContact: Bool) -> NSImage {
         let size = NSSize(width: itemCount > 1 ? 58 : 42, height: 42)
-        let image = NSImage(size: size)
-        image.lockFocus()
-        drawPreviewBackground(in: NSRect(origin: .zero, size: size), isContact: isContact)
-        drawIcon(for: firstURL, in: size)
-        if itemCount > 1 {
-            drawCountBadge(itemCount, in: size, isContact: isContact)
+        let image = NSImage(size: size, flipped: false) { rect in
+            drawPreviewBackground(in: rect, isContact: isContact)
+            drawIcon(for: firstURL, in: size)
+            if itemCount > 1 {
+                drawCountBadge(itemCount, in: size, isContact: isContact)
+            }
+            if isContact {
+                drawContactBadge(in: size)
+            }
+            return true
         }
-        if isContact {
-            drawContactBadge(in: size)
-        }
-        image.unlockFocus()
         image.isTemplate = false
         return image
     }
@@ -111,17 +106,4 @@ struct DragSessionBuilder {
         )
     }
 
-    private static func hiddenDraggingFrame(at mouseLocation: NSPoint) -> NSRect {
-        NSRect(x: mouseLocation.x, y: mouseLocation.y, width: 1, height: 1)
-    }
-
-    // MARK: - Hidden Image
-    private static func makeHiddenImage() -> NSImage {
-        let image = NSImage(size: NSSize(width: 1, height: 1))
-        image.lockFocus()
-        NSColor.clear.setFill()
-        NSRect(x: 0, y: 0, width: 1, height: 1).fill()
-        image.unlockFocus()
-        return image
-    }
 }

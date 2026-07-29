@@ -48,6 +48,10 @@ struct WindowExternalFileDropInstaller: NSViewRepresentable {
         view.dragDropManager = dragDropManager
         view.leftPanelWidth = leftPanelWidth
         view.containerWidth = containerWidth
+        dragDropManager.updatePanelGeometry(
+            leftPanelWidth: leftPanelWidth,
+            containerWidth: containerWidth
+        )
     }
 }
 
@@ -123,8 +127,7 @@ final class ExternalFileDropNSView: NSView {
     }
 
     private func panelSide(for point: NSPoint) -> FavPanelSide {
-        let dividerX = max(0, min(leftPanelWidth, containerWidth))
-        return point.x < dividerX ? .left : .right
+        dragDropManager?.panelSide(atWindowX: point.x) ?? .left
     }
 
     private func pasteboardTypes(_ sender: NSDraggingInfo) -> String {

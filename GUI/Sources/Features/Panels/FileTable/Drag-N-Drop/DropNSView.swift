@@ -19,7 +19,7 @@ import SwiftUI
 final class DropNSView: NSView {
     weak var appState: AppState?
     weak var dragDropManager: DragDropManager?
-    var panelSide: FavPanelSide!
+    var panelSide: FavPanelSide?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -37,7 +37,11 @@ final class DropNSView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        log.debug("[AppKitDrop] draggingEntered panel=\(panelSide!)")
+        guard let panelSide else {
+            log.error("[AppKitDrop] draggingEntered without panel side")
+            return []
+        }
+        log.debug("[AppKitDrop] draggingEntered panel=\(panelSide)")
         return allowedOperation(for: sender)
     }
 

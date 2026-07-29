@@ -14,8 +14,6 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class DragDropManager {
-    private static let tableHeaderHeight: CGFloat = 24
-
     private static let shared = DragDropManager()
 
     /// Currently pending transfer (shown in confirmation dialog)
@@ -33,6 +31,8 @@ final class DragDropManager {
     private var dragCleanupTask: Task<Void, Never>?
     private var internalReleaseWatchTask: Task<Void, Never>?
     private weak var dragAppState: AppState?
+    private var leftPanelWidth: CGFloat = 0
+    private var panelsContainerWidth: CGFloat = 0
 
     /// Currently highlighted drop target folder
     var dropTargetPath: URL?
@@ -48,36 +48,14 @@ final class DragDropManager {
         AppState.isRemotePath(destination)
     }
 
-    private func normalizedRemoteDestinationPath(_ destination: URL) -> String {
-        let path = destination.path
-        return path.isEmpty ? "/" : path
-    }
-
-    private func destinationDisplayName(_ destination: URL) -> String {
-        let normalizedPath = normalizedRemoteDestinationPath(destination)
-        if normalizedPath == "/" {
-            return "/"
-        }
-
-        return destination.lastPathComponent.isEmpty ? normalizedPath : destination.lastPathComponent
-    }
-
-    private func humanReadableRemoteUploadError(_ error: Error, targetPath: String) -> String {
-        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-        let lowercased = message.lowercased()
-        if lowercased.contains("permission") || lowercased.contains("access denied") {
-            return "Server denied upload to '\(targetPath)'. Check write permissions for that remote folder."
-        }
-        if lowercased.contains("citadel.sftpmessage.status error 1") {
-            return "Server rejected upload to '\(targetPath)'. This usually means the folder is read-only or does not allow file creation."
-        }
-        return message
-    }
-
     // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide, appState: AppState? = nil) {
         log.debug("[DnD] drag started: \(files.count) item(s) from \(panelSide)")
+        if let appState, appState.focusedPanel != panelSide {
+            appState.focusedPanel = panelSide
+            log.debug("[DnD] focus → \(panelSide) at drag start")
+        }
         draggedFiles = files
         dragSourcePanelSide = panelSide
         dragAppState = appState
@@ -160,9 +138,20 @@ final class DragDropManager {
             return nil
         }
         let windowPoint = window.convertPoint(fromScreen: mouseScreenPoint)
-        let width = window.contentView?.bounds.width ?? window.frame.width
-        let side: FavPanelSide = windowPoint.x < width / 2 ? .left : .right
-        return (side, windowPoint)
+        return (panelSide(atWindowX: windowPoint.x), windowPoint)
+    }
+
+    // MARK: - Panel Geometry
+    func updatePanelGeometry(leftPanelWidth: CGFloat, containerWidth: CGFloat) {
+        guard leftPanelWidth > 0, containerWidth > 0 else { return }
+        self.leftPanelWidth = leftPanelWidth
+        panelsContainerWidth = containerWidth
+    }
+
+    func panelSide(atWindowX x: CGFloat) -> FavPanelSide {
+        let fallbackDivider = panelsContainerWidth > 0 ? panelsContainerWidth / 2 : x
+        let dividerX = leftPanelWidth > 0 ? min(leftPanelWidth, panelsContainerWidth) : fallbackDivider
+        return x < dividerX ? .left : .right
     }
 
     // MARK: - Set Drop Target
@@ -185,7 +174,7 @@ final class DragDropManager {
     ) -> URL? {
         let rowHeight = FilePanelStyle.rowHeight
         let yInPanel = panelFrame.maxY - windowPoint.y
-        let rowY = yInPanel - Self.tableHeaderHeight
+        let rowY = yInPanel - TableHeaderStyle.height
         guard rowY >= 0 else { return nil }
         let rowIndex = Int(floor(rowY / rowHeight))
         let files = appState.displayedRows(for: panelSide)
@@ -198,7 +187,6 @@ final class DragDropManager {
 
     // MARK: - Prepare Transfer
     /// Stage a transfer operation and show confirmation dialog.
-    /// No validation here — let FileManager reject invalid ops at execution time.
     func prepareTransfer(
         files: [CustomFile],
         to destination: URL,
@@ -237,9 +225,6 @@ final class DragDropManager {
         showConfirmationDialog = false
         endDrag()
         await Task.yield()
-        if action != .abort {
-            try? await Task.sleep(for: .milliseconds(120))
-        }
         switch action {
             case .abort:
                 log.debug("[DnD] transfer aborted")
@@ -329,183 +314,6 @@ final class DragDropManager {
         await refreshAffectedPanels(appState: appState, operation: operation)
     }
 
-    private func fileOperationTitle(for files: [CustomFile]) -> String {
-        let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
-        let sizeString = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
-        return "⬇ Downloading \(files.count) item(s) — \(sizeString)"
-    }
-
-    private func uploadOperationTitle(for files: [CustomFile]) -> String {
-        let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
-        let sizeString = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
-        return "⬆ Uploading \(files.count) item(s) — \(sizeString)"
-    }
-
-    private func remoteDestinationPath(for file: CustomFile, in destination: URL) -> String {
-        let destinationPath = normalizedRemoteDestinationPath(destination)
-        return destinationPath == "/"
-            ? "/\(file.nameStr)"
-            : destinationPath + "/\(file.nameStr)"
-    }
-
-    private func moveLocalItemToTrash(_ url: URL) throws {
-        var resultingURL: NSURL?
-        try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-    }
-
-    // MARK: - Remote Upload (local → SFTP/FTP)
-    private func performRemoteUpload(
-        _ kind: FileTransferAction,
-        operation: FileTransferOperation,
-        appState: AppState
-    ) async {
-        let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
-            log.error("[DnD] remote upload — no active connection")
-            return
-        }
-
-        let provider = conn.provider
-        let destination = operation.destinationPath
-        let files = operation.sourceFiles
-        let panel = ProgressPanel.shared
-
-        panel.showFileOp(
-            icon: "arrow.up.doc.fill",
-            title: uploadOperationTitle(for: files),
-            itemCount: files.count,
-            destination: normalizedRemoteDestinationPath(destination)
-        )
-
-        var ok = 0
-        var fail = 0
-
-        for (index, file) in files.enumerated() {
-            guard !panel.isCancelled else {
-                panel.appendLog("⛔ Cancelled")
-                break
-            }
-
-            let localPath = file.urlValue.path
-            let remotePath = remoteDestinationPath(for: file, in: destination)
-            let isDirectory = file.isDirectory || file.isSymbolicDirectory
-
-            panel.updateStatus("[\(index + 1)/\(files.count)] \(file.nameStr)")
-
-            do {
-                switch kind {
-                    case .copy:
-                        try await provider.uploadToRemote(
-                            localPath: localPath,
-                            remotePath: remotePath,
-                            recursive: isDirectory
-                        )
-                    case .move:
-                        try await provider.uploadToRemote(
-                            localPath: localPath,
-                            remotePath: remotePath,
-                            recursive: isDirectory
-                        )
-                        try moveLocalItemToTrash(file.urlValue)
-                    case .abort:
-                        return
-                }
-
-                if isDirectory {
-                    panel.appendLog("📁 \(file.nameStr)/")
-                } else {
-                    panel.appendLog("📄 \(file.nameStr)")
-                }
-                log.info("[DnD] uploaded '\(file.nameStr)' → '\(destinationDisplayName(destination))'")
-                ok += 1
-            } catch {
-                let message = humanReadableRemoteUploadError(error, targetPath: remotePath)
-                log.error("[DnD] upload '\(file.nameStr)' failed: \(error.localizedDescription)")
-                panel.appendLog("❌ \(file.nameStr): \(message)")
-                fail += 1
-            }
-        }
-
-        log.info("[DnD] remote upload done: ok=\(ok) fail=\(fail)")
-        if panel.isCancelled {
-            panel.finish(success: false, message: "⏹ Cancelled — \(ok)/\(files.count)")
-        } else if fail > 0 {
-            panel.finish(success: false, message: "⚠️ \(ok) ok, \(fail) failed")
-        } else {
-            panel.finish(success: true, message: "✅ \(ok) item(s) uploaded")
-        }
-
-        await refreshAffectedPanels(appState: appState, operation: operation)
-    }
-
-    // MARK: - Remote Download (SFTP/FTP → local)
-    private func performRemoteDownload(
-        operation: FileTransferOperation,
-        appState: AppState
-    ) async {
-        let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
-            log.error("[DnD] remote download — no active connection")
-            return
-        }
-        let dest = operation.destinationPath
-        let provider = conn.provider
-        let panel = ProgressPanel.shared
-        let files = operation.sourceFiles
-        panel.showFileOp(
-            icon: "arrow.down.doc.fill",
-            title: fileOperationTitle(for: files),
-            itemCount: files.count,
-            destination: dest.path
-        )
-        var ok = 0
-        var fail = 0
-        for (idx, file) in files.enumerated() {
-            guard !panel.isCancelled else {
-                panel.appendLog("⛔ Cancelled")
-                break
-            }
-            let remotePath = file.urlValue.path
-            let finalURL = dest.appendingPathComponent(file.nameStr)
-            let isDir = file.isDirectory
-            panel.updateStatus("[\(idx + 1)/\(files.count)] \(file.nameStr)")
-            do {
-                if isDir {
-                    if FileManager.default.fileExists(atPath: finalURL.path) {
-                        try FileManager.default.removeItem(at: finalURL)
-                    }
-                    try await provider.downloadToLocal(
-                        remotePath: remotePath, localPath: finalURL.path, recursive: true
-                    )
-                    panel.appendLog("📁 \(file.nameStr)/")
-                } else {
-                    let tmpURL = try await provider.downloadFile(remotePath: remotePath)
-                    if FileManager.default.fileExists(atPath: finalURL.path) {
-                        try FileManager.default.removeItem(at: finalURL)
-                    }
-                    try FileManager.default.moveItem(at: tmpURL, to: finalURL)
-                    let sz = (try? FileManager.default.attributesOfItem(atPath: finalURL.path)[.size] as? Int64) ?? 0
-                    panel.appendLog("📄 \(file.nameStr) (\(ByteCountFormatter.string(fromByteCount: sz, countStyle: .file)))")
-                }
-                log.info("[DnD] downloaded '\(file.nameStr)' → '\(dest.lastPathComponent)'")
-                ok += 1
-            } catch {
-                log.error("[DnD] download '\(file.nameStr)' failed: \(error.localizedDescription)")
-                panel.appendLog("❌ \(file.nameStr): \(error.localizedDescription)")
-                fail += 1
-            }
-        }
-        log.info("[DnD] remote download done: ok=\(ok) fail=\(fail)")
-        if panel.isCancelled {
-            panel.finish(success: false, message: "⏹ Cancelled — \(ok)/\(files.count)")
-        } else if fail > 0 {
-            panel.finish(success: false, message: "⚠️ \(ok) ok, \(fail) failed")
-        } else {
-            panel.finish(success: true, message: "✅ \(ok) item(s) downloaded")
-        }
-        await refreshAffectedPanels(appState: appState, operation: operation)
-    }
-
     private func panelPath(_ side: FavPanelSide, in appState: AppState) -> URL {
         switch side {
             case .left:
@@ -519,7 +327,7 @@ final class DragDropManager {
     /// Refresh only the panels whose directories overlap with source or destination.
     /// Uses Set to avoid double-refreshing the same panel.
     /// Remote panels are refreshed via refreshRemoteFiles, not local scanner.
-    private func refreshAffectedPanels(appState: AppState, operation: FileTransferOperation) async {
+    func refreshAffectedPanels(appState: AppState, operation: FileTransferOperation) async {
         if let sourceSide = operation.sourcePanelSide {
             appState.unmarkAll(on: sourceSide)
         }
@@ -527,7 +335,6 @@ final class DragDropManager {
         let destPath = operation.destinationPath.standardizedFileURL.path
         for side in [FavPanelSide.left, .right] {
             let panelURL = panelPath(side, in: appState)
-
             if AppState.isRemotePath(panelURL) {
                 if panelURL.path == operation.destinationPath.path {
                     refreshed.insert(side)
@@ -536,7 +343,7 @@ final class DragDropManager {
             }
 
             let panelPath = panelURL.standardizedFileURL.path
-            if destPath.hasPrefix(panelPath) || panelPath.hasPrefix(destPath) {
+            if pathsOverlap(panelPath, destPath) {
                 refreshed.insert(side)
             }
         }
@@ -552,5 +359,16 @@ final class DragDropManager {
             }
         }
         log.debug("[DnD] refreshed panels: \(refreshed)")
+    }
+
+    private func pathsOverlap(_ firstPath: String, _ secondPath: String) -> Bool {
+        isAncestorOrSame(firstPath, of: secondPath)
+            || isAncestorOrSame(secondPath, of: firstPath)
+    }
+
+    private func isAncestorOrSame(_ ancestorPath: String, of descendantPath: String) -> Bool {
+        if ancestorPath == descendantPath { return true }
+        if ancestorPath == "/" { return descendantPath.hasPrefix("/") }
+        return descendantPath.hasPrefix(ancestorPath + "/")
     }
 }
