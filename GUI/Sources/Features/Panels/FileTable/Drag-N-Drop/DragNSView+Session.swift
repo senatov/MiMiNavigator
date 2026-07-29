@@ -9,7 +9,7 @@ import AppKit
 // MARK: - Drag Session
 extension DragNSView {
     func configureDraggingSession(_ session: NSDraggingSession) {
-        session.animatesToStartingPositionsOnCancelOrFail = true
+        session.animatesToStartingPositionsOnCancelOrFail = false
         session.draggingFormation = cachedSelection.count > 1 ? .stack : .default
         log.debug("[DragNSView] drag session configured formation=\(session.draggingFormation.rawValue)")
     }
@@ -39,26 +39,16 @@ extension DragNSView {
             dragDropManager.setDropTarget(nil)
             return
         }
-        let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
-        let hoverSide = dragDropManager.panelSide(atWindowX: dragContext.windowPoint.x)
-        let panelFrame = panelFrameInWindowCoordinates()
-        let parentDestination = resolveToParentDestination(
-            windowPoint: window.convertPoint(fromScreen: cursorScreenPoint),
-            panelSide: hoverSide,
+        let dropContext = resolveDropContext(
+            screenPoint: screenPoint,
+            window: window,
             appState: appState,
-            panelFrame: panelFrame
+            dragDropManager: dragDropManager
         )
-        let directoryURL = dragDropManager.resolveDirectoryUnderCursor(
-            windowPoint: dragContext.windowPoint,
-            panelSide: hoverSide,
-            appState: appState,
-            panelFrame: panelFrame
-        )
-        let targetURL = parentDestination ?? directoryURL
-        logDragMove(hoverSide: hoverSide, targetURL: targetURL)
-        dragDropManager.setDropTarget(targetURL)
-        dragDropManager.setDropDestinationOverride(parentDestination)
-        updateToParentContact(parentDestination != nil, session: session)
+        logDragMove(hoverSide: dropContext.side, targetURL: dropContext.target)
+        dragDropManager.setDropTarget(dropContext.target)
+        dragDropManager.setDropDestinationOverride(dropContext.isToParent ? dropContext.target : nil)
+        updateToParentContact(dropContext.isToParent, session: session)
     }
 
     func draggingSession(
@@ -66,6 +56,7 @@ extension DragNSView {
         endedAt screenPoint: NSPoint,
         operation: NSDragOperation
     ) {
+        session.animatesToStartingPositionsOnCancelOrFail = false
         defer { resetDragState() }
         if handleExternalDragEnd(screenPoint: screenPoint, operation: operation) { return }
         handleInternalDragEnd(screenPoint: screenPoint)

@@ -170,22 +170,32 @@ final class DragNSView: NSView, NSDraggingSource {
         cachedSelection.contains { AppState.isAppManagedNetworkMountPath($0.urlValue) }
     }
 
-    private func resolveDropContext(
+    func resolveDropContext(
         screenPoint: NSPoint,
         window: NSWindow,
         appState: AppState,
         dragDropManager: DragDropManager
-    ) -> (side: FavPanelSide, target: URL?) {
+    ) -> (side: FavPanelSide, target: URL?, isToParent: Bool) {
         let dragContext = makeDragLocationContext(screenPoint: screenPoint, window: window)
         let dropSide = dragDropManager.panelSide(atWindowX: dragContext.windowPoint.x)
         let panelFrame = panelFrameInWindowCoordinates()
+        let parentDestination = resolveToParentDestination(
+            windowPoint: window.convertPoint(fromScreen: dragContext.cursorScreenPoint),
+            panelSide: dropSide,
+            appState: appState,
+            panelFrame: panelFrame
+        )
         let dirUnderCursor = dragDropManager.resolveDirectoryUnderCursor(
             windowPoint: dragContext.windowPoint,
             panelSide: dropSide,
             appState: appState,
             panelFrame: panelFrame
         )
-        return (dropSide, dirUnderCursor ?? dragDropManager.dropDestinationOverride)
+        let target = DragDropTargetResolver.preferredExplicitTarget(
+            parent: parentDestination,
+            directory: dirUnderCursor
+        )
+        return (dropSide, target, parentDestination != nil)
     }
 
     private func resolveDropDestination(side: FavPanelSide, targetURL: URL?, appState: AppState) -> URL {
@@ -300,12 +310,12 @@ final class DragNSView: NSView, NSDraggingSource {
             dragDropManager: dragDropManager
         )
         let dropSide = dropContext.side
-        let dirUnderCursor = dropContext.target
+        let targetURL = dropContext.target
 
         if shouldIgnoreInternalDrop(
             from: panelSide,
             to: dropSide,
-            targetURL: dirUnderCursor,
+            targetURL: targetURL,
             screenPoint: screenPoint,
             window: window
         ) {
@@ -314,9 +324,10 @@ final class DragNSView: NSView, NSDraggingSource {
             return
         }
 
-        let destination = resolveDropDestination(side: dropSide, targetURL: dirUnderCursor, appState: appState)
+        let destination = resolveDropDestination(side: dropSide, targetURL: targetURL, appState: appState)
         log.info(
-            "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) (\(destination.lastPathComponent)) subdir=\(dirUnderCursor != nil)"
+            "[DragNSView] internal drop: \(files.count) file(s) → \(dropSide) "
+                + "(\(destination.lastPathComponent)) target=\(targetURL != nil) toParent=\(dropContext.isToParent)"
         )
 
         dragDropManager.prepareTransfer(files: files, to: destination, from: panelSide)

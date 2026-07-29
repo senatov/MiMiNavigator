@@ -72,6 +72,28 @@ struct ParentNavigationStripPanel: View {
         parentFile.urlValue
     }
 
+    private var displayParentPath: String {
+        let state = appState.archiveState(for: panelSide)
+        guard state.isInsideArchive,
+              let archiveURL = state.archiveURL,
+              let tempDir = state.archiveTempDir
+        else {
+            return parentURL.path == "/" ? "/Root" : parentURL.path
+        }
+        if state.isAtArchiveRoot(currentPath: currentPath) {
+            let archiveParent = archiveURL.deletingLastPathComponent()
+            return archiveParent.path == "/" ? "/Root" : archiveParent.path
+        }
+        let current = URL(fileURLWithPath: currentPath).standardizedFileURL.path
+        let root = tempDir.standardizedFileURL.path
+        let relative = current.hasPrefix(root + "/") ? String(current.dropFirst(root.count + 1)) : ""
+        let relativeParent = (relative as NSString).deletingLastPathComponent
+        if relativeParent.isEmpty {
+            return archiveURL.lastPathComponent
+        }
+        return "\(archiveURL.lastPathComponent)  ›  \(relativeParent)"
+    }
+
     private var transferDestinationURL: URL {
         let state = appState.archiveState(for: panelSide)
         if state.isInsideArchive,
@@ -107,6 +129,7 @@ struct ParentNavigationStripPanel: View {
                 file: parentFile,
                 isSelected: isHighlighted,
                 parentURL: parentURL,
+                displayParentPath: displayParentPath,
                 onSelect: onSelect,
                 onActivate: activateParent,
                 onDrop: handleDrop,

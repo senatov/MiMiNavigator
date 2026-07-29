@@ -44,13 +44,27 @@ struct DragSessionBuilder {
 
     // MARK: - Preview Background
     private static func drawPreviewBackground(in rect: NSRect, isContact: Bool) {
-        let fillColor = isContact ? NSColor.systemGreen : NSColor.windowBackgroundColor
-        fillColor.withAlphaComponent(isContact ? 0.42 : 0.82).setFill()
-        NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 9, yRadius: 9).fill()
-        let borderColor = isContact ? NSColor.systemBlue : NSColor.separatorColor
-        borderColor.withAlphaComponent(isContact ? 0.95 : 0.55).setStroke()
+        let path = NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 11, yRadius: 11)
+        let fillColor = isContact
+            ? NSColor(#colorLiteral(red: 0.18, green: 0.28, blue: 0.42, alpha: 1))
+            : NSColor.windowBackgroundColor
+        fillColor.withAlphaComponent(isContact ? 0.88 : 0.82).setFill()
+        path.fill()
+        if isContact {
+            NSGraphicsContext.current?.saveGraphicsState()
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor(#colorLiteral(red: 0.20, green: 0.34, blue: 0.55, alpha: 0.62))
+            shadow.shadowBlurRadius = 5
+            shadow.set()
+            NSColor(#colorLiteral(red: 0.42, green: 0.58, blue: 0.78, alpha: 0.82)).setStroke()
+            path.lineWidth = 3
+            path.stroke()
+            NSGraphicsContext.current?.restoreGraphicsState()
+        }
+        let borderColor = isContact ? NSColor.white : NSColor.separatorColor
+        borderColor.withAlphaComponent(isContact ? 0.98 : 0.55).setStroke()
         let border = NSBezierPath(roundedRect: rect.insetBy(dx: 1.5, dy: 1.5), xRadius: 8, yRadius: 8)
-        border.lineWidth = isContact ? 2.5 : 1
+        border.lineWidth = isContact ? 2 : 1
         border.stroke()
     }
 

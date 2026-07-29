@@ -66,4 +66,23 @@ final class MiMiNavigatorTests: XCTestCase {
             XCTAssertTrue(suffix.allSatisfy(cloudLinkAliasCharacters.contains))
         }
     }
+
+    // MARK: - Drag-Drop Target Priority
+
+    func testToParentTargetWinsOverOverlappingDirectoryRow() {
+        let parent = URL(fileURLWithPath: "/tmp/archive-parent", isDirectory: true)
+        let directory = URL(fileURLWithPath: "/tmp/archive-temp/first-row", isDirectory: true)
+        XCTAssertEqual(
+            DragDropTargetResolver.preferredExplicitTarget(parent: parent, directory: directory),
+            parent
+        )
+    }
+
+    func testDirectoryTargetIsUsedWithoutToParentContact() {
+        let directory = URL(fileURLWithPath: "/tmp/target-directory", isDirectory: true)
+        XCTAssertEqual(
+            DragDropTargetResolver.preferredExplicitTarget(parent: nil, directory: directory),
+            directory
+        )
+    }
 }

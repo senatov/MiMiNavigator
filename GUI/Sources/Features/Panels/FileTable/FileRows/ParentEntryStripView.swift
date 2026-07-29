@@ -14,30 +14,29 @@ struct ParentEntryStripView: View {
     let file: CustomFile
     let isSelected: Bool
     let parentURL: URL
+    let displayParentPath: String
     let onSelect: (CustomFile) -> Void
     let onActivate: (CustomFile) -> Void
     let onDrop: (([CustomFile]) -> Bool)?
     let onDropTargetChange: ((Bool) -> Void)?
     let isExternalDropContact: Bool
-    @State private var rowsCount: Int = 0
     @State private var isHovering = false
     @State private var keyboardPulse = false
     @State private var isDropTargeted = false
-    private var label: String { "Parent: \(parentName)   (\(rowsCount) dirs)" }
+    private var label: String { "Parent: \(displayParentPath)" }
     private var textColor: Color {
-        isActive ? Self.activeContentColor : Color.black
+        isContactActive ? Color.white : isActive ? Self.activeContentColor : Color.black
     }
     private var iconColor: Color {
-        isActive
+        isContactActive
+            ? Color.white
+            : isActive
             ? Self.activeContentColor
             : Color(#colorLiteral(red: 0.521568656, green: 0.1098039225, blue: 0.05098039284, alpha: 1))
     }
     private static let activeContentColor = Color(#colorLiteral(red: 0.02, green: 0.16, blue: 0.72, alpha: 1))
     private var isActive: Bool { isSelected || isHovering || isContactActive }
     private var isContactActive: Bool { isDropTargeted || isExternalDropContact }
-    private var showHidden: Bool { UserPreferences.shared.snapshot.showHiddenFiles }
-    private var parentName: String { parentURL.path == "/" ? "/Root" : parentURL.path }
-    private var countTaskID: String { "\(parentURL.path)-\(showHidden)" }
     private enum UI {
         static let stripHeight: CGFloat = 25
         static let buttonInset: CGFloat = 1
@@ -48,6 +47,7 @@ struct ParentEntryStripView: View {
         file: CustomFile,
         isSelected: Bool,
         parentURL: URL,
+        displayParentPath: String? = nil,
         onSelect: @escaping (CustomFile) -> Void,
         onActivate: @escaping (CustomFile) -> Void,
         onDrop: (([CustomFile]) -> Bool)? = nil,
@@ -57,6 +57,7 @@ struct ParentEntryStripView: View {
         self.file = file
         self.isSelected = isSelected
         self.parentURL = parentURL
+        self.displayParentPath = displayParentPath ?? (parentURL.path == "/" ? "/Root" : parentURL.path)
         self.onSelect = onSelect
         self.onActivate = onActivate
         self.onDrop = onDrop
@@ -78,9 +79,6 @@ struct ParentEntryStripView: View {
                     activateParentNavigation()
                 }
         )
-        .task(id: countTaskID) {
-            await loadParentCount()
-        }
         .onChange(of: isSelected) { _, selected in
             triggerKeyboardPulse(selected)
         }
@@ -98,14 +96,15 @@ struct ParentEntryStripView: View {
     private func stripContent(geo: GeometryProxy) -> some View {
         ZStack(alignment: .leading) {
             Color.white
-            if isContactActive {
-                PulsingDropHighlight()
-                    .padding(.horizontal, UI.buttonInset)
-                    .allowsHitTesting(false)
-            }
             fullWidthButton(geo: geo)
         }
-        .scaleEffect(isContactActive ? 1.015 : 1)
+        .scaleEffect(isContactActive ? 1.025 : 1)
+        .shadow(
+            color: isContactActive
+                ? Color(#colorLiteral(red: 0.12, green: 0.22, blue: 0.38, alpha: 0.38))
+                : Color.clear,
+            radius: isContactActive ? 5 : 0
+        )
     }
     // MARK: - Full Width Button
     private func fullWidthButton(geo: GeometryProxy) -> some View {
@@ -118,7 +117,13 @@ struct ParentEntryStripView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
-            .buttonStyle(ParentStripButtonStyle(isHighlighted: isActive, keyboardPulse: keyboardPulse))
+            .buttonStyle(
+                ParentStripButtonStyle(
+                    isHighlighted: isActive,
+                    isDropContact: isContactActive,
+                    keyboardPulse: keyboardPulse
+                )
+            )
             .frame(width: max(0, geo.size.width - UI.buttonInset * 2), height: UI.buttonHeight)
             .overlay(ParentStripCursorView(isHovering: $isHovering))
             .padding(.horizontal, UI.buttonInset)
@@ -141,7 +146,7 @@ struct ParentEntryStripView: View {
     // MARK: - Parent Label
     private var parentLabel: some View {
         Text(label)
-            .font(.system(size: 10, weight: .thin, design: .monospaced))
+            .font(.system(size: 10, weight: isContactActive ? .semibold : .regular, design: .monospaced))
             .foregroundStyle(textColor)
             .lineLimit(1)
             .truncationMode(.middle)
@@ -163,38 +168,6 @@ struct ParentEntryStripView: View {
     private func handleDropTargetChange(_ targeted: Bool) {
         isDropTargeted = targeted
         onDropTargetChange?(targeted)
-    }
-    // MARK: - Load Parent Directory Count
-    private func loadParentCount() async {
-        let url = parentURL
-        let hidden = showHidden
-        let count = await Task.detached(priority: .utility) {
-            Self.countSubdirectories(in: url, showHidden: hidden)
-        }.value
-        await updateRowsCount(count)
-    }
-    // MARK: - Update Rows Count
-    private func updateRowsCount(_ count: Int) async {
-        let newCount = count
-        DispatchQueue.main.async {
-            guard rowsCount != newCount else { return }
-            rowsCount = newCount
-        }
-    }
-    // MARK: - Count Subdirectories
-    nonisolated static func countSubdirectories(in url: URL, showHidden: Bool) -> Int {
-        let fm = FileManager.default
-        guard let items = try? fm.contentsOfDirectory(
-            at: url,
-            includingPropertiesForKeys: [.isDirectoryKey, .isHiddenKey],
-            options: []
-        ) else { return 0 }
-        return items.filter { item in
-            guard let vals = try? item.resourceValues(forKeys: [.isDirectoryKey, .isHiddenKey]) else { return false }
-            let isDir = vals.isDirectory ?? false
-            let isHid = vals.isHidden ?? false
-            return isDir && (showHidden || !isHid)
-        }.count
     }
     // MARK: - Keyboard Pulse
     private func triggerKeyboardPulse(_ selected: Bool) {
