@@ -213,7 +213,11 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func registerDragStart(files: [CustomFile]) {
-        guard let panelSide else { return }
+        guard let panelSide, let appState else { return }
+        if appState.focusedPanel != panelSide {
+            appState.focusedPanel = panelSide
+            log.debug("[DnD] focus → \(panelSide) at drag start")
+        }
         dragDropManager?.startDrag(files: files, from: panelSide)
     }
 
