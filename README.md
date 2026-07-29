@@ -33,7 +33,7 @@
 
 ---
 
-> **🔨 Under active development 🔨**  
+> **🔨 Under active development 🔨**
 > APIs and UI may change without notice.
 
 
@@ -84,7 +84,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview0.png" alt="MiMiNavigator dual-panel interface" width="100%"></td>
+    <td><img src="GUI/Docs/Preview0.png" alt="Preview0.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><em>Dual-panel file management with list and thumbnail views</em></td>
@@ -94,7 +94,7 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview2.png" alt="Advanced Find Files interface" width="100%"></td>
+    <td><img src="GUI/Docs/Preview1.png" alt="Preview1.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><em>Advanced search templates with safe App leftovers discovery</em></td>
@@ -105,12 +105,23 @@ MiMiNavigator is a dual-panel file manager inspired by **Total Commander** and *
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview1.png" alt="Customizable keyboard shortcuts" width="100%"></td>
+    <td><img src="GUI/Docs/Preview2.png" alt="Preview2.png" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><em>Customizable keyboard shortcuts and command groups</em></td>
   </tr>
 </table>
+
+
+<table>
+  <tr>
+    <td><img src="GUI/Docs/Preview3.png" alt="Preview3.png" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Customizable keyboard shortcuts and command groups</em></td>
+  </tr>
+</table>
+
 
 
 ---
@@ -503,7 +514,7 @@ When a cloud desktop client syncs the `Public` folder locally, MiMiNavigator exp
 - [ ] Nextcloud/WebDAV remote panels with browsing, transfers, conflicts, progress, and cancellation
 - [ ] CloudKit synchronization for Favorites, History, Tabs, layouts, and non-secret settings
 - [x] More cloud provider share-link APIs beyond Google Drive and Dropbox
-- [x ] Advanced file comparison 
+- [x ] Advanced file comparison
 - [ ] ~~Plugin system — see [Plugin Development Blue Paper](GUI/Docs/PLUGIN_BLUE_PAPER.md)~~ no need more
 - [ ] ~~App Store release~~ not need
 
