@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.4"><img src="https://img.shields.io/badge/release-v0.9.9.6.4-orange" alt="Release v0.9.9.6.4" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.8"><img src="https://img.shields.io/badge/release-v0.9.9.6.8-orange" alt="Release v0.9.9.6.8" /></a>
 </p>
 
 <p align="center">
@@ -38,13 +38,16 @@
 
 
 
-## Recent Changes (v0.9.9.6.4 - July 2026)
+## Recent Changes (v0.9.9.6.8 - July 2026)
 
 - **Content-aware conflicts** — equal-size files are compared asynchronously by their bytes before timestamps and sizes are interpreted.
 - **Conflict dialog clarity** — native utility-panel presentation, clear file cards, stronger status messaging, and dimensional controls improve readability.
 - **Operation progress** — refined progress styling, persistent per-operation geometry, and interruptible automatic closing make result windows predictable.
 - **Menu-bar status item** — native memory units, stable animation, primary-click restoration, and ignored secondary clicks provide a focused activation shortcut.
-- **Build metadata** — release version is `0.9.9.6.4`, build `133`.
+- **Archive To-Parent workflow** — drag one file or a marked set out of an opened archive through the shared Copy/Move confirmation and operation progress.
+- **Reliable archive repacking** — Move marks the active archive session by archive URL so repacking removes transferred entries.
+- **Persistent cache efficiency** — throttled SQLite touches, batched pruning, health checks, and file-operation-driven directory-size invalidation.
+- **Build metadata** — release version is `0.9.9.6.8`, build `135`.
 
 ## Previous Changes
 
@@ -203,7 +206,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.6.4 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.4)**
+**[Download MiMiNavigator v0.9.9.6.8 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.8)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

@@ -245,6 +245,7 @@ fi
 # ── Step 6: Clean Release build with Developer ID + hardened runtime ─────────
 echo "[6/10] Building ${SCHEME} (${CONFIG}) with Developer ID signing..."
 xcodebuild clean build \
+    -jobs 1 \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \

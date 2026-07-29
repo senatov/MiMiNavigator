@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.8] — 2026-07-29
+
+> **Release notes**
+> Archive To-Parent transfers, reliable repacking, and persistent-cache efficiency.
+
 ### Added
 - **CacheKit module** — GRDB-backed SQLite storage provides namespace isolation, TTL expiry, LRU pruning, cost limits, WAL journaling, and schema migrations for reconstructible application caches.
 - **Persistent file hashes** — conflict comparison streams SHA-256 in bounded chunks and reuses digests across sessions only while file size and modification time remain valid.
+- **Archive To-Parent transfers** — files and marked selections can be dragged from an opened archive to the fixed parent strip and copied or moved beside the archive through the shared file-operation workflow.
+- **Drag contact feedback** — the parent strip, file preview, and multi-file badge switch to coordinated green-and-blue contact styling while a valid archive drop is active.
+- **Cache health diagnostics** — CacheKit exposes SQLite quick-check results and reports failed archive dirty-session lookups explicitly.
 
 ### Changed
 - **Two-level directory-size cache** — active entries remain in a bounded in-memory L1 while older valid values are loaded individually from SQLite instead of decoding the complete JSON snapshot at startup.
@@ -18,10 +26,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Idle resource use** — fallback panel scans run every five minutes, configuration snapshots are written only after state changes, and logs are limited to four 8 MB rotation segments.
 - **Large directory presentation** — breadcrumb controls now reserve trailing space for History and Favorites, collapse leading path segments before the current directory, and account for control padding to prevent overlap.
 - **Large listing memory** — oversized directory listings are no longer retained in navigation LRU, row rendering avoids an enumerated copy, and navigation cancels outstanding directory-size traversals.
+- **SQLite write behavior** — cache hits throttle access-time updates, pruning deletes in batches, and transient lock contention uses a bounded timeout.
+- **Directory-size invalidation** — shared copy, move, and delete operations clear affected memory and SQLite entries, related descendants, and ancestor sizes.
+- **Archive drop routing** — fixed-strip drops are detected by the AppKit drag session and use the same Copy/Move confirmation, conflict handling, progress, and cancellation as ordinary operations.
 
 ### Fixed
 - **Legacy cache scaling** — the monolithic `dirsize.cache` snapshot is migrated safely and idempotently into SQLite and removed only after successful import, avoiding repeated full-file rewrites.
 - **Memory spike diagnostics** — rapid physical-footprint growth and crossings above 512 MB now produce immediate diagnostic warnings instead of relying only on long monotonic trends.
+- **Repeated archive drops** — To-Parent no longer animates without producing a transfer after the first archive operation.
+- **Archive move repacking** — moving content out marks the active archive session by its stable archive URL, so exit confirmation and repacking remove the moved entry from the archive.
+- **Misleading dirty logs** — missing archive sessions no longer report successful dirty tracking.
+- **Stale directory sizes** — filesystem mutations no longer leave recursive size values cached under unchanged parent paths.
 
 ## [0.9.9.6.5] — 2026-07-20
 
