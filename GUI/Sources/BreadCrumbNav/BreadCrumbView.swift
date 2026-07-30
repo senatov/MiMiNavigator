@@ -240,6 +240,10 @@ struct BreadCrumbView: View {
             variableTextColor: colorStore.activeTheme.breadcrumbVariableColor,
             variableItalic: colorStore.breadcrumbVariableItalic,
             fontSize: fontSize,
+            hoverTextColor: colorStore.breadcrumbHoverTextColor,
+            hoverBackgroundColor: colorStore.breadcrumbHoverBackgroundColor,
+            hoverBorderColor: colorStore.breadcrumbHoverBorderColor,
+            hoverFontSize: colorStore.effectiveBreadcrumbHoverFontSize,
             onTap: { handleTap(segment: segment) },
             helpText: tooltip(for: segment),
             copyAction: { copyPath(for: segment) }

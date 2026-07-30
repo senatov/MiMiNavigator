@@ -72,8 +72,33 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("color.breadcrumbBgActive") var hexBreadcrumbBgActive: String = ""
     @ObservationIgnored @AppStorage("color.breadcrumbBgInactive") var hexBreadcrumbBgInactive: String = ""
     @ObservationIgnored @AppStorage("color.breadcrumbVariable") var hexBreadcrumbVariable: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbHoverText") var hexBreadcrumbHoverText: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbHoverBackground") var hexBreadcrumbHoverBackground: String = ""
+    @ObservationIgnored @AppStorage("color.breadcrumbHoverBorder") var hexBreadcrumbHoverBorder: String = ""
     @ObservationIgnored @AppStorage("breadcrumb.fontSize") var breadcrumbFontSize: Double = 0
+    @ObservationIgnored @AppStorage("breadcrumb.hoverFontSize") var breadcrumbHoverFontSize: Double = 0
     @ObservationIgnored @AppStorage("breadcrumb.variableItalic") var breadcrumbVariableItalic: Bool = true
+
+    static let defaultBreadcrumbHoverText = Color(#colorLiteral(red: 0.06, green: 0.20, blue: 0.34, alpha: 1))
+    static let defaultBreadcrumbHoverBackground = Color(#colorLiteral(red: 0.67, green: 0.83, blue: 0.96, alpha: 1))
+    static let defaultBreadcrumbHoverBorder = Color(#colorLiteral(red: 0.34, green: 0.58, blue: 0.78, alpha: 1))
+
+    var breadcrumbHoverTextColor: Color {
+        Color(hex: ud("color.breadcrumbHoverText")) ?? Self.defaultBreadcrumbHoverText
+    }
+
+    var breadcrumbHoverBackgroundColor: Color {
+        Color(hex: ud("color.breadcrumbHoverBackground")) ?? Self.defaultBreadcrumbHoverBackground
+    }
+
+    var breadcrumbHoverBorderColor: Color {
+        Color(hex: ud("color.breadcrumbHoverBorder")) ?? Self.defaultBreadcrumbHoverBorder
+    }
+
+    var effectiveBreadcrumbHoverFontSize: CGFloat {
+        let stored = udD("breadcrumb.hoverFontSize")
+        return stored > 0 ? CGFloat(stored) : activeTheme.breadcrumbFontSize * 1.13
+    }
 
     // Button appearance
     @ObservationIgnored @AppStorage("button.borderColor") var hexButtonBorder: String = ""
@@ -236,6 +261,7 @@ final class ColorThemeStore {
             "color.zebraInactiveEven", "color.zebraInactiveOdd", "color.filterActive",
             "color.breadcrumbTextActive", "color.breadcrumbTextInactive",
             "color.breadcrumbBgActive", "color.breadcrumbBgInactive", "color.breadcrumbVariable",
+            "color.breadcrumbHoverText", "color.breadcrumbHoverBackground", "color.breadcrumbHoverBorder",
         ]
         return keys.filter { !ud($0).isEmpty }.count
     }
@@ -273,7 +299,10 @@ final class ColorThemeStore {
         hexBreadcrumbTextActive = ""; hexBreadcrumbTextInactive = ""
         hexBreadcrumbBgActive = ""; hexBreadcrumbBgInactive = ""
         hexBreadcrumbVariable = ""
+        hexBreadcrumbHoverText = ""; hexBreadcrumbHoverBackground = ""
+        hexBreadcrumbHoverBorder = ""
         breadcrumbFontSize = 0
+        breadcrumbHoverFontSize = 0
         breadcrumbVariableItalic = true
         loadTheme(id: theme.id)
     }

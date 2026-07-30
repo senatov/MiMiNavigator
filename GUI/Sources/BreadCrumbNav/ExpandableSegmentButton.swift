@@ -19,6 +19,10 @@ struct ExpandableSegmentButton: View {
     let variableTextColor: Color
     let variableItalic: Bool
     let fontSize: CGFloat     // breadcrumbFontSize from theme
+    let hoverTextColor: Color
+    let hoverBackgroundColor: Color
+    let hoverBorderColor: Color
+    let hoverFontSize: CGFloat
     let onTap: () -> Void
     let helpText: String
     let copyAction: () -> Void
@@ -27,8 +31,6 @@ struct ExpandableSegmentButton: View {
     @State private var lastLoggedHover = false
 
     private let lensCornerRadius: CGFloat = 10
-    private let hoverFontScale: CGFloat = 1.13
-
     /// Show full name when hovered and segment is truncated.
     private var displayText: String {
         guard isHovered else { return segment.text }
@@ -40,11 +42,12 @@ struct ExpandableSegmentButton: View {
     }
 
     private var displayColor: Color {
-        segment.isEnvironmentVariable ? variableTextColor : textColor
+        if isHovered { return hoverTextColor }
+        return segment.isEnvironmentVariable ? variableTextColor : textColor
     }
 
     private var displayFont: Font {
-        let resolvedSize = isHovered ? fontSize * hoverFontScale : fontSize
+        let resolvedSize = isHovered ? hoverFontSize : fontSize
         let base = Font.system(size: resolvedSize, weight: .regular, design: .rounded)
         return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
     }
@@ -105,9 +108,9 @@ struct ExpandableSegmentButton: View {
     private var lensFill: LinearGradient {
         LinearGradient(
             colors: [
-                Color(#colorLiteral(red: 0.92, green: 0.98, blue: 1.0, alpha: 0.76)),
-                Color(#colorLiteral(red: 0.67, green: 0.83, blue: 0.96, alpha: 0.58)),
-                Color(#colorLiteral(red: 0.43, green: 0.66, blue: 0.86, alpha: 0.46))
+                hoverBackgroundColor.opacity(0.72),
+                hoverBackgroundColor.opacity(0.58),
+                hoverBackgroundColor.opacity(0.46)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -133,8 +136,8 @@ struct ExpandableSegmentButton: View {
     private var lensStroke: LinearGradient {
         LinearGradient(
             colors: [
-                Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.92)),
-                Color(#colorLiteral(red: 0.34, green: 0.58, blue: 0.78, alpha: 0.66))
+                Color.white.opacity(0.92),
+                hoverBorderColor.opacity(0.82)
             ],
             startPoint: .top,
             endPoint: .bottom
