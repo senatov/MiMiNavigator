@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Animated memory status item that only raises the main application window.
+// Description: Animated memory status item that toggles the main window and provides safe termination.
 
 import AppKit
 
@@ -27,13 +27,13 @@ import AppKit
             return
         }
         button.target = self
-        button.action = #selector(raiseApplication)
-        button.sendAction(on: [.leftMouseUp])
+        button.action = #selector(handleStatusItemClick)
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.imageScaling = .scaleProportionallyDown
         button.imagePosition = .imageLeading
         button.font = NSFont.menuBarFont(ofSize: 9)
         button.toolTip = "MiMiNavigator"
-        button.setAccessibilityLabel("Show MiMiNavigator")
+        button.setAccessibilityLabel("Show or minimize MiMiNavigator")
         item.menu = nil
         item.isVisible = true
         statusItem = item
@@ -47,8 +47,26 @@ import AppKit
         }
     }
 
-    // MARK: - Raise Application
-    @objc private func raiseApplication() {
+    // MARK: - Status Item Actions
+    @objc private func handleStatusItemClick() {
+        guard NSApp.currentEvent?.type != .rightMouseUp else {
+            showQuitMenu()
+            return
+        }
+        toggleApplicationVisibility()
+    }
+
+    private func toggleApplicationVisibility() {
+        if let window = existingMainWindow,
+           window.isVisible,
+           !window.isMiniaturized,
+           window.isKeyWindow,
+           NSApp.isActive
+        {
+            window.miniaturize(nil)
+            log.info("[MenuBar] minimized main window to Dock")
+            return
+        }
         NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         if let window = existingMainWindow {
@@ -58,6 +76,21 @@ import AppKit
         }
         DispatchQueue.main.async { [weak self] in self?.raiseExistingMainWindow() }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.raiseExistingMainWindow() }
+    }
+
+    private func showQuitMenu() {
+        guard let button = statusItem?.button else { return }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let quitItem = NSMenuItem(title: "Quit MiMiNavigator", action: #selector(quitApplication), keyEquivalent: "")
+        quitItem.target = self
+        menu.addItem(quitItem)
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.maxY + 2), in: button)
+    }
+
+    @objc private func quitApplication() {
+        log.info("[MenuBar] quit requested")
+        NSApp.terminate(nil)
     }
 
     // MARK: - Animation
