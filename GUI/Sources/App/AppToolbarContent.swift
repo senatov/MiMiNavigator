@@ -19,6 +19,9 @@ struct AppToolbarContent: ToolbarContent {
 
     // MARK: - Body
     var body: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            AppWindowTitle(version: MiMiNavigatorApp.appVersion)
+        }
         // All action buttons — left group
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
@@ -67,6 +70,25 @@ struct AppToolbarContent: ToolbarContent {
         case .menuBarToggle:
             EmptyView()
         }
+    }
+}
+
+// MARK: - App Window Title
+private struct AppWindowTitle: View {
+    let version: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text("MiMiNavigator")
+                .font(.custom("Academy Engraved LET", size: 18))
+                .foregroundStyle(.primary)
+            Text("V \(version)")
+                .font(.system(size: 10, weight: .light))
+                .foregroundStyle(.secondary)
+        }
+        .fixedSize()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("MiMiNavigator version \(version)")
     }
 }
 

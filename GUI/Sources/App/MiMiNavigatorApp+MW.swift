@@ -32,7 +32,7 @@ extension MiMiNavigatorApp {
             .environment(dragDropManager)
 
             // MARK: - Navigation & UI
-            .navigationTitle("MiMiNavigator V \(Self.appVersion)")
+            .navigationTitle("")
             .toolbar { appToolbarContent }
             .glassEffect(.identity)
 
