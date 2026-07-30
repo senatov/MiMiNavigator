@@ -14,9 +14,13 @@ extension AppState {
 
     /// Toggle hidden files visibility — BOTH panels update synchronously
     func toggleShowHiddenFiles() {
-        UserPreferences.shared.snapshot.showHiddenFiles.toggle()
-        UserPreferences.shared.save()
-        log.info("[Settings] showHiddenFiles → \(UserPreferences.shared.snapshot.showHiddenFiles)")
+        setShowHiddenFiles(!showHiddenFiles)
+    }
+
+    func setShowHiddenFiles(_ isVisible: Bool) {
+        guard showHiddenFiles != isVisible else { return }
+        showHiddenFiles = isVisible
+        log.info("[Settings] showHiddenFiles → \(isVisible)")
         Task { await DirectoryContentCache.shared.invalidateForHiddenToggle() }
         forceRefreshBothPanels()
     }

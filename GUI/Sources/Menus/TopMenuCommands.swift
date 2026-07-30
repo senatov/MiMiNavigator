@@ -120,10 +120,8 @@ import Foundation
                 title: "Show/Hide Hidden Files",
                 icon: "eye.slash",
                 action: {
-                    UserPreferences.shared.snapshot.showHiddenFiles.toggle()
-                    UserPreferences.shared.save()
                     guard let appState = AppStateProvider.shared else { return }
-                    appState.forceRefreshBothPanels()
+                    appState.toggleShowHiddenFiles()
                 },
                 hotKey: .toggleHiddenFiles
             ),

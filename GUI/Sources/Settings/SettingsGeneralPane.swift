@@ -57,7 +57,17 @@ struct SettingsGeneralPane: View {
     private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
         Binding(
             get: { prefs.snapshot[keyPath: keyPath] },
-            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+            set: {
+                prefs.snapshot[keyPath: keyPath] = $0
+                AppStateProvider.shared?.applyPreferencesFromSnapshot()
+            }
+        )
+    }
+
+    private var showHiddenFilesBinding: Binding<Bool> {
+        Binding(
+            get: { prefs.snapshot.showHiddenFiles },
+            set: { AppStateProvider.shared?.setShowHiddenFiles($0) }
         )
     }
 
@@ -181,7 +191,7 @@ struct SettingsGeneralPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Hidden files:", help: "Show files and folders starting with dot (.)") {
-                        Toggle("Show hidden files (.dotfiles)", isOn: prefBinding(\.showHiddenFiles))
+                        Toggle("Show hidden files (.dotfiles)", isOn: showHiddenFilesBinding)
                             .toggleStyle(.checkbox)
                     }
 
@@ -225,4 +235,3 @@ struct SettingsGeneralPane: View {
         }
     }
 }
-

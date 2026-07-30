@@ -20,7 +20,6 @@ struct MiMiNavigatorApp: App {
     @State var appState = AppState()
     @State var dragDropManager = DragDropManager()
     @State var cntMenuCoord = CntMenuCoord.shared
-    @State var showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     @State var showAutomationOnboarding = false
     @State var showFullDiskOnboarding = false
     @State var showGitHubStarPrompt = false
@@ -81,7 +80,7 @@ struct MiMiNavigatorApp: App {
         guard !didBindAppState else { return }
         appDelegate.bind(appState)
         AppStateProvider.shared = appState
-        showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
+        appState.applyPreferencesFromSnapshot()
         didBindAppState = true
     }
 
@@ -296,7 +295,7 @@ struct MiMiNavigatorApp: App {
                     activeImage: "eye.fill",
                     helpActive: HotKeyStore.shared.helpText("Hidden files are shown — click to hide", for: .toggleHiddenFiles),
                     helpInactive: HotKeyStore.shared.helpText("Hidden files are hidden — click to show", for: .toggleHiddenFiles),
-                    isActive: Binding(get: { showHiddenFiles }, set: { _ in })
+                    isActive: Binding(get: { appState.showHiddenFiles }, set: { _ in })
                 ) {
                     performToggleHidden()
                 }
@@ -327,7 +326,6 @@ struct MiMiNavigatorApp: App {
     func performToggleHidden() {
         log.debug("Hidden toggle clicked")
         appState.toggleShowHiddenFiles()
-        showHiddenFiles = UserPreferences.shared.snapshot.showHiddenFiles
     }
 
     func performOpenWith() {

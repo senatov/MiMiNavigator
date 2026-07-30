@@ -22,7 +22,10 @@ struct SettingsNetworkPane: View {
     private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
         Binding(
             get: { prefs.snapshot[keyPath: keyPath] },
-            set: { prefs.snapshot[keyPath: keyPath] = $0; prefs.save() }
+            set: {
+                prefs.snapshot[keyPath: keyPath] = $0
+                AppStateProvider.shared?.applyPreferencesFromSnapshot()
+            }
         )
     }
 
