@@ -234,6 +234,7 @@ echo "[5/10] Resolving packages..."
 xcodebuild -resolvePackageDependencies \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
+    -destination "platform=macOS" \
     -clonedSourcePackagesDirPath "${PROJECT_DIR}/.spm-checkouts" \
     2>&1 | tail -5
 
@@ -249,6 +250,7 @@ xcodebuild clean build \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \
+    -destination "platform=macOS" \
     -derivedDataPath "${BUILD_DIR}" \
     -clonedSourcePackagesDirPath "${PROJECT_DIR}/.spm-checkouts" \
     CODE_SIGN_IDENTITY="${SIGN_IDENTITY}" \

@@ -19,6 +19,7 @@ A performance and resource-efficiency release focused on lower idle memory, fast
 - Publish fresh directory snapshots before scanning and skip the scan when an active watcher guarantees live updates.
 - Extend periodic integrity scans to 30 minutes for watched paths while retaining the five-minute safety fallback for paths without FSEvents.
 - Configure CacheKit with a 2 MiB SQLite page cache, 16 MiB mmap limit, and 256-page WAL checkpoints.
+- Pin package resolution and signed Release builds to the macOS destination so connected devices cannot delay release preparation.
 
 ## Fixed
 

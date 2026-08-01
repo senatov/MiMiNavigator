@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cache-first revisits** — a fresh directory snapshot is published immediately and can skip a redundant disk scan when an active FSEvents watcher covers the path.
 - **Watcher integrity interval** — watched local directories receive a periodic full verification every 30 minutes instead of an unconditional scan every five minutes; paths without a watcher keep the five-minute fallback.
 - **SQLite runtime policy** — CacheKit uses a bounded 2 MiB page cache, a 16 MiB mapping limit, and 256-page WAL auto-checkpoints.
+- **Release destination** — package resolution and signed Release builds explicitly target macOS so connected Apple devices cannot stall the notarization pipeline during device discovery.
 - **Build metadata** — marketing version updated to `0.9.9.6.9`; build number updated to `136`.
 
 ### Fixed
