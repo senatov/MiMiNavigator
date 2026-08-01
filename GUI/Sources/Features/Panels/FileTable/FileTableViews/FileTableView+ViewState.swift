@@ -27,6 +27,7 @@ extension FileTableView {
             hasher.combine(file.nameStr)
             hasher.combine(file.pathStr)
             hasher.combine(file.isDirectory)
+            hasher.combine(file.cachedChildCount)
             hasher.combine(file.cachedDirectorySize)
             hasher.combine(file.sizeInBytes)
             hasher.combine(file.sizeIsExact)

@@ -120,7 +120,8 @@ extension DualDirectoryScanner {
         }
         if patch.needsFullRescan {
             log.info("[FSEvents] needsFullRescan for \(side) panel")
-            await refreshFiles(currSide: side)
+            await DirectoryContentCache.shared.invalidate(patch.watchedPath)
+            await refreshFiles(currSide: side, force: true)
             return
         }
         await applyIncrementalPatch(patch, for: side)
@@ -138,6 +139,7 @@ extension DualDirectoryScanner {
         let totalChanges = addedOrModified.count + removedPaths.count
         if totalChanges == 0 {
             applyChildCountUpdates(childUpdates, to: state.files)
+            await publishDisplayedFiles(state.files, for: side)
             await DirectoryContentCache.shared.store(
                 path: patch.watchedPath,
                 files: state.files,
