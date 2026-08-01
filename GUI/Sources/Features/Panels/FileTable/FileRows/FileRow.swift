@@ -23,9 +23,7 @@ struct FileRow: View, Equatable {
     let layoutVersion: Int
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    let onFileAction: (FileAction, CustomFile) -> Void
-    let onDirectoryAction: (DirectoryAction, CustomFile) -> Void
-    let onMultiSelectionAction: (MultiSelectionAction) -> Void
+    let onContextMenuHover: (CustomFile, Bool) -> Void
 
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
@@ -174,35 +172,6 @@ struct FileRow: View, Equatable {
             .allowsHitTesting(false)
     }
 
-    private var hasMarkedFiles: Bool {
-        appState.markedCount(for: panelSide) > 0
-    }
-
-    @ViewBuilder
-    private var contextMenuContent: some View {
-        let optionHeld = NSEvent.modifierFlags.contains(.option)
-        if hasMarkedFiles {
-            MultiSelectionContextMenu(
-                markedCount: appState.markedCount(for: panelSide),
-                panelSide: panelSide,
-                isOptionHeld: optionHeld
-            ) { action in
-                log.debug("[FileRow] multi-selection action=\(action.rawValue) count=\(appState.markedCount(for: panelSide))")
-                onMultiSelectionAction(action)
-            }
-        } else if file.isDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                logContextMenuAction(action, isDirectory: true)
-                onDirectoryAction(action, file)
-            }
-        } else {
-            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                logContextMenuAction(action, isDirectory: false)
-                onFileAction(action, file)
-            }
-        }
-    }
-
     // MARK: - Event Handlers
     private func handleSingleClick() {
         let _ = log.debug(#function)
@@ -235,11 +204,6 @@ struct FileRow: View, Equatable {
         if targeted {
             dragDropManager.setDropTarget(file.urlValue)
         }
-    }
-
-    private func logContextMenuAction(_ action: Any, isDirectory: Bool) {
-        let type = isDirectory ? "directory" : "file"
-        log.debug("[FileRow] \(type) context menu action=\(action) file='\(file.nameStr)'")
     }
 
     // MARK: - Handle drop on this row (directory)
@@ -373,7 +337,9 @@ struct FileRow: View, Equatable {
             .contentShape(Rectangle())
             .gesture(rowGestures())
             .animation(nil, value: isSelected)
-            .contextMenu { contextMenuContent }
+            .onHover { hovering in
+                onContextMenuHover(file, hovering)
+            }
             .modifier(
                 DropTargetModifier(
                     isValidTarget: isValidDropTarget,

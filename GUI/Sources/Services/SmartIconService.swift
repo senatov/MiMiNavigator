@@ -18,7 +18,8 @@ enum SmartIconService {
     // MARK: - Icon cache
     nonisolated(unsafe) private static let iconCache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
-        cache.countLimit = 256
+        cache.countLimit = 192
+        cache.totalCostLimit = 12 * 1_024 * 1_024
         return cache
     }()
 
@@ -36,7 +37,7 @@ enum SmartIconService {
         }
         let url = file.urlValue
         let workspace = NSWorkspace.shared
-        let iconSize = NSSize(width: 128, height: 128)
+        let iconSize = NSSize(width: 32, height: 32)
         if !FileManager.default.fileExists(atPath: url.path) {
             return remoteIcon(for: file, size: iconSize)
         }
@@ -47,12 +48,12 @@ enum SmartIconService {
             // OS-hidden dirs (~/Library etc.) — eye.slash badge
             if file.isOSHiddenOnly {
                 let icon = OSHiddenIconComposer.compose(url: url, size: iconSize)
-                iconCache.setObject(icon, forKey: extKey)
+                iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
                 return icon
             }
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
-            iconCache.setObject(icon, forKey: extKey)
+            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
             return icon
         }
         let pathExtension = url.pathExtension.lowercased()
@@ -84,8 +85,13 @@ enum SmartIconService {
         log.debug("[SmartIcon] fallback for '\(url.lastPathComponent)' ext='\(url.pathExtension)'")
         let icon = workspace.icon(forFile: url.path)
         icon.size = iconSize
-        iconCache.setObject(icon, forKey: extKey)
+        iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
         return icon
+    }
+
+    // MARK: - Icon Cost
+    private static func iconCost(for size: NSSize) -> Int {
+        Int(size.width * size.height * 4)
     }
 
     // MARK: - URL-based API (for FindFilesResultsView and other callers)

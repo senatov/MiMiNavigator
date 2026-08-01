@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.6.9] — 2026-08-01
+
+> **Release notes**
+> Lower idle memory, faster directory revisits, and reduced background disk scanning.
+
+### Changed
+- **Shared row context menu** — list rows report the hovered file to one table-level context menu instead of retaining a complete SwiftUI menu graph and AppKit responder for every row.
+- **Bounded icon memory** — file, symlink, and hidden-item image caches now enforce both entry counts and total byte costs, and list icons use a 32-point backing size instead of 128 points.
+- **QuickLook requests** — thumbnail generation passes the display size once and lets the backing scale determine pixel density, avoiding dimensions being doubled twice on Retina displays.
+- **Directory cache budget** — recent listings retain at most 10,000 file models across all entries in addition to the existing per-directory and LRU limits.
+- **Cache-first revisits** — a fresh directory snapshot is published immediately and can skip a redundant disk scan when an active FSEvents watcher covers the path.
+- **Watcher integrity interval** — watched local directories receive a periodic full verification every 30 minutes instead of an unconditional scan every five minutes; paths without a watcher keep the five-minute fallback.
+- **SQLite runtime policy** — CacheKit uses a bounded 2 MiB page cache, a 16 MiB mapping limit, and 256-page WAL auto-checkpoints.
+- **Build metadata** — marketing version updated to `0.9.9.6.9`; build number updated to `136`.
+
+### Fixed
+- **Repeated scan amplification** — incremental FSEvents changes now refresh the directory snapshot, so returning to a recently visited path does not immediately enumerate the disk again.
+- **Dropped filesystem events** — `MustScanSubDirs`, user/kernel dropped events, and root changes force a complete scan instead of leaving a cached listing potentially stale.
+- **Context-menu retention** — eliminating per-row menu responders removes the principal source of duplicated SwiftUI menu, symbol, accessibility, and responder objects observed in idle heap profiles.
+- **Unbounded composed icons** — symlink and OS-hidden icon caches can now release entries under count or memory pressure.
+
 ## [0.9.9.6.8] — 2026-07-29
 
 > **Release notes**

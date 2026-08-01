@@ -68,12 +68,13 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             release: nil,
             copyDescription: nil
         )
-        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
+        let callback: FSEventStreamCallback = { _, info, eventCount, eventPaths, eventFlags, _ in
             guard let info else { return }
             let watcher = Unmanaged<FSEventsDirectoryWatcher>.fromOpaque(info).takeUnretainedValue()
             let cfPaths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue()
             guard let paths = cfPaths as? [String] else { return }
-            watcher.scheduleHandleEvents(paths: paths)
+            let flags = Array(UnsafeBufferPointer(start: eventFlags, count: eventCount))
+            watcher.scheduleHandleEvents(paths: paths, flags: flags)
         }
         let flags = UInt32(
             kFSEventStreamCreateFlagUseCFTypes
@@ -116,18 +117,29 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     }
 
     // MARK: - Schedule Event Handling
-    private func scheduleHandleEvents(paths: [String]) {
+    private func scheduleHandleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         pendingWork?.cancel()
         let work = DispatchWorkItem { [weak self] in
-            self?.handleEvents(paths: paths)
+            self?.handleEvents(paths: paths, flags: flags)
         }
         pendingWork = work
         callbackQueue.asyncAfter(deadline: .now() + throttleDelay, execute: work)
     }
 
     // MARK: - Handle Events
-    private func handleEvents(paths: [String]) {
+    private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         let watched = watchedPath
+        let rescanFlags = FSEventStreamEventFlags(
+            kFSEventStreamEventFlagMustScanSubDirs
+                | kFSEventStreamEventFlagUserDropped
+                | kFSEventStreamEventFlagKernelDropped
+                | kFSEventStreamEventFlagRootChanged
+        )
+        if flags.contains(where: { $0 & rescanFlags != 0 }) {
+            log.warning("[FSEvents] continuity flag received; full rescan for '\(watched)'")
+            onPatch(makeFullRescanPatch(watchedPath: watched, childCounts: [:]))
+            return
+        }
         var classification = classifyEvents(paths, watchedPath: watched)
         if classification.watchedDirectoryChanged && classification.directChildren.isEmpty {
             log.info("[FSEvents] watched directory changed; full rescan for '\(watched)'")

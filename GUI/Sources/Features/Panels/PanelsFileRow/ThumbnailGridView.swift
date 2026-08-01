@@ -334,7 +334,7 @@ private struct ThumbnailCellView: View {
     private func loadThumbnail() async {
         if file.isDirectory { return }
         let url = file.urlValue
-        let size = CGSize(width: imageSize * 2, height: imageSize * 2)
+        let size = CGSize(width: imageSize, height: imageSize)
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let request = QLThumbnailGenerator.Request(
             fileAt: url,

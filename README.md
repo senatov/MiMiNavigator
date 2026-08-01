@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Archives-50%2B_Formats-6f42c1" alt="50+ archive formats" />
   <img src="https://img.shields.io/badge/Media-Preview_%26_Conversion-ff8c00" alt="Media preview and conversion" />
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0" />
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.8"><img src="https://img.shields.io/badge/release-v0.9.9.6.8-orange" alt="Release v0.9.9.6.8" /></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.9"><img src="https://img.shields.io/badge/release-v0.9.9.6.9-orange" alt="Release v0.9.9.6.9" /></a>
 </p>
 
 <p align="center">
@@ -38,19 +38,20 @@
 
 
 
-## Recent Changes (v0.9.9.6.8 - July 2026)
+## Recent Changes (v0.9.9.6.9 - August 2026)
 
-- **Content-aware conflicts** — equal-size files are compared asynchronously by their bytes before timestamps and sizes are interpreted.
-- **Conflict dialog clarity** — native utility-panel presentation, clear file cards, stronger status messaging, and dimensional controls improve readability.
-- **Operation progress** — refined progress styling, persistent per-operation geometry, and interruptible automatic closing make result windows predictable.
-- **Menu-bar status item** — native memory units, stable animation, primary-click restoration, and ignored secondary clicks provide a focused activation shortcut.
-- **Archive To-Parent workflow** — drag one file or a marked set out of an opened archive through the shared Copy/Move confirmation and operation progress.
-- **Reliable archive repacking** — Move marks the active archive session by archive URL so repacking removes transferred entries.
-- **Persistent cache efficiency** — throttled SQLite touches, batched pruning, health checks, and file-operation-driven directory-size invalidation.
-- **Build metadata** — release version is `0.9.9.6.8`, build `135`.
+- **Lower idle memory** — file rows share one context-menu graph instead of creating a complete SwiftUI menu responder for every visible row.
+- **Bounded image caches** — file, symlink, and hidden-item icons use smaller backing sizes with explicit count and memory-cost limits.
+- **Lean thumbnail rendering** — QuickLook requests respect display scale without doubling dimensions twice.
+- **Instant directory revisits** — fresh in-memory directory snapshots are published immediately and avoid redundant disk scans while FSEvents remains authoritative.
+- **Reliable live updates** — incremental FSEvents patches update the directory cache, while dropped-event and root-change flags trigger a safe full scan.
+- **Reduced background I/O** — watched local directories use a 30-minute integrity scan instead of unconditional five-minute rescans; paths without a watcher retain the five-minute fallback.
+- **SQLite tuning** — bounded page cache, memory mapping, and tighter WAL checkpoints keep the persistent cache responsive with predictable memory and disk usage.
+- **Build metadata** — release version is `0.9.9.6.9`, build `136`.
 
 ## Previous Changes
 
+- **v0.9.9.6.8** — archive To-Parent transfers, reliable repacking, content-aware conflicts, operation progress polish, and persistent-cache invalidation.
 - **v0.9.9.6.3** — network intelligence, History deduplication, dialog sizing, and DMG presentation.
 - **v0.9.9.6.0** — Preview mounted-volume stability, stale scan protection, and release pipeline validation.
 - **v0.9.9.5.9** — Multi-Rename, unified navigation, keyboard access, network discovery, and interface consistency.
@@ -217,7 +218,7 @@ MiMiNavigator can browse archives as virtual directories. Double-click opens the
 > xattr -cr ~/Downloads/MiMiNavigator.app
 > ```
 
-**[Download MiMiNavigator v0.9.9.6.8 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.8)**
+**[Download MiMiNavigator v0.9.9.6.9 ->](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.6.9)**
 **[All releases →](https://github.com/senatov/MiMiNavigator/releases)**
 
 ---

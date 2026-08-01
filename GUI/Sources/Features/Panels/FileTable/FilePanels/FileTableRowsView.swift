@@ -3,6 +3,7 @@
 //   Parent ".." strip is now a separate panel (ParentNavigationStripPanel) —
 //   this view only renders real filesystem entries.
 
+import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -39,6 +40,7 @@ struct FileTableRowsView: View {
     @Environment(\.displayScale) private var displayScale
     private var onePixel: CGFloat { 1.0 / displayScale }
     @State private var colorStore = ColorThemeStore.shared
+    @State private var contextMenuFile: CustomFile?
 
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
@@ -125,6 +127,45 @@ struct FileTableRowsView: View {
         }
         .padding(.top, SelectionOverlayMetrics.rowsTopInset)
         .transaction { $0.disablesAnimations = true }
+        .contextMenu { contextMenuContent }
+    }
+
+    // MARK: - Shared Context Menu
+    @ViewBuilder
+    private var contextMenuContent: some View {
+        if appState.markedCount(for: panelSide) > 0 {
+            MultiSelectionContextMenu(
+                markedCount: appState.markedCount(for: panelSide),
+                panelSide: panelSide,
+                isOptionHeld: NSEvent.modifierFlags.contains(.option),
+                onAction: handleMultiSelectionAction
+            )
+        } else if let file = contextMenuFile, file.isDirectory {
+            DirectoryContextMenu(
+                file: file,
+                panelSide: panelSide,
+                isOptionHeld: NSEvent.modifierFlags.contains(.option)
+            ) { action in
+                handleDirectoryAction(action, file)
+            }
+        } else if let file = contextMenuFile {
+            FileContextMenu(
+                file: file,
+                panelSide: panelSide,
+                isOptionHeld: NSEvent.modifierFlags.contains(.option)
+            ) { action in
+                handleFileAction(action, file)
+            }
+        }
+    }
+
+    // MARK: - Context Menu Hover
+    private func updateContextMenuHover(_ file: CustomFile, hovering: Bool) {
+        if hovering {
+            contextMenuFile = file
+        } else if contextMenuFile?.id == file.id {
+            contextMenuFile = nil
+        }
     }
 
     @ViewBuilder
@@ -192,9 +233,7 @@ struct FileTableRowsView: View {
                 layoutVersion: layout.layoutVersion,
                 onSelect: onSelect,
                 onDoubleClick: onDoubleClick,
-                onFileAction: handleFileAction,
-                onDirectoryAction: handleDirectoryAction,
-                onMultiSelectionAction: handleMultiSelectionAction
+                onContextMenuHover: updateContextMenuHover
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }

@@ -115,7 +115,7 @@ extension DualDirectoryScanner {
 
         let task = Task { [weak self] in
             guard let self else { return }
-            await self.performRefreshFiles(currSide: currSide, generation: generation)
+            await self.performRefreshFiles(currSide: currSide, generation: generation, force: force)
         }
 
         activeScanTask[currSide] = task
@@ -264,7 +264,7 @@ extension DualDirectoryScanner {
 
     // MARK: - Main scan flow
 
-    func performRefreshFiles(currSide: FavPanelSide, generation: Int) async {
+    func performRefreshFiles(currSide: FavPanelSide, generation: Int, force: Bool) async {
         let scanStart = Date()
         let panelState = await MainActor.run { currentPanelState(for: currSide) }
         let isTerminatingAtStart = await MainActor.run { appState.isTerminating }
@@ -291,6 +291,18 @@ extension DualDirectoryScanner {
             log.debug("[Scan] routing to remote refresh side=\(currSide) gen=\(generation)")
             await appState.refreshRemoteFiles(for: currSide)
             return
+        }
+        if !force,
+           let cached = await DirectoryContentCache.shared.lookup(originalURL.path, showHidden: showHidden)
+        {
+            guard isCurrentGeneration(generation, for: currSide) else { return }
+            await publishSuccessfulScan(cached.files, scannedPath: originalURL.path, for: currSide)
+            if !cached.isStale, hasActiveFSEventsWatcher(for: currSide, path: originalURL.path) {
+                lastFullScan[currSide] = Date()
+                log.debug("[Scan] fresh cache hit path='\(originalURL.path)' items=\(cached.files.count); disk scan skipped")
+                return
+            }
+            log.debug("[Scan] cache preview path='\(originalURL.path)' items=\(cached.files.count); refreshing in background")
         }
 
         let context = ScanAttemptContext(

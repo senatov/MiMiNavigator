@@ -16,6 +16,14 @@ struct ScannerPatchState {
 
 extension DualDirectoryScanner {
 
+    // MARK: - Active Watcher Check
+    func hasActiveFSEventsWatcher(for side: FavPanelSide, path: String) -> Bool {
+        switch side {
+            case .left: return leftFSEvents != nil && leftWatchedPath == path
+            case .right: return rightFSEvents != nil && rightWatchedPath == path
+        }
+    }
+
     // MARK: - FSEvents watcher setup
     /// Starts FSEventsDirectoryWatcher for a panel.
     /// Remote paths are skipped — FSEvents has no meaning for ftp:// / sftp://.
@@ -130,6 +138,11 @@ extension DualDirectoryScanner {
         let totalChanges = addedOrModified.count + removedPaths.count
         if totalChanges == 0 {
             applyChildCountUpdates(childUpdates, to: state.files)
+            await DirectoryContentCache.shared.store(
+                path: patch.watchedPath,
+                files: state.files,
+                showHidden: await appState.showHiddenFilesSnapshot()
+            )
             return
         }
         let useIncremental = totalChanges <= 5
@@ -150,6 +163,11 @@ extension DualDirectoryScanner {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
         await publishDisplayedFiles(merged, for: side)
+        await DirectoryContentCache.shared.store(
+            path: patch.watchedPath,
+            files: merged,
+            showHidden: await appState.showHiddenFilesSnapshot()
+        )
     }
 
     @MainActor
@@ -263,9 +281,16 @@ extension DualDirectoryScanner {
     }
 
     func shouldSkipTimerRefresh(for side: FavPanelSide) -> Bool {
+        let watchedPath = side == .left ? leftWatchedPath : rightWatchedPath
         guard let lastFullScan = lastFullScan[side] else { return false }
         let elapsed = Date().timeIntervalSince(lastFullScan)
-        return elapsed < max(fallbackScanInterval, adaptiveCooldown(for: side))
+        let fallbackInterval: TimeInterval
+        if let watchedPath, hasActiveFSEventsWatcher(for: side, path: watchedPath) {
+            fallbackInterval = watcherIntegrityScanInterval
+        } else {
+            fallbackInterval = fallbackScanInterval
+        }
+        return elapsed < max(fallbackInterval, adaptiveCooldown(for: side))
     }
 
     // MARK: - Timer / watcher maintenance

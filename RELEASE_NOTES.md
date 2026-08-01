@@ -1,50 +1,41 @@
-# MiMiNavigator v0.9.9.6.8
+# MiMiNavigator v0.9.9.6.9
 
-A focused archive workflow and persistent-cache reliability release.
+A performance and resource-efficiency release focused on lower idle memory, faster directory revisits, and less background disk activity.
 
 ## Highlights
 
-- Drag files or a marked selection from an archive onto the fixed To-Parent strip to copy or move them beside the archive.
-- Clear green-and-blue contact feedback now links the To-Parent strip, drag preview, and marked-file badge before the mouse button is released.
-- Moving content out of an archive reliably marks the active archive session as modified and offers to repack it on exit.
-- Persistent SQLite caches perform fewer writes and invalidate directory sizes after shared file operations.
-
-## Added
-
-- The To-Parent strip is a real archive drop destination backed by the shared Copy/Move confirmation and `FileOpsEngine`.
-- AppKit geometry-based drop detection makes repeated archive transfers independent of SwiftUI drop-target timing.
-- SQLite cache health diagnostics, path-prefix invalidation, and explicit dirty-session diagnostics.
+- File rows now share one context-menu graph instead of retaining a full SwiftUI/AppKit menu responder for every row.
+- Recently visited directories can be restored immediately from a bounded memory snapshot while FSEvents keeps the listing current.
+- Watched local directories no longer receive an unconditional full scan every five minutes.
+- Icon and QuickLook backing memory is constrained with smaller render sizes and explicit cache-cost limits.
+- SQLite cache parameters now provide predictable page-cache, mapping, and WAL behavior.
 
 ## Changed
 
-- Cache hits throttle `lastAccess` updates instead of writing to the WAL on every read.
-- Cache pruning deletes stale entries in bounded batches and waits briefly for transient SQLite contention.
-- Copy, move, and delete invalidate related directory-size entries in memory and SQLite, including affected ancestors.
-- Archive drag previews use a green contact surface, blue border, confirmation badge, and green multi-file counter over To-Parent.
+- Moved the list context menu from individual file rows to the shared lazy stack while preserving file, directory, and marked-selection actions.
+- Reduced list icon generation from 128 points to 32 points and bounded file, symlink, and hidden-item image caches by count and estimated byte cost.
+- Corrected Retina QuickLook requests so display dimensions are not doubled before applying the backing scale.
+- Added a 10,000-file global budget to the recent-directory LRU in addition to its per-listing limit.
+- Publish fresh directory snapshots before scanning and skip the scan when an active watcher guarantees live updates.
+- Extend periodic integrity scans to 30 minutes for watched paths while retaining the five-minute safety fallback for paths without FSEvents.
+- Configure CacheKit with a 2 MiB SQLite page cache, 16 MiB mmap limit, and 256-page WAL checkpoints.
 
 ## Fixed
 
-- Repeated To-Parent drops no longer animate without creating a transfer operation.
-- Archive drops now show the standard Copy/Move question and shared operation progress.
-- Moving a file out of an archive no longer leaves the original entry inside after the archive is repacked.
-- Dirty tracking now uses the stable archive URL instead of a `CustomFile` logical origin path.
-- Missing archive sessions produce an explicit warning instead of a false “marked dirty” success message.
-- Directory-size results are no longer retained after shared filesystem mutations make them stale.
-
-## Internal
-
-- `CacheKit` gained throttled access touches, a busy timeout, batched pruning, prefix removal, and `PRAGMA quick_check` health reporting.
-- CacheKit tests cover persistence, expiry, pruning, access throttling, prefix removal, and database health.
-- Directory-size invalidation lives in a dedicated extension and remains under the project file-size limit.
+- Incremental filesystem changes now update the recent-directory cache instead of leaving a snapshot stale until the next full scan.
+- FSEvents continuity failures, dropped events, and watched-root changes now request a complete directory refresh.
+- Per-row context-menu responders no longer multiply SwiftUI platform menu items, SF Symbol graphs, accessibility objects, and responder retain cycles.
+- Composed symlink and hidden-directory icons can be evicted under memory pressure.
 
 ## Validation
 
-- All CacheKit tests pass.
-- Full Debug builds complete successfully.
-- The release pipeline performs a clean signed Release build, DMG verification, notarization, stapling, and Gatekeeper assessment.
+- FileModelKit tests: 8 passed.
+- CacheKit tests: 4 passed.
+- Full Debug build completed successfully.
+- The release pipeline performs a clean Developer ID build, signed DMG creation, notarization, stapling, and Gatekeeper verification.
 
 ## Download
 
-The DMG is signed, notarized by Apple, and includes an Applications shortcut for drag-to-install.
+The DMG is signed and notarized by Apple and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.7...v0.9.9.6.8
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.8...v0.9.9.6.9

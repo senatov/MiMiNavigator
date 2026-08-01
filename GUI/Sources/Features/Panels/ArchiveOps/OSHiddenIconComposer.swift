@@ -17,7 +17,12 @@ enum OSHiddenIconComposer {
     // MARK: - Cache
 
     @MainActor
-    private static let cache = NSCache<NSString, NSImage>()
+    private static let cache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 128
+        cache.totalCostLimit = 8 * 1_024 * 1_024
+        return cache
+    }()
 
 
     // MARK: - Public
@@ -27,7 +32,7 @@ enum OSHiddenIconComposer {
         let key = url.path as NSString
         if let cached = cache.object(forKey: key) { return cached }
         let result = draw(url: url, size: size)
-        cache.setObject(result, forKey: key)
+        cache.setObject(result, forKey: key, cost: Int(size.width * size.height * 4))
         return result
     }
 
