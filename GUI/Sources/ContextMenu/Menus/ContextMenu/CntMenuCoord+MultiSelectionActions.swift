@@ -1,7 +1,6 @@
 // CntMenuCoord+MultiSelectionActions.swift
 // MiMiNavigator
 //
-// Created by Claude on 14.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Handles MultiSelectionAction dispatching for batch operations
 

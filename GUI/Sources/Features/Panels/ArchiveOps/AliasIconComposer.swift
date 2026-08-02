@@ -27,7 +27,7 @@ enum AliasIconComposer {
 
     @MainActor
     static func compose(symlinkURL url: URL, size: NSSize) -> NSImage {
-        let key = url.path as NSString
+        let key = "\(url.path)|\(Int(size.width))x\(Int(size.height))" as NSString
         if let cached = cache.object(forKey: key) { return cached }
         let result = draw(symlinkURL: url, size: size)
         cache.setObject(result, forKey: key, cost: Int(size.width * size.height * 4))

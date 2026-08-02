@@ -3,7 +3,6 @@
 //   Parent ".." strip is now a separate panel (ParentNavigationStripPanel) —
 //   this view only renders real filesystem entries.
 
-import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -49,9 +48,6 @@ struct FileTableRowsView: View {
     let layout: ColumnLayoutModel
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    let handleFileAction: (FileAction, CustomFile) -> Void
-    let handleDirectoryAction: (DirectoryAction, CustomFile) -> Void
-    let handleMultiSelectionAction: (MultiSelectionAction) -> Void
 
     private var currentSelectedID: CustomFile.ID? {
         selectedID
@@ -133,39 +129,15 @@ struct FileTableRowsView: View {
     // MARK: - Shared Context Menu
     @ViewBuilder
     private var contextMenuContent: some View {
-        if appState.markedCount(for: panelSide) > 0 {
-            MultiSelectionContextMenu(
-                markedCount: appState.markedCount(for: panelSide),
-                panelSide: panelSide,
-                isOptionHeld: NSEvent.modifierFlags.contains(.option),
-                onAction: handleMultiSelectionAction
-            )
-        } else if let file = contextMenuFile, file.isDirectory {
-            DirectoryContextMenu(
-                file: file,
-                panelSide: panelSide,
-                isOptionHeld: NSEvent.modifierFlags.contains(.option)
-            ) { action in
-                handleDirectoryAction(action, file)
-            }
-        } else if let file = contextMenuFile {
-            FileContextMenu(
-                file: file,
-                panelSide: panelSide,
-                isOptionHeld: NSEvent.modifierFlags.contains(.option)
-            ) { action in
-                handleFileAction(action, file)
-            }
+        if let file = contextMenuFile {
+            FileItemContextMenu(file: file, panelSide: panelSide)
         }
     }
 
     // MARK: - Context Menu Hover
     private func updateContextMenuHover(_ file: CustomFile, hovering: Bool) {
-        if hovering {
-            contextMenuFile = file
-        } else if contextMenuFile?.id == file.id {
-            contextMenuFile = nil
-        }
+        guard hovering else { return }
+        contextMenuFile = file
     }
 
     @ViewBuilder
@@ -213,6 +185,7 @@ struct FileTableRowsView: View {
 
         SizeAwareRow(
             id: file.id,
+            index: index,
             isSelected: isSelected,
             layoutVersion: layout.layoutVersion,
             sizeVersion: file.sizeVersion,
@@ -246,6 +219,7 @@ struct FileTableRowsView: View {
 /// Uses `sizeVersion` to refresh size column updates while keeping SwiftUI diffs cheap.
 struct SizeAwareRow<Content: View>: View, Equatable {
     let id: CustomFile.ID
+    let index: Int
     let isSelected: Bool
     let layoutVersion: Int
     let sizeVersion: Int
@@ -257,6 +231,7 @@ struct SizeAwareRow<Content: View>: View, Equatable {
     @ViewBuilder let content: () -> Content
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
+            && lhs.index == rhs.index
             && lhs.isSelected == rhs.isSelected
             && lhs.layoutVersion == rhs.layoutVersion
             && lhs.sizeVersion == rhs.sizeVersion

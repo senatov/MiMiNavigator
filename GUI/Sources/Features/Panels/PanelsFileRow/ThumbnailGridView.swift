@@ -30,6 +30,7 @@ struct ThumbnailGridView: View {
     let cellSize: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
+    @State private var contextMenuFile: CustomFile?
 
     /// Width matching the native scrollbar track — driven by ScrollBarConfig
     private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
@@ -70,17 +71,16 @@ struct ThumbnailGridView: View {
                             handleSelection(for: file, modifiers: modifiers)
                         },
                         onDoubleClick: { onDoubleClick(file) },
-                        onFileAction: { action in
-                            CntMenuCoord.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
-                        },
-                        onDirectoryAction: { action in
-                            CntMenuCoord.shared.handleDirectoryAction(
-                                action, for: file, panel: panelSide, appState: appState)
-                        }
+                        onContextMenuHover: { contextMenuFile = file }
                     )
                 }
             }
             .padding(10)
+            .contextMenu {
+                if let file = contextMenuFile {
+                    FileItemContextMenu(file: file, panelSide: panelSide)
+                }
+            }
         }
         // MARK: - Jump-to-edge buttons (matching file table style)
         .overlay(alignment: .trailing) {
@@ -160,8 +160,7 @@ private struct ThumbnailCellView: View {
     let dragFiles: [CustomFile]
     let onSelect: (NSEvent.ModifierFlags) -> Void
     let onDoubleClick: () -> Void
-    let onFileAction: (FileAction) -> Void
-    let onDirectoryAction: (DirectoryAction) -> Void
+    let onContextMenuHover: () -> Void
 
     @State private var thumbnail: NSImage? = nil
     @State private var isHovered = false
@@ -217,7 +216,10 @@ private struct ThumbnailCellView: View {
         }
         .frame(width: cellSize)
         .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
+        .onHover { hovering in
+            isHovered = hovering
+            if hovering { onContextMenuHover() }
+        }
         .onTapGesture(count: 2) { onDoubleClick() }
         .simultaneousGesture(
             TapGesture(count: 1)
@@ -226,7 +228,6 @@ private struct ThumbnailCellView: View {
                     onSelect(modifiers)
                 }
         )
-        .contextMenu { contextMenuContent }
         .onDrag {
             dragDropManager.startDrag(files: dragFiles, from: panelSide, appState: appState)
             return makeDragProvider()
@@ -244,6 +245,7 @@ private struct ThumbnailCellView: View {
                 text: Bindable(appState.inlineRename).editedName,
                 originalName: appState.inlineRename.originalName,
                 nameWidth: cellSize - 4,
+                preservesExtension: !file.isDirectory,
                 onCommit: { commitInlineRename() },
                 onCancel: { appState.inlineRename.cancel() }
             )
@@ -278,20 +280,6 @@ private struct ThumbnailCellView: View {
             return nil
         }
         return provider
-    }
-
-    // MARK: - Context menu content
-    @ViewBuilder
-    private var contextMenuContent: some View {
-        if file.isDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: NSEvent.modifierFlags.contains(.option)) { action in
-                onDirectoryAction(action)
-            }
-        } else {
-            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: NSEvent.modifierFlags.contains(.option)) { action in
-                onFileAction(action)
-            }
-        }
     }
 
     // MARK: - Fallback SF Symbol icon

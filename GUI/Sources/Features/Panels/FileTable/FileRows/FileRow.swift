@@ -52,7 +52,8 @@ struct FileRow: View, Equatable {
     // MARK: - Equatable optimization
     /// Prevent SwiftUI from re-rendering the row unless the visible state actually changed.
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
-        lhs.file.id == rhs.file.id && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
+        lhs.file.id == rhs.file.id && lhs.index == rhs.index
+            && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
             && lhs.isActivePanel == rhs.isActivePanel
             && lhs.themeVersion == rhs.themeVersion
             && lhs.layoutVersion == rhs.layoutVersion
@@ -277,6 +278,7 @@ struct FileRow: View, Equatable {
                 text: Bindable(appState.inlineRename).editedName,
                 originalName: appState.inlineRename.originalName,
                 nameWidth: layout.nameWidth,
+                preservesExtension: !file.isDirectory,
                 onCommit: { commitInlineRename() },
                 onCancel: { appState.inlineRename.cancel() }
             )

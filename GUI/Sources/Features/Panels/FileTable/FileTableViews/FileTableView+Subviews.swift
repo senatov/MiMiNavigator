@@ -39,10 +39,7 @@ extension FileTableView {
                                 panelSide: panelSide,
                                 layout: layout,
                                 onSelect: onSelect,
-                                onDoubleClick: onDoubleClick,
-                                handleFileAction: handleFileAction,
-                                handleDirectoryAction: handleDirectoryAction,
-                                handleMultiSelectionAction: handleMultiSelectionAction
+                                onDoubleClick: onDoubleClick
                             )
                         } header: {
                             TableHeaderView(

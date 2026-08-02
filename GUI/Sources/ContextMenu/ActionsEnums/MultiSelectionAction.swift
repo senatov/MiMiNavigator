@@ -1,7 +1,6 @@
 // MultiSelectionAction.swift
 // MiMiNavigator
 //
-// Created by Claude on 14.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Context actions available for multiple selected files/directories
 

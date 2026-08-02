@@ -27,6 +27,7 @@ struct DirectoryTreeRow: View {
     let onToggleSubtree: () -> Void
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
+    let onContextMenuHover: () -> Void
     let onDrop: ([CustomFile]) -> Bool
     @State private var isDropTargeted = false
 
@@ -45,7 +46,9 @@ struct DirectoryTreeRow: View {
         .contentShape(Rectangle())
         .onTapGesture(count: 2, perform: onDoubleClick)
         .simultaneousGesture(TapGesture(count: 1).onEnded { handleSingleClick() })
-        .contextMenu { contextMenuContent }
+        .onHover { hovering in
+            if hovering { onContextMenuHover() }
+        }
         .modifier(dropModifier)
         .onDrag {
             dragDropManager.startDrag(files: [file], from: panelSide, appState: appState)
@@ -78,6 +81,7 @@ struct DirectoryTreeRow: View {
                 text: Bindable(appState.inlineRename).editedName,
                 originalName: appState.inlineRename.originalName,
                 nameWidth: inlineRenameWidth,
+                preservesExtension: !isDirectory,
                 onCommit: { commitInlineRename() },
                 onCancel: { appState.inlineRename.cancel() }
             )
@@ -220,25 +224,4 @@ struct DirectoryTreeRow: View {
         return .none
     }
 
-    @ViewBuilder
-    private var contextMenuContent: some View {
-        let optionHeld = NSEvent.modifierFlags.contains(.option)
-        if appState.markedCount(for: panelSide) > 0 {
-            MultiSelectionContextMenu(
-                markedCount: appState.markedCount(for: panelSide),
-                panelSide: panelSide,
-                isOptionHeld: optionHeld
-            ) { action in
-                CntMenuCoord.shared.handleMultiSelectionAction(action, panel: panelSide, appState: appState)
-            }
-        } else if isExpandableDirectory {
-            DirectoryContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                CntMenuCoord.shared.handleDirectoryAction(action, for: file, panel: panelSide, appState: appState)
-            }
-        } else {
-            FileContextMenu(file: file, panelSide: panelSide, isOptionHeld: optionHeld) { action in
-                CntMenuCoord.shared.handleFileAction(action, for: file, panel: panelSide, appState: appState)
-            }
-        }
-    }
 }

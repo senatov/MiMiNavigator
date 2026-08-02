@@ -92,12 +92,10 @@ struct FileContextMenu: View {
     var userFavorites: UserFavoritesStore { .shared }
 
     // Keep submenu data frozen for the lifetime of one context menu instance.
-    // Rebuilding the submenu identity while AppKit is tracking the menu can
-    // cause item/view mismatches and visible flicker.
-    // Lazy-loaded on first body eval (not in init!) to avoid O(N) LS lookups
-    // when SwiftUI diffs 1500+ rows in large directories.
-    @State var openWithApps: [AppInfo]?
-    @State var openWithMenuID: String?
+    // File rows share one context menu, so the Launch Services lookup only runs
+    // when that menu is created and never mutates it while AppKit is tracking.
+    let openWithApps: [AppInfo]
+    let openWithMenuID: String
 
     struct DebugSnapshot {
         let fileName: String
@@ -150,40 +148,27 @@ struct FileContextMenu: View {
         self.file = file
         self.isOptionHeld = isOptionHeld
         self.onAction = onAction
-        // openWithApps/openWithMenuID stay nil — loaded lazily in body
-    }
-
-    var body: some View {
-        menuContent
-            .onAppear {
-                ensureOpenWithLoaded()
-                logBodyAppearance()
-            }
-    }
-
-    // MARK: - Lazy OpenWith Loading
-
-    /// Loads open-with apps on first body eval (context menu actually shown).
-    /// This avoids O(N) LS lookups when SwiftUI diffs 1500+ rows.
-    func ensureOpenWithLoaded() {
-        guard openWithApps == nil else { return }
         let apps = Self.loadOpenWithApps(for: file)
-        let menuID = Self.makeOpenWithMenuID(for: file, apps: apps)
         openWithApps = apps
-        openWithMenuID = menuID
+        openWithMenuID = Self.makeOpenWithMenuID(for: file, apps: apps)
         FileContextMenuLog.logInit(
             instanceID: instanceID,
             fileName: file.nameStr,
             fileExtension: Self.cacheKey(for: file),
             appsCount: apps.count,
-            menuID: menuID
+            menuID: openWithMenuID
         )
     }
 
-    /// Resolved apps — empty until context menu is actually shown
-    var resolvedApps: [AppInfo] { openWithApps ?? [] }
+    var body: some View {
+        menuContent
+            .onAppear {
+                logBodyAppearance()
+            }
+    }
 
-    /// Resolved menu ID — fallback until loaded
-    var resolvedMenuID: String { openWithMenuID ?? "openwith|\(file.urlValue.path)|pending" }
+    var resolvedApps: [AppInfo] { openWithApps }
+
+    var resolvedMenuID: String { openWithMenuID }
 
 }
