@@ -24,7 +24,6 @@ struct DirectoryTreeView: View {
     @State private var loadingSubtreePaths: Set<String> = []
     @State private var autoFitTask: Task<Void, Never>?
     @State private var autoExpandedPath = ""
-    @State private var contextMenuFile: CustomFile?
 
     private enum TreeMetrics {
         static let depthIndent: CGFloat = 16
@@ -74,11 +73,6 @@ struct DirectoryTreeView: View {
             }
             .padding(.vertical, 1)
             .animation(.easeInOut(duration: 0.18), value: treeAnimationID)
-            .contextMenu {
-                if let file = contextMenuFile {
-                    FileItemContextMenu(file: file, panelSide: panelSide)
-                }
-            }
         }
         .background(treeBackground)
         .clipped()
@@ -106,7 +100,6 @@ struct DirectoryTreeView: View {
             onToggleSubtree: { toggleSubtree(item.file) },
             onSelect: { select(item.file) },
             onDoubleClick: { activate(item.file) },
-            onContextMenuHover: { contextMenuFile = item.file },
             onDrop: { droppedFiles in drop(droppedFiles, on: item.file) }
         )
     }

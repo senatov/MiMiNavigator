@@ -39,7 +39,6 @@ struct FileTableRowsView: View {
     @Environment(\.displayScale) private var displayScale
     private var onePixel: CGFloat { 1.0 / displayScale }
     @State private var colorStore = ColorThemeStore.shared
-    @State private var contextMenuFile: CustomFile?
 
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
@@ -123,21 +122,6 @@ struct FileTableRowsView: View {
         }
         .padding(.top, SelectionOverlayMetrics.rowsTopInset)
         .transaction { $0.disablesAnimations = true }
-        .contextMenu { contextMenuContent }
-    }
-
-    // MARK: - Shared Context Menu
-    @ViewBuilder
-    private var contextMenuContent: some View {
-        if let file = contextMenuFile {
-            FileItemContextMenu(file: file, panelSide: panelSide)
-        }
-    }
-
-    // MARK: - Context Menu Hover
-    private func updateContextMenuHover(_ file: CustomFile, hovering: Bool) {
-        guard hovering else { return }
-        contextMenuFile = file
     }
 
     @ViewBuilder
@@ -205,8 +189,7 @@ struct FileTableRowsView: View {
                 layout: layout,
                 layoutVersion: layout.layoutVersion,
                 onSelect: onSelect,
-                onDoubleClick: onDoubleClick,
-                onContextMenuHover: updateContextMenuHover
+                onDoubleClick: onDoubleClick
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }

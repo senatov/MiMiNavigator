@@ -30,7 +30,6 @@ struct ThumbnailGridView: View {
     let cellSize: CGFloat
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    @State private var contextMenuFile: CustomFile?
 
     /// Width matching the native scrollbar track — driven by ScrollBarConfig
     private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
@@ -70,17 +69,11 @@ struct ThumbnailGridView: View {
                         onSelect: { modifiers in
                             handleSelection(for: file, modifiers: modifiers)
                         },
-                        onDoubleClick: { onDoubleClick(file) },
-                        onContextMenuHover: { contextMenuFile = file }
+                        onDoubleClick: { onDoubleClick(file) }
                     )
                 }
             }
             .padding(10)
-            .contextMenu {
-                if let file = contextMenuFile {
-                    FileItemContextMenu(file: file, panelSide: panelSide)
-                }
-            }
         }
         // MARK: - Jump-to-edge buttons (matching file table style)
         .overlay(alignment: .trailing) {
@@ -160,7 +153,6 @@ private struct ThumbnailCellView: View {
     let dragFiles: [CustomFile]
     let onSelect: (NSEvent.ModifierFlags) -> Void
     let onDoubleClick: () -> Void
-    let onContextMenuHover: () -> Void
 
     @State private var thumbnail: NSImage? = nil
     @State private var isHovered = false
@@ -216,10 +208,7 @@ private struct ThumbnailCellView: View {
         }
         .frame(width: cellSize)
         .contentShape(Rectangle())
-        .onHover { hovering in
-            isHovered = hovering
-            if hovering { onContextMenuHover() }
-        }
+        .onHover { isHovered = $0 }
         .onTapGesture(count: 2) { onDoubleClick() }
         .simultaneousGesture(
             TapGesture(count: 1)
@@ -228,6 +217,9 @@ private struct ThumbnailCellView: View {
                     onSelect(modifiers)
                 }
         )
+        .contextMenu {
+            FileItemContextMenu(file: file, panelSide: panelSide)
+        }
         .onDrag {
             dragDropManager.startDrag(files: dragFiles, from: panelSide, appState: appState)
             return makeDragProvider()

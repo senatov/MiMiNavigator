@@ -23,7 +23,6 @@ struct FileRow: View, Equatable {
     let layoutVersion: Int
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
-    let onContextMenuHover: (CustomFile, Bool) -> Void
 
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
@@ -339,8 +338,8 @@ struct FileRow: View, Equatable {
             .contentShape(Rectangle())
             .gesture(rowGestures())
             .animation(nil, value: isSelected)
-            .onHover { hovering in
-                onContextMenuHover(file, hovering)
+            .contextMenu {
+                FileItemContextMenu(file: file, panelSide: panelSide)
             }
             .modifier(
                 DropTargetModifier(

@@ -27,7 +27,6 @@ struct DirectoryTreeRow: View {
     let onToggleSubtree: () -> Void
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
-    let onContextMenuHover: () -> Void
     let onDrop: ([CustomFile]) -> Bool
     @State private var isDropTargeted = false
 
@@ -46,8 +45,8 @@ struct DirectoryTreeRow: View {
         .contentShape(Rectangle())
         .onTapGesture(count: 2, perform: onDoubleClick)
         .simultaneousGesture(TapGesture(count: 1).onEnded { handleSingleClick() })
-        .onHover { hovering in
-            if hovering { onContextMenuHover() }
+        .contextMenu {
+            FileItemContextMenu(file: file, panelSide: panelSide)
         }
         .modifier(dropModifier)
         .onDrag {
