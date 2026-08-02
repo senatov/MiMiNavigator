@@ -29,14 +29,15 @@ struct BreadCrumbToolBar: View {
         static let groupSpacing: CGFloat = 6
         static let iconSize: CGFloat = 15
         static let buttonSize: CGFloat = 28
-        static let raisedButtonHeight: CGFloat = 22
-        static let raisedCornerRadius: CGFloat = 6
+        static let raisedButtonHeight: CGFloat = 24
+        static let raisedCornerRadius: CGFloat = 7
     }
 
     private enum Palette {
         static let activeIcon = Color(nsColor: .labelColor)
         static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.45)
-        static let utilityIcon = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))
+        static let historyIcon = Color(#colorLiteral(red: 0.07843137255, green: 0.3764705882, blue: 0.7058823529, alpha: 1))
+        static let favoritesIcon = Color(#colorLiteral(red: 0.6980392157, green: 0.3137254902, blue: 0.04705882353, alpha: 1))
         static let hoverTint = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))
     }
 
@@ -138,7 +139,8 @@ struct BreadCrumbToolBar: View {
     private func historyButton() -> some View {
         ToolBarIconButton(
             iconName: "clock.arrow.circlepath",
-            iconColor: Palette.utilityIcon,
+            iconColor: Palette.historyIcon,
+            surfaceTint: Palette.historyIcon,
             isRaised: true,
             action: {
                 log.debug("[BreadCrumbToolBar] history tapped panel=\(panelSide)")
@@ -153,7 +155,8 @@ struct BreadCrumbToolBar: View {
     private func favoritesButton() -> some View {
         ToolBarIconButton(
             iconName: panelSide == .left ? "sidebar.left" : "sidebar.right",
-            iconColor: Palette.utilityIcon,
+            iconColor: Palette.favoritesIcon,
+            surfaceTint: Palette.favoritesIcon,
             isRaised: true,
             action: {
                 log.debug("[BreadCrumbToolBar] favorites tapped panel=\(panelSide)")
@@ -239,6 +242,7 @@ struct BreadCrumbToolBar: View {
     private struct ToolBarIconButton: View {
         let iconName: String
         let iconColor: Color
+        var surfaceTint: Color = .clear
         var isEnabled: Bool = true
         var isRaised: Bool = false
         let action: () -> Void
@@ -281,9 +285,9 @@ struct BreadCrumbToolBar: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(isHovered ? 0.98 : 0.92),
-                                Color(nsColor: .controlBackgroundColor).opacity(0.96),
-                                Color(#colorLiteral(red: 0.74, green: 0.80, blue: 0.87, alpha: 1)).opacity(0.78)
+                                Color.white.opacity(isHovered ? 1 : 0.96),
+                                surfaceTint.opacity(isHovered ? 0.18 : 0.11),
+                                Color(nsColor: .controlBackgroundColor).opacity(0.94)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -298,11 +302,11 @@ struct BreadCrumbToolBar: View {
                 RoundedRectangle(cornerRadius: Metrics.raisedCornerRadius, style: .continuous)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white, Color(nsColor: .separatorColor).opacity(0.92)],
+                            colors: [Color.white.opacity(0.95), iconColor.opacity(isHovered ? 0.72 : 0.48)],
                             startPoint: .top,
                             endPoint: .bottom
                         ),
-                        lineWidth: 0.8
+                        lineWidth: isHovered ? 1.15 : 0.95
                     )
                     .overlay(alignment: .top) {
                         Capsule()

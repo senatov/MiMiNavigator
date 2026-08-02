@@ -70,6 +70,9 @@ struct BreadCrumbControlWrapper: View {
             .onTapGesture {
                 handleWrapperTap()
             }
+            .onChange(of: isTextFieldFocused) { wasFocused, isFocused in
+                handleEditingFocusChange(wasFocused: wasFocused, isFocused: isFocused)
+            }
     }
 
     private var backgroundShape: some View {
@@ -117,9 +120,17 @@ struct BreadCrumbControlWrapper: View {
     }
 
     private func exitEditingMode() {
+        isTextFieldFocused = false
         animated {
             isEditing = false
         }
+    }
+
+    // MARK: - Editing Focus Change
+    private func handleEditingFocusChange(wasFocused: Bool, isFocused: Bool) {
+        guard isEditing, wasFocused, !isFocused else { return }
+        log.info("[BreadCrumb] editing ended after focus loss for \(panelSide)")
+        exitEditingMode()
     }
 
     // MARK: - Editing View

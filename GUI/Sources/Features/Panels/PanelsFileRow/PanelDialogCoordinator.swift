@@ -55,7 +55,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     func open<Content: View>(content: Content) {
         log.debug(#function)
         if let existing = panel, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
+            presentAboveMain(existing)
             isVisible = true
             return
         }
@@ -79,14 +79,16 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.animationBehavior = .default
         newPanel.isMovableByWindowBackground = false
         newPanel.hidesOnDeactivate = false
-        newPanel.level = .normal
+        newPanel.isFloatingPanel = true
+        newPanel.level = .floating
+        newPanel.collectionBehavior.insert(.fullScreenAuxiliary)
         newPanel.tabbingMode = .disallowed
         newPanel.autorecalculatesKeyViewLoop = true
         // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
         newPanel.setFrame(computeDefaultFrame(), display: true)
-        newPanel.makeKeyAndOrderFront(nil)
+        presentAboveMain(newPanel)
         newPanel.recalculateKeyViewLoop()
         panel = newPanel
         isVisible = true
@@ -133,6 +135,14 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
             )
         }
         return NSRect(origin: .zero, size: size)
+    }
+
+    // MARK: - Present Above Main Window
+    private func presentAboveMain(_ panel: NSPanel) {
+        NSApp.activate(ignoringOtherApps: true)
+        panel.level = .floating
+        panel.orderFrontRegardless()
+        panel.makeKeyAndOrderFront(nil)
     }
 
     // MARK: - Window Size Persistence
