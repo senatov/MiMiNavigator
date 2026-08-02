@@ -36,11 +36,18 @@ extension AppState {
     }
 
     /// Set scanner directory + refresh in one call.
-    func setScannerDirectoryAndRefresh(_ path: String, for panel: FavPanelSide) async {
+    func setScannerDirectoryAndRefresh(_ path: String, for panel: FavPanelSide, force: Bool = false) async {
+        guard PathUtils.areEqual(self.path(for: panel), path) else {
+            log.debug("[Refresh] stale navigation skipped before watcher update panel=\(panel) path='\(path)'")
+            return
+        }
         await setScannerDirectory(path, for: panel)
-
+        guard PathUtils.areEqual(self.path(for: panel), path) else {
+            log.debug("[Refresh] stale navigation skipped before scan panel=\(panel) path='\(path)'")
+            return
+        }
         log.info("[Refresh] blocking refresh panel=\(panel) path='\(path)'")
-        await refreshFiles(for: panel)
+        await refreshFiles(for: panel, force: force)
         log.info("[Refresh] blocking refresh completed panel=\(panel) path='\(path)'")
     }
 

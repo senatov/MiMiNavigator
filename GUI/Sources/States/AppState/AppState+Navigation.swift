@@ -72,8 +72,8 @@ extension AppState {
                 }
 
                 await self.scanner.clearCooldown(for: panel)
-                await self.setScannerDirectoryAndRefresh(newPath, for: panel)
-
+                await self.setScannerDirectoryAndRefresh(newPath, for: panel, force: true)
+                guard PathUtils.areEqual(self.path(for: panel), newPath) else { return }
                 let files = self.displayedFiles(for: panel)
                 if !files.isEmpty || Self.isReadableDirectory(newPath) {
                     log.info("[Navigate] \(panel): mounted volume refresh completed, \(files.count) files")
@@ -96,7 +96,8 @@ extension AppState {
             Task { [weak self] in
                 guard let self else { return }
                 await self.scanner.clearCooldown(for: panel)
-                await self.setScannerDirectoryAndRefresh(newPath, for: panel)
+                await self.setScannerDirectoryAndRefresh(newPath, for: panel, force: true)
+                guard PathUtils.areEqual(self.path(for: panel), newPath) else { return }
                 // store fresh data in cache
                 let fresh = self.displayedFiles(for: panel)
                 if !fresh.isEmpty {
