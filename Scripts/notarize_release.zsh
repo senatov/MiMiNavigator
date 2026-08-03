@@ -53,6 +53,14 @@ DMG="/tmp/MiMiNavigator-${VERSION}.dmg"
 DMG_STAGE="/tmp/mimi_dmg_notarize"
 DERIVED_DATA_ROOT="${HOME}/Library/Developer/Xcode/DerivedData"
 NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
+TEMP_DMG_DEVICE=""
+
+cleanup_dmg_mount() {
+    if [[ -n "${TEMP_DMG_DEVICE}" ]]; then
+        hdiutil detach "${TEMP_DMG_DEVICE}" >/dev/null 2>&1 || true
+        TEMP_DMG_DEVICE=""
+    fi
+}
 
 verify_dmg_volume_icon() {
     local dmg_path="$1"
@@ -329,9 +337,11 @@ hdiutil create \
     "${DMG_RW}"
 
 # mount r/w, style with AppleScript
-MOUNT_OUT=$(hdiutil attach -readwrite -noverify "${DMG_RW}" | grep '/Volumes/')
+MOUNT_OUT=$(hdiutil attach -readwrite -noverify -nobrowse "${DMG_RW}" | grep '/Volumes/')
 DEVICE=$(echo "${MOUNT_OUT}" | head -1 | awk '{print $1}')
 MOUNT_PT=$(echo "${MOUNT_OUT}" | head -1 | sed 's|.*\(/Volumes/.*\)|\1|')
+TEMP_DMG_DEVICE="${DEVICE}"
+trap cleanup_dmg_mount EXIT
 sleep 2
 
 # copy background into hidden .background dir
@@ -342,36 +352,38 @@ cp "${DMG_BG}" "${MOUNT_PT}/.background/background.png"
 echo "   Styling DMG window..."
 osascript << APPLESCRIPT
 tell application "Finder"
-    tell disk "${DMG_VOL}"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set bounds of container window to {${DMG_WINDOW_LEFT}, ${DMG_WINDOW_TOP}, ${DMG_WINDOW_RIGHT}, ${DMG_WINDOW_BOTTOM}}
-        set viewOptions to the icon view options of container window
-        set arrangement of viewOptions to not arranged
-        set icon size of viewOptions to 128
-        set background picture of viewOptions to file ".background:background.png"
-        set position of item "MiMiNavigator.app" of container window to {${DMG_APP_X}, ${DMG_APP_Y}}
-        set position of item "Applications" of container window to {${DMG_APPS_X}, ${DMG_APPS_Y}}
-        set hiddenItemX to ${DMG_HIDDEN_X}
-        repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes", ".VolumeIcon.icns"}
-            try
-                set position of item (hiddenItemName as text) of container window to {hiddenItemX, ${DMG_HIDDEN_Y}}
-            end try
-            set hiddenItemX to hiddenItemX + 180
-        end repeat
-        close
-        open
-        update without registering applications
-        delay 2
-    end tell
+    set dmgDisk to POSIX file "${MOUNT_PT}" as alias
+    open dmgDisk
+    set dmgWindow to container window of dmgDisk
+    set current view of dmgWindow to icon view
+    set toolbar visible of dmgWindow to false
+    set statusbar visible of dmgWindow to false
+    set bounds of dmgWindow to {${DMG_WINDOW_LEFT}, ${DMG_WINDOW_TOP}, ${DMG_WINDOW_RIGHT}, ${DMG_WINDOW_BOTTOM}}
+    set viewOptions to the icon view options of dmgWindow
+    set arrangement of viewOptions to not arranged
+    set icon size of viewOptions to 128
+    set background picture of viewOptions to file ".background:background.png" of dmgDisk
+    set position of item "MiMiNavigator.app" of dmgDisk to {${DMG_APP_X}, ${DMG_APP_Y}}
+    set position of item "Applications" of dmgDisk to {${DMG_APPS_X}, ${DMG_APPS_Y}}
+    set hiddenItemX to ${DMG_HIDDEN_X}
+    repeat with hiddenItemName in {".background", ".DS_Store", ".fseventsd", ".Trashes", ".VolumeIcon.icns"}
+        try
+            set position of item (hiddenItemName as text) of dmgDisk to {hiddenItemX, ${DMG_HIDDEN_Y}}
+        end try
+        set hiddenItemX to hiddenItemX + 180
+    end repeat
+    close dmgWindow
+    open dmgDisk
+    update dmgDisk without registering applications
+    delay 2
 end tell
 APPLESCRIPT
 
 apply_dmg_volume_icon "${MOUNT_PT}" "${DMG_VOLUME_ICON}"
 sleep 2
 hdiutil detach "${DEVICE}"
+TEMP_DMG_DEVICE=""
+trap - EXIT
 sleep 1
 
 # convert to compressed read-only DMG
