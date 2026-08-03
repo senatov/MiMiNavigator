@@ -191,8 +191,7 @@ extension DualDirectoryScanner {
     ) {
         for updated in updates {
             if let index = files.firstIndex(where: { $0.pathStr == updated.pathStr }) {
-                files[index] = updated
-                continue
+                files.remove(at: index)
             }
             if useIncremental {
                 let insertIndex = Self.binarySearchInsertIndex(
@@ -227,7 +226,12 @@ extension DualDirectoryScanner {
 
         while low < high {
             let mid = (low + high) / 2
-            let shouldComeBefore = FileSortingService.compare(file, list[mid], by: sortKey, ascending: ascending)
+            let shouldComeBefore = FileSortingService.comesBefore(
+                file,
+                list[mid],
+                by: sortKey,
+                ascending: ascending
+            )
 
             if shouldComeBefore {
                 high = mid

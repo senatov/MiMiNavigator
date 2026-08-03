@@ -18,22 +18,24 @@ enum FileSortingService {
     }
 
     static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
-        let sortedItems = items.sorted { left, right in
-            let leftPriority = priority(for: left)
-            let rightPriority = priority(for: right)
-
-            if leftPriority != rightPriority {
-                return leftPriority.rawValue < rightPriority.rawValue
-            }
-            if leftPriority == .visibleDirectory || leftPriority == .hiddenDirectory {
-                return compareName(left, right, ascending: true)
-            }
-
-            return compare(left, right, by: key, ascending: bDirection)
+        let sortedItems = items.sorted {
+            comesBefore($0, $1, by: key, ascending: bDirection)
         }
-
         log.debug("[FileSortingService] sorted=\(sortedItems.count) by=\(key) asc=\(bDirection)")
         return sortedItems
+    }
+
+    // MARK: - Grouped Comparison
+    static func comesBefore(_ left: CustomFile, _ right: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
+        let leftPriority = priority(for: left)
+        let rightPriority = priority(for: right)
+        if leftPriority != rightPriority {
+            return leftPriority.rawValue < rightPriority.rawValue
+        }
+        if leftPriority == .visibleDirectory || leftPriority == .hiddenDirectory {
+            return compareName(left, right, ascending: true)
+        }
+        return compare(left, right, by: key, ascending: ascending)
     }
 
     private static func priority(for item: CustomFile) -> GroupPriority {
