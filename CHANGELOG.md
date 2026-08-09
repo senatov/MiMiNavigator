@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.0] — 2026-08-09
+
+> **Release notes**
+> Correct external drag selection and reliable refreshes after other applications change a directory.
+
+### Changed
+- **Activation refresh** — returning to MiMiNavigator now performs a disk-backed panel refresh instead of accepting a recent directory cache as authoritative.
+- **Drag diagnostics** — row hit-test logs include window, document, and resolved row coordinates so selection mismatches can be traced directly.
+- **Build metadata** — marketing version updated to `0.9.9.7.0`; build number updated to `137`.
+
+### Fixed
+- **Scrolled-list drag selection** — list-mode DnD resolves the source row through the actual `NSScrollView` document coordinates, including the current vertical offset.
+- **Detached parent-row offset** — drag hit-testing no longer counts the fixed `..` navigation strip as a file-table row.
+- **External application removal** — deleting an application through AppCleaner or another process no longer leaves a cache-backed panel state that can disagree with the visible directory.
+
 ## [0.9.9.6.9] — 2026-08-01
 
 > **Release notes**

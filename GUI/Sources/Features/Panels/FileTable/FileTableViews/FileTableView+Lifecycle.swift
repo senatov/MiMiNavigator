@@ -121,7 +121,7 @@ extension FileTableView {
                 log.info("[FileTableView] app-activation refresh task cancelled panel=\(panelSide) — app is terminating")
                 return
             }
-            await appState.scanner.refreshFiles(currSide: panelSide)
+            await appState.scanner.refreshFiles(currSide: panelSide, force: true)
         }
     }
 

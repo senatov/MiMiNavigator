@@ -69,7 +69,7 @@ extension FileTableView {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            DragOverlayView(panelSide: panelSide)
+            DragOverlayView(panelSide: panelSide, scrollView: nativeScrollView)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if showSpinner {

@@ -15,12 +15,14 @@ struct DragOverlayView: NSViewRepresentable {
     @Environment(AppState.self) var appState
     @Environment(DragDropManager.self) var dragDropManager
     let panelSide: FavPanelSide
+    let scrollView: NSScrollView?
 
 
     func makeNSView(context: Context) -> DragNSView {
         let view = DragNSView(appState: appState)
         view.panelSide = panelSide
         view.dragDropManager = dragDropManager
+        view.fileScrollView = scrollView
         return view
     }
 
@@ -28,5 +30,6 @@ struct DragOverlayView: NSViewRepresentable {
     func updateNSView(_ nsView: DragNSView, context: Context) {
         nsView.panelSide = panelSide
         nsView.dragDropManager = dragDropManager
+        nsView.fileScrollView = scrollView
     }
 }

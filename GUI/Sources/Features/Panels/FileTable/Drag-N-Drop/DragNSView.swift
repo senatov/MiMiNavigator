@@ -1,20 +1,16 @@
 // DragNSView.swift
-// MiMiNavigator
-//
-// Created by Iakov Senatov on 08.03.2026.
-// Copyright © 2026 Senatov. All rights reserved.
 // Description: AppKit drag source — initiates NSDraggingSession for multi-file drag from list mode
 
 import AppKit
 import FileModelKit
 import SwiftUI
-
 // MARK: - DragNSView
 @MainActor
 final class DragNSView: NSView, NSDraggingSource {
     var panelSide: FavPanelSide?
     weak var dragDropManager: DragDropManager?
     weak var appState: AppState?
+    weak var fileScrollView: NSScrollView?
     private var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
     var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
@@ -22,19 +18,15 @@ final class DragNSView: NSView, NSDraggingSource {
     private var isToParentContact = false
     private var lastLoggedHoverSide: FavPanelSide?
     private var lastLoggedTargetPath: String?
-
     init(appState: AppState) {
         self.appState = appState
         super.init(frame: .zero)
     }
-
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) not supported")
     }
 
-    /// Passthrough — let SwiftUI handle clicks, selection, context menu.
-    /// Drag is initiated via NSEvent local monitor.
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     override func viewDidMoveToWindow() {
@@ -91,7 +83,8 @@ final class DragNSView: NSView, NSDraggingSource {
                 from: appState,
                 side: panelSide,
                 windowPoint: locWindow,
-                panelFrame: panelFrame
+                panelFrame: panelFrame,
+                scrollView: fileScrollView
             )
         } else {
             cachedSelection = []
@@ -99,7 +92,6 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     // MARK: - Mouse Dragged
-    /// Returns true if drag was initiated (event consumed).
     private func handleMouseDragged(_ event: NSEvent) -> Bool {
         guard canStartPanelDrag else {
             resetDragState()
@@ -119,7 +111,6 @@ final class DragNSView: NSView, NSDraggingSource {
         return true
     }
 
-    // MARK: - Begin Drag
     private func beginDrag(with files: [CustomFile], event: NSEvent) {
         dragState.didStart = true
         registerDragStart(files: files)

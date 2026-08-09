@@ -33,7 +33,8 @@ struct DragSelectionResolver {
         from appState: AppState,
         side: FavPanelSide,
         windowPoint: NSPoint,
-        panelFrame: NSRect
+        panelFrame: NSRect,
+        scrollView: NSScrollView?
     ) -> [CustomFile] {
         guard isInsideNameColumn(windowPoint: windowPoint, side: side, panelFrame: panelFrame) else {
             log.debug("[DragResolver] drag ignored outside name column")
@@ -43,7 +44,7 @@ struct DragSelectionResolver {
             windowPoint: windowPoint,
             panelSide: side,
             appState: appState,
-            panelFrame: panelFrame
+            scrollView: scrollView
         ) else {
             return resolve(from: appState, side: side)
         }
@@ -74,23 +75,31 @@ struct DragSelectionResolver {
         windowPoint: NSPoint,
         panelSide: FavPanelSide,
         appState: AppState,
-        panelFrame: NSRect
+        scrollView: NSScrollView?
     ) -> CustomFile? {
+        guard let scrollView,
+              let documentView = scrollView.documentView
+        else {
+            log.warning("[DragResolver] hit-test unavailable: file scroll view missing")
+            return nil
+        }
+        let clipPoint = scrollView.contentView.convert(windowPoint, from: nil)
+        guard scrollView.contentView.bounds.contains(clipPoint) else { return nil }
+        let documentPoint = documentView.convert(windowPoint, from: nil)
         let rowHeight = FilePanelStyle.rowHeight
-        let yFromTop = panelFrame.maxY - windowPoint.y
-        let rowY = yFromTop - tableHeaderHeight
+        let rowY = documentPoint.y - tableHeaderHeight
         guard rowY >= 0 else { return nil }
         let rowIndex = Int(floor(rowY / rowHeight))
-        let files = appState.displayedRows(for: panelSide)
+        let files = appState.displayedFiles(for: panelSide)
         guard rowIndex >= 0, rowIndex < files.count else {
             log.debug(
-                "[DragResolver] hit-test miss: yFromTop=\(yFromTop) rowY=\(rowY) rowIdx=\(rowIndex) count=\(files.count)"
+                "[DragResolver] hit-test miss: documentY=\(documentPoint.y) rowY=\(rowY) rowIdx=\(rowIndex) count=\(files.count)"
             )
             return nil
         }
         log.debug(
-            "[DragResolver] hit-test: y=\(windowPoint.y) panelMaxY=\(panelFrame.maxY) "
-                + "yFromTop=\(yFromTop) rowY=\(rowY) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'"
+            "[DragResolver] hit-test: windowY=\(windowPoint.y) documentY=\(documentPoint.y) "
+                + "rowY=\(rowY) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'"
         )
         return files[rowIndex]
     }
