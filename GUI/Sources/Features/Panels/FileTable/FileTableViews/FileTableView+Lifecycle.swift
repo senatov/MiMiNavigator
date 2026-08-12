@@ -125,6 +125,17 @@ extension FileTableView {
         }
     }
 
+    func handleMainWindowDidRestore() {
+        log.info("[FileTableView] window restored — rebuilding panel=\(panelSide) files=\(files.count)")
+        recomputeSortedCache(force: true)
+        navigationScrollPending = true
+        nativeScrollView?.documentView?.needsLayout = true
+        nativeScrollView?.documentView?.needsDisplay = true
+        nativeScrollView?.contentView.needsDisplay = true
+        nativeScrollView?.layoutSubtreeIfNeeded()
+        scrollToSelectionFromState()
+    }
+
     func handleFilesVersionChange(_ newValue: Int) {
         log.debug(
             "[FileTableView] filesVersion changed panel=\(panelSide) new=\(filesVersion) files=\(files.count) menuTracking=\(isMenuTracking)"
@@ -150,4 +161,8 @@ extension FileTableView {
         log.debug("[FileTableView] metadata changed panel=\(panelSide) files=\(files.count)")
         recomputeSortedCache(force: true)
     }
+}
+
+extension Notification.Name {
+    static let mainWindowDidRestore = Notification.Name("MiMi.mainWindowDidRestore")
 }

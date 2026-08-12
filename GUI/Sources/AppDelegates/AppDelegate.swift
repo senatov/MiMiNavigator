@@ -13,6 +13,7 @@
 //   then calls reply(.now) — guarantees the app exits in < 1 s with no spinner.
 
 import AppKit
+import FileModelKit
 import LogKit
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -143,10 +144,24 @@ import LogKit
 
     private func installMainWindowObserver() {
         NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleWindowDidBecomeKey(_:)),
             name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowDidMiniaturize(_:)),
+            name: NSWindow.didMiniaturizeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowDidDeminiaturize(_:)),
+            name: NSWindow.didDeminiaturizeNotification,
             object: nil
         )
     }
@@ -156,6 +171,33 @@ import LogKit
         guard let window = notification.object as? NSWindow else { return }
         guard window == NSApp.mainWindow else { return }
         bringAuxiliaryPanelsToFront()
+    }
+
+    // MARK: - Main Window Miniaturization
+    @objc private func handleWindowDidMiniaturize(_ notification: Notification) {
+        guard isMainApplicationWindow(notification.object) else { return }
+        MemoryDiagnostics.shared.checkpoint("window.miniaturized.before-trim")
+        Task {
+            await DirectoryContentCache.shared.clearAll()
+            await MainActor.run {
+                MemoryDiagnostics.shared.checkpoint("window.miniaturized.after-trim")
+                log.info("[WindowLifecycle] minimized — released directory listing cache")
+            }
+        }
+    }
+
+    @objc private func handleWindowDidDeminiaturize(_ notification: Notification) {
+        guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
+        guard isMainApplicationWindow(notification.object) else { return }
+        log.info("[WindowLifecycle] restored — rebuilding panel views and refreshing scanner")
+        NotificationCenter.default.post(name: .mainWindowDidRestore, object: nil)
+        appState?.forceRefreshBothPanels()
+        MemoryDiagnostics.shared.checkpoint("window.restored")
+    }
+
+    private func isMainApplicationWindow(_ object: Any?) -> Bool {
+        guard let window = object as? NSWindow, !(window is NSPanel) else { return false }
+        return window.identifier?.rawValue.hasPrefix("main-AppWindow") == true
     }
 
     private func logStartupCompletionIfNeeded(reason: String) {

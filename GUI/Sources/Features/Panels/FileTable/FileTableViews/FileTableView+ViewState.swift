@@ -128,6 +128,9 @@ extension FileTableView {
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 handleAppDidBecomeActive()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .mainWindowDidRestore)) { _ in
+                handleMainWindowDidRestore()
+            }
             .onChange(of: appState.sortKey) { _, newValue in
                 handleSortChange(newValue)
             }
