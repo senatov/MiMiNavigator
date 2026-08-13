@@ -164,7 +164,7 @@ extension ConvertMediaCoord {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
-        panel.level = .normal
+        panel.level = .floating
         panel.tabbingMode = .disallowed
         panel.delegate = ConvertMediaWindowDelegate.shared
     }

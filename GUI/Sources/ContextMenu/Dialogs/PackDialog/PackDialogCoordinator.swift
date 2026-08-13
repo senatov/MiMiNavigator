@@ -91,7 +91,7 @@ final class PackDialogCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
-        panel.level = .normal
+        panel.level = .floating
         panel.tabbingMode = .disallowed
     }
 

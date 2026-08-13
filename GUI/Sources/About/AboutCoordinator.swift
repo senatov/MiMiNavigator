@@ -67,7 +67,7 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         p.backgroundColor = .windowBackgroundColor
         p.isFloatingPanel = false
         p.becomesKeyOnlyIfNeeded = false
-        p.level = .normal
+        p.level = .floating
         p.hidesOnDeactivate = false
         p.tabbingMode = .disallowed
 

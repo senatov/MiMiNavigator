@@ -23,7 +23,7 @@ extension MediaInfoPanel {
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = false
         panel.collectionBehavior = [.fullScreenAuxiliary]
-        panel.level = .normal
+        panel.level = .floating
         panel.titlebarAppearsTransparent = false
         panel.toolbarStyle = .unified
         panel.animationBehavior = .default
@@ -42,7 +42,6 @@ extension MediaInfoPanel {
         self.panel = panel
     }
 }
-
 
 
 

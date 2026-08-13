@@ -144,12 +144,19 @@ import LogKit
 
     private func installMainWindowObserver() {
         NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didUpdateNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleWindowDidBecomeKey(_:)),
             name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleWindowDidUpdate(_:)),
+            name: NSWindow.didUpdateNotification,
             object: nil
         )
         NotificationCenter.default.addObserver(
@@ -171,6 +178,12 @@ import LogKit
         guard let window = notification.object as? NSWindow else { return }
         guard window == NSApp.mainWindow else { return }
         bringAuxiliaryPanelsToFront()
+    }
+
+    @objc private func handleWindowDidUpdate(_ notification: Notification) {
+        guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
+        guard let panel = notification.object as? NSPanel else { return }
+        enforceAuxiliaryWindowLevel(for: panel)
     }
 
     // MARK: - Main Window Miniaturization
@@ -218,6 +231,7 @@ import LogKit
     }
 
     private func bringAuxiliaryPanelsToFront() {
+        NSApp.windows.compactMap { $0 as? NSPanel }.forEach(enforceAuxiliaryWindowLevel)
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         PackDialogCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
@@ -226,6 +240,12 @@ import LogKit
         SettingsCoordinator.shared.bringToFront()
         ToolbarCustomizeCoordinator.shared.bringToFront()
         MediaInfoPanel.shared.bringToFront()
+    }
+
+    private func enforceAuxiliaryWindowLevel(for panel: NSPanel) {
+        guard panel.level != .floating else { return }
+        panel.level = .floating
+        log.warning("[WindowLevel] corrected auxiliary panel to floating: \(panel.title)")
     }
 
     // MARK: - Termination

@@ -82,8 +82,7 @@ final class ConnectToServerCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
-        // Normal window level — not floating, not always-on-top
-        panel.level = .normal
+        panel.level = .floating
         panel.hidesOnDeactivate = false
         panel.tabbingMode = .disallowed
         panel.autorecalculatesKeyViewLoop = true

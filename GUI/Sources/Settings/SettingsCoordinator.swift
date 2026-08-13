@@ -64,7 +64,7 @@ final class SettingsCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
-        panel.level = .normal
+        panel.level = .floating
         panel.tabbingMode = .disallowed
         panel.autorecalculatesKeyViewLoop = true
 

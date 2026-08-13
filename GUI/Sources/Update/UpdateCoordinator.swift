@@ -71,7 +71,7 @@ final class UpdateCoordinator {
         p.isMovableByWindowBackground = false
         p.backgroundColor = .windowBackgroundColor
         p.isFloatingPanel = false
-        p.level = .normal
+        p.level = .floating
         p.hidesOnDeactivate = false
         p.tabbingMode = .disallowed
         if !p.setFrameUsingName(frameAutosaveName) {
