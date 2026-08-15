@@ -156,7 +156,7 @@ actor DirectorySizeService {
     }
     // MARK: - File Attribute Helper
 
-    private func fileModificationTime(forResolvedPath path: String, urlForScope: URL) -> TimeInterval? {
+    func fileModificationTime(forResolvedPath path: String, urlForScope: URL) -> TimeInterval? {
         let attrs: [FileAttributeKey: Any]?
         attrs = try? withSecurityScope(urlForScope) {
             try FileManager.default.attributesOfItem(atPath: path)

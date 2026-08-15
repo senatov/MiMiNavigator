@@ -205,12 +205,15 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         switch self {
         case .name:          .name
         case .dateModified:  .date
+        case .dateCreated:   .dateCreated
+        case .dateLastOpened: .dateLastOpened
+        case .dateAdded:     .dateAdded
         case .size:          .size
         case .kind:          .type
         case .permissions:   .permissions
         case .owner:         .owner
-        case .childCount:    nil
-        default:             nil
+        case .group:         .group
+        case .childCount:    .childCount
         }
     }
 

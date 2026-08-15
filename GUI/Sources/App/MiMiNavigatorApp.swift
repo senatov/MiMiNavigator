@@ -30,7 +30,6 @@ struct MiMiNavigatorApp: App {
 
     @State var didBindAppState = false
     @State var didWireCoordinatorCallbacks = false
-    @State var didRestoreStartupConnection = false
     @State var didScheduleGitHubStarPrompt = false
 
     // MARK: - Environment
@@ -112,7 +111,6 @@ struct MiMiNavigatorApp: App {
         }
 
         didWireCoordinatorCallbacks = true
-        restoreStartupConnectionIfNeeded()
     }
 
     func handleScenePhaseChange() {
@@ -211,16 +209,6 @@ struct MiMiNavigatorApp: App {
         } catch {
             log.error("[Network] mount failed host='\(shareURL.host ?? "")' path='\(shareURL.path)' error='\(error.localizedDescription)'")
             NetworkNeighborhoodCoordinator.shared.showMountFailure(for: shareURL, error: error)
-        }
-    }
-
-    private func restoreStartupConnectionIfNeeded() {
-        guard !didRestoreStartupConnection else { return }
-        guard let connection = RemoteConnectionManager.shared.activeConnection else { return }
-        didRestoreStartupConnection = true
-
-        Task { @MainActor in
-            await handleActivatedConnection(connection)
         }
     }
 

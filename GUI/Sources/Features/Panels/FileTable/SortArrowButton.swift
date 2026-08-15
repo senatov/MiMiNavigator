@@ -28,22 +28,28 @@ struct SortArrowButton: View {
     }
 
     private var arrowColor: Color {
-        if isHovering {
-            return Color.primary
-        }
-        guard isActive else {
-            return Color.secondary.opacity(0.5)
-        }
-        return Color.accentColor
+        isActive ? .white : (isHovering ? .primary.opacity(0.78) : .secondary.opacity(0.55))
+    }
+
+    private var buttonFill: Color {
+        isActive ? Color.blue.opacity(0.88) : Color.white.opacity(isHovering ? 0.22 : 0.10)
     }
 
     var body: some View {
         Image(systemName: arrowName)
-            .font(.system(size: isActive ? 12 : 11, weight: isActive ? .bold : .medium))
+            .font(.system(size: isActive ? 8 : 7, weight: .semibold))
             .foregroundStyle(arrowColor)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
-            .contentShape(Rectangle().inset(by: -4))
+            .frame(width: 16, height: 16)
+            .background {
+                Circle()
+                    .fill(buttonFill)
+                    .shadow(color: .white.opacity(isActive ? 0.20 : 0.42), radius: 0.35, y: -0.5)
+                    .shadow(color: .black.opacity(isActive ? 0.16 : 0.08), radius: 0.6, y: 0.5)
+            }
+            .overlay {
+                Circle().strokeBorder(isActive ? Color.blue.opacity(0.70) : .primary.opacity(0.10), lineWidth: 0.5)
+            }
+            .contentShape(Circle())
             .onHover { hovering in
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isHovering = hovering
@@ -54,8 +60,8 @@ struct SortArrowButton: View {
                     NSCursor.pop()
                 }
             }
-            .onTapGesture {
+            .highPriorityGesture(TapGesture().onEnded {
                 onSort?()
-            }
+            })
     }
 }

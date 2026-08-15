@@ -11,10 +11,8 @@ enum FileSortingService {
 
     private enum GroupPriority: Int {
         case parent = 0
-        case visibleDirectory = 1
-        case hiddenDirectory = 2
-        case regularFile = 3
-        case alias = 4
+        case directory = 1
+        case regularFile = 2
     }
 
     static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
@@ -32,9 +30,6 @@ enum FileSortingService {
         if leftPriority != rightPriority {
             return leftPriority.rawValue < rightPriority.rawValue
         }
-        if leftPriority == .visibleDirectory || leftPriority == .hiddenDirectory {
-            return compareName(left, right, ascending: true)
-        }
         return compare(left, right, by: key, ascending: ascending)
     }
 
@@ -43,31 +38,8 @@ enum FileSortingService {
             return .parent
         }
 
-        if item.isAlias {
-            return .alias
-        }
-
-        if isVisibleDirectory(item) {
-            return .visibleDirectory
-        }
-
-        if isHiddenDirectory(item) {
-            return .hiddenDirectory
-        }
-
+        if isFolderLike(item) && !item.isAppBundle { return .directory }
         return .regularFile
-    }
-
-    private static func isVisibleDirectory(_ item: CustomFile) -> Bool {
-        isFolderLike(item) && !item.isAppBundle && !isHiddenName(item.nameStr)
-    }
-
-    private static func isHiddenDirectory(_ item: CustomFile) -> Bool {
-        isFolderLike(item) && !item.isAppBundle && isHiddenName(item.nameStr)
-    }
-
-    private static func isHiddenName(_ name: String) -> Bool {
-        name.hasPrefix(".") && name != ".."
     }
 
     static func compare(_ a: CustomFile, _ b: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
@@ -76,6 +48,12 @@ enum FileSortingService {
                 return compareName(a, b, ascending: ascending)
             case .date:
                 return compareDate(a, b, ascending: ascending)
+            case .dateCreated:
+                return compareDate(a.creationDate, b.creationDate, a: a, b: b, ascending: ascending)
+            case .dateLastOpened:
+                return compareDate(a.lastOpenedDate, b.lastOpenedDate, a: a, b: b, ascending: ascending)
+            case .dateAdded:
+                return compareDate(a.dateAdded, b.dateAdded, a: a, b: b, ascending: ascending)
             case .size:
                 return compareSize(a, b, ascending: ascending)
             case .type:
@@ -84,6 +62,8 @@ enum FileSortingService {
                 return comparePermissions(a, b, ascending: ascending)
             case .owner:
                 return compareOwner(a, b, ascending: ascending)
+            case .group:
+                return compareText(a.groupName, b.groupName, a: a, b: b, ascending: ascending)
             case .childCount:
                 return compareChildCount(a, b, ascending: ascending)
         }
@@ -95,8 +75,18 @@ enum FileSortingService {
     }
 
     static func compareDate(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let da = a.modifiedDate ?? Date.distantPast
-        let db = b.modifiedDate ?? Date.distantPast
+        compareDate(a.modifiedDate, b.modifiedDate, a: a, b: b, ascending: ascending)
+    }
+
+    private static func compareDate(
+        _ da: Date?, _ db: Date?, a: CustomFile, b: CustomFile, ascending: Bool
+    ) -> Bool {
+        if da == nil || db == nil {
+            if da == nil && db != nil { return false }
+            if da != nil && db == nil { return true }
+            return compareName(a, b, ascending: ascending)
+        }
+        guard let da, let db else { return false }
         if da != db {
             return ascending ? (da < db) : (da > db)
         }
@@ -104,13 +94,8 @@ enum FileSortingService {
     }
 
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let aIsDir = isFolderLike(a) && !a.isAppBundle
-        let bIsDir = isFolderLike(b) && !b.isAppBundle
-        if aIsDir && bIsDir {
-            return compareName(a, b, ascending: ascending)
-        }
-        let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
-        let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
+        let sa = a.displaySize
+        let sb = b.displaySize
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }
@@ -137,10 +122,14 @@ enum FileSortingService {
     }
 
     static func compareOwner(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let oa = a.ownerName
-        let ob = b.ownerName
-        if oa != ob {
-            let cmp = oa.localizedCaseInsensitiveCompare(ob)
+        compareText(a.ownerName, b.ownerName, a: a, b: b, ascending: ascending)
+    }
+
+    private static func compareText(
+        _ left: String, _ right: String, a: CustomFile, b: CustomFile, ascending: Bool
+    ) -> Bool {
+        if left != right {
+            let cmp = left.localizedCaseInsensitiveCompare(right)
             return ascending ? (cmp == .orderedAscending) : (cmp == .orderedDescending)
         }
         return compareName(a, b, ascending: ascending)

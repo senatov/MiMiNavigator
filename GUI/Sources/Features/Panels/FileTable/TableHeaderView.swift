@@ -318,7 +318,16 @@ struct TableHeaderView: View {
             appState.sortKey = key
             appState.bSortAscending = true
         }
-        appState.updateSorting()
+        log.info("[Sort] panel=\(panelSide) key=\(key.rawValue) asc=\(appState.bSortAscending)")
+        if key == .size {
+            Task { @MainActor in
+                _ = await DirectorySizeService.shared.hydrateCachedSizes(for: appState.displayedLeftFiles)
+                _ = await DirectorySizeService.shared.hydrateCachedSizes(for: appState.displayedRightFiles)
+                appState.updateSorting()
+            }
+        } else {
+            appState.updateSorting()
+        }
     }
 
     // MARK: - Auto-fit

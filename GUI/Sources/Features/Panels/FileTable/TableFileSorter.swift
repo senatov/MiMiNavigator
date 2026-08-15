@@ -16,39 +16,7 @@ struct TableFileSorter {
     
     /// Compare two files for sorting (parent entry first, then directories, then files)
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
-        // ".." parent entry always stays at the very top, regardless of sort key/direction
-        let aIsParent = ParentDirectoryEntry.isParentEntry(a)
-        let bIsParent = ParentDirectoryEntry.isParentEntry(b)
-        if aIsParent != bIsParent { return aIsParent }
-
-        let aIsFolder = a.isDirectory || a.isSymbolicDirectory
-        let bIsFolder = b.isDirectory || b.isSymbolicDirectory
-
-        // Directories always come first
-        if aIsFolder != bIsFolder {
-            return aIsFolder && !bIsFolder
-        }
-        if aIsFolder && bIsFolder {
-            return a.nameStr.localizedCaseInsensitiveCompare(b.nameStr) == .orderedAscending
-        }
-        
-        // Then sort by key
-        switch sortKey {
-        case .name:
-            return compareName(a, b)
-        case .size:
-            return compareSize(a, b)
-        case .date:
-            return compareDate(a, b)
-        case .type:
-            return compareType(a, b)
-        case .permissions:
-            return comparePermissions(a, b)
-        case .owner:
-            return compareOwner(a, b)
-        case .childCount:
-            return compareChildCount(a, b)
-        }
+        FileSortingService.comesBefore(a, b, by: sortKey, ascending: ascending)
     }
     
     // MARK: - Comparison Methods

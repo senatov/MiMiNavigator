@@ -133,7 +133,7 @@ final class RemoteConnectionManager {
             return
         }
 
-        await connect(to: server, password: password)
+        await connect(to: server, password: password, activatesPanel: false)
     }
 
     private func supportsAutoConnectOnStart(for proto: RemoteProtocol) -> Bool {
@@ -173,7 +173,7 @@ final class RemoteConnectionManager {
     }
 
     // MARK: - Connect
-    func connect(to server: RemoteServer, password: String) async {
+    func connect(to server: RemoteServer, password: String, activatesPanel: Bool = true) async {
         log.info("\(#function) \(server.displayName) via \(server.remoteProtocol.rawValue)")
 
         guard beginConnectAttempt(for: server, source: #function) else { return }
@@ -196,7 +196,7 @@ final class RemoteConnectionManager {
             return
         }
 
-        await connectWithNewProvider(provider, to: server, password: password)
+        await connectWithNewProvider(provider, to: server, password: password, activatesPanel: activatesPanel)
     }
 
     private func reuseConnection(_ connection: RemoteConnection) {
@@ -205,7 +205,9 @@ final class RemoteConnectionManager {
         notifyConnectionActivated(connection)
     }
 
-    private func connectWithNewProvider(_ provider: any RemoteFileProvider, to server: RemoteServer, password: String) async {
+    private func connectWithNewProvider(
+        _ provider: any RemoteFileProvider, to server: RemoteServer, password: String, activatesPanel: Bool
+    ) async {
         do {
             log.debug(
                 "[RemoteConnectionManager] provider.connect host=\(server.host) port=\(server.port) user=\(server.user) proto=\(server.remoteProtocol.rawValue)"
@@ -219,7 +221,7 @@ final class RemoteConnectionManager {
             )
 
             let connection = makeConnection(server: server, provider: provider)
-            appendConnectedServer(connection, originalServer: server)
+            appendConnectedServer(connection, originalServer: server, activatesPanel: activatesPanel)
         } catch {
             handleConnectionFailure(error, server: server)
         }
@@ -235,11 +237,13 @@ final class RemoteConnectionManager {
         )
     }
 
-    private func appendConnectedServer(_ connection: RemoteConnection, originalServer: RemoteServer) {
+    private func appendConnectedServer(
+        _ connection: RemoteConnection, originalServer: RemoteServer, activatesPanel: Bool
+    ) {
         connections.append(connection)
         activeConnectionID = connection.id
         updateServerResult(originalServer, result: .success, errorDetail: nil)
-        notifyConnectionActivated(connection)
+        if activatesPanel { notifyConnectionActivated(connection) }
 
         log.info("\(#function) connected: \(connection.displayName)")
         log.info("\(#function) id=\(connection.id)")

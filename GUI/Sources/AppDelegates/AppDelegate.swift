@@ -243,6 +243,7 @@ import LogKit
     }
 
     private func enforceAuxiliaryWindowLevel(for panel: NSPanel) {
+        guard panel.identifier?.rawValue != "PathAutoCompletePanel" else { return }
         guard panel.level != .floating else { return }
         panel.level = .floating
         log.warning("[WindowLevel] corrected auxiliary panel to floating: \(panel.title)")

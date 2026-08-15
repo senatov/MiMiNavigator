@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: - TableHeaderStyle
 enum TableHeaderStyle {
-    static let height: CGFloat = 26
+    static let height: CGFloat = 28
     /// Compensates for the system font descender so visible glyphs are optically centered.
     static let contentVerticalOffset: CGFloat = 1
     /// Standard black for inactive column titles

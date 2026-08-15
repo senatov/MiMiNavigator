@@ -194,7 +194,7 @@ final class AutoCompletePopupController {
                 guard let self else { return true }
                 return !(self.anchorScreenRect()?.contains(NSEvent.mouseLocation) ?? false)
             },
-            installResignObserver: false
+            installResignObserver: true
         )
     }
 
@@ -218,10 +218,11 @@ final class AutoCompletePopupController {
         )
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = true
+        panel.identifier = NSUserInterfaceItemIdentifier("PathAutoCompletePanel")
         panel.hasShadow = true
         panel.backgroundColor = .clear
         panel.isOpaque = false
-        panel.level = .floating
+        panel.level = .normal
         panel.contentView = NSHostingView(rootView: AutoCompletePopupView(model: model))
         self.panel = panel
     }
