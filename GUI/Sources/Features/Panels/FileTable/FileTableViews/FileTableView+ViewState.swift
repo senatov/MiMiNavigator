@@ -67,7 +67,10 @@ extension FileTableView {
                     isFocused: isFocused
                 )
                 .padding(.trailing, ScrollBarConfig.trackWidth)
+                .fixedSize(horizontal: false, vertical: true)
                 mainScrollView
+                    .frame(maxHeight: .infinity)
+                    .clipped()
             }
 
             AppKitDropView(

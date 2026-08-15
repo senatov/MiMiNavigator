@@ -78,12 +78,26 @@ enum FileSortingService {
     }
 
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let sa = a.isAppBundle ? (a.cachedAppSize ?? a.sizeInBytes) : a.displaySize
-        let sb = b.isAppBundle ? (b.cachedAppSize ?? b.sizeInBytes) : b.displaySize
+        let sa = sortableSize(for: a)
+        let sb = sortableSize(for: b)
+        if sa == nil || sb == nil {
+            if sa == nil && sb != nil { return false }
+            if sa != nil && sb == nil { return true }
+            return compareName(a, b, ascending: ascending)
+        }
+        guard let sa, let sb else { return false }
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }
         return compareName(a, b, ascending: ascending)
+    }
+
+    private static func sortableSize(for file: CustomFile) -> Int64? {
+        if file.isAppBundle { return file.cachedAppSize ?? file.sizeInBytes }
+        if !isFolderLike(file) { return file.sizeInBytes }
+        if let exact = file.cachedDirectorySize, exact >= 0 { return exact }
+        if let shallow = file.cachedShallowSize, shallow >= 0 { return shallow }
+        return nil
     }
 
     static func compareType(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {

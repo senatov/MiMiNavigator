@@ -17,10 +17,7 @@ struct ScrollBarJumpButtons: View {
 
     private enum Metrics {
         static let minimumScrollableRows = 50
-        static let buttonHeight: CGFloat = 18
         static let buttonWidthInset: CGFloat = 2
-        static let containerSpacing: CGFloat = 4
-        static let verticalPadding: CGFloat = 4
         static let cornerRadius: CGFloat = 4
         static let borderOpacity: Double = 0.16
         static let borderWidth: CGFloat = 0.5
@@ -39,26 +36,26 @@ struct ScrollBarJumpButtons: View {
     var body: some View {
         Group {
             if shouldShowButtons {
-                VStack(spacing: Metrics.containerSpacing) {
+                ZStack {
                     jumpButton(
                         icon: "chevron.up.2",
                         help: "Jump to top (Home)",
                         accessibilityLabel: "Jump to top",
                         action: handleJumpToTop
                     )
-
-                    Spacer(minLength: 0)
-
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, ScrollBarConfig.jumpButtonOuterPadding)
                     jumpButton(
                         icon: "chevron.down.2",
                         help: "Jump to bottom (End)",
                         accessibilityLabel: "Jump to bottom",
                         action: handleJumpToBottom
                     )
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, ScrollBarConfig.jumpButtonOuterPadding)
                 }
                 .frame(width: ScrollBarConfig.trackWidth)
                 .frame(maxHeight: .infinity)
-                .padding(.vertical, Metrics.verticalPadding)
             }
         }
     }
@@ -72,7 +69,7 @@ struct ScrollBarJumpButtons: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: Metrics.symbolSize, weight: .semibold))
-                .frame(width: buttonWidth, height: Metrics.buttonHeight)
+                .frame(width: buttonWidth, height: ScrollBarConfig.jumpButtonHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

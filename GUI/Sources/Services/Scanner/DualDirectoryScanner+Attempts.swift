@@ -90,7 +90,6 @@ extension DualDirectoryScanner {
         }
         let preview = Array(files.prefix(progressivePreviewThreshold))
         await MainActor.run {
-            AutoFitScheduler.shared.runInitialPublishFit(panel: context.side, files: preview)
             applyPreviewFiles(preview, for: context.side)
         }
     }
@@ -136,10 +135,11 @@ extension DualDirectoryScanner {
         sortAsc: Bool
     ) async throws -> [CustomFile] {
         let scanTask = Task.detached(priority: .userInitiated) {
-            let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-            return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
+            try FileScanner.scan(url: url, showHiddenFiles: showHidden)
         }
         let timeout = effectiveTimeout(for: url)
-        return try await scanWithTimeout(scanTask, url: url, timeout: timeout)
+        let scanned = try await scanWithTimeout(scanTask, url: url, timeout: timeout)
+        _ = await DirectorySizeService.shared.hydrateCachedSizes(for: scanned)
+        return FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
     }
 }
