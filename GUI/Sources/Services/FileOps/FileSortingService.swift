@@ -38,26 +38,9 @@ enum FileSortingService {
             return .parent
         }
 
-<<<<<<< HEAD
-        if isFolderLike(item) && !item.isAppBundle { return .directory }
-||||||| a384ca26
-        if item.isAlias {
-            return .alias
-        }
-
-        if isVisibleDirectory(item) {
-            return .visibleDirectory
-        }
-
-        if isHiddenDirectory(item) {
-            return .hiddenDirectory
-        }
-
-=======
         if isFolderLike(item) && !item.isAppBundle {
             return .directory
         }
->>>>>>> bdc4b35fff02fba84b5347fe2725d64f26c14e52
         return .regularFile
     }
 
@@ -113,18 +96,6 @@ enum FileSortingService {
     }
 
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-<<<<<<< HEAD
-        let sa = a.displaySize
-        let sb = b.displaySize
-||||||| a384ca26
-        let aIsDir = isFolderLike(a) && !a.isAppBundle
-        let bIsDir = isFolderLike(b) && !b.isAppBundle
-        if aIsDir && bIsDir {
-            return compareName(a, b, ascending: ascending)
-        }
-        let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
-        let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
-=======
         let sa = sortableSize(for: a)
         let sb = sortableSize(for: b)
         if sa == nil || sb == nil {
@@ -133,7 +104,6 @@ enum FileSortingService {
             return compareName(a, b, ascending: ascending)
         }
         guard let sa, let sb else { return false }
->>>>>>> bdc4b35fff02fba84b5347fe2725d64f26c14e52
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }

@@ -92,6 +92,7 @@ extension FileTableView {
 
     func handleLoadingChange(_ loading: Bool) {
         spinnerTask?.cancel()
+        AutoFitScheduler.shared.setLoading(loading, panel: panelSide, appState: appState)
 
         if loading {
             showSpinner = true

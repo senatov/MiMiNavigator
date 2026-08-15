@@ -31,6 +31,7 @@ final class AutoFitScheduler {
     private var lastAutoFitWidth: [FavPanelSide: CGFloat] = [:]
     private var initialFitDone = false
     private var lastResizeFitTime: [FavPanelSide: Date] = [:]
+    private var loadingPanels: Set<FavPanelSide> = []
 
     private init() {}
 
@@ -48,7 +49,8 @@ final class AutoFitScheduler {
                 if Task.isCancelled { return }
                 let leftFiles = appState.displayedFiles(for: .left)
                 let rightFiles = appState.displayedFiles(for: .right)
-                if !leftFiles.isEmpty && !rightFiles.isEmpty { break }
+                let panelsLoaded = !appState.isLoading(.left) && !appState.isLoading(.right)
+                if panelsLoaded && !leftFiles.isEmpty && !rightFiles.isEmpty { break }
                 try? await Task.sleep(for: .milliseconds(250))
             }
             if Task.isCancelled { return }
@@ -107,6 +109,10 @@ final class AutoFitScheduler {
     /// Deferred: waits for sizes to resolve, then runs 3 passes.
     func scheduleNavigationFit(panel: FavPanelSide, appState: AppState) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard !loadingPanels.contains(panel), !appState.isLoading(panel) else {
+            log.debug("[AutoFit] nav deferred while loading panel=\(panel)")
+            return
+        }
         let currentPath = appState.path(for: panel)
         guard currentPath != lastAutoFitPath[panel] else {
             log.debug("[AutoFit] nav skip — same path panel=\(panel)")
@@ -162,15 +168,30 @@ final class AutoFitScheduler {
     }
 
     func prepareForNavigationLoading(panel: FavPanelSide) {
-        let layout = ColumnLayoutStore.shared.layout(for: panel)
-        layout.resetWidthsToDefaultsForLoading()
+        loadingPanels.insert(panel)
         navigationFitTasks[panel]?.cancel()
         lastAutoFitPath[panel] = ""
-        log.debug("[AutoFit] reset widths before navigation panel=\(panel)")
+        log.debug("[AutoFit] paused for navigation loading panel=\(panel)")
+    }
+
+    func setLoading(_ loading: Bool, panel: FavPanelSide, appState: AppState) {
+        if loading {
+            loadingPanels.insert(panel)
+            navigationFitTasks[panel]?.cancel()
+            log.debug("[AutoFit] paused panel=\(panel)")
+            return
+        }
+        guard loadingPanels.remove(panel) != nil else { return }
+        log.debug("[AutoFit] resumed panel=\(panel)")
+        scheduleNavigationFit(panel: panel, appState: appState)
     }
 
     func runInitialPublishFit(panel: FavPanelSide, files: [CustomFile]) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard !loadingPanels.contains(panel) else {
+            log.debug("[AutoFit] initial publish skipped while loading panel=\(panel)")
+            return
+        }
         guard !files.isEmpty else { return }
         let layout = ColumnLayoutStore.shared.layout(for: panel)
         guard !layout.isColumnReorderActive else { return }
@@ -207,6 +228,7 @@ final class AutoFitScheduler {
 
     func handleResize(panel: FavPanelSide, newWidth: CGFloat, appState: AppState) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard !loadingPanels.contains(panel), !appState.isLoading(panel) else { return }
         let files = appState.displayedFiles(for: panel)
         guard !files.isEmpty else { return }
         let lastWidth = lastAutoFitWidth[panel] ?? 0
@@ -231,6 +253,10 @@ final class AutoFitScheduler {
     // MARK: - Helpers
 
     private func runAutoFit(panel: FavPanelSide, appState: AppState) {
+        guard !loadingPanels.contains(panel), !appState.isLoading(panel) else {
+            log.debug("[AutoFit] pass skipped while loading panel=\(panel)")
+            return
+        }
         let layout = ColumnLayoutStore.shared.layout(for: panel)
         guard !layout.isColumnReorderActive else {
             log.debug("[AutoFit] runAutoFit skip — column reorder active panel=\(panel)")
