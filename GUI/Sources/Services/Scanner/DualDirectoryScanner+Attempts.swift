@@ -90,7 +90,6 @@ extension DualDirectoryScanner {
         }
         let preview = Array(files.prefix(progressivePreviewThreshold))
         await MainActor.run {
-            AutoFitScheduler.shared.runInitialPublishFit(panel: context.side, files: preview)
             applyPreviewFiles(preview, for: context.side)
         }
     }

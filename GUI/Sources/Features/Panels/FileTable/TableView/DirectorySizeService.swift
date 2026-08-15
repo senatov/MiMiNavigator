@@ -1,9 +1,6 @@
-//
 //  DirectorySizeService.swift
 //  MiMiNavigator
-//
 //  Created by Iakov Senatov on 13.03.2026.
-//
 
 import AppKit
 import CacheKit
@@ -58,7 +55,7 @@ actor DirectorySizeService {
     let persistentCache = ApplicationPersistentCache.shared
     private let legacyCacheURL: URL
     let cacheNamespace = "directory-size-v1"
-    private let cacheEntryLimit = 512
+    private let cacheEntryLimit = 64
     private let cacheMaxIdleAge: TimeInterval = 30 * 60
     private let persistentLifetime: TimeInterval = 7 * 24 * 60 * 60
 
@@ -311,11 +308,8 @@ actor DirectorySizeService {
             try? await persistentCache?.remove(namespace: cacheNamespace, key: path)
             return nil
         }
-        var refreshed = entry
-        refreshed.lastAccess = Date().timeIntervalSince1970
-        memoryCache[path] = refreshed
         log.debug("[DirectorySizeService] persistent hit path='\(url.lastPathComponent)'")
-        return refreshed.size
+        return entry.size
     }
 
     // MARK: - Cache Store
@@ -330,6 +324,7 @@ actor DirectorySizeService {
         }
         let entry = CacheEntry(size: size, mtime: mtime, lastAccess: Date().timeIntervalSince1970)
         memoryCache[path] = entry
+        trimMemoryCacheIfNeeded()
         if let payload = try? JSONEncoder().encode(entry) {
             try? await persistentCache?
                 .set(
@@ -339,6 +334,15 @@ actor DirectorySizeService {
                     expiresAt: Date().addingTimeInterval(persistentLifetime)
                 )
         }
+    }
+
+    private func trimMemoryCacheIfNeeded() {
+        guard memoryCache.count > cacheEntryLimit else { return }
+        let overflow = memoryCache.count - cacheEntryLimit
+        let oldestKeys = memoryCache.sorted {
+            ($0.value.lastAccess ?? $0.value.mtime) < ($1.value.lastAccess ?? $1.value.mtime)
+        }.prefix(overflow).map(\.key)
+        for key in oldestKeys { memoryCache[key] = nil }
     }
 
     // MARK: - Legacy Cache Migration

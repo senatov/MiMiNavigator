@@ -331,7 +331,8 @@ extension DualDirectoryScanner {
     // MARK: - MainActor scan publish
 
     @MainActor
-    func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) {
+    @discardableResult
+    func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) -> Bool {
         let publishedFiles = sanitizedPublishedFiles(from: incomingFiles)
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
@@ -347,7 +348,7 @@ extension DualDirectoryScanner {
             isFirstUpdate: isFirstUpdate
         ) {
             scheduleGeoTagScan(publishedFiles, for: side, path: currentPath)
-            return
+            return false
         }
 
         lastContentHashOnMain[side] = contentHash
@@ -361,6 +362,7 @@ extension DualDirectoryScanner {
         if isFirstUpdate {
             seedInitialSelectionIfNeeded(for: side, files: publishedFiles)
         }
+        return true
     }
 
     // MARK: - Current Path Check
@@ -388,10 +390,12 @@ extension DualDirectoryScanner {
             log.info("[Scan] publish skipped stale path side=\(side) scanned='\(scannedPath)' current='\(currentPath)'")
             return
         }
-        await MainActor.run {
-            AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
+        let didPublish = await updateScannedFiles(files, for: side)
+        if didPublish {
+            await MainActor.run {
+                AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
+            }
         }
-        await updateScannedFiles(files, for: side)
         await updateFileList(panelSide: side, with: files)
     }
 }

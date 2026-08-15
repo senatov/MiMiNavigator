@@ -38,6 +38,14 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     private var pendingFlags: [FSEventStreamEventFlags] = []
     private let throttleDelay: TimeInterval = 0.3
     private static let latency: CFTimeInterval = 0.5
+    private static let ignoredApplicationRoots: [String] = {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return [
+            home.appendingPathComponent("Library/Caches/MiMiNavigator", isDirectory: true).path,
+            home.appendingPathComponent("Library/Application Support/MiMiNavigator", isDirectory: true).path,
+            home.appendingPathComponent("Library/Containers/Senatov.MiMiNavigator", isDirectory: true).path
+        ]
+    }()
     private static let resourceKeys: Set<URLResourceKey> = [
         .isDirectoryKey,
         .isSymbolicLinkKey,
@@ -142,18 +150,20 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     // MARK: - Handle Events
     private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         let watched = watchedPath
+        let filtered = filteredEvents(paths: paths, flags: flags, watchedPath: watched)
+        guard !filtered.paths.isEmpty else { return }
         let rescanFlags = FSEventStreamEventFlags(
             kFSEventStreamEventFlagMustScanSubDirs
                 | kFSEventStreamEventFlagUserDropped
                 | kFSEventStreamEventFlagKernelDropped
                 | kFSEventStreamEventFlagRootChanged
         )
-        if flags.contains(where: { $0 & rescanFlags != 0 }) {
+        if filtered.flags.contains(where: { $0 & rescanFlags != 0 }) {
             log.warning("[FSEvents] continuity flag received; full rescan for '\(watched)'")
             onPatch(makeFullRescanPatch(watchedPath: watched, childCounts: [:]))
             return
         }
-        var classification = classifyEvents(paths, watchedPath: watched)
+        var classification = classifyEvents(filtered.paths, watchedPath: watched)
         if classification.watchedDirectoryChanged && classification.directChildren.isEmpty {
             log.info("[FSEvents] watched directory changed; full rescan for '\(watched)'")
             onPatch(makeFullRescanPatch(watchedPath: watched, childCounts: classification.childCountUpdates))
@@ -172,6 +182,30 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             watchedPath: watched,
             needsFullRescan: false
         ))
+    }
+
+    // MARK: - Self-Generated Event Filtering
+    private func filteredEvents(
+        paths: [String],
+        flags: [FSEventStreamEventFlags],
+        watchedPath: String
+    ) -> (paths: [String], flags: [FSEventStreamEventFlags]) {
+        let pairs = zip(paths, flags)
+        let containsIgnoredPath = pairs.contains { path, _ in Self.isIgnoredApplicationPath(path) }
+        var relevantPaths: [String] = []
+        var relevantFlags: [FSEventStreamEventFlags] = []
+        for (path, flag) in zip(paths, flags) {
+            if Self.isIgnoredApplicationPath(path) { continue }
+            if containsIgnoredPath && normalizedPath(path) == watchedPath { continue }
+            relevantPaths.append(path)
+            relevantFlags.append(flag)
+        }
+        return (relevantPaths, relevantFlags)
+    }
+
+    private static func isIgnoredApplicationPath(_ path: String) -> Bool {
+        let normalized = path.hasSuffix("/") ? String(path.dropLast()) : path
+        return ignoredApplicationRoots.contains { normalized == $0 || normalized.hasPrefix($0 + "/") }
     }
 
     // MARK: - Classify Events

@@ -14,39 +14,6 @@ extension FileTableView {
 
     private static let log = SwiftyBeaver.self
 
-    private struct FilesSnapshot: Equatable {
-        let count: Int
-        let firstHash: Int
-        let lastHash: Int
-
-        var combinedHash: Int {
-            count ^ firstHash ^ lastHash
-        }
-    }
-
-    private func makeFilesSnapshot() -> FilesSnapshot {
-        let firstHash = files.first?.id.hashValue ?? 0
-        let lastHash = files.last?.id.hashValue ?? 0
-
-        return FilesSnapshot(
-            count: files.count,
-            firstHash: firstHash,
-            lastHash: lastHash
-        )
-    }
-
-    private func shouldSkipSortedCacheRebuild(snapshot: FilesSnapshot) -> Bool {
-        guard Self.lastFilesHash[panelSide] == snapshot.combinedHash else {
-            return false
-        }
-
-        return cachedSortedFiles.count == snapshot.count
-    }
-
-    private func storeFilesSnapshot(_ snapshot: FilesSnapshot) {
-        Self.lastFilesHash[panelSide] = snapshot.combinedHash
-    }
-
     private func makeSortedRows(from sortedFiles: [CustomFile], currentPath: String) -> [CustomFile] {
         var rows: [CustomFile] = []
         rows.reserveCapacity(sortedFiles.count)
@@ -75,37 +42,12 @@ extension FileTableView {
         !file.isParentEntry && file.nameStr != ".."
     }
 
-    /// Track last files reference to skip redundant rebuilds
-    private static var lastFilesHash: [FavPanelSide: Int] = [:]
-
-    func recomputeSortedCache(force: Bool = false) {
-        let snapshot = makeFilesSnapshot()
-
-        if !force, shouldSkipSortedCacheRebuild(snapshot: snapshot) {
-            Self.log.debug(
-                "[FileTableState] skip cache rebuild panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash)"
-            )
-            scrollToSelectionFromState()
-            return
-        }
-
-        storeFilesSnapshot(snapshot)
-        cachedSortedFiles = files
-        rebuildIndexByID()
-        scrollToSelectionFromState()
-
-        Self.log.debug(
-            "[FileTableState] rebuilt cache panel=\(panelSide.rawValue) count=\(snapshot.count) hash=\(snapshot.combinedHash) force=\(force)")
-    }
-
-    /// Called only when sort parameters change — re-sort needed.
-    func recomputeSortedCacheForSortChange() {
+    func recomputeSortedCache() {
         cachedSortedFiles = files.sorted(by: sorter.compare)
         rebuildIndexByID()
         scrollToSelectionFromState()
-
         Self.log.debug(
-            "[FileTableState] rebuilt sorted cache after sort change panel=\(panelSide.rawValue) count=\(cachedSortedFiles.count)")
+            "[FileTableState] rebuilt sorted cache panel=\(panelSide.rawValue) count=\(cachedSortedFiles.count)")
     }
 
     /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.

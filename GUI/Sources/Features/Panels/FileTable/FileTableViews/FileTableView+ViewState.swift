@@ -29,7 +29,9 @@ extension FileTableView {
             hasher.combine(file.isDirectory)
             hasher.combine(file.cachedChildCount)
             hasher.combine(file.cachedDirectorySize)
+            hasher.combine(file.cachedShallowSize)
             hasher.combine(file.sizeInBytes)
+            hasher.combine(file.sizeVersion)
             hasher.combine(file.sizeIsExact)
             hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
             hasher.combine(String(describing: file.securityState))
@@ -59,7 +61,16 @@ extension FileTableView {
                         onDoubleClick(file)
                     }
                 )
+                TableHeaderView(
+                    panelSide: panelSide,
+                    layout: layout,
+                    isFocused: isFocused
+                )
+                .padding(.trailing, ScrollBarConfig.trackWidth)
+                .fixedSize(horizontal: false, vertical: true)
                 mainScrollView
+                    .frame(maxHeight: .infinity)
+                    .clipped()
             }
 
             AppKitDropView(
