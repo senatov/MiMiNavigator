@@ -157,9 +157,8 @@ extension FileTableView {
             return
         }
         guard !files.isEmpty else { return }
-
         log.debug("[FileTableView] metadata changed panel=\(panelSide) files=\(files.count)")
-        recomputeSortedCache(force: true)
+        recomputeSortedCacheForSortChange()
     }
 }
 

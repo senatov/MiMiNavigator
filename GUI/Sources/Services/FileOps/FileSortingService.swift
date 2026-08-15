@@ -11,10 +11,8 @@ enum FileSortingService {
 
     private enum GroupPriority: Int {
         case parent = 0
-        case visibleDirectory = 1
-        case hiddenDirectory = 2
-        case regularFile = 3
-        case alias = 4
+        case directory = 1
+        case regularFile = 2
     }
 
     static func sort(_ items: [CustomFile], by key: SortKeysEnum, bDirection: Bool) -> [CustomFile] {
@@ -32,9 +30,6 @@ enum FileSortingService {
         if leftPriority != rightPriority {
             return leftPriority.rawValue < rightPriority.rawValue
         }
-        if leftPriority == .visibleDirectory || leftPriority == .hiddenDirectory {
-            return compareName(left, right, ascending: true)
-        }
         return compare(left, right, by: key, ascending: ascending)
     }
 
@@ -43,31 +38,10 @@ enum FileSortingService {
             return .parent
         }
 
-        if item.isAlias {
-            return .alias
+        if isFolderLike(item) && !item.isAppBundle {
+            return .directory
         }
-
-        if isVisibleDirectory(item) {
-            return .visibleDirectory
-        }
-
-        if isHiddenDirectory(item) {
-            return .hiddenDirectory
-        }
-
         return .regularFile
-    }
-
-    private static func isVisibleDirectory(_ item: CustomFile) -> Bool {
-        isFolderLike(item) && !item.isAppBundle && !isHiddenName(item.nameStr)
-    }
-
-    private static func isHiddenDirectory(_ item: CustomFile) -> Bool {
-        isFolderLike(item) && !item.isAppBundle && isHiddenName(item.nameStr)
-    }
-
-    private static func isHiddenName(_ name: String) -> Bool {
-        name.hasPrefix(".") && name != ".."
     }
 
     static func compare(_ a: CustomFile, _ b: CustomFile, by key: SortKeysEnum, ascending: Bool) -> Bool {
@@ -104,13 +78,8 @@ enum FileSortingService {
     }
 
     static func compareSize(_ a: CustomFile, _ b: CustomFile, ascending: Bool) -> Bool {
-        let aIsDir = isFolderLike(a) && !a.isAppBundle
-        let bIsDir = isFolderLike(b) && !b.isAppBundle
-        if aIsDir && bIsDir {
-            return compareName(a, b, ascending: ascending)
-        }
-        let sa = a.isAppBundle ? (a.cachedAppSize ?? 0) : a.sizeInBytes
-        let sb = b.isAppBundle ? (b.cachedAppSize ?? 0) : b.sizeInBytes
+        let sa = a.isAppBundle ? (a.cachedAppSize ?? a.sizeInBytes) : a.displaySize
+        let sb = b.isAppBundle ? (b.cachedAppSize ?? b.sizeInBytes) : b.displaySize
         if sa != sb {
             return ascending ? (sa < sb) : (sa > sb)
         }
