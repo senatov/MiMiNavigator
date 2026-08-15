@@ -83,7 +83,7 @@ private static func defaultPersistentState() -> PersistentState {
         leftActiveTabID: nil,
         rightActiveTabID: nil,
         sortKey: SortKeysEnum.name.rawValue,
-        sortAscending: true,
+        sortAscending: false,
         windowFrameX: nil,
         windowFrameY: nil,
         windowFrameW: nil,

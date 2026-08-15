@@ -88,7 +88,7 @@ struct PreferencesSnapshot: Codable, Sendable {
         calculateSizes: false,
         highlightBorder: true,
         defaultSort: "name",
-        sortAscending: true,
+        sortAscending: false,
         excludeDirectoriesFromSorting: true,
         dateFormat: "short",
         showSizeInKB: false,

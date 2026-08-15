@@ -202,7 +202,7 @@ private struct ThumbnailCellView: View {
             // Size
             if !file.isDirectory {
                 Text(ByteCountFormatter.string(fromByteCount: file.sizeInBytes, countStyle: .file))
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
         }
@@ -241,11 +241,11 @@ private struct ThumbnailCellView: View {
                 onCommit: { commitInlineRename() },
                 onCancel: { appState.inlineRename.cancel() }
             )
-            .font(.system(size: 10))
+            .font(.system(size: 11))
             .frame(width: cellSize - 4)
         } else {
             Text(file.nameStr)
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                 .lineLimit(1)
                 .truncationMode(.middle)

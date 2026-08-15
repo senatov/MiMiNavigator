@@ -196,7 +196,7 @@ final class AppState {
 
     // MARK: - Sorting
     var sortKey: SortKeysEnum = .name
-    var bSortAscending: Bool = true
+    var bSortAscending: Bool = false
     var excludeDirectoriesFromSorting: Bool = UserPreferences.shared.snapshot.excludeDirectoriesFromSorting ?? true {
         didSet { persistPreferenceChange { $0.excludeDirectoriesFromSorting = excludeDirectoriesFromSorting } }
     }
