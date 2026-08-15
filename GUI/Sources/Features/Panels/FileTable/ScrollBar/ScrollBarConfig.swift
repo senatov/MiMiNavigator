@@ -17,6 +17,9 @@ enum ScrollBarConfig {
     /// Wider than the macOS default for easier targeting and clearer separation.
     static let trackWidth: CGFloat = 23
 
+    /// Leaves the native track clear of the jump-to-edge button at each end.
+    static let jumpButtonTrackInset: CGFloat = 26
+
     /// Compensates the outer grid inset while keeping the track clear of the border stroke.
     static let trailingPadding: CGFloat = 4 - DesignTokens.grid
 

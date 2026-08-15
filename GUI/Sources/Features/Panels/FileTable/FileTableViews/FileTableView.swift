@@ -145,7 +145,7 @@ struct FileTableView: View {
     var sortedRows: [CustomFile] { cachedSortedRows }
 
     func handleSortChange<T>(_: T) {
-        recomputeSortedCacheForSortChange()
+        recomputeSortedCache()
     }
 
     var body: some View {

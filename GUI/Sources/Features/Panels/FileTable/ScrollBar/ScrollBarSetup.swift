@@ -24,6 +24,12 @@ enum ScrollBarSetup {
         scrollView.hasHorizontalScroller = ScrollBarConfig.hasHorizontalScroller
         scrollView.autohidesScrollers = ScrollBarConfig.autohidesScrollers
         scrollView.scrollerStyle = .legacy
+        scrollView.scrollerInsets = NSEdgeInsets(
+            top: ScrollBarConfig.jumpButtonTrackInset,
+            left: 0,
+            bottom: ScrollBarConfig.jumpButtonTrackInset,
+            right: 0
+        )
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
     }

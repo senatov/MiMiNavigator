@@ -10,10 +10,6 @@ import SwiftUI
 
 // MARK: - Subviews
 extension FileTableView {
-
-    /// Width of the macOS native scrollbar track — driven by ScrollBarConfig
-    private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
-
     private var onePixel: CGFloat {
         1.0 / (NSScreen.main?.backingScaleFactor ?? 2.0)
     }
@@ -30,24 +26,16 @@ extension FileTableView {
                     }
                     .frame(width: 0, height: 0)
 
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                        Section {
-                            FileTableRowsView(
-                                rows: sortedRows,
-                                indexByID: cachedIndexByID,
-                                selectedID: $selectedID,
-                                panelSide: panelSide,
-                                layout: layout,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick
-                            )
-                        } header: {
-                            TableHeaderView(
-                                panelSide: panelSide,
-                                layout: layout,
-                                isFocused: isFocused
-                            )
-                        }
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        FileTableRowsView(
+                            rows: sortedRows,
+                            indexByID: cachedIndexByID,
+                            selectedID: $selectedID,
+                            panelSide: panelSide,
+                            layout: layout,
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick
+                        )
                     }
                     .scrollTargetLayout()
 
@@ -57,7 +45,6 @@ extension FileTableView {
                 }
             }
             .background(scrollBackgroundLayer)
-            .scrollClipDisabled()
             // Jump-to-edge buttons (aligned with scrollbar)
             .overlay(alignment: .trailing) {
                 jumpButtonsOverlay

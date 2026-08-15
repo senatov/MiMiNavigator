@@ -127,7 +127,7 @@ extension FileTableView {
 
     func handleMainWindowDidRestore() {
         log.info("[FileTableView] window restored — rebuilding panel=\(panelSide) files=\(files.count)")
-        recomputeSortedCache(force: true)
+        recomputeSortedCache()
         navigationScrollPending = true
         nativeScrollView?.documentView?.needsLayout = true
         nativeScrollView?.documentView?.needsDisplay = true
@@ -158,7 +158,7 @@ extension FileTableView {
         }
         guard !files.isEmpty else { return }
         log.debug("[FileTableView] metadata changed panel=\(panelSide) files=\(files.count)")
-        recomputeSortedCacheForSortChange()
+        recomputeSortedCache()
     }
 }
 

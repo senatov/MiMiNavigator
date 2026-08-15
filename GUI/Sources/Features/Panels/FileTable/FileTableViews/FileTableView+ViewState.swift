@@ -61,6 +61,12 @@ extension FileTableView {
                         onDoubleClick(file)
                     }
                 )
+                TableHeaderView(
+                    panelSide: panelSide,
+                    layout: layout,
+                    isFocused: isFocused
+                )
+                .padding(.trailing, ScrollBarConfig.trackWidth)
                 mainScrollView
             }
 
