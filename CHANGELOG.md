@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.2] — 2026-08-15
+
+> **Release notes**
+> Restore installation through the built-in software updater.
+
+### Changed
+- **Build metadata** — marketing version updated to `0.9.9.7.2`; build number updated to `139`.
+
+### Fixed
+- **Update downloads** — relative asset paths returned by the MiMiNavigator release proxy are resolved against the HTTPS update-service origin before being opened or downloaded.
+- **Install Update** — URLSession no longer fails with `unsupported URL` when downloading the signed DMG from the update window.
+
 ## [0.9.9.7.1] — 2026-08-15
 
 > **Release notes**

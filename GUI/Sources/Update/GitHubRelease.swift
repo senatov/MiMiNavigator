@@ -29,6 +29,7 @@ struct GitHubRelease: Codable {
 }
 
 struct GitHubAsset: Codable {
+    private static let updateServiceURL = URL(string: "https://miminavi.tech")!
     let id: Int?
     let name: String
     let browserDownloadURL: String
@@ -48,5 +49,10 @@ struct GitHubAsset: Codable {
     }
     var releaseDate: Date? {
         ISO8601DateFormatter().date(from: updatedAt ?? createdAt ?? "")
+    }
+    var downloadURL: URL? {
+        guard let url = URL(string: browserDownloadURL, relativeTo: Self.updateServiceURL)?.absoluteURL,
+              url.scheme == "https" else { return nil }
+        return url
     }
 }

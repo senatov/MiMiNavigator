@@ -132,7 +132,7 @@ final class UpdateChecker: ObservableObject {
     
     func downloadUpdate() {
         guard let asset = downloadAsset,
-              let url = URL(string: asset.browserDownloadURL) else {
+              let url = asset.downloadURL else {
             openReleasePage()
             return
         }

@@ -94,7 +94,7 @@ enum UpdateInstaller {
 
     // MARK: - Download
     private static func download(asset: GitHubAsset) async throws -> URL {
-        guard let url = URL(string: asset.browserDownloadURL) else {
+        guard let url = asset.downloadURL else {
             log.error("[Update] invalid asset download URL asset=\(asset.name)")
             throw UpdateInstallerError.invalidDownload
         }
