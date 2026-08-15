@@ -109,7 +109,11 @@ struct FileTableView: View {
     var isFocused: Bool { appState.focusedPanel == panelSide }
 
     var sorter: TableFileSorter {
-        TableFileSorter(sortKey: sortKey, ascending: sortAscending)
+        TableFileSorter(
+            sortKey: sortKey,
+            ascending: sortAscending,
+            excludeDirectoriesFromSorting: appState.excludeDirectoriesFromSorting
+        )
     }
 
     /// Number of fully visible rows based on measured viewport height.

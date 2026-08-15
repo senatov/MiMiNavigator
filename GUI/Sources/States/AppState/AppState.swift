@@ -197,6 +197,9 @@ final class AppState {
     // MARK: - Sorting
     var sortKey: SortKeysEnum = .name
     var bSortAscending: Bool = true
+    var excludeDirectoriesFromSorting: Bool = UserPreferences.shared.snapshot.excludeDirectoriesFromSorting ?? true {
+        didSet { persistPreferenceChange { $0.excludeDirectoriesFromSorting = excludeDirectoriesFromSorting } }
+    }
 
     // MARK: - User Preference Flags
     private var suppressPreferencesWriteback = false
@@ -275,6 +278,7 @@ final class AppState {
         showIcons = snapshot.showIcons
         calculateSizes = snapshot.calculateSizes
         highlightBorder = snapshot.highlightBorder
+        excludeDirectoriesFromSorting = snapshot.excludeDirectoriesFromSorting ?? true
         showSizeInKB = snapshot.showSizeInKB
         openOnSingleClick = snapshot.openOnSingleClick
         tabsRestoreOnLaunch = snapshot.tabsRestoreOnLaunch

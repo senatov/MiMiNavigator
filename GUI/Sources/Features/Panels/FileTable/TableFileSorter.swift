@@ -11,9 +11,16 @@ import FileModelKit
 struct TableFileSorter {
     let sortKey: SortKeysEnum
     let ascending: Bool
+    let excludeDirectoriesFromSorting: Bool
 
     // MARK: - Compare
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
-        FileSortingService.comesBefore(a, b, by: sortKey, ascending: ascending)
+        FileSortingService.comesBefore(
+            a,
+            b,
+            by: sortKey,
+            ascending: ascending,
+            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting
+        )
     }
 }

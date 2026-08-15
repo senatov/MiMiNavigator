@@ -31,6 +31,16 @@ struct SettingsPanelsPane: View {
         )
     }
 
+    private var excludeDirectoriesFromSortingBinding: Binding<Bool> {
+        Binding(
+            get: { prefs.snapshot.excludeDirectoriesFromSorting ?? true },
+            set: {
+                prefs.snapshot.excludeDirectoriesFromSorting = $0
+                AppStateProvider.shared?.applyPreferencesFromSnapshot()
+            }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
 
@@ -107,6 +117,11 @@ struct SettingsPanelsPane: View {
                             .labelsHidden()
                             .frame(width: 130)
                         }
+                    }
+                    Divider()
+                    SettingsRow(label: "Directories:", help: "Keep directories in a separate alphabetical group and exclude them from column sorting") {
+                        Toggle("Do not sort directories", isOn: excludeDirectoriesFromSortingBinding)
+                            .toggleStyle(.checkbox)
                     }
                 }
             }

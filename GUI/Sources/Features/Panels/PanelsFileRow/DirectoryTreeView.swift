@@ -81,6 +81,7 @@ struct DirectoryTreeView: View {
         .onChange(of: filesSignature) { _, _ in prepareTreeForCurrentPath() }
         .onChange(of: appState.sortKey) { _, _ in resortLoadedChildrenAndFit() }
         .onChange(of: appState.bSortAscending) { _, _ in resortLoadedChildrenAndFit() }
+        .onChange(of: appState.excludeDirectoriesFromSorting) { _, _ in resortLoadedChildrenAndFit() }
     }
 
     // MARK: - Tree Rows

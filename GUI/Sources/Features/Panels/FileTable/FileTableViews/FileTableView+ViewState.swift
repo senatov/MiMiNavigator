@@ -139,6 +139,9 @@ extension FileTableView {
             .onChange(of: appState.bSortAscending) { _, newValue in
                 handleSortChange(newValue)
             }
+            .onChange(of: appState.excludeDirectoriesFromSorting) { _, newValue in
+                handleSortChange(newValue)
+            }
             .onChange(of: selectedID) { _, newValue in
                 handleSelectionChange(newValue)
             }

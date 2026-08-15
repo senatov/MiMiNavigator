@@ -32,6 +32,7 @@ struct PreferencesSnapshot: Codable, Sendable {
     var highlightBorder: Bool
     var defaultSort: String              // "name", "date", "size", "type"
     var sortAscending: Bool
+    var excludeDirectoriesFromSorting: Bool?
     var dateFormat: String               // "short", "medium", "relative", "iso"
     var showSizeInKB: Bool
     var openOnSingleClick: Bool
@@ -88,6 +89,7 @@ struct PreferencesSnapshot: Codable, Sendable {
         highlightBorder: true,
         defaultSort: "name",
         sortAscending: true,
+        excludeDirectoriesFromSorting: true,
         dateFormat: "short",
         showSizeInKB: false,
         openOnSingleClick: false,

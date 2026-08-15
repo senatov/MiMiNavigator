@@ -16,11 +16,16 @@ extension AppState {
         if let ascending { bSortAscending = ascending }
         MiMiDefaults.shared.set(sortKey.rawValue, forKey: "MiMiNavigator.sortKey")
         MiMiDefaults.shared.set(bSortAscending, forKey: "MiMiNavigator.sortAscending")
-        displayedLeftFiles = FileSortingService.sort(displayedLeftFiles, by: sortKey, bDirection: bSortAscending)
-        displayedRightFiles = FileSortingService.sort(displayedRightFiles, by: sortKey, bDirection: bSortAscending)
+        displayedLeftFiles = applySorting(displayedLeftFiles)
+        displayedRightFiles = applySorting(displayedRightFiles)
     }
 
     func applySorting(_ items: [CustomFile]) -> [CustomFile] {
-        FileSortingService.sort(items, by: sortKey, bDirection: bSortAscending)
+        FileSortingService.sort(
+            items,
+            by: sortKey,
+            bDirection: bSortAscending,
+            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting
+        )
     }
 }
