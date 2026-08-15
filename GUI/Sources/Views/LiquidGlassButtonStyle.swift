@@ -56,7 +56,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .blendMode(.overlay)
+                .blendMode(SwiftUI.BlendMode.overlay)
             )
             // ── layer 4: specular glint top-left ──
             .overlay(
@@ -69,7 +69,7 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                     startRadius: 0,
                     endRadius: 18
                 )
-                .blendMode(.screen)
+                .blendMode(SwiftUI.BlendMode.screen)
             )
             .clipShape(PebbleShape())
             // ── layer 5: refraction edge ring ──
