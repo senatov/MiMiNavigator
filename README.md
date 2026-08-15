@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/macOS-26.0+-black?logo=apple&logoColor=white" alt="macOS 26+">
   <img src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white" alt="Swift 6.2">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0">
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.7.0"><img src="https://img.shields.io/badge/release-v0.9.9.7.0-orange" alt="Release v0.9.9.7.0"></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.7.1"><img src="https://img.shields.io/badge/release-v0.9.9.7.1-orange" alt="Release v0.9.9.7.1"></a>
 </p>
 
 <p align="center">
@@ -110,7 +110,7 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 The current DMG is signed and notarized by Apple. No App Store account, subscription, or additional installer is required.
 
-1. [Download MiMiNavigator v0.9.9.7.0](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.7.0).
+1. [Download MiMiNavigator v0.9.9.7.1](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.7.1).
 2. Open the DMG and drag MiMiNavigator to Applications.
 3. Launch it from Applications.
 

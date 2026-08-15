@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.1] — 2026-08-15
+
+> **Release notes**
+> Responsive directory-first sorting, stable column sizing during scans, and corrected panel controls and restoration.
+
+### Changed
+- **Directory-first sorting** — folders remain above files for every direction while each group follows the selected Name, Date Modified, Size, Kind, Owner, or item-count column.
+- **Persistent size hydration** — validated directory sizes are loaded from SQLite in batches before publication and sorting, reducing transient RAM use and making repeated sorts react immediately.
+- **Column autofit scheduling** — pending autofit work is cancelled while a directory loads or recalculates metadata, then resumes after the final rows arrive without making columns oscillate.
+- **Sort indicators** — compact raised header controls show the active direction in blue while preserving the full header hit target and column reordering.
+- **Build metadata** — marketing version updated to `0.9.9.7.1`; build number updated to `138`.
+
+### Fixed
+- **Header interaction regression** — sort clicks and the Autofit On/Off submenu work again by restoring the known-good pinned header topology above the native scroll overlays.
+- **First-click size sorting** — cached folder sizes are available before the first comparator pass instead of appearing only after a later refresh.
+- **Scrollbar geometry** — jump controls and native tracks no longer overlap, disappear behind the header, or extend into each other.
+- **Panel restoration** — automatic mount reconnection no longer replaces the right panel path restored from the previous session.
+- **Autocomplete ownership** — path suggestions remain attached to MiMiNavigator and no longer float above unrelated applications.
+
 ## [0.9.9.7.0] — 2026-08-09
 
 > **Release notes**

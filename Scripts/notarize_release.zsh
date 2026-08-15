@@ -128,6 +128,27 @@ if [[ -n "$(git status --porcelain)" ]]; then
     git status --short
     exit 1
 fi
+SUBMODULE_STATUS="$(git submodule status --recursive)"
+if print -r -- "${SUBMODULE_STATUS}" | grep -Eq '^[+-U]'; then
+    echo "❌ Submodule checkout does not match the recorded commit."
+    print -r -- "${SUBMODULE_STATUS}"
+    exit 1
+fi
+while IFS= read -r submodule_path; do
+    [[ -z "${submodule_path}" ]] && continue
+    if [[ -n "$(git -C "${submodule_path}" status --porcelain)" ]]; then
+        echo "❌ Submodule has uncommitted changes: ${submodule_path}"
+        git -C "${submodule_path}" status --short
+        exit 1
+    fi
+    submodule_sha="$(git rev-parse "HEAD:${submodule_path}")"
+    git -C "${submodule_path}" fetch --quiet origin
+    if [[ -z "$(git -C "${submodule_path}" branch -r --contains "${submodule_sha}")" ]]; then
+        echo "❌ Submodule commit is not available on origin: ${submodule_path} ${submodule_sha}"
+        echo "   Push the submodule branch before creating the release."
+        exit 1
+    fi
+done < <(git config --file .gitmodules --get-regexp path | awk '{print $2}')
 if [[ ! -f "${NOTES_FILE}" ]]; then
     echo "❌ Release notes not found: ${NOTES_FILE}"
     exit 1

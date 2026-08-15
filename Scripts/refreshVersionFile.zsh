@@ -63,6 +63,14 @@ fi
 if [[ -f "$PBXPROJ" ]]; then
   sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = ${GIT_VERSION}/" "$PBXPROJ"
   echo "📋 Updated MARKETING_VERSION → $GIT_VERSION"
+  if [[ -n "${RELEASE_BUILD:-}" ]]; then
+    if [[ ! "${RELEASE_BUILD}" =~ '^[0-9]+$' ]]; then
+      echo "❌ ERROR: RELEASE_BUILD must be an integer." >&2
+      exit 3
+    fi
+    sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = ${RELEASE_BUILD}/" "$PBXPROJ"
+    echo "🔢 Updated CURRENT_PROJECT_VERSION → $RELEASE_BUILD"
+  fi
 fi
 
 # ✅ Финальное сообщение
