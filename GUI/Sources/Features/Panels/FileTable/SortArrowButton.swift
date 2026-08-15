@@ -36,32 +36,32 @@ struct SortArrowButton: View {
     }
 
     var body: some View {
-        Image(systemName: arrowName)
-            .font(.system(size: isActive ? 8 : 7, weight: .semibold))
-            .foregroundStyle(arrowColor)
-            .frame(width: 16, height: 16)
-            .background {
-                Circle()
-                    .fill(buttonFill)
-                    .shadow(color: .white.opacity(isActive ? 0.20 : 0.42), radius: 0.35, y: -0.5)
-                    .shadow(color: .black.opacity(isActive ? 0.16 : 0.08), radius: 0.6, y: 0.5)
-            }
-            .overlay {
-                Circle().strokeBorder(isActive ? Color.blue.opacity(0.70) : .primary.opacity(0.10), lineWidth: 0.5)
-            }
-            .contentShape(Circle())
-            .onHover { hovering in
-                withAnimation(.easeInOut(duration: 0.1)) {
-                    isHovering = hovering
+        Button(action: { onSort?() }) {
+            Image(systemName: arrowName)
+                .font(.system(size: isActive ? 8 : 7, weight: .semibold))
+                .foregroundStyle(arrowColor)
+                .frame(width: 16, height: 16)
+                .background {
+                    Circle()
+                        .fill(buttonFill)
+                        .shadow(color: .white.opacity(isActive ? 0.20 : 0.42), radius: 0.35, y: -0.5)
+                        .shadow(color: .black.opacity(isActive ? 0.16 : 0.08), radius: 0.6, y: 0.5)
                 }
-                if hovering {
-                    NSCursor.pointingHand.push()
-                } else {
-                    NSCursor.pop()
+                .overlay {
+                    Circle().strokeBorder(isActive ? Color.blue.opacity(0.70) : .primary.opacity(0.10), lineWidth: 0.5)
                 }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isHovering = hovering
             }
-            .highPriorityGesture(TapGesture().onEnded {
-                onSort?()
-            })
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
     }
 }

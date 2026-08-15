@@ -155,7 +155,7 @@ struct TableHeaderView: View {
         .scaleEffect(draggedColumnID == spec.id ? 1.03 : 1, anchor: .center)
         .animation(.easeOut(duration: 0.10), value: draggedColumnID)
         .animation(.easeOut(duration: 0.10), value: dragOverTargetID)
-        .gesture(columnReorderGesture(for: spec.id), including: .gesture)
+        .simultaneousGesture(columnReorderGesture(for: spec.id), including: .gesture)
     }
 
     // MARK: - Dividers
@@ -309,7 +309,6 @@ struct TableHeaderView: View {
     // MARK: - Sort
 
     private func toggleSort(_ col: ColumnID) {
-        guard !layout.isColumnReorderActive else { return }
         guard let key = col.sortKey else { return }
         appState.focusedPanel = panelSide
         if sortKey == key {
