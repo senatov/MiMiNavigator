@@ -25,7 +25,8 @@ extension AppState {
             items,
             by: sortKey,
             bDirection: bSortAscending,
-            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting
+            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting,
+            directoryNameAscending: directoryNameAscending
         )
     }
 }

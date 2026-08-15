@@ -19,7 +19,8 @@ enum FileSortingService {
         _ items: [CustomFile],
         by key: SortKeysEnum,
         bDirection: Bool,
-        excludeDirectoriesFromSorting: Bool = true
+        excludeDirectoriesFromSorting: Bool = true,
+        directoryNameAscending: Bool = true
     ) -> [CustomFile] {
         let sortedItems = items.sorted {
             comesBefore(
@@ -27,7 +28,8 @@ enum FileSortingService {
                 $1,
                 by: key,
                 ascending: bDirection,
-                excludeDirectoriesFromSorting: excludeDirectoriesFromSorting
+                excludeDirectoriesFromSorting: excludeDirectoriesFromSorting,
+                directoryNameAscending: directoryNameAscending
             )
         }
         log.debug("[FileSortingService] sorted=\(sortedItems.count) by=\(key) asc=\(bDirection)")
@@ -40,7 +42,8 @@ enum FileSortingService {
         _ right: CustomFile,
         by key: SortKeysEnum,
         ascending: Bool,
-        excludeDirectoriesFromSorting: Bool = true
+        excludeDirectoriesFromSorting: Bool = true,
+        directoryNameAscending: Bool = true
     ) -> Bool {
         let leftPriority = priority(for: left)
         let rightPriority = priority(for: right)
@@ -48,7 +51,7 @@ enum FileSortingService {
             return leftPriority.rawValue < rightPriority.rawValue
         }
         if excludeDirectoriesFromSorting && leftPriority == .directory {
-            return compareName(left, right, ascending: true)
+            return compareName(left, right, ascending: directoryNameAscending)
         }
         return compare(left, right, by: key, ascending: ascending)
     }

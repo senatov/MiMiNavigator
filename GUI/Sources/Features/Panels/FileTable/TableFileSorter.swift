@@ -12,6 +12,7 @@ struct TableFileSorter {
     let sortKey: SortKeysEnum
     let ascending: Bool
     let excludeDirectoriesFromSorting: Bool
+    let directoryNameAscending: Bool
 
     // MARK: - Compare
     func compare(_ a: CustomFile, _ b: CustomFile) -> Bool {
@@ -20,7 +21,8 @@ struct TableFileSorter {
             b,
             by: sortKey,
             ascending: ascending,
-            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting
+            excludeDirectoriesFromSorting: excludeDirectoriesFromSorting,
+            directoryNameAscending: directoryNameAscending
         )
     }
 }

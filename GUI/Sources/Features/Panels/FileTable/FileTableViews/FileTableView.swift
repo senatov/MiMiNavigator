@@ -112,7 +112,8 @@ struct FileTableView: View {
         TableFileSorter(
             sortKey: sortKey,
             ascending: sortAscending,
-            excludeDirectoriesFromSorting: appState.excludeDirectoriesFromSorting
+            excludeDirectoriesFromSorting: appState.excludeDirectoriesFromSorting,
+            directoryNameAscending: appState.directoryNameAscending
         )
     }
 
