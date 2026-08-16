@@ -51,6 +51,12 @@ final class UpdateCoordinator {
         showPanel(startCheck: true)
     }
 
+    // MARK: - Bring to Front
+    func bringToFront() {
+        guard let panel, panel.isVisible else { return }
+        panel.orderFront(nil)
+    }
+
     private func showPanel(startCheck: Bool) {
         // If already open, bring to front
         if let existing = panel, existing.isVisible {

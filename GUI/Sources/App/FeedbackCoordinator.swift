@@ -33,6 +33,12 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
         log.debug("[Feedback] panel shown")
     }
 
+    // MARK: - Bring to Front
+    func bringToFront() {
+        guard let panel, panel.isVisible else { return }
+        panel.orderFront(nil)
+    }
+
     // MARK: - NSWindowDelegate
     func windowWillClose(_ notification: Notification) {
         panel = nil

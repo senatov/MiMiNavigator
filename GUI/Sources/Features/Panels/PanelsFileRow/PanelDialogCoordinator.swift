@@ -102,6 +102,12 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         log.info("[\(kind.rawValue)] Window closed")
     }
 
+    // MARK: - Bring to Front
+    func bringToFront() {
+        guard let panel, panel.isVisible else { return }
+        panel.orderFront(nil)
+    }
+
     // MARK: - NSWindowDelegate
     func windowDidResize(_ notification: Notification) {
         savePanelSize()

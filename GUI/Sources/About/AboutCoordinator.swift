@@ -35,6 +35,12 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         log.debug("[AboutCoordinator] panel shown")
     }
 
+    // MARK: - Bring to Front
+    func bringToFront() {
+        guard let panel, panel.isVisible else { return }
+        panel.orderFront(nil)
+    }
+
 
 
     // MARK: - NSWindowDelegate
