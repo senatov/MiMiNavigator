@@ -23,6 +23,12 @@ enum SmartIconService {
         return cache
     }()
 
+    // MARK: - Clear Memory Cache
+    @MainActor
+    static func clearMemoryCache() {
+        iconCache.removeAllObjects()
+    }
+
     // MARK: - Primary API: icon for CustomFile
     @MainActor
     static func icon(for file: CustomFile) -> NSImage {

@@ -4,7 +4,8 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Low-overhead memory checkpoints and sustained-growth detection.
 
-import Darwin.Mach
+import CoreGraphics
+import Darwin
 import Foundation
 
 // MARK: - Memory Snapshot
@@ -20,10 +21,13 @@ final class MemoryDiagnostics {
     private var timer: Timer?
     private var recentFootprints: [UInt64] = []
     private var lastSnapshot: MemorySnapshot?
+    private var lastIdleTrimAt: Date?
     private let sampleLimit = 8
     private let growthWarningBytes: UInt64 = 64 * 1_024 * 1_024
     private let spikeWarningBytes: UInt64 = 256 * 1_024 * 1_024
     private let highFootprintBytes: UInt64 = 512 * 1_024 * 1_024
+    private let idleTrimDelay: TimeInterval = 60
+    private let idleTrimInterval: TimeInterval = 5 * 60
 
     private init() {}
 
@@ -62,6 +66,24 @@ final class MemoryDiagnostics {
 
     @objc private func periodicCheckpoint() {
         checkpoint("idle.periodic")
+        trimCachesIfIdle()
+    }
+
+    // MARK: - Idle Trimming
+    private func trimCachesIfIdle() {
+        let idleSeconds = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .null)
+        guard idleSeconds >= idleTrimDelay else { return }
+        if let lastIdleTrimAt, Date().timeIntervalSince(lastIdleTrimAt) < idleTrimInterval { return }
+        lastIdleTrimAt = .now
+        Task {
+            await DirectoryContentCache.shared.clearAll()
+            await DirectorySizeService.shared.releaseMemoryCache()
+            await MainActor.run {
+                SmartIconService.clearMemoryCache()
+                malloc_zone_pressure_relief(nil, 0)
+                self.checkpoint("idle.trimmed")
+            }
+        }
     }
 
     // MARK: - Trend Detection

@@ -262,6 +262,15 @@ actor DirectorySizeService {
         }
     }
 
+    // MARK: - Release Memory Cache
+    func releaseMemoryCache() {
+        let released = memoryCache.count
+        memoryCache.removeAll(keepingCapacity: false)
+        if released > 0 {
+            log.info("[DirectorySizeService] released \(released) in-memory entries; persistent SQLite cache retained")
+        }
+    }
+
     private func computeSizeOnBackgroundQueue(
         for url: URL,
         cancellation: DirectorySizeCancellationState

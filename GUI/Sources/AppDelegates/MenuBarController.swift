@@ -104,7 +104,7 @@ import AppKit
     @objc private func animationTick() {
         animationPhase = (animationPhase + 1 / Double(animationFrameCount)).truncatingRemainder(dividingBy: 1)
         animationTickCount += 1
-        if animationTickCount.isMultiple(of: 8) { refreshMemoryLabel() }
+        if animationTickCount.isMultiple(of: 4) { refreshMemoryLabel() }
         updateStatusImage()
     }
 
@@ -118,7 +118,7 @@ import AppKit
             button.image = animationFrames[frameIndex]
         }
         button.title = currentMemoryLabel
-        button.toolTip = "MiMiNavigator — \(currentMemoryLabel) memory"
+        button.toolTip = "MiMiNavigator — \(currentMemoryLabel) physical footprint"
     }
 
     private func makeAnimationFrames() -> [NSImage] {
@@ -150,7 +150,7 @@ import AppKit
     }
 
     private func refreshMemoryLabel() {
-        currentMemoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: MemoryDiagnostics.capture().residentBytes)
+        currentMemoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: MemoryDiagnostics.capture().footprintBytes)
     }
 
     private var existingMainWindow: NSWindow? {
