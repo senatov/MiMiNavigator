@@ -231,7 +231,12 @@ import LogKit
     }
 
     private func bringAuxiliaryPanelsToFront() {
-        NSApp.windows.compactMap { $0 as? NSPanel }.forEach(enforceAuxiliaryWindowLevel)
+        NSApp.windows.compactMap { $0 as? NSPanel }.forEach { panel in
+            enforceAuxiliaryWindowLevel(for: panel)
+            if panel.isVisible, !(panel is ProgressPanelWindow), panel.level == .floating {
+                panel.orderFront(nil)
+            }
+        }
         NetworkNeighborhoodCoordinator.shared.bringToFront()
         PackDialogCoordinator.shared.bringToFront()
         ConnectToServerCoordinator.shared.bringToFront()
@@ -240,10 +245,12 @@ import LogKit
         SettingsCoordinator.shared.bringToFront()
         ToolbarCustomizeCoordinator.shared.bringToFront()
         MediaInfoPanel.shared.bringToFront()
+        ProgressPanel.shared.bringToFront()
     }
 
     private func enforceAuxiliaryWindowLevel(for panel: NSPanel) {
         guard panel.identifier?.rawValue != "PathAutoCompletePanel" else { return }
+        guard !(panel is ProgressPanelWindow) else { return }
         guard panel.level != .floating else { return }
         panel.level = .floating
         log.warning("[WindowLevel] corrected auxiliary panel to floating: \(panel.title)")

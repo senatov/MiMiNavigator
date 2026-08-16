@@ -93,7 +93,8 @@ extension ProgressPanel {
 
     // MARK: - Panel Presentation
     func attachPanelToMainWindow(_ panel: NSPanel) {
-        if let window = NSApp.mainWindow ?? NSApp.keyWindow {
+        if let window = presentationHostWindow ?? NSApp.keyWindow ?? NSApp.mainWindow,
+           window !== panel {
             window.addChildWindow(panel, ordered: .above)
         }
     }

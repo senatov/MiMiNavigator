@@ -71,6 +71,7 @@ final class ProgressPanel: NSObject {
     var lastProgressUpdateAt: Date?
     var lastProgressFraction: Double = 0
     var smoothedProgressRate: Double?
+    weak var presentationHostWindow: NSWindow?
     private override init() { super.init() }
     var appearance: ProgressPanelAppearance { .shared }
 
@@ -105,6 +106,7 @@ final class ProgressPanel: NSObject {
         operationKey: String? = nil,
         cancelHandler: (() -> Void)? = nil
     ) {
+        presentationHostWindow = currentPresentationHostWindow()
         InfoPopupController.hideAll(reason: "progress-show:\(title)", immediate: true)
         isCancelled = false
         isFinished = false
@@ -122,6 +124,13 @@ final class ProgressPanel: NSObject {
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
         log.debug("[ProgressPanel] \(#function) title='\(title)'")
+    }
+
+    // MARK: - Bring to Front
+    func bringToFront() {
+        guard let panel, panel.isVisible else { return }
+        panel.level = .modalPanel
+        panel.orderFront(nil)
     }
     // MARK: - Convenience: extraction
     func show(archiveName: String, destinationPath: String, cancelHandler: (() -> Void)? = nil) {

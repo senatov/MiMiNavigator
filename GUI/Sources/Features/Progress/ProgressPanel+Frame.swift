@@ -28,17 +28,6 @@ extension ProgressPanel {
         isApplyingProgrammaticFrame = true
         defer { isApplyingProgrammaticFrame = false }
         applySavedSizeIfNeeded(to: panel)
-        if let saved = appearance.frame(for: operationKey),
-           shouldRestoreFrame(saved),
-           let mainFrame = hostWindowFrame() {
-            let width = clampedWidth(CGFloat(saved.width), mainFrame: mainFrame)
-            let height = clampedHeight(restoredHeight(for: saved), mainFrame: mainFrame)
-            let x = mainFrame.minX + CGFloat(saved.relativeX)
-            let y = mainFrame.minY + CGFloat(saved.relativeY)
-            panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: false)
-            clampPanelToMainWindow()
-            return
-        }
         clampPanelToMainWindow()
         centerInMainWindow()
     }
@@ -195,10 +184,18 @@ extension ProgressPanel {
     }
 
     func hostWindowFrame() -> NSRect? {
+        if let presentationHostWindow, presentationHostWindow.isVisible { return presentationHostWindow.frame }
         if let parent = panel?.parent { return parent.frame }
         if let mainWindow = NSApp.mainWindow, mainWindow !== panel { return mainWindow.frame }
         if let keyWindow = NSApp.keyWindow, keyWindow !== panel, !(keyWindow is NSPanel) { return keyWindow.frame }
         return NSApp.windows.first { $0 !== panel && !($0 is NSPanel) && $0.isVisible }?.frame
+    }
+
+    // MARK: - Presentation Host
+    func currentPresentationHostWindow() -> NSWindow? {
+        if let keyWindow = NSApp.keyWindow, keyWindow !== panel { return keyWindow }
+        if let mainWindow = NSApp.mainWindow, mainWindow !== panel { return mainWindow }
+        return NSApp.windows.first { $0 !== panel && $0.isVisible }
     }
 
     func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
