@@ -46,7 +46,7 @@ extension ProgressPanel {
         panel.hidesOnDeactivate = false
         panel.hasShadow = true
         panel.isOpaque = false
-        panel.level = .floating
+        panel.level = .modalPanel
         panel.isMovableByWindowBackground = false
         panel.titlebarAppearsTransparent = true
         panel.titleVisibility = .hidden
