@@ -200,7 +200,7 @@ final class AppState {
     var excludeDirectoriesFromSorting: Bool = UserPreferences.shared.snapshot.excludeDirectoriesFromSorting ?? true {
         didSet { persistPreferenceChange { $0.excludeDirectoriesFromSorting = excludeDirectoriesFromSorting } }
     }
-    var directoryNameAscending: Bool = UserPreferences.shared.snapshot.sortAscending
+    var directoryNameAscending: Bool = true
 
     // MARK: - User Preference Flags
     private var suppressPreferencesWriteback = false
@@ -280,7 +280,7 @@ final class AppState {
         calculateSizes = snapshot.calculateSizes
         highlightBorder = snapshot.highlightBorder
         excludeDirectoriesFromSorting = snapshot.excludeDirectoriesFromSorting ?? true
-        directoryNameAscending = snapshot.sortAscending
+        directoryNameAscending = true
         showSizeInKB = snapshot.showSizeInKB
         openOnSingleClick = snapshot.openOnSingleClick
         tabsRestoreOnLaunch = snapshot.tabsRestoreOnLaunch

@@ -100,7 +100,7 @@ struct SettingsPanelsPane: View {
             // ── Sorting ──────────────────────────────────────
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Default sort:", help: "Sort files by this column when opening a folder") {
+                    SettingsRow(label: "Files:", help: "Choose how files are sorted. This does not affect folders when the separate folder rule is enabled.") {
                         HStack(spacing: 12) {
                             Picker("", selection: prefBinding(\.defaultSort)) {
                                 Text("Name").tag("name")
@@ -119,9 +119,16 @@ struct SettingsPanelsPane: View {
                         }
                     }
                     Divider()
-                    SettingsRow(label: "Directories:", help: "Keep directories in a separate alphabetical group and exclude them from column sorting") {
-                        Toggle("Do not sort directories", isOn: excludeDirectoriesFromSortingBinding)
-                            .toggleStyle(.checkbox)
+                    SettingsRow(label: "Folders:", help: "Keep folders above files and always sort their names alphabetically from A to Z.") {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Toggle("Keep folders first, sorted A → Z", isOn: excludeDirectoriesFromSortingBinding)
+                                .toggleStyle(.checkbox)
+                            Text(prefs.snapshot.excludeDirectoriesFromSorting ?? true
+                                ? "File sorting applies only to files."
+                                : "Folders follow the selected file sort and direction.")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
