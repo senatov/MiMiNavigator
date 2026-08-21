@@ -204,7 +204,7 @@ struct SelectionStatusBar: View {
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             leftInfoSection
             remoteBadgeSection
             filterSection
@@ -212,14 +212,14 @@ struct SelectionStatusBar: View {
             thumbnailSliderSection
             positionIndicator
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 3)
-        .frame(height: 31)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.84))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .frame(height: 27)
+        .background(Color(nsColor: .windowBackgroundColor).opacity(0.72))
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))
-                .frame(height: 1)
+                .frame(height: 0.5)
         }
         .animation(.easeInOut(duration: 0.15), value: currentViewMode)
         .animation(.easeInOut(duration: 0.15), value: markedCount)

@@ -33,7 +33,7 @@ struct PanelFilterBar: View {
                 .padding(.leading, 7)
 
             // Text input
-            TextField("Filter", text: $query)
+            TextField("Filter folder", text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .focused($isFocused)

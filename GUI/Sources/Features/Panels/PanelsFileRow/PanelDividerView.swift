@@ -20,7 +20,7 @@ struct PanelDividerView: View {
     var body: some View {
         let isHighlighted = divider.isDragging || isHovered
         let lineWidth = divider.isDragging ? PanelDividerMetrics.activeWidth : PanelDividerMetrics.normalWidth
-        let lineColor = isHighlighted ? PanelDividerMetrics.Colors.activeLine : colorStore.activeTheme.dividerNormalColor
+        let lineColor = isHighlighted ? colorStore.activeTheme.dividerActiveColor : colorStore.activeTheme.dividerNormalColor
 
         ZStack {
             if isHighlighted {
@@ -29,7 +29,10 @@ struct PanelDividerView: View {
                 inactiveGroove(height: containerHeight)
             }
 
-            dividerHandle(isHighlighted: isHighlighted, lineColor: lineColor)
+            if isHighlighted {
+                dividerHandle(isHighlighted: isHighlighted, lineColor: lineColor)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            }
 
             if divider.isTooltipVisible {
                 tooltipLayer
@@ -268,24 +271,9 @@ struct PanelDividerView: View {
 
     @ViewBuilder
     private func inactiveGroove(height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(.ultraThinMaterial)
-            .frame(width: PanelDividerMetrics.grooveWidth, height: height)
-            .overlay(
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.16), Color.black.opacity(0.24)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: 0.5)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 3)
-                    .strokeBorder(PanelDividerMetrics.Colors.grooveBorder.opacity(0.76), lineWidth: 0.5)
-            )
+        Rectangle()
+            .fill(colorStore.activeTheme.dividerNormalColor.opacity(0.62))
+            .frame(width: 1, height: height)
             .allowsHitTesting(false)
     }
 
@@ -304,7 +292,7 @@ struct PanelDividerView: View {
                 )
             )
             .frame(width: max(lineWidth, PanelDividerMetrics.grooveWidth), height: height)
-            .shadow(color: Color.black.opacity(0.18), radius: 3, x: 0.5, y: 0)
+            .shadow(color: color.opacity(0.18), radius: 2, x: 0.5, y: 0)
             .overlay(
                 RoundedRectangle(cornerRadius: 3, style: .continuous)
                     .strokeBorder(PanelDividerMetrics.Colors.activeLineEdge, lineWidth: 0.5)
