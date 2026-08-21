@@ -71,6 +71,11 @@ extension FileTableView {
 
     func handleEscape() -> KeyPress.Result {
         guard isFocused else { return .ignored }
+        if !appState[panel: panelSide].filterQuery.isEmpty {
+            appState[panel: panelSide].filterQuery = ""
+            log.debug("[Filter] cleared with Escape side=\(panelSide)")
+            return .handled
+        }
         appState.clearSelection(on: panelSide)
         selectedID = nil
         return .handled

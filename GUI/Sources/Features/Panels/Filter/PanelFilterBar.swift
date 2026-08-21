@@ -13,14 +13,18 @@ import SwiftUI
 struct PanelFilterBar: View {
     @Binding var query: String
     let panelSide: FavPanelSide
+    let resultCount: Int
+    let totalCount: Int
 
     @StateObject private var history: PanelFilterHistory
     @State private var showHistory = false
     @FocusState private var isFocused: Bool
 
-    init(query: Binding<String>, panelSide: FavPanelSide) {
+    init(query: Binding<String>, panelSide: FavPanelSide, resultCount: Int, totalCount: Int) {
         self._query = query
         self.panelSide = panelSide
+        self.resultCount = resultCount
+        self.totalCount = totalCount
         self._history = StateObject(wrappedValue: PanelFilterHistory(panelSide: panelSide.rawValue))
     }
 
@@ -43,10 +47,24 @@ struct PanelFilterBar: View {
                         history.add(query)
                     }
                 }
+                .onKeyPress(.escape) {
+                    clearFilter()
+                    return .handled
+                }
+
+            if !query.isEmpty {
+                Text("\(resultCount)/\(totalCount)")
+                    .font(.system(size: 9, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(resultCount == 0 ? Color.orange : Color.secondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.055), in: Capsule())
+            }
 
             // Clear button
             if !query.isEmpty {
-                Button { query = "" } label: {
+                Button { clearFilter() } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
                         .foregroundStyle(.tertiary)
@@ -77,19 +95,25 @@ struct PanelFilterBar: View {
         .frame(height: 22)
         .background(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(query.isEmpty ? Color(nsColor: .controlBackgroundColor) : ColorThemeStore.shared.activeTheme.filterActiveColor.opacity(0.07))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
                 .stroke(
-                    isFocused
+                    isFocused || !query.isEmpty
                         ? ColorThemeStore.shared.activeTheme.filterActiveColor
                         : Color(nsColor: .separatorColor).opacity(0.9),
-                    lineWidth: isFocused ? 1.5 : 1
+                    lineWidth: isFocused ? 1.25 : 0.75
                 )
         )
         .animation(.easeInOut(duration: 0.12), value: query.isEmpty)
         .animation(.easeInOut(duration: 0.12), value: isFocused)
+    }
+
+    private func clearFilter() {
+        query = ""
+        showHistory = false
+        isFocused = false
     }
 
     // MARK: - History popover

@@ -56,6 +56,14 @@ struct SelectionStatusBar: View {
             .filter { !ParentDirectoryEntry.isParentEntry($0) && !$0.isDirectory }
     }
 
+    private var visibleItemCount: Int {
+        appState.displayedFiles(for: panelSide).count
+    }
+
+    private var unfilteredItemCount: Int {
+        isLeftPanel ? appState.displayedLeftFiles.count : appState.displayedRightFiles.count
+    }
+
     private var markedFiles: [CustomFile] {
         let marked = appState.markedFiles(for: panelSide)
         return displayedPanelFiles.filter { marked.contains($0.id) }
@@ -299,8 +307,13 @@ extension SelectionStatusBar {
 
     private var filterSection: some View {
 
-        PanelFilterBar(query: filterQuery, panelSide: panelSide)
-            .frame(minWidth: 140, maxWidth: 220)
+        PanelFilterBar(
+            query: filterQuery,
+            panelSide: panelSide,
+            resultCount: visibleItemCount,
+            totalCount: unfilteredItemCount
+        )
+            .frame(minWidth: 170, maxWidth: 250)
     }
 
     private var thumbnailSliderSection: some View {
@@ -333,7 +346,7 @@ extension SelectionStatusBar {
 
             } else {
 
-                Text("\(totalFiles) items")
+                Text("\(visibleItemCount) items")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
