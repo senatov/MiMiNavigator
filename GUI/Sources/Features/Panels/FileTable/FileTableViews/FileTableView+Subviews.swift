@@ -47,6 +47,12 @@ extension FileTableView {
                     }
                     .scrollTargetLayout()
 
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .frame(height: emptyAreaHeight)
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: clearSelectionFromEmptyArea)
+
                     // 1px breathing room inside scroll content so the bottom selection border isn't clipped.
                     Color.clear
                         .frame(height: onePixel)
@@ -70,6 +76,19 @@ extension FileTableView {
     }
 
     // MARK: - Scroll Background (Zebra)
+
+    private var emptyAreaHeight: CGFloat {
+        let rowsHeight = CGFloat(sortedRows.count) * FilePanelStyle.rowHeight
+        return max(viewHeight - TableHeaderStyle.height - rowsHeight - onePixel, 0)
+    }
+
+    private func clearSelectionFromEmptyArea() {
+        appState.focusedPanel = panelSide
+        appState.unmarkAll(on: panelSide)
+        selectedID = nil
+        isParentStripHighlighted = false
+        log.debug("[Selection] cleared from empty panel area side=\(panelSide)")
+    }
 
     private var scrollBackgroundLayer: some View {
         ZStack {

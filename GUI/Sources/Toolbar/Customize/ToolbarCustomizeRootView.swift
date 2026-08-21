@@ -4,8 +4,7 @@
 // Created by Claude on 24.04.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Root view for toolbar customization dialog.
-//   Refined macOS layout with card-based sections, explicit hierarchy,
-//   reorderable current toolbar strip, and palette drop-to-remove behavior.
+//   Compact macOS layout with a reorderable toolbar strip and command palette.
 
 import AppKit
 import SwiftUI
@@ -31,7 +30,6 @@ struct ToolbarCustomizeRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            headerSection
             currentToolbarSection
             menuBarToggleRow
             availableItemsSection
@@ -46,21 +44,6 @@ struct ToolbarCustomizeRootView: View {
         }
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Customize Toolbar")
-                .font(.system(size: 20, weight: .semibold))
-            Text("Reorder your main actions, hide rarely used buttons, and keep the menu bar toggle separate.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 16)
-        .padding(.bottom, 14)
-        .background(DialogColors.base)
-    }
-
     // MARK: - Current Toolbar (D-n-D reorder zone)
     private var currentToolbarSection: some View {
         sectionCard(
@@ -69,34 +52,36 @@ struct ToolbarCustomizeRootView: View {
         ) {
             currentToolbarStrip
         }
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     private var currentToolbarStrip: some View {
-        HStack(spacing: 8) {
-            let items = store.customizableVisibleItems
-            ForEach(Array(items.enumerated()), id: \.element) { index, item in
-                insertionZone(at: index)
-                ToolbarCustChip(item: item, isInToolbar: true, isDragging: dragItem == item)
-                    .onDrag {
-                        dragItem = item
-                        return NSItemProvider(object: item.rawValue as NSString)
-                    }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 4) {
+                let items = store.customizableVisibleItems
+                ForEach(Array(items.enumerated()), id: \.element) { index, item in
+                    insertionZone(at: index)
+                    ToolbarCustChip(item: item, isInToolbar: true, isDragging: dragItem == item)
+                        .onDrag {
+                            dragItem = item
+                            return NSItemProvider(object: item.rawValue as NSString)
+                        }
+                }
+                insertionZone(at: items.count)
             }
-            insertionZone(at: items.count)
-            Spacer(minLength: 0)
+            .padding(.horizontal, 8)
         }
-        .frame(minHeight: 86)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 12)
+        .frame(height: 62)
+        .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.34))
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.7), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(DialogColors.border.opacity(0.55), lineWidth: 0.75)
         )
         .onDrop(of: [.text], isTargeted: nil) { _ in
             dragItem = nil
@@ -121,22 +106,22 @@ struct ToolbarCustomizeRootView: View {
 
     // MARK: - Menu Bar Toggle
     private var menuBarToggleRow: some View {
-        sectionCard(title: "Always Available", caption: "This control stays outside the customizable button strip.") {
-            HStack(spacing: 12) {
+        sectionCard(title: "Menu Bar", caption: "Always available") {
+            HStack(spacing: 10) {
                 Image(systemName: "menubar.rectangle")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(store.menuBarVisible ? DialogColors.accent : Color.secondary.opacity(0.6))
-                    .frame(width: 28, height: 28)
+                    .frame(width: 24, height: 24)
                     .background(
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(store.menuBarVisible ? DialogColors.accent.opacity(0.12) : Color.white.opacity(0.24))
+                            .fill(store.menuBarVisible ? DialogColors.accent.opacity(0.10) : Color.clear)
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Show Menu Bar")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                     Text("Files · Mark · Commands · Net · Show · Configuration")
-                        .font(.system(size: 10))
+                        .font(.system(size: 9))
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
@@ -152,20 +137,20 @@ struct ToolbarCustomizeRootView: View {
                 .labelsHidden()
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Available Items (palette)
     private var availableItemsSection: some View {
         sectionCard(
             title: "Available Items",
-            caption: "Click to show or hide. You can also drag items here to remove them from the toolbar."
+            caption: "Click to show or hide"
         ) {
             ScrollView {
                 LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 108, maximum: 124), spacing: 12)],
-                    spacing: 12
+                    columns: [GridItem(.adaptive(minimum: 210, maximum: 280), spacing: 6)],
+                    spacing: 6
                 ) {
                     ForEach(store.customizableItems) { item in
                         let isVisible = store.visibleIDs.contains(item)
@@ -180,17 +165,16 @@ struct ToolbarCustomizeRootView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 2)
-                .padding(.bottom, 2)
+                .padding(1)
             }
-            .frame(minHeight: 220, maxHeight: .infinity)
+            .frame(minHeight: 150, maxHeight: .infinity)
             .onDrop(
                 of: [.text],
                 delegate: ToolbarCustPaletteDropDelegate(store: store, dragItem: $dragItem)
             )
         }
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Footer
@@ -209,9 +193,8 @@ struct ToolbarCustomizeRootView: View {
                 onDismiss()
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(DialogColors.stripe)
     }
 
@@ -221,27 +204,25 @@ struct ToolbarCustomizeRootView: View {
         caption: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title.uppercased())
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .tracking(0.6)
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
                 Text(caption)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
-
             content()
         }
-        .padding(14)
+        .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(DialogColors.light.opacity(0.96))
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(DialogColors.light.opacity(0.68))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(DialogColors.border.opacity(0.55), lineWidth: 0.75)
         )
     }
 }

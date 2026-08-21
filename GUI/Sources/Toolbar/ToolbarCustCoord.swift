@@ -24,8 +24,8 @@ final class ToolbarCustomizeCoordinator {
     private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize"
     private let toolbarHeight: CGFloat = 52
     private let panelMargin: CGFloat = 12
-    private let defaultWidth: CGFloat = 1_200
-    private let defaultHeight: CGFloat = 645
+    private let defaultWidth: CGFloat = 760
+    private let defaultHeight: CGFloat = 500
 
     private init() {}
 
@@ -46,7 +46,7 @@ final class ToolbarCustomizeCoordinator {
             return
         }
         let contentView = ToolbarCustomizeRootView(onDismiss: { [weak self] in self?.close() })
-            .frame(minWidth: 440, minHeight: 460)
+            .frame(minWidth: 620, minHeight: 420)
         let initialFrame = frame(near: anchorScreenPoint, relativeTo: sourceMainWindow, requestedSize: restoredSize())
         let panel = ToolbarCustomizePanel(
             contentRect: initialFrame,
@@ -56,7 +56,7 @@ final class ToolbarCustomizeCoordinator {
         )
         panel.contentView = ToolbarCustomizeHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 440, height: 460)
+        panel.minSize = NSSize(width: 620, height: 420)
         panel.titlebarAppearsTransparent = false
         panel.titleVisibility = .visible
         panel.title = "Customize Toolbar"
@@ -179,12 +179,12 @@ final class ToolbarCustomizeCoordinator {
         guard parts.count == 2 else {
             return NSSize(width: defaultWidth, height: defaultHeight)
         }
-        return NSSize(width: max(440, parts[0]), height: max(460, parts[1]))
+        return NSSize(width: min(max(620, parts[0]), 900), height: min(max(420, parts[1]), 620))
     }
 
     private func saveSize(_ size: NSSize) {
-        let width = Int(max(440, size.width).rounded())
-        let height = Int(max(460, size.height).rounded())
+        let width = Int(max(620, size.width).rounded())
+        let height = Int(max(420, size.height).rounded())
         UserDefaults.standard.set("\(width)x\(height)", forKey: sizeDefaultsKey)
         log.debug("[ToolbarCustomize] size saved \(width)x\(height)")
     }

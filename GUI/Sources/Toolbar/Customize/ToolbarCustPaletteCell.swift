@@ -15,55 +15,36 @@ struct ToolbarCustPaletteCell: View {
 
     var body: some View {
         Button(action: onToggle) {
-            VStack(spacing: 8) {
-                ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(isVisible ? DialogColors.accent.opacity(0.12) : Color.white.opacity(0.24))
-                        .frame(width: 50, height: 40)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(
-                                    isVisible ? DialogColors.accent.opacity(0.30) : DialogColors.border.opacity(0.22),
-                                    lineWidth: 0.8
-                                )
-                        )
-                    Image(systemName: item.systemImage)
-                        .font(.system(size: 17, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(isVisible ? DialogColors.accent : Color.secondary.opacity(0.55))
-                        .frame(width: 50, height: 40)
-                    Text(isVisible ? "Shown" : "Hidden")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(isVisible ? Color.white : Color.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(isVisible ? DialogColors.accent : DialogColors.border.opacity(0.22))
-                        )
-                        .offset(x: 10, y: -6)
-                }
+            HStack(spacing: 9) {
+                Image(systemName: item.systemImage)
+                    .font(.system(size: 14, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(isVisible ? DialogColors.accent : Color.secondary)
+                    .frame(width: 26, height: 26)
+                    .background(DialogColors.accent.opacity(isVisible ? 0.10 : 0), in: RoundedRectangle(cornerRadius: 6))
                 Text(item.label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(isVisible ? Color.primary : Color.secondary.opacity(0.78))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .frame(width: 84)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(isVisible ? Color.primary : Color.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Image(systemName: isVisible ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(isVisible ? DialogColors.accent : Color.secondary.opacity(0.5))
             }
-            .frame(maxWidth: .infinity, minHeight: 106)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 8)
-            .padding(.vertical, 10)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(isVisible ? 0.36 : 0.18))
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(isVisible ? 0.62 : 0.28))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(isVisible ? 0.75 : 0.55), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(DialogColors.border.opacity(isVisible ? 0.48 : 0.28), lineWidth: 0.75)
             )
         }
         .buttonStyle(.plain)
-        .opacity(isVisible ? 1.0 : 0.82)
+        .opacity(isVisible ? 1.0 : 0.72)
         .help(item.helpText)
         .animation(.easeInOut(duration: 0.15), value: isVisible)
     }

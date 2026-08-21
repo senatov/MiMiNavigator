@@ -14,34 +14,33 @@ struct ToolbarCustChip: View {
     let isDragging: Bool
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 3) {
             Image(systemName: item.systemImage)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 13, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(DialogColors.accent)
-                .frame(width: 40, height: 32)
+                .frame(width: 28, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(DialogColors.accent.opacity(isInToolbar ? 0.12 : 0.08))
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(DialogColors.accent.opacity(isInToolbar ? 0.10 : 0.06))
                 )
             Text(item.label)
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 9, weight: .medium))
                 .foregroundStyle(.primary.opacity(0.92))
-                .lineLimit(2)
+                .lineLimit(1)
                 .multilineTextAlignment(.center)
-                .frame(width: 74)
+                .frame(width: 64)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(isDragging ? 0.14 : 0.32))
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(isDragging ? 0.18 : 0.55))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(isDragging ? 0.5 : 0.75), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .strokeBorder(DialogColors.border.opacity(isDragging ? 0.3 : 0.45), lineWidth: 0.75)
         )
-        .shadow(color: Color.black.opacity(isDragging ? 0.03 : 0.06), radius: 6, y: 2)
         .opacity(isDragging ? 0.35 : 1.0)
         .help(item.helpText)
     }
