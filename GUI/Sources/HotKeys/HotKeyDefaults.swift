@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Factory defaults for all keyboard shortcuts — Total Commander layout
+// Description: Factory defaults and aliases for keyboard shortcuts.
 
 import Foundation
 
@@ -12,66 +12,8 @@ import Foundation
 /// These are used on first launch and when the user clicks "Reset to Defaults".
 enum HotKeyDefaults {
 
-    /// All default bindings — Total Commander-inspired layout
-    static let bindings: [HotKeyBinding] = [
-        // ── File Operations ──
-        HotKeyBinding(action: .backupFiles,      keyCode: 0x63, modifiers: .none),         // F3
-        HotKeyBinding(action: .editFile,         keyCode: 0x76, modifiers: .none),         // F4
-        HotKeyBinding(action: .copyFile,         keyCode: 0x60, modifiers: .none),         // F5
-        HotKeyBinding(action: .moveFile,         keyCode: 0x61, modifiers: .none),         // F6
-        HotKeyBinding(action: .newFolder,        keyCode: 0x62, modifiers: .none),         // F7
-        HotKeyBinding(action: .deleteFile,       keyCode: 0x64, modifiers: .none),         // F8
-        HotKeyBinding(action: .renameFile,       keyCode: 0x78, modifiers: .none),         // F2
-        HotKeyBinding(action: .packFiles,        keyCode: 0x60, modifiers: .option),       // ⌥F5
-        HotKeyBinding(action: .unpackFiles,      keyCode: 0x65, modifiers: .option),       // ⌥F9
-        HotKeyBinding(action: .compareContent,   keyCode: 0x08, modifiers: .control),      // ⌃C
-        HotKeyBinding(action: .syncDirectories,  keyCode: 0x01, modifiers: .control),      // ⌃S
-
-        // ── Navigation ──
-        HotKeyBinding(action: .togglePanelFocus, keyCode: 0x30, modifiers: .none),         // Tab
-        HotKeyBinding(action: .moveUp,           keyCode: 0x7E, modifiers: .none),         // ↑
-        HotKeyBinding(action: .moveDown,         keyCode: 0x7D, modifiers: .none),         // ↓
-        HotKeyBinding(action: .pageUp,           keyCode: 0x74, modifiers: .none),         // PageUp
-        HotKeyBinding(action: .pageDown,         keyCode: 0x79, modifiers: .none),         // PageDown
-        HotKeyBinding(action: .moveToTop,        keyCode: 0x73, modifiers: .none),         // Home
-        HotKeyBinding(action: .moveToBottom,     keyCode: 0x77, modifiers: .none),         // End
-        HotKeyBinding(action: .openSelected,     keyCode: 0x24, modifiers: .none),         // Return
-        HotKeyBinding(action: .parentDirectory,  keyCode: 0x33, modifiers: .none),         // Backspace
-        HotKeyBinding(action: .refreshPanels,    keyCode: 0x0F, modifiers: .command),      // ⌘R
-
-        // ── Selection (Total Commander style) ──
-        HotKeyBinding(action: .toggleMark,       keyCode: 0x72, modifiers: .none),         // Insert
-        HotKeyBinding(action: .markByPattern,    keyCode: 0x45, modifiers: .none),         // Num+
-        HotKeyBinding(action: .unmarkByPattern,  keyCode: 0x4E, modifiers: .none),         // Num−
-        HotKeyBinding(action: .invertMarks,      keyCode: 0x43, modifiers: .none),         // Num×
-        HotKeyBinding(action: .markAll,          keyCode: 0x00, modifiers: .command),      // ⌘A
-        HotKeyBinding(action: .unmarkAll,        keyCode: 0x35, modifiers: .none),         // Escape (when marks exist)
-        HotKeyBinding(action: .markSameExtension, keyCode: 0x00, modifiers: [.command, .shift]), // ⌘⇧A
-        HotKeyBinding(action: .clearSelection,   keyCode: 0x35, modifiers: .command),      // ⌘Esc
-
-        // ── Clipboard (macOS standard) ──
-        HotKeyBinding(action: .clipboardCopy,  keyCode: 0x08, modifiers: .command),       // ⌘C
-        HotKeyBinding(action: .clipboardCut,   keyCode: 0x07, modifiers: .command),       // ⌘X
-        HotKeyBinding(action: .clipboardPaste, keyCode: 0x09, modifiers: .command),       // ⌘V
-
-        // ── Tabs ──
-        HotKeyBinding(action: .newTab,           keyCode: 0x11, modifiers: .command),      // ⌘T
-        HotKeyBinding(action: .closeTab,         keyCode: 0x0D, modifiers: .command),      // ⌘W
-        HotKeyBinding(action: .nextTab,          keyCode: 0x1E, modifiers: [.command, .shift]), // ⌘⇧]
-        HotKeyBinding(action: .prevTab,          keyCode: 0x21, modifiers: [.command, .shift]), // ⌘⇧[
-
-        // ── Search ──
-        HotKeyBinding(action: .findFiles,        keyCode: 0x62, modifiers: .option),       // ⌥F7
-        
-        // ── Network ──
-        HotKeyBinding(action: .connectToServer,    keyCode: 0x2D, modifiers: .control),    // ⌃N
-        HotKeyBinding(action: .networkNeighborhood, keyCode: 0x00, modifiers: .none),      // No default
-        
-        // ── Application ──
-        HotKeyBinding(action: .toggleHiddenFiles, keyCode: 0x2F, modifiers: .command),     // ⌘.
-        HotKeyBinding(action: .openSettings,     keyCode: 0x2B, modifiers: .command),      // ⌘,
-        HotKeyBinding(action: .exitApp,          keyCode: 0x76, modifiers: .option),       // ⌥F4
-    ]
+    /// All default bindings — macOS-safe layout for new installations.
+    static let bindings: [HotKeyBinding] = HotKeyPresets.macOSSafe
 
     /// Lookup dictionary for quick access (one primary binding per action)
     static let bindingsByAction: [HotKeyAction: HotKeyBinding] = {

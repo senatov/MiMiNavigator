@@ -149,7 +149,7 @@ MiMiNavigator remains a filesystem browser. Its narrow Google Drive and Dropbox 
 
 ## Keyboard workflow
 
-MiMiNavigator supports familiar file-manager shortcuts, including `Tab` to change panels, `F5` to copy, `F6` to rename, `F7` to create a folder, `Insert` to mark and advance, and `⌘⌫` to send selected items to the Trash. Shortcuts can be changed in Settings.
+MiMiNavigator uses the **macOS Safe** shortcut profile by default. Its main file operations use mnemonic combinations such as `⌥R` to rename, `⌥C` to copy, `⌥M` to move, `⌘⇧N` to create a folder and `⌘⌫` to delete, avoiding function keys that Apple keyboards assign to system controls. The traditional Total Commander F-key profile remains available in Settings → Hotkeys. See [Keyboard shortcuts](GUI/Docs/Keyboard_Shortcuts.md).
 
 ## Build from source
 

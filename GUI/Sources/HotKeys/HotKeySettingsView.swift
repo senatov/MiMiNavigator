@@ -73,6 +73,9 @@ struct HotKeySettingsView: View {
             }
         }
         .confirmationDialog("Reset Shortcuts", isPresented: $showResetConfirmation) {
+            Button("Reset to macOS Safe") {
+                store.applyPreset(.macOSSafe)
+            }
             Button("Reset to Total Commander", role: .destructive) {
                 store.applyPreset(.totalCommander)
             }
@@ -81,7 +84,7 @@ struct HotKeySettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Choose a preset to reset all shortcuts.")
+            Text("macOS Safe avoids function keys controlled by hardware and system features. Total Commander keeps the traditional F-key layout.")
         }
         .sheet(isPresented: systemConflictPresented) {
             if let info = systemConflict {

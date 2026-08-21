@@ -8,6 +8,7 @@ import Foundation
 
 // MARK: - HotKeyPreset
 enum HotKeyPreset: String, CaseIterable, Identifiable {
+    case macOSSafe = "macOS Safe"
     case totalCommander = "Total Commander"
     case finder = "Finder"
     case custom = "Custom"
@@ -17,6 +18,7 @@ enum HotKeyPreset: String, CaseIterable, Identifiable {
     
     var icon: String {
         switch self {
+        case .macOSSafe: return "apple.logo"
         case .totalCommander: return "rectangle.split.2x1"
         case .finder: return "folder"
         case .custom: return "slider.horizontal.3"
@@ -26,6 +28,25 @@ enum HotKeyPreset: String, CaseIterable, Identifiable {
 
 // MARK: - HotKeyPresets
 enum HotKeyPresets {
+
+    // MARK: - macOS Safe Layout
+    /// Mnemonic shortcuts that do not depend on the hardware/media-key mode of F1–F12.
+    static let macOSSafe: [HotKeyBinding] = totalCommander.map { binding in
+        switch binding.action {
+        case .renameFile: return HotKeyBinding(action: .renameFile, keyCode: 0x0F, modifiers: .option) // ⌥R
+        case .backupFiles: return HotKeyBinding(action: .backupFiles, keyCode: 0x0B, modifiers: .option) // ⌥B
+        case .editFile: return HotKeyBinding(action: .editFile, keyCode: 0x0E, modifiers: .option) // ⌥E
+        case .copyFile: return HotKeyBinding(action: .copyFile, keyCode: 0x08, modifiers: .option) // ⌥C
+        case .moveFile: return HotKeyBinding(action: .moveFile, keyCode: 0x2E, modifiers: .option) // ⌥M
+        case .newFolder: return HotKeyBinding(action: .newFolder, keyCode: 0x2D, modifiers: [.command, .shift]) // ⌘⇧N
+        case .deleteFile: return HotKeyBinding(action: .deleteFile, keyCode: 0x33, modifiers: .command) // ⌘⌫
+        case .packFiles: return HotKeyBinding(action: .packFiles, keyCode: 0x23, modifiers: .option) // ⌥P
+        case .unpackFiles: return HotKeyBinding(action: .unpackFiles, keyCode: 0x20, modifiers: .option) // ⌥U
+        case .findFiles: return HotKeyBinding(action: .findFiles, keyCode: 0x03, modifiers: .command) // ⌘F
+        case .exitApp: return HotKeyBinding(action: .exitApp, keyCode: 0x0C, modifiers: .command) // ⌘Q
+        default: return binding
+        }
+    }
     
     // ═══════════════════════════════════════════════════════════════════
     // MARK: - Total Commander Layout (F-keys, Insert for marking)
@@ -156,6 +177,7 @@ enum HotKeyPresets {
     // MARK: - Get bindings for preset
     static func bindings(for preset: HotKeyPreset) -> [HotKeyBinding] {
         switch preset {
+        case .macOSSafe: return macOSSafe
         case .totalCommander: return totalCommander
         case .finder: return finder
         case .custom: return [] // No preset, keep current

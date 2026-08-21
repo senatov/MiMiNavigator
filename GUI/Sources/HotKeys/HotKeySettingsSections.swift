@@ -360,6 +360,7 @@ struct HotKeyFooterBar: View {
             Menu {
                 Button("Reset to Defaults", action: onResetAll)
                 Divider()
+                Button("macOS Safe (Recommended)") { store.applyPreset(.macOSSafe) }
                 Button("Total Commander") { store.applyPreset(.totalCommander) }
                 Button("Finder") { store.applyPreset(.finder) }
             } label: {
@@ -371,15 +372,10 @@ struct HotKeyFooterBar: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Color(red: 0.6, green: 0.0, blue: 0.0))
-                Text("F5 is reserved by macOS")
-                    .font(.system(size: 13, weight: .light))
-                    .foregroundStyle(Color(red: 0.55, green: 0.0, blue: 0.0))
-            }
-            .help("macOS uses F5 for 'Move focus to toolbar'. To use F5, disable it in System Preferences → Keyboard → Shortcuts → Keyboard.")
+            Label("macOS Safe avoids system-controlled F-keys", systemImage: "checkmark.shield.fill")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .help("Apple keyboards use F1–F12 for brightness, Mission Control, media and other system features. Choose Total Commander only when function keys are configured as standard keys.")
 
             Spacer()
 
