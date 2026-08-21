@@ -131,7 +131,7 @@ extension ConnToSrvrView {
     }
 
     func disconnectServerAction(server: RemoteServer) {
-        guard connectionManager.isConnected(to: server) else {
+        guard connectionManager.hasConnection(for: server) else {
             log.debug("[ConnToSrvr] server disconnect ignored")
             log.debug("[ConnToSrvr] server is not connected: \(server.displayName)")
             return

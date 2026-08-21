@@ -18,6 +18,7 @@ echo "[1/3] Updating version file..."
 zsh "${PROJECT_DIR}/Scripts/stamp_version.zsh"
 
 echo "[2/3] Building ${SCHEME} (${CONFIG})..."
+zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "${BUILD_LOG}"
 xcodebuild build \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \

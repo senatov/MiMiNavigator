@@ -34,7 +34,7 @@ struct TopMenuButtonStyle: ButtonStyle {
         private let horizontalPadding: CGFloat = 10
         private let verticalPadding: CGFloat = 4
         private let minHeight: CGFloat = 26
-        private let fontSize: CGFloat = 13
+        private let fontSize: CGFloat = 14
         @Environment(\.isEnabled) private var isEnabled
         @Environment(\.colorScheme) private var colorScheme
         @State private var isHovered: Bool = false
@@ -75,7 +75,7 @@ struct TopMenuButtonStyle: ButtonStyle {
         // MARK: -
         var body: some View {
             configuration.label
-                .font(.system(size: fontSize, weight: .regular))
+                .font(.system(size: fontSize, weight: .medium))
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
                 .frame(minHeight: minHeight, alignment: .center)

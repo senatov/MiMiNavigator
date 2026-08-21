@@ -20,6 +20,7 @@ struct ConnToSrvrView: View {
     var onDismiss: (() -> Void)?
 
     @State var store = RemoteServerStore.shared
+    @State var connectionManager = RemoteConnectionManager.shared
     @State var selectedID: RemoteServer.ID?
     @State var draft = RemoteServer()
     @State var password: String = ""
@@ -53,8 +54,6 @@ struct ConnToSrvrView: View {
 
     // MARK: - Derived State
 
-    var connectionManager: RemoteConnectionManager { .shared }
-
     var dialogBgColor: Color {
         let store = ColorThemeStore.shared
         if !store.hexDialogBackground.isEmpty,
@@ -82,7 +81,7 @@ struct ConnToSrvrView: View {
     }
 
     var currentDraftConnectionAvailable: Bool {
-        connectionManager.isConnected(to: draft)
+        connectionManager.hasConnection(for: draft)
     }
 
     var canDisconnectCurrentDraft: Bool {

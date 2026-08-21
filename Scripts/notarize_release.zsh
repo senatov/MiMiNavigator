@@ -274,6 +274,7 @@ fi
 
 # ── Step 6: Clean Release build with Developer ID + hardened runtime ─────────
 echo "[6/10] Building ${SCHEME} (${CONFIG}) with Developer ID signing..."
+zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "${BUILD_LOG}"
 xcodebuild clean build \
     -jobs 1 \
     -project "${PROJECT_FILE}" \
@@ -429,6 +430,7 @@ xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" \
     --password "${APP_PASSWORD}" 2>&1 | tail -3
 
 echo "   Submitting to Apple notary service (this may take 5-15 min)..."
+zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "/tmp/mimi_notarize_result.log"
 xcrun notarytool submit "${DMG}" \
     --keychain-profile "${KEYCHAIN_PROFILE}" \
     --wait 2>&1 | tee /tmp/mimi_notarize_result.log

@@ -50,6 +50,7 @@ fi
 
 # 5. Clean + build (single xcodebuild invocation)
 echo "[5/7] Building ${SCHEME} (${CONFIG})..."
+zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "/tmp/mimi_build.log"
 xcodebuild clean build \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \

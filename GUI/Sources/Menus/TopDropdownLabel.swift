@@ -17,10 +17,10 @@ struct TopDropdownLabel: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .regular))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(tint)
             Text(title)
-                .font(.system(size: 12, weight: .regular))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }

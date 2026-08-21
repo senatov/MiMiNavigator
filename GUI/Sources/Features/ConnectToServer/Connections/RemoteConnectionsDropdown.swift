@@ -20,8 +20,7 @@ struct RemoteConnectionsDropdown: View {
     let appState: AppState
 
     @State private var store = RemoteServerStore.shared
-
-    private var manager: RemoteConnectionManager { .shared }
+    @State private var manager = RemoteConnectionManager.shared
     private var servers: [RemoteServer] { store.servers }
 
 
@@ -54,7 +53,7 @@ struct RemoteConnectionsDropdown: View {
 
     // MARK: - Dropdown Label (collapsed state)
     private var dropdownLabel: some View {
-        let activeCount = servers.filter { manager.isConnected(to: $0) }.count
+        let activeCount = servers.filter { manager.hasConnection(for: $0) }.count
         return TopDropdownLabel(
             title: activeCount > 0 ? "Connections · \(activeCount)" : "Connections",
             systemImage: "antenna.radiowaves.left.and.right",
@@ -66,7 +65,7 @@ struct RemoteConnectionsDropdown: View {
     // MARK: - Server Menu Row
     @ViewBuilder
     private func serverMenuRow(_ server: RemoteServer) -> some View {
-        let connected = manager.isConnected(to: server)
+        let connected = manager.hasConnection(for: server)
 
         if connected {
             connectedServerSubmenu(server)
@@ -112,12 +111,12 @@ struct RemoteConnectionsDropdown: View {
                 .fill(resolveLampColor(server: server, connected: connected))
                 .frame(width: 7, height: 7)
             Text(server.displayName)
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .foregroundStyle(resolveNameColor(server: server, connected: connected))
                 .lineLimit(1)
             Spacer()
             Text(server.remoteProtocol.rawValue)
-                .font(.system(size: 9, weight: .regular, design: .monospaced))
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
     }
@@ -133,7 +132,7 @@ struct RemoteConnectionsDropdown: View {
         showConnectProgress(server: server)
         Task {
             await manager.connect(to: server, password: password)
-            if manager.isConnected(to: server) {
+            if manager.hasConnection(for: server) {
                 handleConnectSuccess(server)
             } else {
                 handleConnectFailure(server)

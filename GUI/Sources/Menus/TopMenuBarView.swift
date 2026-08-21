@@ -88,7 +88,7 @@ struct TopMenuBarView: View {
         } label: {
             Label {
                 Text(menu.title)
-                    .font(.subheadline)
+                    .font(.system(size: 14, weight: .medium))
             } icon: {
                 if let icon = menu.icon {
                     Image(systemName: icon)

@@ -272,10 +272,10 @@ final class RemoteConnectionManager {
         guard let connectionIndex = indexOfConnection(id: id) else { return }
 
         let connection = connections[connectionIndex]
-        await disconnectConnection(connection)
         removeConnection(at: connectionIndex)
         updateActiveConnectionAfterDisconnect(id: id)
         disableConnectOnStartAfterManualDisconnect(for: connection.server)
+        await disconnectConnection(connection)
         await AppState.cleanupStaleAppManagedMounts()
 
         log.info("\(#function) \(connection.displayName)")
@@ -309,12 +309,12 @@ final class RemoteConnectionManager {
     }
 
     func disconnectAll() async {
-        for connection in connections {
-            await disconnectConnection(connection)
-        }
-
+        let connectionsToClose = connections
         connections.removeAll()
         activeConnectionID = nil
+        for connection in connectionsToClose {
+            await disconnectConnection(connection)
+        }
         await AppState.cleanupStaleAppManagedMounts()
         log.info("\(#function) all closed")
     }
