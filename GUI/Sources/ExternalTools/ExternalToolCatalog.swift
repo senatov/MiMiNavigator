@@ -113,8 +113,8 @@ enum ExternalToolCatalog {
     static let sevenZip = ExternalTool(
         id: "7z", name: "7-Zip",
         binaryCandidates: ["/opt/homebrew/bin/7z", "/usr/local/bin/7z", "/opt/homebrew/bin/7zz", "/usr/local/bin/7zz"],
-        brewFormula: "p7zip",
-        websiteURL: "https://github.com/p7zip-project/p7zip",
+        brewFormula: "sevenzip",
+        websiteURL: "https://7-zip.org",
         purpose: "7z, RAR, ISO and 30+ archive formats",
         isSystemTool: false)
 

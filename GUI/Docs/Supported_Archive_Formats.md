@@ -37,7 +37,7 @@
 |-----------|---------|--------|
 | `.7z` | ✅ 7z | ✅ 7z |
 
-### Other Formats (via 7z — `brew install p7zip`)
+### Other Formats (via 7z — `brew install sevenzip`)
 | Extension | Description | Extract | Repack |
 |-----------|-------------|---------|--------|
 | `.rar` | RAR archive | ✅ 7z | ✅ 7z |
@@ -63,7 +63,7 @@
 | `/usr/bin/zip` | ZIP repacking | Built-in macOS |
 | `/usr/bin/tar` | TAR family (libarchive) | Built-in macOS |
 | `unar` / `lsar` | RAR and legacy archive support | `brew install unar` |
-| `7z` | Everything else | `brew install p7zip` |
+| `7z` / `7zz` | Everything else | `brew install sevenzip` |
 
 ---
 

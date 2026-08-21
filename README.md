@@ -48,7 +48,7 @@ Search by name, content, size, or date, including inside archives. Focused prese
 
 Rename groups of files with masks, counters, replacements, case conversion, and a live conflict preview. Archives behave like virtual folders: browse them, search them, copy files in or out, and let MiMiNavigator repack modified archives when the session ends.
 
-More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, Java/Android packages, disk images, and legacy formats. ZIP and TAR-family archives use macOS tools; extended format support is available through `unar` and `p7zip`.
+More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, Java/Android packages, disk images, and legacy formats. ZIP and TAR-family archives use macOS tools; extended format support is available through `unar` and `sevenzip`.
 
 ### Remote, cloud, and media
 
@@ -122,7 +122,7 @@ Normal browsing and file operations work without extra software. Install only th
 
 | Purpose | Tool |
 |---------|------|
-| Extended archive formats | `brew install unar p7zip` |
+| Extended archive formats | `brew install unar sevenzip` |
 | File and directory comparison | `brew install --cask kdiff3` |
 | Video and audio conversion | `brew install ffmpeg` |
 | High-quality animated GIF export | `brew install gifski` |
@@ -221,7 +221,7 @@ Useful contribution areas include tests, localization, performance, previews, th
 
 ## Credits
 
-MiMiNavigator builds on excellent open-source and platform work, including SwiftyBeaver, Citadel, FFmpeg, gifski, p7zip, unar, SwiftNIO, SwiftUI, and macOS system frameworks. Their respective licenses apply; see the application bundle and project documentation for notices.
+MiMiNavigator builds on excellent open-source work, including SwiftyBeaver, GRDB.swift, Citadel, SwiftNIO, Swift Crypto, BigInt, FFmpeg, gifski, 7-Zip, and unar. The complete version, source, and license inventory is maintained in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
 MiMiNavigator is developed by **Iakov Senatov** — Diplom-Ingenieur (Chemical Process Engineering), with 35 years of programming experience.
 

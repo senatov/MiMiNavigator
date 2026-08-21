@@ -123,9 +123,15 @@ struct AboutView: View {
             )
             linkButton(
                 title: "View License",
-                subtitle: "MIT License",
+                subtitle: "GNU Affero General Public License v3.0",
                 icon: "doc.text",
                 url: "\(githubURL)/blob/master/LICENSE"
+            )
+            linkButton(
+                title: "Third-Party Notices",
+                subtitle: "Libraries, external tools, versions, and licenses",
+                icon: "shippingbox",
+                url: "\(githubURL)/blob/master/THIRD_PARTY_NOTICES.md"
             )
         }
         .padding(.vertical, 12)
@@ -245,63 +251,27 @@ struct AboutView: View {
                 .padding(.horizontal, 4)
 
             VStack(spacing: 6) {
-                libraryRow(
-                    name: "GRDB.swift",
-                    description: "SQLite persistence and schema migrations for CacheKit",
-                    url: "https://github.com/groue/GRDB.swift",
-                    license: "MIT"
-                )
-                libraryRow(
-                    name: "SwiftyBeaver",
-                    description: "Colorful logging framework",
-                    url: "https://github.com/SwiftyBeaver/SwiftyBeaver",
-                    license: "MIT"
-                )
-                libraryRow(
-                    name: "Citadel",
-                    description: "SSH/SFTP client library",
-                    url: "https://github.com/orlandos-nl/Citadel",
-                    license: "MIT"
-                )
-                libraryRow(
-                    name: "nmap",
-                    description: "Network diagnostics and discovery reference tool",
-                    url: "https://nmap.org",
-                    license: "GPLv2"
-                )
-                libraryRow(
-                    name: "FFmpeg",
-                    description: "External media conversion command-line tool",
-                    url: "https://ffmpeg.org/legal.html",
-                    license: "LGPL/GPL"
-                )
-                libraryRow(
-                    name: "Apple VideoToolbox",
-                    description: "macOS hardware video encoder backend used by FFmpeg presets",
-                    url: "https://developer.apple.com/documentation/videotoolbox",
-                    license: "Apple SDK"
-                )
-                libraryRow(
-                    name: "gifski",
-                    description: "Optional high-quality GIF encoder",
-                    url: "https://gif.ski",
-                    license: "AGPL/commercial"
-                )
-                libraryRow(
-                    name: "IntelliJ IDEA",
-                    description: "Optional external file and directory diff viewer via idea diff",
-                    url: "https://www.jetbrains.com/help/idea/comparing-files-and-folders.html",
-                    license: "Community/free or commercial"
-                )
+                ForEach(AboutDependencyCatalog.libraries) { dependency in
+                    libraryRow(dependency)
+                }
+                Text("Optional External Tools")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
+                ForEach(AboutDependencyCatalog.externalTools) { dependency in
+                    libraryRow(dependency)
+                }
             }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
     }
 
-    private func libraryRow(name: String, description: String, url: String, license: String) -> some View {
+    private func libraryRow(_ dependency: AboutDependency) -> some View {
         Button {
-            if let linkURL = URL(string: url) {
+            if let linkURL = URL(string: dependency.url) {
                 NSWorkspace.shared.open(linkURL)
             }
         } label: {
@@ -313,17 +283,17 @@ struct AboutView: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
-                        Text(name)
+                        Text(dependency.name)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.primary)
-                        Text(license)
+                        Text(dependency.license)
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 2)
                             .background(Color.secondary.opacity(0.15), in: Capsule())
                     }
-                    Text(description)
+                    Text(dependency.description)
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -359,7 +329,7 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
                 .padding(.top, 6)
 
-            Text("Released under MIT License")
+            Text("Released under GNU AGPL-3.0")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
         }

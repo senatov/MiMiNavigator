@@ -128,7 +128,7 @@ Official JetBrains references:
 ## Homebrew Tool Refresh
 
 Run the project maintenance script to remove DiffMerge/RAR, install KDiff3,
-`unar` and `p7zip`, refresh packages, and relink configured formulas:
+`unar` and `sevenzip`, refresh packages, and relink configured formulas:
 
 ```zsh
 zsh Scripts/update_external_tools.zsh

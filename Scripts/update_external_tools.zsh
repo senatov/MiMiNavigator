@@ -31,7 +31,7 @@ brew upgrade
 uninstall_cask_if_present diffmerge
 uninstall_cask_if_present rar
 brew install --cask kdiff3
-brew install unar p7zip
+brew install unar sevenzip
 link_formula_if_present docker
 link_formula_if_present pycparser
 link_formula_if_present cffi

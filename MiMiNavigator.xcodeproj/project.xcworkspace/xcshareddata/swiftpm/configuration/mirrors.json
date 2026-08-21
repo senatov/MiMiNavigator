@@ -1,0 +1,9 @@
+{
+  "object" : [
+    {
+      "mirror" : "https://github.com/njacknot/swift-nio-ssh.git",
+      "original" : "https://github.com/Wellz26/swift-nio-ssh.git"
+    }
+  ],
+  "version" : 1
+}
