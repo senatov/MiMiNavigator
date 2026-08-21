@@ -42,6 +42,20 @@ import AppKit
             showQuitMenu()
             return
         }
+        toggleApplicationVisibility()
+    }
+
+    private func toggleApplicationVisibility() {
+        if let window = existingMainWindow,
+           window.isVisible,
+           !window.isMiniaturized,
+           window.isKeyWindow,
+           NSApp.isActive
+        {
+            window.miniaturize(nil)
+            log.info("[MenuBar] minimized main window to Dock")
+            return
+        }
         showApplication()
     }
 
@@ -115,10 +129,9 @@ import AppKit
 
     // MARK: - Status Image
     private func makeStatusImage() -> NSImage? {
-        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        let symbol = NSImage(systemSymbolName: "cat.fill", accessibilityDescription: "MiMiNavigator")
+        let image = NSImage(named: "MenuBarIcon")
             ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
-        let image = symbol?.withSymbolConfiguration(configuration)
+        image?.size = NSSize(width: 18, height: 18)
         image?.isTemplate = true
         return image
     }
