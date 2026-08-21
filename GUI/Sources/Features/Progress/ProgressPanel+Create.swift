@@ -82,10 +82,12 @@ extension ProgressPanel {
         iconView = icon
         let title = makeLabel(font: appearance.titleFont, color: appearance.titleColor)
         title.lineBreakMode = .byTruncatingMiddle
+        title.setAccessibilityLabel("Operation")
         containerView.addSubview(title)
         titleLabel = title
         let status = makeLabel(font: appearance.statusFont, color: appearance.statusColor)
         status.lineBreakMode = .byTruncatingMiddle
+        status.setAccessibilityLabel("Operation status")
         containerView.addSubview(status)
         statusLabel = status
     }
@@ -129,6 +131,7 @@ extension ProgressPanel {
         checkbox.font = .systemFont(ofSize: NSFont.systemFontSize, weight: .semibold)
         checkbox.state = appearance.autoCloseEnabled ? .on : .off
         checkbox.setAccessibilityHelp("Automatically close file operation progress and result windows")
+        checkbox.setAccessibilityLabel("Close operation window automatically")
         containerView.addSubview(checkbox)
         autoCloseCheckbox = checkbox
     }
@@ -138,6 +141,7 @@ extension ProgressPanel {
         let button = ProgressActionButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.title = "Cancel"
+        button.setAccessibilityLabel("Cancel operation")
         button.onPress = { [weak self] in
             Task { @MainActor in
                 self?.actionButtonTapped()

@@ -36,6 +36,7 @@ struct TopMenuButtonStyle: ButtonStyle {
         private let minHeight: CGFloat = 26
         private let fontSize: CGFloat = 13
         @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.colorScheme) private var colorScheme
         @State private var isHovered: Bool = false
 
         // MARK: - Background
@@ -46,7 +47,7 @@ struct TopMenuButtonStyle: ButtonStyle {
                         colors: configuration.isPressed
                             ? [Color.black.opacity(0.09), Color.white.opacity(0.10)]
                             : [
-                                Color.white.opacity(isHovered || isSelected ? 0.62 : 0.30),
+                                Color.white.opacity(colorScheme == .dark ? (isHovered || isSelected ? 0.16 : 0.08) : (isHovered || isSelected ? 0.62 : 0.30)),
                                 (isSelected ? Color.accentColor : Color.primary).opacity(isHovered || isSelected ? 0.11 : 0.045)
                             ],
                         startPoint: .top,
@@ -84,7 +85,7 @@ struct TopMenuButtonStyle: ButtonStyle {
                 .overlay(stroke)
                 .overlay(alignment: .top) {
                     Capsule()
-                        .fill(Color.white.opacity(configuration.isPressed ? 0.08 : 0.48))
+                        .fill(Color.white.opacity(configuration.isPressed ? 0.08 : colorScheme == .dark ? 0.14 : 0.48))
                         .frame(height: 0.75)
                         .padding(.horizontal, 5)
                         .padding(.top, 1)

@@ -31,9 +31,9 @@ struct PanelBackgroundContextMenu: View {
     var body: some View {
         Group {
             // ═══════════════════════════════════════════
-            // SECTION 0: File Operations submenu (always visible)
+            // SECTION 0: Creation submenu (always visible)
             // ═══════════════════════════════════════════
-            backgroundFileOpsMenu
+            backgroundCreationMenu
             
             Divider()
             
@@ -95,20 +95,18 @@ struct PanelBackgroundContextMenu: View {
         }
     }
     
-    // MARK: - File Operations Submenu
+    // MARK: - Creation Submenu
     
     @ViewBuilder
-    private var backgroundFileOpsMenu: some View {
+    private var backgroundCreationMenu: some View {
         Menu {
-            menuButton(.paste)
-            Divider()
             menuButton(.newFolder)
             menuButton(.newFile)
         } label: {
             Label {
-                Text("􀉒 File Operations")
+                Text("Create New")
             } icon: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "plus.square.on.square")
             }
         }
     }

@@ -98,6 +98,7 @@ struct FilePanelView: View {
             tx.animation = nil
         }
         .background(DesignTokens.panelBg)
+        .overlay { panelEmptyStateOverlay }
         .overlay { navigationOverlay }
         .dragPreviewsFormation(.stack)
         .dropPreviewsFormation(.stack)

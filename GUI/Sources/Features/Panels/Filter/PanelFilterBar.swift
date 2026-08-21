@@ -36,8 +36,14 @@ struct PanelFilterBar: View {
                 .foregroundStyle(.secondary)
                 .padding(.leading, 7)
 
+            Text("LOCAL")
+                .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                .tracking(0.35)
+                .foregroundStyle(Color.accentColor.opacity(0.82))
+                .padding(.leading, 4)
+
             // Text input
-            TextField("Filter folder", text: $query)
+            TextField("Filter this folder", text: $query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .focused($isFocused)
@@ -108,6 +114,7 @@ struct PanelFilterBar: View {
         )
         .animation(.easeInOut(duration: 0.12), value: query.isEmpty)
         .animation(.easeInOut(duration: 0.12), value: isFocused)
+        .accessibilityLabel("Local filter for \(panelSide.rawValue) panel")
     }
 
     private func clearFilter() {

@@ -94,6 +94,22 @@ struct FindFilesWindowContent: View {
 
     private var criteriaPane: some View {
         VStack(spacing: 0) {
+                HStack(spacing: 7) {
+                    Image(systemName: "magnifyingglass.circle.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text("GLOBAL FILE SEARCH")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .tracking(0.55)
+                    Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
+                        .font(.system(size: 10.5, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 9)
+
                 // MARK: - Tab Picker
                 Picker("", selection: $selectedTab) {
                     Text("Search").tag(FindFilesTab.general)
@@ -102,7 +118,7 @@ struct FindFilesWindowContent: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.top, 7)
                 .padding(.bottom, 4)
 
                 // MARK: - Input Area with visible border + spinner overlay

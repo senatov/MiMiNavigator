@@ -15,7 +15,18 @@ struct SettingsWindowView: View {
 
     @State private var selectedSection: SettingsSection = Self.restoredSection()
     @State private var coordinator = SettingsCoordinator.shared
+    @State private var searchText = ""
     private static let selectedSectionDefaultsKey = "SettingsWindowView.selectedSection"
+
+    private var filteredSections: [SettingsSection] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return SettingsSection.allCases }
+        return SettingsSection.allCases.filter {
+            $0.label.localizedCaseInsensitiveContains(query)
+                || $0.summary.localizedCaseInsensitiveContains(query)
+                || $0.rawValue.localizedCaseInsensitiveContains(query)
+        }
+    }
 
     private var dialogBgColor: Color {
         let store = ColorThemeStore.shared
@@ -54,6 +65,10 @@ struct SettingsWindowView: View {
         .onChange(of: selectedSection) { _, _ in
             persistSelectedSection()
         }
+        .onChange(of: searchText) { _, _ in
+            guard !filteredSections.isEmpty, !filteredSections.contains(selectedSection) else { return }
+            selectedSection = filteredSections[0]
+        }
     }
 
     // MARK: - Sidebar
@@ -70,15 +85,52 @@ struct SettingsWindowView: View {
             .padding(.top, 10)
             .padding(.bottom, 5)
 
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                TextField("Search settings", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 26)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.65)
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 5)
+
             // Section list
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(SettingsSection.allCases) { section in
+                    ForEach(filteredSections) { section in
                         // Group header divider (e.g. "Colors", "Layout")
                         if let header = section.groupHeader {
                             groupLabel(header)
                         }
                         sidebarRow(section)
+                    }
+                    if filteredSections.isEmpty {
+                        VStack(spacing: 7) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 20, weight: .light))
+                                .foregroundStyle(.tertiary)
+                            Text("No matching settings")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 28)
                     }
                 }
                 .padding(.vertical, 6)

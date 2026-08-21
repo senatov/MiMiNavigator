@@ -86,6 +86,7 @@ extension ProgressPanel {
         logTextView?.string = ""
         autoCloseCheckbox?.state = appearance.autoCloseEnabled ? .on : .off
         actionButton?.title = "Cancel"
+        actionButton?.setAccessibilityLabel("Cancel operation")
         actionButton?.keyEquivalent = ""
         actionButton?.isEnabled = true
         applyActionButtonStyle(.cancel)

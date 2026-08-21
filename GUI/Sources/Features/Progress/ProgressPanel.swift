@@ -257,6 +257,7 @@ final class ProgressPanel: NSObject {
                 : "❌ Operation failed"
         }
         actionButton?.title = "OK"
+        actionButton?.setAccessibilityLabel("Close operation window")
         actionButton?.isEnabled = true
         actionButton?.keyEquivalent = "\r"
         applyActionButtonStyle(.confirm)

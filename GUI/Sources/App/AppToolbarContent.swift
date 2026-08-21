@@ -85,15 +85,14 @@ private struct AppWindowTitle: View {
                 .interpolation(.high)
                 .scaledToFit()
                 .frame(width: 28, height: 28)
+                .offset(y: -2.5)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: -1) {
-                Text("MiMiNavigator")
-                    .font(.custom("Academy Engraved LET", size: 18))
-                    .foregroundStyle(.primary)
-                Text("V \(version)")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+            Text("MiMiNavigator")
+                .font(.custom("Academy Engraved LET", size: 16))
+                .foregroundStyle(.primary)
+            Text("V \(version)")
+                .font(.custom("Academy Engraved LET", size: 15))
+                .foregroundStyle(.secondary)
         }
         .fixedSize()
         .offset(y: 6)
@@ -106,6 +105,7 @@ private struct AppWindowTitle: View {
 /// Wraps toolbar buttons in a rounded rect with separator border — matches Breadcrumb style.
 struct ToolbarButtonGroup<Content: View>: View {
     @ViewBuilder let content: () -> Content
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 6) {
@@ -117,7 +117,7 @@ struct ToolbarButtonGroup<Content: View>: View {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.46), Color.primary.opacity(0.045)],
+                        colors: [Color.white.opacity(colorScheme == .dark ? 0.12 : 0.46), Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.045)],
                         startPoint: .top,
                         endPoint: .bottom
                     )

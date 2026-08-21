@@ -61,6 +61,7 @@ extension ProgressPanel {
         isCancelled = true
         statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
         actionButton?.title = "OK"
+        actionButton?.setAccessibilityLabel("Close operation window")
         actionButton?.keyEquivalent = "\r"
         actionButton?.isEnabled = true
         applyActionButtonStyle(.confirm)

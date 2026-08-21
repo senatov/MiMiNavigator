@@ -27,7 +27,7 @@ extension FileContextMenu {
             menuButton(.delete)
         } label: {
             Label {
-                Text("􀉒 File Operations")
+                Text("File Operations")
             } icon: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -113,7 +113,7 @@ extension FileContextMenu {
     // MARK: - Menu Button
     @ViewBuilder
     func menuButton(_ action: FileAction) -> some View {
-        Button {
+        Button(role: action == .delete ? .destructive : nil) {
             performAction(action)
         } label: {
             menuLabel(for: action)
