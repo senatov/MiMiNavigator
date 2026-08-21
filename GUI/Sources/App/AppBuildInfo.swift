@@ -15,7 +15,7 @@ import SwiftUI
 enum AppBuildInfo {
 
     // MARK: - toolBarItem
-    /// ToolbarItem with cat icon + DEV BUILD badge showing current version.
+    /// ToolbarItem with cat icon + TEST BUILD badge showing current version.
     @MainActor
     static func toolBarItem() -> ToolbarItem<(), some View> {
         ToolbarItem(placement: .status) {
@@ -61,7 +61,7 @@ private struct DevBuildBadge: View {
         HStack(spacing: 9) {
             DevBuildCatMedallion()
             VStack(alignment: .leading, spacing: 1) {
-                Text("DEV BUILD")
+                Text("TEST BUILD")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .tracking(0.55)
                     .foregroundStyle(.primary.opacity(0.82))
@@ -77,9 +77,9 @@ private struct DevBuildBadge: View {
         .padding(.vertical, 5)
         .background { DevBuildBadgeSurface() }
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .help("Current development build version")
+        .help("Current test build version")
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Development build \(version)")
+        .accessibilityLabel("Test build \(version)")
     }
 }
 
