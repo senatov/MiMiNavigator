@@ -246,6 +246,21 @@ final class ColumnLayoutModel: Codable {
         save()
     }
 
+    // MARK: - Presets
+    @MainActor
+    func applyPreset(_ preset: ColumnLayoutPreset) {
+        let visibleIDs = preset.columns
+        let orderedIDs = preset.columns + Self.defaultOrder.filter { !visibleIDs.contains($0) }
+        columns = orderedIDs.map { id in
+            let existing = columns.first(where: { $0.id == id })
+            return ColumnSpec(id: id, width: existing?.width, isVisible: visibleIDs.contains(id))
+        }
+        updateNameWidthForContainer()
+        incrementLayoutVersion()
+        save()
+        log.info("[Columns] applied preset=\(preset.rawValue)")
+    }
+
     @MainActor
     func saveWidths() { save() }
     @MainActor private func save() { ColumnLayoutStore.shared.saveToDisk() }

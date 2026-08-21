@@ -368,6 +368,16 @@ struct TableHeaderView: View {
 
     @ViewBuilder
     private var columnToggleMenu: some View {
+        Menu("Column Preset") {
+            ForEach(ColumnLayoutPreset.allCases) { preset in
+                Button {
+                    applyColumnPreset(preset)
+                } label: {
+                    Label(preset.rawValue, systemImage: preset.systemImage)
+                }
+            }
+        }
+        Divider()
         ForEach(layout.columns) { spec in
             if !spec.id.isRequired {
                 Button {
@@ -378,6 +388,12 @@ struct TableHeaderView: View {
             }
         }
         Divider()
+
+        Button {
+            autoFitAllColumns()
+        } label: {
+            Label("Auto Fit All Columns", systemImage: "arrow.left.and.right.text.vertical")
+        }
 
         // Auto-fit toggle — synced with ~/.mimi/preferences.json
         let autoFitOn = UserPreferences.shared.snapshot.autoFitColumnsOnNavigate
@@ -391,11 +407,23 @@ struct TableHeaderView: View {
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
             }
         } label: {
-            Label("Auto-fit cols", systemImage: autoFitOn ? "checkmark" : "")
+            Label("Auto Fit After Navigation", systemImage: autoFitOn ? "checkmark" : "")
         }
 
         Divider()
-        Button("Restore Defaults") { restoreDefaults() }
+        Button("Reset Column Layout") { restoreDefaults() }
+    }
+
+    private func applyColumnPreset(_ preset: ColumnLayoutPreset) {
+        layout.applyPreset(preset)
+        autoFitAllColumns()
+    }
+
+    private func autoFitAllColumns() {
+        guard !layout.isColumnReorderActive else { return }
+        let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
+        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        layout.saveWidths()
     }
 
     private func restoreDefaults() {
