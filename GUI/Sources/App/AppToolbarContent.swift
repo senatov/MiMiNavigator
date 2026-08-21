@@ -7,6 +7,7 @@
 //   All action buttons grouped in a single framed HStack for visual cohesion.
 //   Menu bar toggle is separate, also framed.
 
+import AppKit
 import SwiftUI
 
 // MARK: - App Toolbar Content
@@ -78,15 +79,24 @@ private struct AppWindowTitle: View {
     let version: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Text("MiMiNavigator")
-                .font(.custom("Academy Engraved LET", size: 18))
-                .foregroundStyle(.primary)
-            Text("V \(version)")
-                .font(.system(size: 10, weight: .light))
-                .foregroundStyle(.secondary)
+        HStack(spacing: 7) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: 28, height: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: -1) {
+                Text("MiMiNavigator")
+                    .font(.custom("Academy Engraved LET", size: 18))
+                    .foregroundStyle(.primary)
+                Text("V \(version)")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
         }
         .fixedSize()
+        .offset(y: 6)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("MiMiNavigator version \(version)")
     }
@@ -105,8 +115,20 @@ struct ToolbarButtonGroup<Content: View>: View {
         .padding(.vertical, 4)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.46), Color.primary.opacity(0.045)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(Color.black.opacity(0.15), lineWidth: 0.65)
+                }
         )
+        .shadow(color: Color.black.opacity(0.08), radius: 1, y: 1)
+        .offset(y: 6)
     }
 }
 

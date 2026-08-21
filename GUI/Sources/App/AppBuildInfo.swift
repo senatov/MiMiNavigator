@@ -76,6 +76,7 @@ private struct DevBuildBadge: View {
         .padding(.trailing, 11)
         .padding(.vertical, 5)
         .background { DevBuildBadgeSurface() }
+        .offset(y: 6)
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .help("Current test build version")
         .accessibilityElement(children: .combine)

@@ -63,7 +63,7 @@ struct TopMenuBarView: View {
                 .frame(width: 22, height: 22)
         }
         .help(isFinderSidebarVisible ? "Hide Finder sidebar" : "Show Finder sidebar")
-        .buttonStyle(TopMenuButtonStyle())
+        .buttonStyle(TopMenuButtonStyle(isSelected: isFinderSidebarVisible))
         .keyboardFocusable()
     }
 

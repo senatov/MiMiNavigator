@@ -3,7 +3,7 @@
 //
 // Created by Iakov Senatov on 09.03.25.
 // Copyright © 2025 Senatov. All rights reserved.
-// Description: Visual style for top-row text buttons (macOS/Figma menu look)
+// Description: Compact dimensional style for top-row command buttons.
 
 import SwiftUI
 
@@ -14,16 +14,21 @@ import SwiftUI
 /// - Rounded hit area, thin separator stroke only on hover/press
 /// - Works in light/dark mode; no ignoresSafeArea usage
 struct TopMenuButtonStyle: ButtonStyle {
-    init() {}
+    let isSelected: Bool
+
+    init(isSelected: Bool = false) {
+        self.isSelected = isSelected
+    }
 
     // MARK: -
     public func makeBody(configuration: Configuration) -> some View {
-        _TopMenuButton(configuration: configuration)
+        _TopMenuButton(configuration: configuration, isSelected: isSelected)
     }
 
     // MARK: - Internal view managing hover state and visuals
     private struct _TopMenuButton: View {
         let configuration: Configuration
+        let isSelected: Bool
         // Layout constants tuned for macOS menu-like row
         private let cornerRadius: CGFloat = 6
         private let horizontalPadding: CGFloat = 10
@@ -33,31 +38,35 @@ struct TopMenuButtonStyle: ButtonStyle {
         @Environment(\.isEnabled) private var isEnabled
         @State private var isHovered: Bool = false
 
-        // MARK: - Background for hover/press, transparent by default
+        // MARK: - Background
         private var background: some View {
-            Group {
-                if configuration.isPressed {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.tertiary)
-                } else if isHovered {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.quaternary)
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.clear)
-                }
-            }
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: configuration.isPressed
+                            ? [Color.black.opacity(0.09), Color.white.opacity(0.10)]
+                            : [
+                                Color.white.opacity(isHovered || isSelected ? 0.62 : 0.30),
+                                (isSelected ? Color.accentColor : Color.primary).opacity(isHovered || isSelected ? 0.11 : 0.045)
+                            ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
         }
 
         // MARK: - Hairline stroke only when interactive (hover/press)
         private var stroke: some View {
             Group {
-                if configuration.isPressed || isHovered {
+                if configuration.isPressed || isHovered || isSelected {
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .strokeBorder(.separator, lineWidth: 1)
+                        .strokeBorder(
+                            isSelected ? Color.accentColor.opacity(0.46) : Color.black.opacity(0.20),
+                            lineWidth: 0.75
+                        )
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .strokeBorder(.clear, lineWidth: 0)
+                        .strokeBorder(Color.black.opacity(0.10), lineWidth: 0.5)
                 }
             }
         }
@@ -73,6 +82,15 @@ struct TopMenuButtonStyle: ButtonStyle {
                 .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .background(background)
                 .overlay(stroke)
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .fill(Color.white.opacity(configuration.isPressed ? 0.08 : 0.48))
+                        .frame(height: 0.75)
+                        .padding(.horizontal, 5)
+                        .padding(.top, 1)
+                }
+                .shadow(color: Color.black.opacity(configuration.isPressed ? 0.04 : 0.10), radius: 1, y: configuration.isPressed ? 0 : 1)
+                .offset(y: configuration.isPressed ? 0.5 : 0)
                 .clipShape(.rect(cornerRadius: cornerRadius))
                 .onHover { isHovered = $0 }
                 .animation(.easeInOut(duration: 0.12), value: isHovered)

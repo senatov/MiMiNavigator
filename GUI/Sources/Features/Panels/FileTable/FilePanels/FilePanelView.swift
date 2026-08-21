@@ -127,18 +127,28 @@ struct FilePanelView: View {
     @ViewBuilder
     private var navigationOverlay: some View {
         if appState.navigatingPanel == viewModel.panelSide {
-            VStack(spacing: 8) {
+            HStack(spacing: 8) {
                 ProgressView()
-                    .scaleEffect(1.8)
-                    .controlSize(.large)
-                    .tint(Color(nsColor: .systemBlue).opacity(0.42))
-                Text("Loading…")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color(nsColor: .systemBlue).opacity(0.58))
+                    .controlSize(.small)
+                    .tint(.accentColor)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Loading folder…")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(viewModel.panelSide == .left ? "Left panel" : "Right panel")
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(16)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(Color.accentColor.opacity(0.24), lineWidth: 0.75)
+            }
+            .shadow(color: Color.black.opacity(0.16), radius: 5, y: 2)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .padding(.top, 46)
             .allowsHitTesting(false)
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.15), value: appState.navigatingPanel)
