@@ -19,6 +19,7 @@ final class SettingsCoordinator {
 
     private(set) var isVisible = false
     private var window: NSPanel?
+    private var isClosing = false
 
     private let frameAutosaveName = "MiMiNavigator.SettingsWindow"
     private let defaultWidth: CGFloat = 720
@@ -42,6 +43,7 @@ final class SettingsCoordinator {
 
     // MARK: - Open
     func open() {
+        guard !isClosing else { return }
         if let existing = window, existing.isVisible {
             existing.makeKeyAndOrderFront(nil)
             isVisible = true
@@ -83,18 +85,26 @@ final class SettingsCoordinator {
 
     // MARK: - Close
     func close() {
+        guard !isClosing else { return }
+        guard let panel = window else {
+            isVisible = false
+            return
+        }
+        isClosing = true
         isVisible = false
-        window?.close()
+        window = nil
+        panel.close()
         log.info("[Settings] panel closed")
     }
 
     func windowDidClose() {
         isVisible = false
         window = nil
+        isClosing = false
     }
 
     func bringToFront() {
-        guard isVisible else { return }
+        guard isVisible, !isClosing else { return }
         window?.orderFront(nil)
     }
 
@@ -114,12 +124,11 @@ final class SettingsCoordinator {
 }
 
 // MARK: - NSWindowDelegate
+@MainActor
 private final class SettingsWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = SettingsWindowDelegate()
 
     func windowWillClose(_ notification: Notification) {
-        Task { @MainActor in
-            SettingsCoordinator.shared.windowDidClose()
-        }
+        SettingsCoordinator.shared.windowDidClose()
     }
 }

@@ -60,20 +60,15 @@ struct SettingsWindowView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            // Header bar
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(SettingsVisualStyle.secondaryText)
-                    .font(.system(size: 12))
-                Text("Settings")
-                    .foregroundStyle(SettingsVisualStyle.secondaryText)
-                    .font(.system(size: 12, weight: .medium))
+                Text("Preferences")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
                 Spacer()
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .bottom) { Divider() }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, 5)
 
             // Section list
             ScrollView {
@@ -109,14 +104,11 @@ struct SettingsWindowView: View {
 
     // MARK: - Group label (Nova-style section divider)
     private func groupLabel(_ title: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "paintpalette")
-                .font(.system(size: 10, weight: .light))
-                .foregroundStyle(SettingsVisualStyle.secondaryText)
+        HStack(spacing: 0) {
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .light))
-                .foregroundStyle(SettingsVisualStyle.secondaryText)
-                .tracking(0.8)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .tracking(0.7)
             Spacer()
         }
         .padding(.horizontal, 14)
@@ -205,29 +197,12 @@ struct SettingsWindowView: View {
 
     private var sectionTitleBar: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                SettingsVisualStyle.accent.opacity(0.82),
-                                SettingsVisualStyle.accent.opacity(0.52)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(.white.opacity(0.42), lineWidth: 0.5)
-                    }
-                    .shadow(color: SettingsVisualStyle.accent.opacity(0.18), radius: 6, y: 3)
-                Image(systemName: selectedSection.icon)
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 36, height: 36)
+            Image(systemName: selectedSection.icon)
+                .symbolRenderingMode(.hierarchical)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(SettingsVisualStyle.accent)
+                .frame(width: 30, height: 30)
+                .background(SettingsVisualStyle.accent.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(selectedSection.rawValue)
                     .font(.system(size: 17, weight: .semibold))
@@ -238,8 +213,8 @@ struct SettingsWindowView: View {
             Spacer()
         }
         .padding(.horizontal, 24)
-        .padding(.top, 18)
-        .padding(.bottom, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 11)
     }
 
     // MARK: - State Persistence
