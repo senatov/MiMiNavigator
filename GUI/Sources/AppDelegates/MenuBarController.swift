@@ -5,14 +5,18 @@
 // Description: Native menu bar item for opening MiMiNavigator and common actions.
 
 import AppKit
+import SwiftUI
 
 // MARK: - Menu Bar Controller
 @MainActor final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem?
+    private var statusPopover: NSPopover?
+    private var diagnosticLogOffset: UInt64 = 0
 
     // MARK: - Install
     func install() {
         guard statusItem == nil else { return }
+        diagnosticLogOffset = MenuBarDiagnostics.currentLogOffset()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = item.button else {
             NSStatusBar.system.removeStatusItem(item)
@@ -39,9 +43,10 @@ import AppKit
     // MARK: - Status Item Actions
     @objc private func handleStatusItemClick() {
         guard NSApp.currentEvent?.type != .rightMouseUp else {
-            showQuitMenu()
+            toggleStatusPopover()
             return
         }
+        closeStatusPopover()
         toggleApplicationVisibility()
     }
 
@@ -71,40 +76,45 @@ import AppKit
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.raiseExistingMainWindow() }
     }
 
-    private func showQuitMenu() {
+    private func toggleStatusPopover() {
         guard let button = statusItem?.button else { return }
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        menu.addItem(menuItem(title: "Show MiMiNavigator", symbol: "macwindow", action: #selector(showApplicationFromMenu)))
-        menu.addItem(.separator())
-        menu.addItem(menuItem(title: "Find Files…", symbol: "magnifyingglass", action: #selector(openFindFiles)))
-        menu.addItem(menuItem(title: "Connect to Server…", symbol: "network", action: #selector(openConnectToServer)))
-        menu.addItem(.separator())
-        let memoryItem = NSMenuItem(title: "Memory: \(memoryLabel)", action: nil, keyEquivalent: "")
-        memoryItem.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: nil)
-        memoryItem.isEnabled = false
-        menu.addItem(memoryItem)
-        menu.addItem(.separator())
-        menu.addItem(menuItem(title: "Settings…", symbol: "gearshape", action: #selector(openSettings)))
-        let quitItem = NSMenuItem(title: "Quit MiMiNavigator", action: #selector(quitApplication), keyEquivalent: "")
-        quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
-        quitItem.target = self
-        menu.addItem(quitItem)
-        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.maxY + 2), in: button)
+        if statusPopover?.isShown == true {
+            closeStatusPopover()
+            return
+        }
+        let appState = AppStateProvider.shared
+        let panel = appState?.focusedPanel
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentSize = NSSize(width: 336, height: 470)
+        popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView(
+            version: AppBuildInfo.versionString(),
+            memory: memoryLabel,
+            activePanel: panel == .right ? "Right" : "Left",
+            currentPath: panel.flatMap { appState?.path(for: $0) } ?? NSHomeDirectory(),
+            issues: MenuBarDiagnostics.issues(since: diagnosticLogOffset),
+            onShow: { [weak self] in self?.performPopoverAction { self?.showApplication() } },
+            onFind: { [weak self] in self?.performPopoverAction { self?.openFindFiles() } },
+            onConnect: { [weak self] in self?.performPopoverAction { self?.openConnectToServer() } },
+            onSettings: { [weak self] in self?.performPopoverAction { self?.openSettings() } },
+            onQuit: { [weak self] in self?.performPopoverAction { self?.quitApplication() } }
+        ))
+        statusPopover = popover
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     }
 
-    private func menuItem(title: String, symbol: String, action: Selector) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-        item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-        item.target = self
-        return item
+    private func performPopoverAction(_ action: () -> Void) {
+        closeStatusPopover()
+        action()
     }
 
-    @objc private func showApplicationFromMenu() {
-        showApplication()
+    private func closeStatusPopover() {
+        statusPopover?.performClose(nil)
+        statusPopover = nil
     }
 
-    @objc private func openFindFiles() {
+    private func openFindFiles() {
         showApplication()
         guard let appState = AppStateProvider.shared else { return }
         let panel = appState.focusedPanel
@@ -112,17 +122,17 @@ import AppKit
         FindFilesCoordinator.shared.open(searchPath: appState.path(for: panel))
     }
 
-    @objc private func openConnectToServer() {
+    private func openConnectToServer() {
         showApplication()
         ConnectToServerCoordinator.shared.open()
     }
 
-    @objc private func openSettings() {
+    private func openSettings() {
         showApplication()
         SettingsCoordinator.shared.open()
     }
 
-    @objc private func quitApplication() {
+    private func quitApplication() {
         log.info("[MenuBar] quit requested")
         NSApp.terminate(nil)
     }
