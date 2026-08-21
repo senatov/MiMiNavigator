@@ -30,6 +30,10 @@ struct SelectionStatusBar: View {
         currentURL.path
     }
 
+    private var isFocused: Bool {
+        appState.focusedPanel == panelSide
+    }
+
     // MARK: - State
 
     @State private var colorStore = ColorThemeStore.shared
@@ -223,7 +227,16 @@ struct SelectionStatusBar: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 2)
         .frame(height: 27)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.72))
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .controlBackgroundColor).opacity(isFocused ? 0.94 : 0.74),
+                    Color(nsColor: .windowBackgroundColor).opacity(isFocused ? 0.84 : 0.68)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))
@@ -231,6 +244,7 @@ struct SelectionStatusBar: View {
         }
         .animation(.easeInOut(duration: 0.15), value: currentViewMode)
         .animation(.easeInOut(duration: 0.15), value: markedCount)
+        .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 
 }

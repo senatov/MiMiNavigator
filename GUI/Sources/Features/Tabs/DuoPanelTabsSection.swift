@@ -32,7 +32,16 @@ struct DuoPanelTabsSection: View {
                 .frame(width: rightPanelWidth, height: Self.height, alignment: .leading)
         }
         .frame(width: containerWidth, height: Self.height, alignment: .leading)
-        .background(Color(nsColor: .windowBackgroundColor).opacity(0.92))
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(nsColor: .controlBackgroundColor).opacity(0.88),
+                    Color(nsColor: .windowBackgroundColor).opacity(0.96)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(Color(nsColor: .separatorColor).opacity(0.72))

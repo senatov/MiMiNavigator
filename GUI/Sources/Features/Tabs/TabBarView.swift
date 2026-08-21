@@ -80,23 +80,11 @@ struct TabBarView: View {
 
     private var addTabButton: some View {
         Button(action: handleAddTab) {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(
-                    Color(nsColor: .darkGray),
-                    Color(nsColor: .controlBackgroundColor)
-                )
-                .shadow(color: Color.black.opacity(0.16), radius: 1, x: 0, y: 0.8)
-                .frame(width: 22, height: 26)
+            Image(systemName: "plus")
+                .font(.system(size: 10, weight: .bold))
+                .frame(width: 20, height: 22)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(Color(nsColor: .darkGray))
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor).opacity(0.34))
-                .frame(width: 0.5)
-        }
+        .buttonStyle(TabStripControlButtonStyle(isEmphasized: true))
         .help("New Tab")
     }
 
@@ -106,10 +94,9 @@ struct TabBarView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 9, weight: .bold))
-                .frame(width: 16, height: 26)
+                .frame(width: 18, height: 22)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(Color(nsColor: .tertiaryLabelColor))
+        .buttonStyle(TabStripControlButtonStyle(isEmphasized: false))
     }
 
     // MARK: - Actions
@@ -190,5 +177,33 @@ struct TabBarView: View {
             let target = url.isFileURL ? url.path : url.absoluteString
             await appState.navigateToDirectory(target, on: panelSide)
         }
+    }
+}
+
+// MARK: - Tab Strip Control Button Style
+private struct TabStripControlButtonStyle: ButtonStyle {
+    let isEmphasized: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isEmphasized ? Color.accentColor : Color(nsColor: .secondaryLabelColor))
+            .background {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: configuration.isPressed
+                                ? [Color.black.opacity(0.09), Color.white.opacity(0.12)]
+                                : [Color.white.opacity(0.68), Color.primary.opacity(0.07)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(Color.black.opacity(configuration.isPressed ? 0.25 : 0.16), lineWidth: 0.6)
+            }
+            .shadow(color: Color.black.opacity(configuration.isPressed ? 0.04 : 0.12), radius: 1, y: configuration.isPressed ? 0 : 1)
+            .offset(y: configuration.isPressed ? 0.5 : 0)
     }
 }

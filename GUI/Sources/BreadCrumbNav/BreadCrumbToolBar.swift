@@ -92,7 +92,9 @@ struct BreadCrumbToolBar: View {
         return ToolBarIconButton(
             iconName: "arrowshape.turn.up.backward",
             iconColor: iconColor,
+            surfaceTint: Color.accentColor,
             isEnabled: canGoBack,
+            isRaised: true,
             action: { handleBackTap(canGoBack: canGoBack) }
         )
         .gesture(
@@ -110,6 +112,8 @@ struct BreadCrumbToolBar: View {
         ToolBarIconButton(
             iconName: "arrowshape.up",
             iconColor: iconColor,
+            surfaceTint: Color.accentColor,
+            isRaised: true,
             action: { handleNavigateUp() }
         )
         .keyboardFocusable()
@@ -122,7 +126,9 @@ struct BreadCrumbToolBar: View {
         return ToolBarIconButton(
             iconName: "arrowshape.turn.up.forward",
             iconColor: iconColor,
+            surfaceTint: Color.accentColor,
             isEnabled: canGoForward,
+            isRaised: true,
             action: { handleForwardTap(canGoForward: canGoForward) }
         )
         .gesture(

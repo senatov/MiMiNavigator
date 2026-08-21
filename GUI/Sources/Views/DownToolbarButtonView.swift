@@ -95,23 +95,19 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var shadowOpacity: Double {
-        isPressed ? 0.10 : (isHovered ? 0.08 : 0.035)
+        isPressed ? 0.08 : (isHovered ? 0.18 : 0.12)
     }
 
     private var shadowRadius: CGFloat {
-        isPressed ? 1 : (isHovered ? 2 : 1)
+        isPressed ? 0.5 : (isHovered ? 3 : 1.5)
     }
 
     private var shadowYOffset: CGFloat {
-        isPressed ? 0 : 1
+        isPressed ? 0.5 : 1.5
     }
 
     private var borderOpacity: Double {
-        isPressed ? 0.28 : (isHovered ? 0.24 : 0.14)
-    }
-
-    private var glassOpacity: Double {
-        isPressed ? 0.18 : (isHovered ? 0.12 : 0.055)
+        isPressed ? 0.30 : (isHovered ? 0.32 : 0.22)
     }
 
     var body: some View {
@@ -122,6 +118,7 @@ private struct DownToolbarGlassButtonBody: View {
             .padding(.vertical, verticalPadding)
             .background { backgroundLayer }
             .overlay { buttonBorder }
+            .overlay(alignment: .top) { topHighlight }
             .compositingGroup()
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
@@ -134,9 +131,27 @@ private struct DownToolbarGlassButtonBody: View {
     private var backgroundLayer: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color.primary.opacity(glassOpacity))
+                .fill(
+                    LinearGradient(
+                        colors: isPressed
+                            ? [Color.black.opacity(0.10), Color.white.opacity(0.12)]
+                            : [Color.white.opacity(isHovered ? 0.72 : 0.56), Color.primary.opacity(isHovered ? 0.10 : 0.075)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             tintLayer
         }
+    }
+
+    private var topHighlight: some View {
+        RoundedRectangle(cornerRadius: 6.5, style: .continuous)
+            .strokeBorder(Color.white.opacity(isPressed ? 0.10 : 0.56), lineWidth: 0.75)
+            .padding(0.75)
+            .mask(alignment: .top) {
+                Rectangle().frame(height: 12)
+            }
+            .allowsHitTesting(false)
     }
 
     @ViewBuilder
@@ -149,7 +164,7 @@ private struct DownToolbarGlassButtonBody: View {
 
     private var buttonBorder: some View {
         RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .strokeBorder(Color(nsColor: .separatorColor).opacity(borderOpacity), lineWidth: 0.75)
+            .strokeBorder(Color.black.opacity(borderOpacity), lineWidth: 0.65)
     }
 
 }

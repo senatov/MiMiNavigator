@@ -77,7 +77,16 @@ struct BreadCrumbControlWrapper: View {
 
     private var backgroundShape: some View {
         RoundedRectangle(cornerRadius: Design.cornerRadius)
-            .fill(isEditing ? Design.Colors.editingBackground : backgroundColor)
+            .fill(
+                LinearGradient(
+                    colors: isEditing
+                        ? [Design.Colors.editingBackground, Design.Colors.editingBackground.opacity(0.72)]
+                        : [Color.white.opacity(isActivePanel ? 0.34 : 0.18), backgroundColor],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .shadow(color: Color.black.opacity(isActivePanel ? 0.10 : 0.05), radius: 1.5, y: 1)
     }
 
     // MARK: - Content View
