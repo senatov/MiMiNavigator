@@ -40,7 +40,7 @@ struct BreadCrumbControlWrapper: View {
     private enum Design {
         static let cornerRadius: CGFloat = 8
         static let borderWidth: CGFloat = 1.5  // editing mode border
-        static let idleBorderWidth: CGFloat = 0.75  // resting dark-navy border
+        static let idleBorderWidth: CGFloat = 0.75
         static let animationDuration: CGFloat = 0.25
 
         enum Padding {
@@ -90,7 +90,7 @@ struct BreadCrumbControlWrapper: View {
         }
     }
 
-    // MARK: - Border Shape — thin dark-navy border, always visible
+    // MARK: - Border Shape
     private var borderShape: some View {
         RoundedRectangle(cornerRadius: Design.cornerRadius)
             .stroke(
@@ -99,13 +99,15 @@ struct BreadCrumbControlWrapper: View {
             )
     }
 
-    // MARK: - Border Color — dark navy, accent when editing
+    // MARK: - Border Color
     private var borderColor: Color {
         if isEditing {
             return .accentColor
         }
-        // dark navy — same vibe as Total Commander chrome
-        return Color(nsColor: NSColor(calibratedRed: 0.08, green: 0.13, blue: 0.32, alpha: isHovering ? 0.65 : 0.45))
+        if isActivePanel {
+            return Color.accentColor.opacity(isHovering ? 0.68 : 0.42)
+        }
+        return Color(nsColor: .separatorColor).opacity(isHovering ? 0.78 : 0.48)
     }
 
     // MARK: - Helpers

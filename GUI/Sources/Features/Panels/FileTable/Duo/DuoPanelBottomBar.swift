@@ -22,9 +22,9 @@ struct DuoPanelBottomToolbarSection: View {
     @Environment(AppState.self) var appState
     
     private enum Layout {
-        static let toolbarHorizontalPadding: CGFloat = 16
-        static let toolbarVerticalPadding: CGFloat = 12
-        static let toolbarButtonSpacing: CGFloat = 12
+        static let toolbarHorizontalPadding: CGFloat = 12
+        static let toolbarVerticalPadding: CGFloat = 7
+        static let toolbarButtonSpacing: CGFloat = 6
     }
     
     var body: some View {
@@ -52,6 +52,10 @@ struct DuoPanelBottomToolbarSection: View {
         .background(
             DuoPanelToolbarBackground(cornerRadius: 0)
         )
+        .overlay(alignment: .top) {
+            Color(nsColor: .separatorColor).opacity(0.7)
+                .frame(height: 1)
+        }
     }
     
     private func downToolBarButton(title: String, icon: String, action: @escaping () -> Void) -> some View {

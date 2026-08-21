@@ -190,17 +190,18 @@ struct FilePanelView: View {
         let focused = appState.focusedPanel == viewModel.panelSide
         return ZStack {
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .fill(focused ? DesignTokens.warmWhite : DesignTokens.card)
-            // Border — soft but visible, stronger on focused panel
+                .fill(focused ? DesignTokens.warmWhite : DesignTokens.card.opacity(0.92))
             RoundedRectangle(cornerRadius: DesignTokens.radius, style: .continuous)
-                .stroke(
-                    focused
-                        ? colorStore.activeTheme.panelBorderActive
-                        : colorStore.activeTheme.panelBorderInactive,
-                    lineWidth: colorStore.activeTheme.panelBorderWidth
-                )
+                .stroke(colorStore.activeTheme.panelBorderInactive.opacity(focused ? 0.72 : 0.42), lineWidth: 0.75)
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(focused ? colorStore.activeTheme.panelBorderActive : Color.clear)
+                    .frame(height: 2)
+                    .padding(.horizontal, DesignTokens.radius)
+                Spacer(minLength: 0)
+            }
         }
-        .shadow(color: Color.black.opacity(0.10), radius: 3, x: 0, y: 1)
+        .shadow(color: Color.black.opacity(focused ? 0.08 : 0.035), radius: focused ? 3 : 1, x: 0, y: 1)
         .animation(.easeInOut(duration: 0.15), value: focused)
     }
 
