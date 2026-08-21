@@ -79,7 +79,7 @@ extension FileTableView {
 
     private var emptyAreaHeight: CGFloat {
         let rowsHeight = CGFloat(sortedRows.count) * FilePanelStyle.rowHeight
-        return max(viewHeight - TableHeaderStyle.height - rowsHeight - onePixel, 0)
+        return max(viewHeight - ParentEntryStripView.rowHeight - TableHeaderStyle.height - rowsHeight - onePixel, 0)
     }
 
     private func clearSelectionFromEmptyArea() {
