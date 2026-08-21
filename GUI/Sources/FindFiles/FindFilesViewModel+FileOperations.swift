@@ -5,6 +5,7 @@
 // Description: Direct single and batch operations for Find Files results.
 
 import AppKit
+import FindFilesKit
 import Foundation
 
 // MARK: - Find Files File Operations

@@ -6,6 +6,7 @@
 // Description: Lottie and TGS conversion helpers for MediaConversionService.
 
 import FileModelKit
+import ExternalToolsKit
 import Foundation
 
 // MARK: - Lottie / TGS

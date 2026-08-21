@@ -6,6 +6,7 @@
 // Description: ViewModel for the Find Files panel — bridges UI with FindFilesEngine
 
 import AppKit
+import FindFilesKit
 import FileModelKit
 import Foundation
 import SwiftUI

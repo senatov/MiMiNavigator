@@ -56,29 +56,6 @@ enum FindFilesTimestampFilter: String, CaseIterable, Codable, Identifiable {
         }
     }
 }
-// MARK: - Item Type Filter
-enum FindFilesItemTypeFilter: String, CaseIterable, Codable, Identifiable {
-    case filesAndFolders
-    case filesOnly
-    case foldersOnly
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .filesAndFolders: return "Files and folders"
-        case .filesOnly: return "Files only"
-        case .foldersOnly: return "Folders only"
-        }
-    }
-}
-
-// MARK: - Search Backend
-enum FindFilesSearchBackend: String, Sendable {
-    case spotlight
-    case find
-}
-
 // MARK: - Search Preset
 enum FindFilesPreset: String, Codable {
     case largeStaleFiles

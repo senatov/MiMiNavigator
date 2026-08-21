@@ -5,6 +5,7 @@
 // Description: Independent persisted settings for Search and Advanced Search.
 
 import Foundation
+import FindFilesKit
 
 // MARK: - Find Files Search Settings
 struct FindFilesSearchSettings: Codable {

@@ -5,6 +5,7 @@
 // Description: User-visible capabilities inferred from advertised network services.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Network capability
 enum NetworkCapability: String, CaseIterable, Identifiable, Sendable {

@@ -5,6 +5,7 @@
 // Description: Presentation labels shared by Network Neighborhood views.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Network host presentation
 extension NetworkHost {

@@ -5,6 +5,7 @@
 // Description: Merges router and SSDP discovery results into Network Neighborhood hosts.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Discovery result merging
 extension NetworkNeighborhoodProvider {

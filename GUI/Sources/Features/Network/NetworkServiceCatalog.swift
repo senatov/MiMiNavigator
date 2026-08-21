@@ -5,6 +5,7 @@
 // Description: Bonjour service groups used by Network Neighborhood discovery.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Network service catalog
 enum NetworkServiceCatalog {

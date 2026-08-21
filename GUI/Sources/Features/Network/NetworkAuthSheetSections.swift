@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
+import NetworkKit
 
 enum NetworkAuthSheetLayout {
     static let dialogWidth: CGFloat = 380

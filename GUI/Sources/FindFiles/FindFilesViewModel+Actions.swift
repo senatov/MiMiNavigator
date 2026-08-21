@@ -6,6 +6,7 @@
 // Description: Result actions — go to file, open, reveal, export, show in panel
 
 import AppKit
+import FindFilesKit
 import FileModelKit
 import Foundation
 

@@ -6,6 +6,7 @@
 // Description: Diagnostics and repair flow for external command-line tools.
 
 import AppKit
+import ExternalToolsKit
 import FileModelKit
 import Foundation
 

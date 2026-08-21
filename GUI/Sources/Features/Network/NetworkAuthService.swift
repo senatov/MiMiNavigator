@@ -8,6 +8,7 @@
 //              Tries multiple hostname variants to match what Finder stores.
 
 import Foundation
+import NetworkKit
 import Security
 
 // MARK: - Credentials for one host

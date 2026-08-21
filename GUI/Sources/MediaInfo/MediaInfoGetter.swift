@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import MediaMetadataKit
 import FileModelKit
 
 final class MediaInfoGetter: @unchecked Sendable {

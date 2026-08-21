@@ -6,6 +6,7 @@
 // Description: Advanced tab of Find Files.
 
 import SwiftUI
+import FindFilesKit
 // MARK: - Advanced Tab
 struct FindFilesAdvancedTab: View {
     @Bindable var viewModel: FindFilesViewModel

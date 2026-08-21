@@ -5,6 +5,7 @@
 // Description: Enriches discovered hosts with online MAC vendor information.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Manufacturer Enrichment
 extension NetworkNeighborhoodProvider {

@@ -20,6 +20,9 @@
 		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
 		EE000003EE000003EE000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		F1000001F1000001F1000001 /* FindFilesKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1000011F1000011F1000011 /* FindFilesKit */; };
+		F2000001F2000001F2000001 /* MediaMetadataKit in Frameworks */ = {isa = PBXBuildFile; productRef = F2000011F2000011F2000011 /* MediaMetadataKit */; };
+		F3000001F3000001F3000001 /* ExternalToolsKit in Frameworks */ = {isa = PBXBuildFile; productRef = F3000011F3000011F3000011 /* ExternalToolsKit */; };
 		FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52D4533F441E4D78BD910304 /* NetworkKit */; };
 /* End PBXBuildFile section */
 
@@ -97,6 +100,9 @@
 		97AD1A2B2C624E020045C38D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				F1000001F1000001F1000001 /* FindFilesKit in Frameworks */,
+				F2000001F2000001F2000001 /* MediaMetadataKit in Frameworks */,
+				F3000001F3000001F3000001 /* ExternalToolsKit in Frameworks */,
 				97B6C2A92F637D1F00578130 /* ArchiveKit in Frameworks */,
 				97B6C2A82F637D1F00578130 /* ScannerKit in Frameworks */,
 				97B6C2A72F637D1F00578130 /* FileModelKit in Frameworks */,
@@ -174,6 +180,9 @@
 			);
 			name = MiMiNavigator;
 			packageProductDependencies = (
+				F1000011F1000011F1000011 /* FindFilesKit */,
+				F2000011F2000011F2000011 /* MediaMetadataKit */,
+				F3000011F3000011F3000011 /* ExternalToolsKit */,
 				971A28F82F1B140900094ADE /* FavoritesKit */,
 				52D4533F441E4D78BD910304 /* NetworkKit */,
 				AA000002AA000002AA000002 /* LogKit */,
@@ -257,6 +266,9 @@
 			);
 			mainGroup = 97AD1A252C624E020045C38D;
 			packageReferences = (
+				F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */,
+				F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */,
+				F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */,
 				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
 				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
 				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */,
@@ -707,6 +719,18 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/RenameKit;
 		};
+		F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FindFilesKit;
+		};
+		F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/MediaMetadataKit;
+		};
+		F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ExternalToolsKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -783,6 +807,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */;
 			productName = RenameKit;
+		};
+		F1000011F1000011F1000011 /* FindFilesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */;
+			productName = FindFilesKit;
+		};
+		F2000011F2000011F2000011 /* MediaMetadataKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */;
+			productName = MediaMetadataKit;
+		};
+		F3000011F3000011F3000011 /* ExternalToolsKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */;
+			productName = ExternalToolsKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -213,6 +213,21 @@ struct AboutView: View {
                     description: "Shared structured diagnostics across application modules",
                     icon: "text.alignleft"
                 )
+                architectureRow(
+                    name: "FindFilesKit",
+                    description: "Streaming file, content, Spotlight, and archive search engine",
+                    icon: "magnifyingglass"
+                )
+                architectureRow(
+                    name: "MediaMetadataKit",
+                    description: "Image, audio, video, EXIF, and GPS metadata extraction",
+                    icon: "info.circle"
+                )
+                architectureRow(
+                    name: "ExternalToolsKit",
+                    description: "External command-line tool discovery and health state",
+                    icon: "wrench.and.screwdriver"
+                )
             }
         }
         .padding(.vertical, 12)

@@ -5,6 +5,7 @@
 // Description: Merges Fing Local API device recognition into Network Neighborhood.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Fing Device Merge
 extension NetworkNeighborhoodProvider {

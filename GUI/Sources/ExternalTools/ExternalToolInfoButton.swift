@@ -8,6 +8,7 @@
 //   Copies install command to clipboard on click. Shows website link if available.
 
 import AppKit
+import ExternalToolsKit
 import SwiftUI
 
 

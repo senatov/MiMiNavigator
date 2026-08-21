@@ -7,6 +7,7 @@
 //   Extracted from NetworkNeighborhoodView.swift for single responsibility.
 
 import SwiftUI
+import NetworkKit
 
 
 // MARK: - Host node row

@@ -7,6 +7,7 @@
 //              Saves to Keychain on confirm, calls onAuthenticated to retry share fetch.
 
 import SwiftUI
+import NetworkKit
 
 // MARK: - Auth sheet: user + password entry for a network host
 struct NetworkAuthSheet: View {

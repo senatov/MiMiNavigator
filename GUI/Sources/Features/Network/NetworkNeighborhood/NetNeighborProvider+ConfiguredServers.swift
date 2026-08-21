@@ -6,6 +6,7 @@
 // Description: Adds saved local SMB/AFP server configurations to Network Neighborhood.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Configured server discovery
 extension NetworkNeighborhoodProvider {

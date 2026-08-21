@@ -11,6 +11,7 @@
 //   - Offline hosts hidden; Sign In only for expandable non-mobile non-router hosts
 
 import SwiftUI
+import NetworkKit
 
 // MARK: - Network Neighborhood View
 struct NetworkNeighborhoodView: View {

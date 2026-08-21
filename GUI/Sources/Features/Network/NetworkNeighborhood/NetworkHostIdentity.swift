@@ -5,6 +5,7 @@
 // Description: Shared host identity normalization for merging discovery sources.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Network Host Identity
 enum NetworkHostIdentity {

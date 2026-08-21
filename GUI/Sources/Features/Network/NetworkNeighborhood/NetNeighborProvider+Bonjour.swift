@@ -7,6 +7,7 @@
 //   Extracted from NetNeighborProvider.swift for single responsibility.
 
 import Foundation
+import NetworkKit
 
 // MARK: - NetService sendability bridge
 private final class NetServiceReference: @unchecked Sendable {

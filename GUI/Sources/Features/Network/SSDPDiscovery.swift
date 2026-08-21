@@ -5,6 +5,7 @@
 // Description: Passive UPnP and DLNA discovery using a bounded SSDP multicast query.
 
 import Darwin
+import NetworkKit
 import Foundation
 
 // MARK: - SSDP device

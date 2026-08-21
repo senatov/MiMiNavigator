@@ -196,7 +196,7 @@ Packages/
 └── LogKit and NetworkKit
 ```
 
-Actors isolate scanning, archive sessions, search, and persistent cache work. Observable main-actor state drives the interface. GRDB/SQLite provides a bounded persistent cache for directory sizes and validated file hashes.
+Actors isolate scanning, archive sessions, search, and persistent cache work. Observable main-actor state drives the interface. Reusable implementation lives in FileModelKit, ScannerKit, ArchiveKit, FindFilesKit, NetworkKit, MediaMetadataKit, ExternalToolsKit, CacheKit, FavoritesKit, RenameKit, and LogKit. GRDB/SQLite provides a bounded persistent cache for directory sizes and validated file hashes.
 
 For implementation details, start with [CONTRIBUTING.md](CONTRIBUTING.md), the documents in [GUI/Docs](GUI/Docs), and the source-level `AGENTS.md` guidelines.
 

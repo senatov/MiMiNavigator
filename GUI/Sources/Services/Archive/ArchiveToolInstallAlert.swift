@@ -6,6 +6,7 @@
 // Description: Install prompt for optional archive tools.
 
 import AppKit
+import ExternalToolsKit
 import Foundation
 
 // MARK: - Archive Tool Install Alert

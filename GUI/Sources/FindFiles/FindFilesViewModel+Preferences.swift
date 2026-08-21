@@ -5,6 +5,7 @@
 // Description: Independent persistence for Search and Advanced Search.
 
 import Foundation
+import FindFilesKit
 
 // MARK: - Find Files Preferences
 extension FindFilesViewModel {

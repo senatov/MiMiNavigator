@@ -8,6 +8,7 @@
 //   The first responding endpoint wins and becomes NetworkHost.probedWebURL.
 
 import Foundation
+import NetworkKit
 
 // MARK: - Web UI Prober
 enum WebUIProber {

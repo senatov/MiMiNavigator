@@ -8,6 +8,7 @@
 //   - Printer info via IPP (port 631)
 
 import AppKit
+import NetworkKit
 import Foundation
 import SwiftUI
 

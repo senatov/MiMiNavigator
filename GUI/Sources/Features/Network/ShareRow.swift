@@ -7,6 +7,7 @@
 //   Extracted from NetworkNeighborhoodView.swift for single responsibility.
 
 import AppKit
+import NetworkKit
 import SwiftUI
 
 // MARK: - Share row

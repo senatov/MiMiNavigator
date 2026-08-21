@@ -8,6 +8,7 @@
 //   Icons: real NSWorkspace icons via FileRowView.getSmartIcon - same as main panel.
 
 import SwiftUI
+import FindFilesKit
 
 // MARK: - Results View
 

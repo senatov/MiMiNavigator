@@ -5,6 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 
 import SwiftUI
+import ExternalToolsKit
 
 // MARK: - ════════════════════════════════════════════
 // MARK:   Archives

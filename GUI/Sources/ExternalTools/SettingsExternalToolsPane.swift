@@ -8,6 +8,7 @@
 //   Optional tools shown first, system tools collapsed by default.
 
 import AppKit
+import ExternalToolsKit
 import SwiftUI
 
 

@@ -7,6 +7,7 @@
 // Description: Bonjour-based network host discovery + lazy share enumeration + FritzBox TR-064
 
 import Darwin
+import NetworkKit
 import Foundation
 import Network
 
