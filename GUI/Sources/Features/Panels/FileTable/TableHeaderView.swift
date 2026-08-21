@@ -43,7 +43,7 @@ struct TableHeaderView: View {
     }
 
     private var columnDividerColor: Color {
-        colorStore.activeTheme.columnDividerColor
+        colorStore.activeTheme.columnDividerColor.opacity(0.62)
     }
 
     // MARK: - Header Drag Metrics
@@ -63,7 +63,10 @@ struct TableHeaderView: View {
         .frame(height: TableHeaderStyle.height)
         .background(headerBg)
         .overlay { headerBorder }
-        .shadow(color: .black.opacity(0.10), radius: 1, x: 0, y: 1)
+        .overlay(alignment: .bottom) {
+            Color(nsColor: .separatorColor).opacity(0.55)
+                .frame(height: 0.5)
+        }
         .contextMenu { columnToggleMenu }
     }
 
@@ -103,8 +106,8 @@ struct TableHeaderView: View {
     }
 
     private var headerBorder: some View {
-        RoundedRectangle(cornerRadius: 3)
-            .stroke(columnDividerColor, lineWidth: 0.75)
+        Rectangle()
+            .stroke(columnDividerColor.opacity(0.65), lineWidth: 0.5)
             .allowsHitTesting(false)
     }
 

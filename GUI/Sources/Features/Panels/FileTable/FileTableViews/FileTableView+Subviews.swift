@@ -92,19 +92,17 @@ extension FileTableView {
 
     private var scrollBackgroundLayer: some View {
         ZStack {
-            scrollZebraBackground
+            emptyAreaBackground
             Color.clear
                 .contentShape(Rectangle())
                 .gesture(emptyAreaTapGesture, including: .gesture)
         }
     }
 
-    private var scrollZebraBackground: some View {
-        ZebraBackgroundFill(
-            startIndex: 0,
-            isActivePanel: appState.focusedPanel == panelSide,
-            rowHeight: FilePanelStyle.rowHeight
-        )
+    private var emptyAreaBackground: some View {
+        let isActive = appState.focusedPanel == panelSide
+        return Rectangle()
+            .fill(isActive ? DesignTokens.zebraActiveEven : DesignTokens.zebraInactiveEven)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(false)
         .accessibilityHidden(true)

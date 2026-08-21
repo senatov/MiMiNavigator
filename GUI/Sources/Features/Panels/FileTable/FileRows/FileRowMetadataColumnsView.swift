@@ -31,8 +31,8 @@ struct FileRowMetadataColumnsView: View {
         return ZStack {
             Color.clear.frame(width: 14)
             Rectangle()
-                .fill(colorStore.activeTheme.columnDividerColor)
-                .frame(width: 1)
+                .fill(colorStore.activeTheme.columnDividerColor.opacity(0.58))
+                .frame(width: 0.5)
         }
         .frame(width: 14)
         .allowsHitTesting(false)
