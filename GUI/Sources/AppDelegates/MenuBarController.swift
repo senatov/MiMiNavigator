@@ -2,25 +2,18 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Animated memory status item that toggles the main window and provides safe termination.
+// Description: Native menu bar item for opening MiMiNavigator and common actions.
 
 import AppKit
 
 // MARK: - Menu Bar Controller
 @MainActor final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem?
-    private var animationTimer: Timer?
-    private var animationPhase: Double = 0
-    private var animationTickCount = 0
-    private var currentMemoryLabel = "0 MB"
-    private var animationFrames: [NSImage] = []
-    private let iconCanvasSize = NSSize(width: 25, height: 24)
-    private let animationFrameCount = 12
 
     // MARK: - Install
     func install() {
         guard statusItem == nil else { return }
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = item.button else {
             NSStatusBar.system.removeStatusItem(item)
             log.error("[MenuBar] status item button unavailable")
@@ -30,18 +23,14 @@ import AppKit
         button.action = #selector(handleStatusItemClick)
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         button.imageScaling = .scaleProportionallyDown
-        button.imagePosition = .imageLeading
-        button.font = NSFont.menuBarFont(ofSize: 9)
+        button.imagePosition = .imageOnly
+        button.image = makeStatusImage()
         button.toolTip = "MiMiNavigator"
-        button.setAccessibilityLabel("Show or minimize MiMiNavigator")
+        button.setAccessibilityLabel("Show MiMiNavigator")
         item.menu = nil
         item.isVisible = true
         statusItem = item
-        animationFrames = makeAnimationFrames()
-        refreshMemoryLabel()
-        updateStatusImage()
-        startAnimation()
-        log.info("[MenuBar] animated memory status item installed visible=\(item.isVisible)")
+        log.info("[MenuBar] native status item installed visible=\(item.isVisible)")
         DispatchQueue.main.async { [weak self] in
             self?.logStatusItemState()
         }
@@ -53,20 +42,10 @@ import AppKit
             showQuitMenu()
             return
         }
-        toggleApplicationVisibility()
+        showApplication()
     }
 
-    private func toggleApplicationVisibility() {
-        if let window = existingMainWindow,
-           window.isVisible,
-           !window.isMiniaturized,
-           window.isKeyWindow,
-           NSApp.isActive
-        {
-            window.miniaturize(nil)
-            log.info("[MenuBar] minimized main window to Dock")
-            return
-        }
+    private func showApplication() {
         NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         if let window = existingMainWindow {
@@ -82,10 +61,51 @@ import AppKit
         guard let button = statusItem?.button else { return }
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.addItem(menuItem(title: "Show MiMiNavigator", symbol: "macwindow", action: #selector(showApplicationFromMenu)))
+        menu.addItem(.separator())
+        menu.addItem(menuItem(title: "Find Files…", symbol: "magnifyingglass", action: #selector(openFindFiles)))
+        menu.addItem(menuItem(title: "Connect to Server…", symbol: "network", action: #selector(openConnectToServer)))
+        menu.addItem(.separator())
+        let memoryItem = NSMenuItem(title: "Memory: \(memoryLabel)", action: nil, keyEquivalent: "")
+        memoryItem.image = NSImage(systemSymbolName: "memorychip", accessibilityDescription: nil)
+        memoryItem.isEnabled = false
+        menu.addItem(memoryItem)
+        menu.addItem(.separator())
+        menu.addItem(menuItem(title: "Settings…", symbol: "gearshape", action: #selector(openSettings)))
         let quitItem = NSMenuItem(title: "Quit MiMiNavigator", action: #selector(quitApplication), keyEquivalent: "")
+        quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
         quitItem.target = self
         menu.addItem(quitItem)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.maxY + 2), in: button)
+    }
+
+    private func menuItem(title: String, symbol: String, action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        item.target = self
+        return item
+    }
+
+    @objc private func showApplicationFromMenu() {
+        showApplication()
+    }
+
+    @objc private func openFindFiles() {
+        showApplication()
+        guard let appState = AppStateProvider.shared else { return }
+        let panel = appState.focusedPanel
+        FindFilesCoordinator.shared.appState = appState
+        FindFilesCoordinator.shared.open(searchPath: appState.path(for: panel))
+    }
+
+    @objc private func openConnectToServer() {
+        showApplication()
+        ConnectToServerCoordinator.shared.open()
+    }
+
+    @objc private func openSettings() {
+        showApplication()
+        SettingsCoordinator.shared.open()
     }
 
     @objc private func quitApplication() {
@@ -93,64 +113,18 @@ import AppKit
         NSApp.terminate(nil)
     }
 
-    // MARK: - Animation
-    private func startAnimation() {
-        animationTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.25, target: self, selector: #selector(animationTick), userInfo: nil, repeats: true)
-        RunLoop.main.add(timer, forMode: .common)
-        animationTimer = timer
-    }
-
-    @objc private func animationTick() {
-        animationPhase = (animationPhase + 1 / Double(animationFrameCount)).truncatingRemainder(dividingBy: 1)
-        animationTickCount += 1
-        if animationTickCount.isMultiple(of: 4) { refreshMemoryLabel() }
-        updateStatusImage()
-    }
-
     // MARK: - Status Image
-    private func updateStatusImage() {
-        guard let button = statusItem?.button else { return }
-        if animationFrames.isEmpty {
-            button.image = NSApp.applicationIconImage
-        } else {
-            let frameIndex = min(Int(animationPhase * Double(animationFrameCount)), animationFrames.count - 1)
-            button.image = animationFrames[frameIndex]
-        }
-        button.title = currentMemoryLabel
-        button.toolTip = "MiMiNavigator — \(currentMemoryLabel) physical footprint"
+    private func makeStatusImage() -> NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        let symbol = NSImage(systemSymbolName: "cat.fill", accessibilityDescription: "MiMiNavigator")
+            ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
+        let image = symbol?.withSymbolConfiguration(configuration)
+        image?.isTemplate = true
+        return image
     }
 
-    private func makeAnimationFrames() -> [NSImage] {
-        guard let applicationIcon = NSApp.applicationIconImage else { return [] }
-        let baseIcon = applicationIcon.copy() as? NSImage ?? applicationIcon
-        return (0..<animationFrameCount).map {
-            index in
-                let phase = Double(index) / Double(animationFrameCount)
-                let image = NSImage(size: iconCanvasSize)
-                image.lockFocus()
-                let iconRect = NSRect(x: 1.5, y: 0.5, width: 22, height: 22)
-                baseIcon.draw(in: iconRect, from: .zero, operation: .sourceOver, fraction: 1)
-                drawActivityPulse(phase: phase)
-                image.unlockFocus()
-                image.isTemplate = false
-                return image
-        }
-    }
-
-    private func drawActivityPulse(phase: Double) {
-        let intensity = 0.42 + 0.30 * (sin(phase * .pi * 2) + 1) / 2
-        let dotRect = NSRect(x: 20, y: 18.5, width: 3.5, height: 3.5)
-        NSColor.controlAccentColor.withAlphaComponent(intensity).setFill()
-        NSBezierPath(ovalIn: dotRect).fill()
-        NSColor.white.withAlphaComponent(0.72).setStroke()
-        let border = NSBezierPath(ovalIn: dotRect.insetBy(dx: 0.35, dy: 0.35))
-        border.lineWidth = 0.5
-        border.stroke()
-    }
-
-    private func refreshMemoryLabel() {
-        currentMemoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: MemoryDiagnostics.capture().footprintBytes)
+    private var memoryLabel: String {
+        MemoryDiagnostics.wholeMemoryLabel(bytes: MemoryDiagnostics.capture().footprintBytes)
     }
 
     private var existingMainWindow: NSWindow? {
