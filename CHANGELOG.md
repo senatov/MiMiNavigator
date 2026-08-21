@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.3] — 2026-08-21
+
+> **Release notes**
+> A more compact and informative interface, reliable live connection state, macOS-safe shortcuts, and reusable service packages.
+
+### Added
+- **Menu bar diagnostics** — the status item now exposes live connection information, current system errors, and clearer application state with a recognizable MiMiNavigator icon.
+- **Column presets** — professional panel column layouts can be selected without rebuilding each arrangement manually.
+- **macOS-safe shortcuts** — a dedicated shortcut profile avoids function keys reserved by the system and is documented in Settings and the keyboard guide.
+- **Reusable packages** — search, media metadata, external-tool, and network discovery services now live in shared Swift package modules.
+
+### Changed
+- **Visual system** — the title area, panels, toolbar customization, Settings, tabs, filters, empty states, and bottom command bar use more consistent spacing, typography, focus treatment, and dimensional controls.
+- **Panel continuity** — zebra rows continue through unused panel space so short file lists remain visually anchored.
+- **Directory ordering** — directories remain alphabetically ordered independently of the file sort key and direction selected by the user.
+- **Diagnostics retention** — previous temporary MiMiNavigator logs are preserved beside the current log for post-failure analysis.
+- **Dependencies and notices** — third-party packages, acknowledgements, licenses, About details, and README references are synchronized and updated.
+- **Build metadata** — marketing version updated to `0.9.9.7.3`; build number updated to `140`.
+
+### Fixed
+- **Panel selection** — clicking empty space in the active panel clears the current file selection.
+- **Settings lifecycle** — the Settings window closes on the first attempt without flashing back into view.
+- **Connection state** — disconnecting a mounted network volume immediately removes it from Connections without requiring an application restart.
+- **Menu bar behavior** — clicking the status icon once again shows or hides the main application window.
+- **Window geometry** — corrected title icon alignment, top spacing, toolbar density, and command-bar edge insets.
+
 ## [0.9.9.7.2] — 2026-08-15
 
 > **Release notes**
