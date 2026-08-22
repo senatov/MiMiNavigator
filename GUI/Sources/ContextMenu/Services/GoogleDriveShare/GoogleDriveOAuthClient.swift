@@ -28,16 +28,37 @@ enum GoogleDriveOAuthClient {
             await cacheAccessToken(token)
             return token.value
         }
-        if let refreshToken = try? await refreshToken() {
+        let savedRefreshToken: String?
+        do {
+            savedRefreshToken = try await refreshToken()
+        } catch GoogleDriveError.keychain(let status) {
+            let approved = await CloudOAuthRecoveryPolicy.requestCredentialReset(
+                for: .googleDrive,
+                reason: "The saved authorization could not be read from Keychain (status \(status))."
+            )
+            guard approved else { throw GoogleDriveError.keychain(status) }
+            try await resetSavedAuthorization()
+            log.info("[CloudLink] user approved Google Drive Keychain credential reset")
+            return try await interactiveAccessToken().value
+        }
+        if let savedRefreshToken {
             do {
-                let token = try await refreshAccessToken(refreshToken)
-                try await cacheTokens(accessToken: token, refreshToken: refreshToken)
+                let token = try await refreshAccessToken(savedRefreshToken)
+                try await cacheTokens(accessToken: token, refreshToken: savedRefreshToken)
                 return token.value
+            } catch GoogleDriveError.requestFailed(let status, let body)
+                where status == 400 && body.localizedCaseInsensitiveContains("invalid_grant") {
+                log.warning("[CloudLink] Google Drive refresh token expired or was revoked")
+                let approved = await CloudOAuthRecoveryPolicy.requestCredentialReset(
+                    for: .googleDrive,
+                    reason: "Google Drive rejected the saved authorization because it expired or was revoked."
+                )
+                guard approved else { throw GoogleDriveError.requestFailed(status, body) }
+                try await resetSavedAuthorization()
+                log.info("[CloudLink] user approved Google Drive rejected credential reset")
             } catch {
                 log.warning("[CloudLink] Google Drive refresh token failed: \(error.localizedDescription)")
-                await clearCachedTokens()
-                GoogleDriveTokenConfigStore.delete()
-                try? GoogleDriveTokenStore.deleteRefreshToken(ignoreMissing: true)
+                throw error
             }
         }
         let token = try await interactiveAccessToken()
@@ -205,6 +226,14 @@ enum GoogleDriveOAuthClient {
         cachedAccessToken = nil
         cachedRefreshToken = nil
         didLoadConfigCache = false
+    }
+
+    // MARK: - Reset Saved Authorization
+
+    private static func resetSavedAuthorization() async throws {
+        await clearCachedTokens()
+        GoogleDriveTokenConfigStore.delete()
+        try GoogleDriveTokenStore.deleteRefreshToken(ignoreMissing: true)
     }
 
     // MARK: - Config Cache

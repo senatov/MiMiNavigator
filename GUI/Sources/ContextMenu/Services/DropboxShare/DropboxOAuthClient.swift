@@ -22,7 +22,20 @@ enum DropboxOAuthClient {
         if let token = await cachedAccessToken, token.isValid {
             return token.value
         }
-        if let refreshToken = try DropboxTokenStore.loadRefreshToken() {
+        let refreshToken: String?
+        do {
+            refreshToken = try DropboxTokenStore.loadRefreshToken()
+        } catch DropboxError.keychain(let status) {
+            let approved = await CloudOAuthRecoveryPolicy.requestCredentialReset(
+                for: .dropbox,
+                reason: "The saved authorization could not be read from Keychain (status \(status))."
+            )
+            guard approved else { throw DropboxError.keychain(status) }
+            try DropboxTokenStore.deleteRefreshToken(ignoreMissing: true)
+            log.info("[CloudLink] user approved Dropbox Keychain credential reset")
+            return try await interactiveAccessToken().value
+        }
+        if let refreshToken {
             do {
                 let token = try await refreshAccessToken(refreshToken)
                 await cache(token)
@@ -30,7 +43,13 @@ enum DropboxOAuthClient {
             } catch DropboxError.requestFailed(let status, let body)
                 where status == 400 && body.localizedCaseInsensitiveContains("invalid_grant") {
                 log.warning("[CloudLink] Dropbox refresh token expired or was revoked")
+                let approved = await CloudOAuthRecoveryPolicy.requestCredentialReset(
+                    for: .dropbox,
+                    reason: "Dropbox rejected the saved authorization because it expired or was revoked."
+                )
+                guard approved else { throw DropboxError.requestFailed(status, body) }
                 try DropboxTokenStore.deleteRefreshToken(ignoreMissing: true)
+                log.info("[CloudLink] user approved Dropbox rejected credential reset")
             } catch {
                 log.warning("[CloudLink] Dropbox refresh token failed: \(error.localizedDescription)")
                 throw error
