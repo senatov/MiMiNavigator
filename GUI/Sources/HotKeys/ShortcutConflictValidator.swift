@@ -95,22 +95,6 @@ enum ShortcutConflictValidator {
         let cmdOpt: HotKeyModifiers = [.command, .option]
         let ctrlCmd: HotKeyModifiers = [.control, .command]
 
-        // ── App lifecycle ──
-        add(0x0C, cmd, "⌘Q — Quit Application")
-        add(0x04, cmd, "⌘H — Hide Application")
-        add(0x04, cmdOpt, "⌘⌥H — Hide Others")
-        add(0x2E, cmd, "⌘M — Minimize Window")
-        add(0x0D, cmd, "⌘W — Close Window")
-        add(0x1F, cmd, "⌘O — Open (system)")
-
-        // ── Edit ──
-        add(0x06, cmd, "⌘Z — Undo")
-        add(0x06, cmdShift, "⌘⇧Z — Redo")
-        add(0x07, cmd, "⌘X — Cut")
-        add(0x08, cmd, "⌘C — Copy")
-        add(0x09, cmd, "⌘V — Paste")
-        add(0x00, cmd, "⌘A — Select All")
-
         // ── Window management ──
         add(0x32, cmd, "⌘` — Cycle Windows")
         add(0x30, ctrlCmd, "⌃⌘F — Toggle Fullscreen")
@@ -127,10 +111,8 @@ enum ShortcutConflictValidator {
         add(0x35, cmdOpt, "⌘⌥Esc — Force Quit")
 
         // ── Accessibility ──
+        add(0x60, .none, "F5 — Move Focus to Window Toolbar")
         add(0x60, cmd, "⌘F5 — VoiceOver Toggle")
-
-        // ── Preferences ──
-        add(0x2B, cmd, "⌘, — Preferences / Settings")
 
         return map
     }()

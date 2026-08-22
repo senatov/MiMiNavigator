@@ -26,7 +26,7 @@ final class HotKeyStore {
     private var reverseLookup: [UInt64: HotKeyAction] = [:]
     
     /// Current preset (or .custom if user modified)
-    private(set) var currentPreset: HotKeyPreset = .macOSSafe
+    private(set) var currentPreset: HotKeyPreset = .totalCommander
 
     private let userDefaultsKey = "com.senatov.MiMiNavigator.hotkeys"
     private let presetKey = "com.senatov.MiMiNavigator.hotkeyPreset"
@@ -92,7 +92,8 @@ final class HotKeyStore {
 
     /// Update a binding for an action
     func updateBinding(action: HotKeyAction, keyCode: UInt16, modifiers: HotKeyModifiers) {
-        let newBinding = HotKeyBinding(action: action, keyCode: keyCode, modifiers: modifiers)
+        let normalizedModifiers = modifiers.subtracting(.function)
+        let newBinding = HotKeyBinding(action: action, keyCode: keyCode, modifiers: normalizedModifiers)
 
         // Remove old reverse entry if it exists
         if let old = bindings[action] {
@@ -104,8 +105,10 @@ final class HotKeyStore {
         bindings[action] = newBinding
 
         // Add new reverse entry
-        let newKey = lookupKey(keyCode: keyCode, modifiers: modifiers)
-        reverseLookup[newKey] = action
+        if keyCode != 0 || !normalizedModifiers.isEmpty {
+            let newKey = lookupKey(keyCode: keyCode, modifiers: normalizedModifiers)
+            reverseLookup[newKey] = action
+        }
 
         markAsCustom()
         saveBindings()
@@ -123,8 +126,8 @@ final class HotKeyStore {
 
     /// Reset all bindings to factory defaults
     func resetToDefaults() {
-        log.info("[HotKeys] Resetting to macOS-safe defaults")
-        applyPreset(.macOSSafe)
+        log.info("[HotKeys] Resetting to Total Commander defaults")
+        applyPreset(.totalCommander)
     }
     
     /// Apply a preset shortcut set
@@ -177,11 +180,15 @@ final class HotKeyStore {
     }
     
     private func loadPreset() {
+        if MiMiDefaults.shared.string(forKey: presetKey) == "macOS Safe" {
+            applyPreset(.totalCommander)
+            return
+        }
         if let presetName = MiMiDefaults.shared.string(forKey: presetKey),
            let preset = HotKeyPreset(rawValue: presetName) {
             currentPreset = preset
         } else {
-            currentPreset = .macOSSafe
+            currentPreset = .totalCommander
         }
     }
     
@@ -207,16 +214,20 @@ final class HotKeyStore {
 
         for binding in list {
             bindings[binding.action] = binding
-            let key = lookupKey(keyCode: binding.keyCode, modifiers: binding.modifiers)
-            reverseLookup[key] = binding.action
+            if binding.keyCode != 0 || !binding.modifiers.isEmpty {
+                let key = lookupKey(keyCode: binding.keyCode, modifiers: binding.modifiers)
+                reverseLookup[key] = binding.action
+            }
         }
 
         // Fill any missing actions with defaults
         for action in HotKeyAction.allCases where bindings[action] == nil {
             if let defaultBinding = HotKeyDefaults.bindingsByAction[action] {
                 bindings[action] = defaultBinding
-                let key = lookupKey(keyCode: defaultBinding.keyCode, modifiers: defaultBinding.modifiers)
-                reverseLookup[key] = action
+                if defaultBinding.keyCode != 0 || !defaultBinding.modifiers.isEmpty {
+                    let key = lookupKey(keyCode: defaultBinding.keyCode, modifiers: defaultBinding.modifiers)
+                    reverseLookup[key] = action
+                }
             }
         }
 

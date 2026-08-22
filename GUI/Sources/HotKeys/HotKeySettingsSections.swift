@@ -360,7 +360,6 @@ struct HotKeyFooterBar: View {
             Menu {
                 Button("Reset to Defaults", action: onResetAll)
                 Divider()
-                Button("macOS Safe (Recommended)") { store.applyPreset(.macOSSafe) }
                 Button("Total Commander") { store.applyPreset(.totalCommander) }
                 Button("Finder") { store.applyPreset(.finder) }
             } label: {
@@ -372,10 +371,10 @@ struct HotKeyFooterBar: View {
 
             Spacer()
 
-            Label("macOS Safe avoids system-controlled F-keys", systemImage: "checkmark.shield.fill")
+            Label("macOS-reserved shortcuts stay unassigned", systemImage: "checkmark.shield.fill")
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
-                .help("Apple keyboards use F1–F12 for brightness, Mission Control, media and other system features. Choose Total Commander only when function keys are configured as standard keys.")
+                .help("MiMiNavigator warns and cancels assignments that conflict with system-level macOS shortcuts.")
 
             Spacer()
 

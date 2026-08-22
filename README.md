@@ -149,7 +149,7 @@ MiMiNavigator remains a filesystem browser. Its narrow Google Drive and Dropbox 
 
 ## Keyboard workflow
 
-MiMiNavigator uses the **macOS Safe** shortcut profile by default. Its main file operations use mnemonic combinations such as `⌥R` to rename, `⌥C` to copy, `⌥M` to move, `⌘⇧N` to create a folder and `⌘⌫` to delete, avoiding function keys that Apple keyboards assign to system controls. The traditional Total Commander F-key profile remains available in Settings → Hotkeys. See [Keyboard shortcuts](GUI/Docs/Keyboard_Shortcuts.md).
+MiMiNavigator uses a **Total Commander/Norton Commander** shortcut layout by default. Globally reserved macOS combinations remain unassigned, and attempts to record them show a warning without changing the current shortcut. Function keys are displayed as `F2`, `F4`, and so on even when the physical keyboard requires `Fn`. See [Keyboard shortcuts](GUI/Docs/Keyboard_Shortcuts.md).
 
 ## Build from source
 

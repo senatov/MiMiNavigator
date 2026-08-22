@@ -82,7 +82,7 @@ struct HotKeyRecorderView: View {
 
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [self] event in
             let keyCode = event.keyCode
-            let mods = HotKeyModifiers.fromNSFlags(event.modifierFlags)
+            let mods = HotKeyModifiers.fromNSFlags(event.modifierFlags).subtracting(.function)
             
             log.debug("[HotKeyRecorder] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) mods=\(mods) chars='\(event.characters ?? "")'")
 

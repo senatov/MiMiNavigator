@@ -81,7 +81,8 @@ struct HotKeyBinding: Codable, Identifiable, Hashable, Sendable {
     // MARK: - Display String
     /// Human-readable shortcut: "⌥F7", "⌘⇧F", "F3", "Space"
     var displayString: String {
-        let modStr = modifiers.displayString
+        if keyCode == 0 && modifiers.isEmpty { return "" }
+        let modStr = modifiers.subtracting(.function).displayString
         let keyStr = HotKeyBinding.keyName(for: keyCode)
         return modStr.isEmpty ? keyStr : "\(modStr)\(keyStr)"
     }
