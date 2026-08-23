@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.4] — 2026-08-23
+
+> **Release notes**
+> Persistent workspace previews, a clearer Commander action bar, and unified in-app feedback.
+
+### Added
+- **Persistent Preview pane** — a resizable trailing inspector follows the active panel selection, renders native file previews, and shows essential metadata without replacing either file panel.
+- **Preview controls** — toolbar, Show menu, View menu, and `⇧⌘P` controls toggle Preview while its visibility and width persist between sessions.
+- **Unified notifications** — scoped toast and banner queues provide concise success feedback and actionable errors in the window where an event originated.
+- **Connection recovery banner** — failed remote connections show endpoint details, readable guidance, dismissal, and a Retry action.
+
+### Changed
+- **Commander action bar** — icon, shortcut, and title are visually separated with restrained dividers and no bright internal tiles.
+- **Command typography** — lighter system weights and native SF Symbols improve shortcut and label definition at compact sizes.
+- **Button depth** — the bottom controls use a stronger border, brighter top highlight, and short shadow while retaining natural hover and pressed states.
+- **Cloud feedback** — iCloud and OneDrive Share+Link guidance now uses the shared in-app notification system.
+- **Build metadata** — marketing version updated to `0.9.9.7.4`; build number updated to `141`.
+
+### Removed
+- **Legacy connection popup** — `ConnectErrorPopupController` is removed after connection diagnostics migrate to the shared banner infrastructure.
+
 ## [0.9.9.7.3] — 2026-08-21
 
 > **Release notes**

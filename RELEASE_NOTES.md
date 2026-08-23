@@ -1,38 +1,40 @@
-# MiMiNavigator v0.9.9.7.3
+# MiMiNavigator v0.9.9.7.4
 
-A substantial interface and reliability update that makes MiMiNavigator more compact, informative, and consistent with its dual-panel identity.
+A focused workspace update adding persistent file previews, a clearer Commander-style action bar, and unified in-app feedback.
 
 ## Highlights
 
-- Refined the main window, file panels, toolbar customization, Settings, command bar, tabs, filters, and empty states while preserving the application's dimensional button style.
-- Rebuilt the menu bar experience with a recognizable MiMiNavigator icon, clearer typography, live connection information, diagnostics, and current system errors.
-- Added macOS-safe keyboard defaults and clearer shortcut guidance in Settings and documentation.
-- Moved reusable search, media metadata, external-tool, and network discovery services into shared Swift packages.
+- Added a persistent, resizable Preview pane that follows the active panel selection and keeps essential file metadata visible.
+- Refined the bottom command bar with clearer separation between icons, shortcuts, and action names while preserving MiMiNavigator's dimensional control style.
+- Introduced a shared toast and banner system with scoped queues, actionable connection errors, and concise success feedback.
+
+## Added
+
+- Toggle Preview from the toolbar, the Show and View menus, or with `⇧⌘P`.
+- Remember Preview visibility and width between application sessions.
+- Display native previews for selected files together with kind, size, modification date, and source path.
+- Show connection failures as in-app banners with endpoint details, readable recovery guidance, and a Retry action.
+- Show short success notifications for completed connections and relevant Cloud Share actions.
 
 ## Changed
 
-- Keep zebra striping across the full panel height and improve focus, selection, column headers, navigation controls, spacing, and loading feedback.
-- Keep directories alphabetically ordered independently of the selected file sort column and direction.
-- Add professional column-layout presets and improve the quick-filter presentation.
-- Preserve previous `/tmp/MiMiNavigator*.log` files for later diagnostics instead of overwriting the last session log.
-- Refresh third-party dependency declarations, licenses, acknowledgements, About information, and README documentation.
+- Give bottom command buttons more room, a stronger border, a clearer top highlight, and a short dimensional shadow.
+- Use crisp SF Symbols and lighter system typography for command icons, shortcuts, and labels.
+- Separate command icon, shortcut, and title with restrained dividers instead of bright internal tiles.
+- Route main-window and Connect to Server notifications through one shared mechanism while keeping each notice in its originating window.
 
-## Fixed
+## Removed
 
-- Clear file selection when clicking unused space in the active panel.
-- Close Settings reliably without flashing or requiring a second attempt.
-- Update Connections immediately after disconnecting a mounted network volume.
-- Restore menu bar icon click behavior for showing and hiding the main window.
-- Correct title-bar spacing, branding alignment, build labeling, and command-bar edge insets.
+- Remove the legacy `ConnectErrorPopupController` after migrating connection diagnostics to the unified banner system.
 
 ## Validation
 
-- All extracted package test suites pass.
-- The application passes a Debug build after the package migration.
+- The application passes a Debug build with Swift 6.2 after the Preview and notification integrations.
+- Release metadata and public download documentation are synchronized for `v0.9.9.7.4`.
 - The release pipeline performs a clean Developer ID build, signed DMG creation, notarization, stapling, and Gatekeeper verification.
 
 ## Download
 
 The DMG is signed and notarized by Apple and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.2...v0.9.9.7.3
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.3...v0.9.9.7.4
