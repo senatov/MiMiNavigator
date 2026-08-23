@@ -15,6 +15,7 @@ struct DownToolbarButtonView: View {
     let imageName: String?
     let action: () -> Void
     @State private var isHovered: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: -
 
@@ -48,11 +49,11 @@ struct DownToolbarButtonView: View {
         }
         .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered))
         .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.12)) {
-                isHovered = hovering
-            }
+            if reduceMotion { isHovered = hovering }
+            else { withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering } }
         }
         .keyboardFocusable()
+        .accessibilityLabel(title)
         .help(title)
     }
 }
@@ -92,6 +93,8 @@ private struct DownToolbarGlassButtonBody: View {
     let isSelected: Bool
     @Environment(\.isFocused) private var isFocused
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
 
     private var isPressed: Bool {
         configuration.isPressed
@@ -140,7 +143,7 @@ private struct DownToolbarGlassButtonBody: View {
     var body: some View {
         configuration.label
             .font(DesignTokens.Typography.hotKey)
-            .foregroundStyle(Color.primary.opacity(isPressed ? 0.96 : 0.90))
+            .foregroundStyle(Color.primary.opacity(contrast == .increased ? 1 : (isPressed ? 0.96 : 0.90)))
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background { backgroundLayer }
@@ -149,8 +152,8 @@ private struct DownToolbarGlassButtonBody: View {
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
             .opacity(state == .disabled ? 0.52 : 1)
-            .animation(.easeOut(duration: 0.10), value: configuration.isPressed)
-            .animation(.easeOut(duration: 0.12), value: isHovered)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: configuration.isPressed)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
             .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous))
             .focusEffectDisabled()
     }

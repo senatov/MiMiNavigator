@@ -115,10 +115,23 @@ struct FindFilesSplitDivider: View {
                 }
         )
         .accessibilityLabel("Resize search criteria and results")
+        .accessibilityValue("Search criteria height \(Int(criteriaHeight)) points")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: adjustHeight(by: 24)
+            case .decrement: adjustHeight(by: -24)
+            @unknown default: break
+            }
+        }
         .help("Drag to resize criteria and results")
     }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
         min(max(value, 250), max(250, totalHeight - 190))
+    }
+
+    private func adjustHeight(by delta: CGFloat) {
+        criteriaHeight = clamped(criteriaHeight + delta)
+        MiMiDefaults.shared.set(Double(criteriaHeight), forKey: "findFiles.criteriaPaneHeight")
     }
 }

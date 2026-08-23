@@ -11,6 +11,7 @@ struct SemanticSurfaceStyle: ViewModifier {
     var cornerRadius: CGFloat = DesignTokens.Radius.card
     var isRaised = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     func body(content: Content) -> some View {
         content
             .background {
@@ -20,9 +21,16 @@ struct SemanticSurfaceStyle: ViewModifier {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(0.72), lineWidth: DesignTokens.Control.borderWidth)
+                    .strokeBorder(
+                        DialogColors.border.opacity(contrast == .increased ? 1 : 0.72),
+                        lineWidth: contrast == .increased ? DesignTokens.Control.raisedBorderWidth : DesignTokens.Control.borderWidth
+                    )
             }
-            .shadow(color: .black.opacity(isRaised ? 0.12 : 0.06), radius: isRaised ? 5 : 2, y: isRaised ? 2 : 1)
+            .shadow(
+                color: .black.opacity(contrast == .increased ? (isRaised ? 0.18 : 0.10) : (isRaised ? 0.12 : 0.06)),
+                radius: isRaised ? 5 : 2,
+                y: isRaised ? 2 : 1
+            )
     }
 }
 

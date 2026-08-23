@@ -14,6 +14,7 @@ struct FindFilesWindowContent: View {
     @State private var selectedTab: FindFilesTab = .general
     @State private var criteriaHeight: CGFloat = 390
     @State private var didRestoreLayout = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var dialogBgColor: Color {
         let store = ColorThemeStore.shared
@@ -314,7 +315,7 @@ struct FindFilesWindowContent: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .animation(.easeInOut(duration: 0.1), value: viewModel.stats.currentPath)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.1), value: viewModel.stats.currentPath)
             }
         }
     }
@@ -336,6 +337,6 @@ struct FindFilesWindowContent: View {
             }
         }
         .allowsHitTesting(false)
-        .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+        .transition(reduceMotion ? .identity : .opacity.animation(.easeInOut(duration: 0.2)))
     }
 }
