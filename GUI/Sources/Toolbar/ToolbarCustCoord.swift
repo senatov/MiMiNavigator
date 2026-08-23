@@ -18,7 +18,6 @@ final class ToolbarCustomizeCoordinator {
 
     private(set) var isVisible = false
     private var window: NSPanel?
-    private var mainWindowObserver: NSObjectProtocol?
     private var isClosing = false
 
     private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize"
@@ -75,7 +74,6 @@ final class ToolbarCustomizeCoordinator {
         panel.collectionBehavior.insert(.moveToActiveSpace)
         panel.backgroundColor = NSColor(DialogColors.base)
         panel.delegate = ToolbarCustWindowDelegate.shared
-        installReactivationObservers()
         self.window = panel
         isVisible = true
         present(panel, relativeTo: sourceMainWindow)
@@ -88,7 +86,6 @@ final class ToolbarCustomizeCoordinator {
         log.debug("[ToolbarCustomize] close() invoked")
         guard !isClosing else { return }
         isClosing = true
-        removeReactivationObservers()
         isVisible = false
         let panel = window
         if let panel {
@@ -111,7 +108,6 @@ final class ToolbarCustomizeCoordinator {
         if let window {
             saveSize(window.frame.size)
         }
-        removeReactivationObservers()
         isClosing = false
         isVisible = false
     }
@@ -186,36 +182,6 @@ final class ToolbarCustomizeCoordinator {
         log.debug("[ToolbarCustomize] size saved \(width)x\(height)")
     }
 
-    private func installReactivationObservers() {
-        removeReactivationObservers()
-        mainWindowObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didBecomeMainNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let observedWindow = notification.object as? NSWindow else { return }
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let panel = self.window,
-                      observedWindow != panel,
-                      observedWindow.isVisible,
-                      observedWindow.isMainWindow,
-                      NSApp.isActive,
-                      self.isVisible else {
-                    return
-                }
-                self.orderAbove(panel, relativeTo: observedWindow)
-            }
-        }
-    }
-
-    private func removeReactivationObservers() {
-        if let mainWindowObserver {
-            NotificationCenter.default.removeObserver(mainWindowObserver)
-            self.mainWindowObserver = nil
-        }
-    }
-
     private func currentPrimaryWindow(excluding panel: NSWindow?) -> NSWindow? {
         if let main = NSApp.mainWindow, main != panel, main.isVisible {
             return main
@@ -237,8 +203,6 @@ final class ToolbarCustomizeCoordinator {
     }
 
     private func present(_ panel: NSPanel, relativeTo window: NSWindow?) {
-        NSApp.activate(ignoringOtherApps: true)
-
         panel.makeKeyAndOrderFront(nil)
 
         // Re-assert key status on the next main turn, after right-click menu tracking settles.

@@ -20,7 +20,6 @@ final class ConvertMediaCoord {
     fileprivate let frameAutosaveName = "MiMiNavigator.ConvertMediaWindow"
     fileprivate let defaultWidth: CGFloat = 420
     fileprivate let defaultHeight: CGFloat = 440
-    fileprivate var mainWindowObserver: NSObjectProtocol?
 
     private init() {}
 
@@ -42,14 +41,12 @@ extension ConvertMediaCoord {
             isVisible = false
             return
         }
-        removeReactivationObservers()
         window.close()
         isVisible = false
         log.info("[ConvertMedia] panel closed")
     }
 
     func windowDidClose() {
-        removeReactivationObservers()
         isVisible = false
         window = nil
     }
@@ -71,49 +68,6 @@ extension ConvertMediaCoord {
         return NSRect(origin: .zero, size: size)
     }
 
-    func installReactivationObservers() {
-        removeReactivationObservers()
-        let center = NotificationCenter.default
-        mainWindowObserver = center.addObserver(
-            forName: NSWindow.didBecomeMainNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let observedWindow = notification.object as? NSWindow else {
-                return
-            }
-            Task { @MainActor [weak self] in
-                guard let self,
-                      observedWindow != self.window,
-                      observedWindow.className != "NSStatusBarWindow",
-                      observedWindow.isVisible,
-                      observedWindow.isMainWindow,
-                      observedWindow.isKeyWindow else {
-                    return
-                }
-                self.bringPanelInFrontOfMainWindowIfNeeded(relativeTo: observedWindow)
-            }
-        }
-    }
-
-    func removeReactivationObservers() {
-        let center = NotificationCenter.default
-        if let mainWindowObserver {
-            center.removeObserver(mainWindowObserver)
-            self.mainWindowObserver = nil
-        }
-    }
-
-    func bringPanelInFrontOfMainWindowIfNeeded(relativeTo mainWindow: NSWindow) {
-        guard isVisible,
-              let panelWindow = window,
-              panelWindow.isVisible,
-              mainWindow != panelWindow,
-              NSApp.isActive else {
-            return
-        }
-        panelWindow.order(.above, relativeTo: mainWindow.windowNumber)
-    }
 }
 
 @MainActor

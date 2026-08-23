@@ -142,8 +142,6 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Present Above Main Window
     private func presentAboveMain(_ panel: NSPanel) {
-        NSApp.activate(ignoringOtherApps: true)
-        panel.level = .normal
         panel.orderFront(nil)
         panel.makeKeyAndOrderFront(nil)
     }

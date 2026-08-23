@@ -174,7 +174,7 @@ import LogKit
 
     private func restoreStandaloneWindowOrdering(relativeTo mainWindow: NSWindow) {
         let standalonePanels = NSApp.orderedWindows.compactMap { $0 as? NSPanel }.filter {
-            $0.isVisible && $0.level == .normal && $0 !== mainWindow
+            $0.isVisible && WindowPresentationPolicy.isStandalone($0) && $0 !== mainWindow
         }
         for panel in standalonePanels.reversed() { panel.orderFront(nil) }
     }
