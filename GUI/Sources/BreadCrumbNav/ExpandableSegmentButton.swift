@@ -47,8 +47,9 @@ struct ExpandableSegmentButton: View {
     }
 
     private var displayFont: Font {
-        let resolvedSize = isHovered ? hoverFontSize : fontSize
-        let base = Font.system(size: resolvedSize, weight: .regular, design: .rounded)
+        let requestedSize = isHovered ? hoverFontSize : fontSize
+        let resolvedSize = (requestedSize * 2).rounded() / 2
+        let base = Font.system(size: resolvedSize, weight: isHovered ? .medium : .regular, design: .default)
         return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
     }
 
@@ -72,7 +73,6 @@ struct ExpandableSegmentButton: View {
         Text(displayText)
             .font(displayFont)
             .foregroundStyle(displayColor)
-            .kerning(0)
             .lineLimit(1)
             .truncationMode(.middle)
             .padding(.vertical, isHovered ? 6 : 3)
@@ -88,12 +88,10 @@ struct ExpandableSegmentButton: View {
         if isHovered {
             RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
                 .fill(lensFill)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous))
                 .overlay(lensHighlight)
-                .compositingGroup()
-                .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.24, blue: 0.38, alpha: 0.34)), radius: 10, x: 0, y: 5)
+                .shadow(color: Color(#colorLiteral(red: 0.08, green: 0.18, blue: 0.30, alpha: 0.30)), radius: 4, x: 0, y: 2)
+                .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.30, blue: 0.48, alpha: 0.16)), radius: 9, x: 0, y: 4)
                 .zIndex(1_000)
-                .transition(.scale(scale: 0.9).combined(with: .opacity))
         }
     }
 
@@ -101,16 +99,21 @@ struct ExpandableSegmentButton: View {
     private var hoverGlow: some View {
         if isHovered {
             RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
-                .stroke(lensStroke, lineWidth: 1.2)
+                .strokeBorder(lensStroke, lineWidth: 1)
+                .overlay {
+                    RoundedRectangle(cornerRadius: lensCornerRadius - 1, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.70), lineWidth: 0.75)
+                        .padding(1)
+                }
         }
     }
 
     private var lensFill: LinearGradient {
         LinearGradient(
             colors: [
-                hoverBackgroundColor.opacity(0.72),
-                hoverBackgroundColor.opacity(0.58),
-                hoverBackgroundColor.opacity(0.46)
+                Color.white.opacity(0.88),
+                hoverBackgroundColor.opacity(0.78),
+                hoverBackgroundColor.opacity(0.66)
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -122,8 +125,8 @@ struct ExpandableSegmentButton: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.42)),
-                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.10)),
+                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.46)),
+                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.08)),
                         Color.clear
                     ],
                     startPoint: .top,
@@ -151,8 +154,6 @@ struct ExpandableSegmentButton: View {
             log.debug("[BreadCrumb] hover \(hovering ? "enter" : "exit") index=\(segment.originalIndex) text='\(segment.fullName)'")
             lastLoggedHover = hovering
         }
-        withAnimation(.spring(response: 0.24, dampingFraction: 0.68)) {
-            isHovered = hovering
-        }
+        isHovered = hovering
     }
 }

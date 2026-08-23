@@ -168,12 +168,12 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
     }
 
     private var previewHoverFontSize: CGFloat {
-        storedHoverFontSize > 0 ? CGFloat(storedHoverFontSize) : previewFontSize * 1.13
+        storedHoverFontSize > 0 ? CGFloat(storedHoverFontSize) : previewFontSize + 1
     }
 
     private var hoverFontSizeBinding: Binding<Double> {
         Binding(
-            get: { storedHoverFontSize > 0 ? storedHoverFontSize : Double(previewFontSize * 1.13) },
+            get: { storedHoverFontSize > 0 ? storedHoverFontSize : Double(previewFontSize + 1) },
             set: { storedHoverFontSize = $0 }
         )
     }

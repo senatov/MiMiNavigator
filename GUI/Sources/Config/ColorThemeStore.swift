@@ -97,7 +97,8 @@ final class ColorThemeStore {
 
     var effectiveBreadcrumbHoverFontSize: CGFloat {
         let stored = udD("breadcrumb.hoverFontSize")
-        return stored > 0 ? CGFloat(stored) : activeTheme.breadcrumbFontSize * 1.13
+        let requestedSize = stored > 0 ? CGFloat(stored) : activeTheme.breadcrumbFontSize + 1
+        return (requestedSize * 2).rounded() / 2
     }
 
     // Button appearance
