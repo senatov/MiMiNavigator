@@ -17,17 +17,17 @@ struct FindFilesAdvancedCriteriaSection: View {
                 Text("Name")
                     .frame(width: 72, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                Toggle("NOT", isOn: $viewModel.advancedSettings.invertFileNamePattern)
+                Toggle("NOT", isOn: settingBinding(\.invertFileNamePattern))
                     .toggleStyle(.checkbox)
                     .fixedSize()
-                TextField("File name pattern", text: $viewModel.advancedSettings.fileNamePattern)
+                TextField("File name pattern", text: settingBinding(\.fileNamePattern))
                     .textFieldStyle(.roundedBorder)
             }
             HStack(spacing: 8) {
                 Text("Directory")
                     .frame(width: 72, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                TextField("Directory path", text: $viewModel.advancedSettings.searchDirectory)
+                TextField("Directory path", text: settingBinding(\.searchDirectory))
                     .textFieldStyle(.roundedBorder)
                 Button(action: browseDirectory) {
                     Image(systemName: "folder.badge.plus")
@@ -38,17 +38,17 @@ struct FindFilesAdvancedCriteriaSection: View {
                 Text("Find text")
                     .frame(width: 72, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                TextField("Text to find inside files", text: $viewModel.advancedSettings.searchText)
+                TextField("Text to find inside files", text: settingBinding(\.searchText))
                     .onChange(of: viewModel.advancedSettings.searchText) {
                         viewModel.normalizeContentSearchSettings()
                     }
                     .textFieldStyle(.roundedBorder)
             }
             HStack(spacing: 16) {
-                Toggle("Case sensitive", isOn: $viewModel.advancedSettings.caseSensitive)
-                Toggle("Regular expressions", isOn: $viewModel.advancedSettings.useRegex)
-                Toggle("Include subdirectories", isOn: $viewModel.advancedSettings.searchInSubdirectories)
-                Toggle("Search in archives", isOn: $viewModel.advancedSettings.searchInArchives)
+                Toggle("Case sensitive", isOn: settingBinding(\.caseSensitive))
+                Toggle("Regular expressions", isOn: settingBinding(\.useRegex))
+                Toggle("Include subdirectories", isOn: settingBinding(\.searchInSubdirectories))
+                Toggle("Search in archives", isOn: settingBinding(\.searchInArchives))
             }
             .toggleStyle(.checkbox)
         }
@@ -69,6 +69,17 @@ struct FindFilesAdvancedCriteriaSection: View {
                 canChooseFiles: false
             ) else { return }
             viewModel.advancedSettings.searchDirectory = url.path
+            viewModel.markAdvancedCriteriaEdited()
         }
+    }
+
+    private func settingBinding<Value>(_ keyPath: WritableKeyPath<FindFilesSearchSettings, Value>) -> Binding<Value> {
+        Binding(
+            get: { viewModel.advancedSettings[keyPath: keyPath] },
+            set: { value in
+                viewModel.advancedSettings[keyPath: keyPath] = value
+                viewModel.markAdvancedCriteriaEdited()
+            }
+        )
     }
 }

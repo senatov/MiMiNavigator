@@ -128,6 +128,10 @@ struct FindFilesWindowContent: View {
                 }
                 .padding(.horizontal, 10)
 
+                FindFilesActiveFiltersBar(viewModel: viewModel)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 5)
+
                 // MARK: - Action Bar (Search / Close) — tight to input
                 actionBar
                     .padding(.horizontal, 12)

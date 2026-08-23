@@ -16,6 +16,49 @@ extension FindFilesViewModel {
         advancedSettings.activePreset == preset
     }
 
+    var activeAdvancedFilterChips: [String] {
+        guard activeModule == .advanced else { return [] }
+        let settings = advancedSettings
+        var values: [String] = []
+        if settings.itemTypeFilter != .filesAndFolders { values.append(settings.itemTypeFilter.label) }
+        if settings.caseSensitive { values.append("Case-sensitive") }
+        if settings.useRegex { values.append("Regex") }
+        if settings.excludeSystemLocations { values.append("System locations excluded") }
+        if settings.deletableOnly { values.append("Deletable only") }
+        if settings.emptyFoldersOnly { values.append("Empty folders") }
+        if settings.useSizeFilter { values.append(sizeSummary(settings)) }
+        if settings.useDateFilter { values.append("Modified: \(Self.shortDate(settings.dateFrom))–\(Self.shortDate(settings.dateTo))") }
+        if settings.useStaleItemFilter { values.append(staleSummary(settings)) }
+        return values
+    }
+
+    var advancedCriteriaWarning: String? {
+        let settings = advancedSettings
+        let hasText = !settings.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if hasText && settings.itemTypeFilter == .foldersOnly { return "Text search requires files." }
+        if settings.emptyFoldersOnly && settings.itemTypeFilter != .foldersOnly { return "Empty-folder filtering requires Folders only." }
+        if settings.useSizeFilter && settings.itemTypeFilter == .foldersOnly { return "File-size filtering does not apply to folders." }
+        return nil
+    }
+
+    func resetAdvancedFilters() {
+        advancedSettings.itemTypeFilter = .filesAndFolders
+        advancedSettings.excludeSystemLocations = false
+        advancedSettings.deletableOnly = false
+        advancedSettings.emptyFoldersOnly = false
+        advancedSettings.useSizeFilter = false
+        advancedSettings.useDateFilter = false
+        advancedSettings.useStaleItemFilter = false
+        advancedSettings.activePreset = nil
+        log.info("[FindFiles] Advanced filters reset")
+    }
+
+    func markAdvancedCriteriaEdited() {
+        guard advancedSettings.activePreset != nil else { return }
+        advancedSettings.activePreset = nil
+        log.debug("[FindFiles] Preset deactivated after manual criteria edit")
+    }
+
     private var searchCriteriaSummary: [String] {
         var values = baseSummary(
             pattern: fileNamePattern,
