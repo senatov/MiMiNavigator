@@ -14,6 +14,7 @@ struct DuoFilePanelView: View {
     @Environment(AppState.self) var appState
     @Binding var isFinderSidebarVisible: Bool
     @State private var toolbarStore = ToolbarStore.shared  // tracks menuBarVisible changes
+    @State private var previewStore = PreviewPaneStore.shared
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var lastContainerWidth: CGFloat = 0
@@ -29,6 +30,7 @@ struct DuoFilePanelView: View {
         static let finderSidebarWidth: CGFloat = 220
         static let finderSidebarHiddenOffset: CGFloat = -18
         static let finderSidebarAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.92, blendDuration: 0)
+        static let previewAnimation = Animation.easeInOut(duration: 0.18)
     }
     // MARK: - Body
     var body: some View {
@@ -81,6 +83,12 @@ struct DuoFilePanelView: View {
                         }
                         .frame(width: panelWidth, height: geometry.size.height)
                     }
+                    if previewStore.isVisible {
+                        PreviewPaneDivider(previewWidth: $previewStore.width, availableWidth: geometry.size.width)
+                        WorkspacePreviewPane(close: { previewStore.isVisible = false })
+                            .frame(width: previewStore.width, height: geometry.size.height)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                    }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
                 Color.clear
@@ -99,6 +107,7 @@ struct DuoFilePanelView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(Layout.finderSidebarAnimation, value: isFinderSidebarVisible)
+        .animation(Layout.previewAnimation, value: previewStore.isVisible)
     }
 
     // MARK: - Finder Sidebar
@@ -115,7 +124,8 @@ struct DuoFilePanelView: View {
     // MARK: - Panels Width
     private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
         let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
-        return max(totalWidth - sidebarWidth, 0)
+        let previewWidth = previewStore.isVisible ? previewStore.width + 7 : 0
+        return max(totalWidth - sidebarWidth - previewWidth, 0)
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {
@@ -360,6 +370,7 @@ extension DuoFilePanelView {
             HotKeySettingsCoordinator.shared.showSettings()
         }
         handler.onRenameFile = { actions.performRename() }
+        handler.onTogglePreview = { PreviewPaneStore.shared.toggle() }
         handler.register()
         keyboardHandler = handler
         log.debug("\(#function) keyboard handler registered")

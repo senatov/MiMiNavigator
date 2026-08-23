@@ -68,6 +68,8 @@ struct AppToolbarContent: ToolbarContent {
             app.makeToolbarIcon(.settings) { app.performSettings() }
         case .feedback:
             FeedbackToolbarButton(action: FeedbackCoordinator.shared.show)
+        case .preview:
+            app.makeToolbarToggle(.preview)
         case .menuBarToggle:
             EmptyView()
         }

@@ -297,6 +297,16 @@ struct MiMiNavigatorApp: App {
                 ) {
                     ToolbarStore.shared.menuBarVisible.toggle()
                 }
+            case .preview:
+                ToolbarToggleButton(
+                    systemImage: "rectangle.trailinghalf.inset.filled",
+                    activeImage: "rectangle.trailinghalf.inset.filled",
+                    helpActive: "Hide Preview (⇧⌘P)",
+                    helpInactive: "Show Preview (⇧⌘P)",
+                    isActive: Binding(get: { PreviewPaneStore.shared.isVisible }, set: { _ in })
+                ) {
+                    PreviewPaneStore.shared.toggle()
+                }
             default:
                 EmptyView()
         }

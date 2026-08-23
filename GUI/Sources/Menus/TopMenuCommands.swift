@@ -125,4 +125,10 @@ import Foundation
                 },
                 hotKey: .toggleHiddenFiles
             ),
+            MenuItem(
+                title: "Show/Hide Preview",
+                icon: "rectangle.trailinghalf.inset.filled",
+                action: { PreviewPaneStore.shared.toggle() },
+                shortcut: "⇧⌘P"
+            ),
         ])

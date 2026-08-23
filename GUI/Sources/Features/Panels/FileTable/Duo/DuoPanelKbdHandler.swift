@@ -30,6 +30,7 @@ final class DuoFilePanelKeyboardHandler {
     var onToggleHiddenFiles: (() -> Void)?
     var onOpenSettings: (() -> Void)?
     var onRenameFile: (() -> Void)?
+    var onTogglePreview: (() -> Void)?
 
     init(appState: AppState) {
         self.appState = appState
@@ -83,6 +84,11 @@ final class DuoFilePanelKeyboardHandler {
         // unmodified Up/Down bindings and won't match Shift+Arrow.
         let cleanMods = modifiers.intersection(.deviceIndependentFlagsMask)
             .subtracting([.function, .numericPad])
+        if keyCode == 0x23 && cleanMods == [.command, .shift] {
+            log.info("[Preview] ⇧⌘P → Toggle Preview")
+            onTogglePreview?()
+            return nil
+        }
         if cleanMods == .shift {
             if keyCode == 0x7E {  // Shift+Up
                 appState.markCurrentAndMove(direction: -1)

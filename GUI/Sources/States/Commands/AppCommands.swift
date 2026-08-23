@@ -23,6 +23,13 @@ struct AppCommands: Commands {
         // Replace default "New Window" etc. with nothing
         CommandGroup(replacing: .newItem) {}
 
+        CommandGroup(after: .sidebar) {
+            Button("Show/Hide Preview") {
+                PreviewPaneStore.shared.toggle()
+            }
+            .keyboardShortcut("p", modifiers: [.command, .shift])
+        }
+
         // Replace Help menu — keep empty (we have our own)
         CommandGroup(replacing: .help) {}
 

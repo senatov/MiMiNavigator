@@ -25,6 +25,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     case multiRename    = "multiRename"
     case settings       = "settings"
     case feedback       = "feedback"
+    case preview        = "preview"
     case menuBarToggle  = "menuBarToggle"  // fixed — cannot be removed from toolbar
 
     var id: String { rawValue }
@@ -48,6 +49,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .multiRename:    return "Multi-Rename"
         case .settings:       return "Settings"
         case .feedback:       return "Feedback"
+        case .preview:        return "Preview"
         case .menuBarToggle:  return "Menu Bar"
         }
     }
@@ -70,6 +72,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .multiRename:    return "text.line.2.summary"
         case .settings:       return "gearshape"
         case .feedback:       return "bubble.left.and.text.bubble.right"
+        case .preview:        return "rectangle.trailinghalf.inset.filled"
         case .menuBarToggle:  return "menubar.rectangle"
         }
     }
@@ -88,6 +91,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .multiRename:    return "Rename multiple items"
         case .settings:       return "Settings (⌘,)"
         case .feedback:       return "Open MiMiNavigator feedback options"
+        case .preview:        return "Show / hide Preview pane (⇧⌘P)"
         case .menuBarToggle:  return "Toggle menu bar visibility"
         }
     }
@@ -103,6 +107,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .network,
         .connectServer,
         .findFiles,
+        .preview,
         .multiRename,
         .settings,
         .feedback,
