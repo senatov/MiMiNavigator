@@ -39,6 +39,9 @@ struct FindFilesAdvancedCriteriaSection: View {
                     .frame(width: 72, alignment: .trailing)
                     .foregroundStyle(.secondary)
                 TextField("Text to find inside files", text: $viewModel.advancedSettings.searchText)
+                    .onChange(of: viewModel.advancedSettings.searchText) {
+                        viewModel.normalizeContentSearchSettings()
+                    }
                     .textFieldStyle(.roundedBorder)
             }
             HStack(spacing: 16) {

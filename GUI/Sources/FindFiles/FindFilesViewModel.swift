@@ -130,6 +130,7 @@ final class FindFilesViewModel {
     func startSearch() {
         guard searchState != .searching else { return }
         MemoryDiagnostics.shared.checkpoint("search.before")
+        normalizeContentSearchSettings()
         let settings = activeSearchSettings
         let applicationLeftoversOnly = settings.activePreset == .applicationLeftovers
         let targetPath = applicationLeftoversOnly
@@ -272,6 +273,19 @@ final class FindFilesViewModel {
                 log.info("[FindFiles] Search finished: \(self.results.count) results, \(self.stats.formattedElapsed)")
             }
         }
+    }
+
+    // MARK: - Normalize Content Search Settings
+    func normalizeContentSearchSettings() {
+        guard activeModule == .advanced,
+              !advancedSettings.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              advancedSettings.itemTypeFilter == .foldersOnly else { return }
+        advancedSettings.itemTypeFilter = .filesOnly
+        advancedSettings.emptyFoldersOnly = false
+        if advancedSettings.activePreset == .emptyStaleFolders {
+            advancedSettings.activePreset = nil
+        }
+        log.info("[FindFiles] Content search changed incompatible item type from folders to files")
     }
 
     // MARK: - Cancel Search
