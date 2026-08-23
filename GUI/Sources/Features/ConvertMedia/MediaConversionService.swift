@@ -54,7 +54,6 @@ final class MediaConversionService {
                 return try await handleMissingGifski(
                     source: source,
                     target: target,
-                    sourceFormat: sourceFormat,
                     targetFormat: targetFormat,
                     onCancel: onCancel
                 )

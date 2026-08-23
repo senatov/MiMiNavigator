@@ -144,25 +144,21 @@ enum GifSizeGuard {
     // MARK: - User Decision
 
     @MainActor
-    static func promptOversizedGIF(size: String) -> GifSizeDecision {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = "GIF Exceeds 19.5 MB"
-        alert.informativeText = """
-            Generated GIF size is \(size).
+    static func promptOversizedGIF(size: String) async -> GifSizeDecision {
+        let choice = await ErrorAlertService.choose(
+            title: "GIF Exceeds 19.5 MB",
+            message: """
+                Generated GIF size is \(size).
 
-            You can keep this file anyway, or let MiMiNavigator regenerate it with shorter duration, lower FPS and smaller dimensions.
-            """
-        alert.addButton(withTitle: "Reduce Size")
-        alert.addButton(withTitle: "Keep Large GIF")
-        alert.addButton(withTitle: "Cancel")
-        switch alert.runModal() {
-            case .alertFirstButtonReturn:
-                return .reduce
-            case .alertSecondButtonReturn:
-                return .keep
-            default:
-                return .cancel
+                You can keep this file anyway, or let MiMiNavigator regenerate it with shorter duration, lower FPS and smaller dimensions.
+                """,
+            buttons: ["Reduce Size", "Keep Large GIF", "Cancel"],
+            style: .warning
+        )
+        switch choice {
+        case 0: return .reduce
+        case 1: return .keep
+        default: return .cancel
         }
     }
 }

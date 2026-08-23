@@ -34,7 +34,7 @@ extension MediaConversionService {
         }
         let firstPassSize = GifSizeGuard.fileSizeMB(target)
         panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
-        switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+        switch await GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
             case .keep:
                 approvedOversizedGIFTargets.insert(target.path)
                 panel.appendLine("Keeping GIF above 19.5 MB by user choice")
@@ -141,26 +141,10 @@ extension MediaConversionService {
     func handleMissingGifski(
         source: URL,
         target: URL,
-        sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         onCancel: @escaping () -> Void
     ) async throws {
-        log.warning("[GifConvert] gifski not found, prompting install")
-        let userChoseInstall = GifskiInstallAlert.promptInstall()
-        if userChoseInstall {
-            try await Task.sleep(for: .seconds(2))
-            if ConversionTool.gifski.isAvailable {
-                log.info("[GifConvert] gifski now available after install")
-                try await convert(
-                    source: source,
-                    target: target,
-                    sourceFormat: sourceFormat,
-                    targetFormat: targetFormat,
-                    onCancel: onCancel
-                )
-                return
-            }
-        }
+        log.info("[GifConvert] gifski unavailable after repair flow; using ffmpeg fallback")
         log.info("[GifConvert] falling back to ffmpeg direct GIF")
         let panel = ProgressPanel.shared
         showProgressPanel(panel, source: source, targetFormat: targetFormat, onCancel: onCancel)
@@ -190,7 +174,7 @@ extension MediaConversionService {
     ) async throws {
         let firstPassSize = GifSizeGuard.fileSizeMB(target)
         panel.appendLine("\u{26A0}\u{FE0F} ffmpeg GIF too large: \(firstPassSize)")
-        switch GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+        switch await GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
             case .keep:
                 approvedOversizedGIFTargets.insert(target.path)
                 panel.appendLine("Keeping GIF above 19.5 MB by user choice")
@@ -234,7 +218,7 @@ extension MediaConversionService {
         }
         let size = GifSizeGuard.fileSizeMB(target)
         panel.appendLine("⚠️ GIF exceeds 19.5 MB: \(size)")
-        switch GifSizeGuard.promptOversizedGIF(size: size) {
+        switch await GifSizeGuard.promptOversizedGIF(size: size) {
             case .keep:
                 approvedOversizedGIFTargets.insert(target.path)
                 panel.appendLine("Keeping GIF above 19.5 MB by user choice")

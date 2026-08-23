@@ -106,12 +106,28 @@ final class ExternalToolDoctor {
     }
 
     func promptRepair(tool: ExternalTool, report: ExternalToolHealthReport, context: String) async -> Bool {
-        let response = showRepairAlert(tool: tool, report: report, context: context)
-        if response == .alertSecondButtonReturn {
+        let canRepair = ExternalToolCatalog.brew.isInstalled && report.canRepair
+        let buttons = canRepair
+            ? [report.kind == .missing ? "Install Now" : "Repair Now", "Copy Command", "Cancel"]
+            : ["Copy Command", "Cancel"]
+        let choice = await ErrorAlertService.choose(
+            title: "\(tool.name) Needs Repair",
+            message: """
+                \(context)
+
+                Status: \(report.summary)
+
+                MiMiNavigator can run:
+                \(repairCommand(for: tool, report: report))
+                """,
+            buttons: buttons,
+            style: .warning
+        )
+        if choice == (canRepair ? 1 : 0) {
             copyCommand(tool.installHint)
             return false
         }
-        guard response == .alertFirstButtonReturn else { return false }
+        guard canRepair, choice == 0 else { return false }
         return await repair(tool, reinstall: report.kind != .missing)
     }
 
@@ -187,26 +203,6 @@ final class ExternalToolDoctor {
         isRepairing = false
         showRepairResult(tool: tool, success: result.exitCode == 0, output: result.combinedOutput)
         return result.exitCode == 0
-    }
-
-    private func showRepairAlert(tool: ExternalTool, report: ExternalToolHealthReport, context: String) -> NSApplication.ModalResponse {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = "\(tool.name) Needs Repair"
-        alert.informativeText = """
-            \(context)
-
-            Status: \(report.summary)
-
-            MiMiNavigator can run:
-            \(repairCommand(for: tool, report: report))
-            """
-        if ExternalToolCatalog.brew.isInstalled && report.canRepair {
-            alert.addButton(withTitle: report.kind == .missing ? "Install Now" : "Repair Now")
-        }
-        alert.addButton(withTitle: "Copy Command")
-        alert.addButton(withTitle: "Cancel")
-        return alert.runModal()
     }
 
     private func showRepairResult(tool: ExternalTool, success: Bool, output: String) {
