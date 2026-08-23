@@ -20,6 +20,7 @@ extension FindFilesViewModel {
         guard !paths.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(paths, forType: .string)
+        InAppNoticeCenter.shared.showToast("Copied \(selected.count) path\(selected.count == 1 ? "" : "s")", scope: .findFiles, systemImage: "doc.on.clipboard.fill", tint: .blue)
     }
 
     func openResults(_ selected: [FindFilesResult]) {
@@ -46,6 +47,7 @@ extension FindFilesViewModel {
             do {
                 _ = try await FileOpsEngine.shared.delete(items: urls)
                 self?.removeMissingResults(from: actionable)
+                InAppNoticeCenter.shared.showToast("Moved \(actionable.count) item\(actionable.count == 1 ? "" : "s") to Trash", scope: .findFiles, systemImage: "trash.fill", tint: .green)
             } catch {
                 self?.errorMessage = "Move to Trash failed: \(error.localizedDescription)"
                 log.error("[FindFiles] trash failed: \(error.localizedDescription)")
@@ -65,6 +67,8 @@ extension FindFilesViewModel {
                 } else {
                     _ = try await FileOpsEngine.shared.copy(items: urls, to: destination)
                 }
+                let verb = move ? "Moved" : "Copied"
+                InAppNoticeCenter.shared.showToast("\(verb) \(actionable.count) item\(actionable.count == 1 ? "" : "s")", scope: .findFiles)
             } catch {
                 self?.errorMessage = "\(move ? "Move" : "Copy") failed: \(error.localizedDescription)"
                 log.error("[FindFiles] transfer failed: \(error.localizedDescription)")

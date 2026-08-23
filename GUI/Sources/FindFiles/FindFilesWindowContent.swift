@@ -77,13 +77,11 @@ struct FindFilesWindowContent: View {
                 onSkip: { viewModel.skipArchive() }
             )
         }
-        .alert("Search Error", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button("OK") { viewModel.errorMessage = nil }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+        .inAppNoticeHost(scope: .findFiles)
+        .onChange(of: viewModel.errorMessage) { _, message in
+            guard let message else { return }
+            InAppNoticeCenter.shared.showBanner(title: "Search Error", message: message, scope: .findFiles)
+            viewModel.errorMessage = nil
         }
         .onDisappear {
             viewModel.savePreferences()

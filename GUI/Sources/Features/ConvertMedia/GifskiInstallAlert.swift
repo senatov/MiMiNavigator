@@ -127,21 +127,21 @@ enum GifskiInstallAlert {
 
 
     private static func showInstallResult(success: Bool) {
-        let alert = NSAlert()
         if success {
-            alert.alertStyle = .informational
-            alert.messageText = "gifski Installed ✅"
-            alert.informativeText = "gifski is ready. GIF conversions will now use gifski for best quality."
+            InAppNoticeCenter.shared.showToast(
+                "gifski installed",
+                scope: .mediaConvert,
+                systemImage: "checkmark.circle.fill",
+                tint: .green
+            )
         } else {
-            alert.alertStyle = .warning
-            alert.messageText = "Installation Failed"
-            alert.informativeText = """
-                Could not install gifski automatically.
-                Please run in Terminal:
-                \(brewCommand)
-                """
+            InAppNoticeCenter.shared.showBanner(
+                title: "gifski Installation Failed",
+                message: "Could not install gifski automatically. Run in Terminal:\n\(brewCommand)",
+                scope: .mediaConvert,
+                systemImage: "xmark.octagon.fill",
+                tint: .red
+            )
         }
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 }

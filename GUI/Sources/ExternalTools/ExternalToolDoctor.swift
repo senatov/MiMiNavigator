@@ -210,12 +210,17 @@ final class ExternalToolDoctor {
     }
 
     private func showRepairResult(tool: ExternalTool, success: Bool, output: String) {
-        let alert = NSAlert()
-        alert.alertStyle = success ? .informational : .warning
-        alert.messageText = success ? "\(tool.name) Ready" : "\(tool.name) Repair Failed"
-        alert.informativeText = success ? "\(tool.name) was installed or repaired successfully." : String(output.prefix(1200))
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        if success {
+            InAppNoticeCenter.shared.showToast("\(tool.name) is ready", scope: .settings, systemImage: "checkmark.circle.fill", tint: .green)
+        } else {
+            InAppNoticeCenter.shared.showBanner(
+                title: "\(tool.name) Repair Failed",
+                message: String(output.prefix(1200)),
+                scope: .settings,
+                systemImage: "xmark.octagon.fill",
+                tint: .red
+            )
+        }
     }
 
     private func repairCommand(for tool: ExternalTool, report: ExternalToolHealthReport) -> String {

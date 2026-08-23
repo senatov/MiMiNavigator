@@ -327,13 +327,10 @@ struct FilePanelView: View {
 
     // MARK: - Show alert for broken symlink
     private func showCannotOpenAlert(_ file: CustomFile) {
-        let alert = NSAlert()
-        alert.messageText = "Cannot Open Directory"
-        alert.informativeText =
-            "The directory \"\(file.nameStr)\" cannot be opened. It may be a broken symlink or you may not have permission."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        InAppNoticeCenter.shared.showBanner(
+            title: "Cannot Open Directory",
+            message: "The directory “\(file.nameStr)” may be a broken symlink or you may not have permission."
+        )
     }
 
     // MARK: - Prepend ".." parent directory entry

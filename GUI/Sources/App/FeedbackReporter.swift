@@ -150,20 +150,22 @@ enum FeedbackReporter {
     // MARK: - Show Diagnostics Error
     @MainActor
     private static func showDiagnosticsError(_ error: Error) {
-        let alert = NSAlert()
-        alert.messageText = "Cannot prepare diagnostics"
-        alert.informativeText = error.localizedDescription
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        InAppNoticeCenter.shared.showBanner(
+            title: "Cannot Prepare Diagnostics",
+            message: error.localizedDescription,
+            systemImage: "xmark.octagon.fill",
+            tint: .red
+        )
     }
 
     // MARK: - Show Email Fallback
     @MainActor
     private static func showEmailFallback() {
-        let alert = NSAlert()
-        alert.messageText = "Diagnostics archive created"
-        alert.informativeText = "Mail compose is not available. The archive was revealed in Finder and the support email address was copied to the clipboard."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        InAppNoticeCenter.shared.showBanner(
+            title: "Diagnostics Archive Created",
+            message: "Mail compose is unavailable. The archive was revealed in Finder and the support address was copied to the clipboard.",
+            systemImage: "doc.zipper",
+            tint: .blue
+        )
     }
 }

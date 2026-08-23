@@ -104,13 +104,15 @@ enum ArchiveToolInstallAlert {
 
     // MARK: - Show Install Result
     private static func showInstallResult(success: Bool) {
-        let alert = NSAlert()
-        alert.alertStyle = success ? .informational : .warning
-        alert.messageText = success ? "7-Zip Installed" : "7-Zip Installation Failed"
-        alert.informativeText = success
-            ? "7-Zip is ready. Try opening the archive again."
-            : "Could not install 7-Zip automatically. Run in Terminal:\n\(ExternalToolCatalog.sevenZip.installHint)"
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        if success {
+            InAppNoticeCenter.shared.showToast("7-Zip installed", systemImage: "checkmark.circle.fill", tint: .green)
+        } else {
+            InAppNoticeCenter.shared.showBanner(
+                title: "7-Zip Installation Failed",
+                message: "Could not install 7-Zip automatically. Run in Terminal:\n\(ExternalToolCatalog.sevenZip.installHint)",
+                systemImage: "xmark.octagon.fill",
+                tint: .red
+            )
+        }
     }
 }

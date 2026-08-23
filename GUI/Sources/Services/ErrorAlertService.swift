@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Centralized NSAlert helpers — replaces scattered runModal() calls.
+// Description: Centralized decision dialogs and non-blocking error banners.
 //   All methods are @MainActor to avoid blocking MainActor from other contexts.
 //   Use 'show' for one-button info/error alerts.
 //   Use 'confirm' for two-button yes/no confirmations.
@@ -17,22 +17,20 @@ enum ErrorAlertService {
 
     // MARK: - Simple error / info alert (one button)
 
-    /// Show a warning or critical alert with a single OK button.
-    /// Non-blocking from caller's perspective — just fire and forget if you don't need the result.
-    @discardableResult
+    /// Present a one-way error or informational message without blocking the user.
     static func show(
         title: String,
         message: String,
-        style: NSAlert.Style = .warning,
-        button: String = "OK"
-    ) -> NSApplication.ModalResponse {
+        style: NSAlert.Style = .warning
+    ) {
         log.warning("\(#function) '\(title)' — \(message.prefix(120))")
-        let alert = NSAlert()
-        alert.alertStyle = style
-        alert.messageText = title
-        alert.informativeText = message
-        alert.addButton(withTitle: button)
-        return alert.runModal()
+        let isCritical = style == .critical
+        InAppNoticeCenter.shared.showBanner(
+            title: title,
+            message: message,
+            systemImage: isCritical ? "xmark.octagon.fill" : "exclamationmark.triangle.fill",
+            tint: isCritical ? .red : .orange
+        )
     }
 
     // MARK: - Two-button confirmation

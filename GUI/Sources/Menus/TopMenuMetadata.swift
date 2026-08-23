@@ -13,12 +13,12 @@
     @MainActor
 func stub(_ title: String) -> @MainActor @Sendable () -> Void {
         {
-            let alert = NSAlert()
-            alert.messageText = title
-            alert.informativeText = "This feature is not yet implemented."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
+            InAppNoticeCenter.shared.showBanner(
+                title: title,
+                message: "This feature is not yet implemented.",
+                systemImage: "hammer.fill",
+                tint: .blue
+            )
         }
     }
 

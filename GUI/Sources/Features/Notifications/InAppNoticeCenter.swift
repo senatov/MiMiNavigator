@@ -16,6 +16,11 @@ struct InAppNotice: Identifiable {
     enum Scope: Hashable {
         case main
         case connectToServer
+        case findFiles
+        case multiRename
+        case networkNeighborhood
+        case settings
+        case mediaConvert
     }
 
     let id = UUID()
@@ -47,8 +52,16 @@ final class InAppNoticeCenter {
     }
 
     // MARK: - Present Banner
-    func showBanner(title: String, message: String, scope: InAppNotice.Scope = .main, actionTitle: String? = nil, action: (() -> Void)? = nil) {
-        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: "exclamationmark.triangle.fill", tint: .orange, actionTitle: actionTitle, action: action))
+    func showBanner(
+        title: String,
+        message: String,
+        scope: InAppNotice.Scope = .main,
+        systemImage: String = "exclamationmark.triangle.fill",
+        tint: Color = .orange,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
     }
 
     // MARK: - Current Notice

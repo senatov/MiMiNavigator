@@ -181,6 +181,7 @@ struct NetworkNeighborhoodView: View {
         .overlay(panelBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
+        .inAppNoticeHost(scope: .networkNeighborhood)
         .onAppear {
             Task { @MainActor in provider.startDiscovery() }
         }

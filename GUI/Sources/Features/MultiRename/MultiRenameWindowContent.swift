@@ -46,13 +46,16 @@ struct MultiRenameWindowContent: View {
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .font(.system(size: 12))
-        .alert("Multi-Rename Error", isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
-            set: { if !$0 { viewModel.errorMessage = nil } }
-        )) {
-            Button("OK") { viewModel.errorMessage = nil }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
+        .inAppNoticeHost(scope: .multiRename)
+        .onChange(of: viewModel.errorMessage) { _, message in
+            guard let message else { return }
+            InAppNoticeCenter.shared.showBanner(title: "Multi-Rename Error", message: message, scope: .multiRename)
+            viewModel.errorMessage = nil
+        }
+        .onChange(of: viewModel.completionMessage) { _, message in
+            guard let message else { return }
+            InAppNoticeCenter.shared.showToast(message, scope: .multiRename)
+            viewModel.completionMessage = nil
         }
     }
 

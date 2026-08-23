@@ -55,6 +55,7 @@ struct MediaInfoPanelView: View {
         .overlay(panelBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
+        .inAppNoticeHost(scope: .mediaConvert)
         .onKeyPress(.escape) {
             controller.hide()
             return .handled

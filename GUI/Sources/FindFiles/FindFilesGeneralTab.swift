@@ -223,24 +223,12 @@ struct FindFilesGeneralTab: View {
 
     // MARK: - Pattern Help
     private func showPatternHelp() {
-        let alert = NSAlert()
-        alert.messageText = "File Name Pattern Syntax"
-        alert.informativeText = """
-        Wildcards:
-          *      — matches any number of characters
-          ?      — matches exactly one character
-
-        Examples:
-          *.txt          — all text files
-          *.swift;*.java — Swift and Java files
-          report*        — files starting with "report"
-          photo?.jpg     — photo1.jpg, photoA.jpg, etc.
-          *.*            — all files with extension
-
-        Separate multiple patterns with semicolons (;)
-        """
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+        InAppNoticeCenter.shared.showBanner(
+            title: "File Name Pattern Syntax",
+            message: "Use * for any number of characters and ? for one character. Separate multiple patterns with semicolons, for example: *.swift;*.java",
+            scope: .findFiles,
+            systemImage: "questionmark.circle.fill",
+            tint: .blue
+        )
     }
 }

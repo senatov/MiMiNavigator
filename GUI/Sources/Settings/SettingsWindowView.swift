@@ -49,6 +49,7 @@ struct SettingsWindowView: View {
         .keyboardFocusSection()
         .background(.ultraThinMaterial)
         .background(dialogBgColor.opacity(0.72).ignoresSafeArea())
+        .inAppNoticeHost(scope: .settings)
         .onAppear {
             if let pending = coordinator.pendingSection {
                 selectedSection = pending
