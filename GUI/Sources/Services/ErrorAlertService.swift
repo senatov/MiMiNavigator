@@ -111,6 +111,24 @@ enum ErrorAlertService {
         return value.isEmpty ? nil : value
     }
 
+    // MARK: - Multiple Choice
+    static func choose(
+        title: String,
+        message: String,
+        buttons: [String],
+        style: NSAlert.Style = .informational
+    ) async -> Int? {
+        guard !buttons.isEmpty else { return nil }
+        let alert = NSAlert()
+        alert.alertStyle = style
+        alert.messageText = title
+        alert.informativeText = message
+        buttons.forEach { alert.addButton(withTitle: $0) }
+        let response = await response(for: alert)
+        let index = response.rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+        return buttons.indices.contains(index) ? index : nil
+    }
+
     // MARK: - Window-Scoped Response
     private static func response(for alert: NSAlert) async -> NSApplication.ModalResponse {
         guard let parent = presentationWindow else { return alert.runModal() }

@@ -204,23 +204,22 @@ enum DiffToolLauncher {
     // MARK: - offerNoToolInstalled
     @MainActor
     static func offerNoToolInstalled(comparingDirs: Bool) {
-        let alert = NSAlert()
-        alert.messageText = comparingDirs ? "No Directory Diff Tool Found" : "No File Diff Tool Found"
-        alert.informativeText = """
-            No suitable diff tool is installed or enabled.
+        Task {
+            let choice = await ErrorAlertService.choose(
+                title: comparingDirs ? "No Directory Diff Tool Found" : "No File Diff Tool Found",
+                message: """
+                    No suitable diff tool is installed or enabled.
 
-            Recommended free options:
-            • KDiff3  —  brew install --cask kdiff3
-            • Beyond Compare  —  scootersoftware.com
-            • Kaleidoscope  —  App Store
+                    Recommended free options:
+                    • KDiff3  —  brew install --cask kdiff3
+                    • Beyond Compare  —  scootersoftware.com
+                    • Kaleidoscope  —  App Store
 
-            Configure tools in Settings (⌘,) → Diff Tool.
-            """
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Cancel")
-        if alert.runModal() == .alertFirstButtonReturn {
-            SettingsCoordinator.shared.toggle()
+                    Configure tools in Settings (⌘,) → Diff Tool.
+                    """,
+                buttons: ["Open Settings", "Cancel"]
+            )
+            if choice == 0 { SettingsCoordinator.shared.toggle() }
         }
     }
 
@@ -228,18 +227,18 @@ enum DiffToolLauncher {
     @MainActor
     static func offerInstallKDiff3() {
         log.debug("\(#function)")
-        let alert = NSAlert()
-        alert.messageText = "KDiff3 Not Found"
-        alert.informativeText = """
-            KDiff3 is a free tool for file and directory comparison.
+        Task {
+            let choice = await ErrorAlertService.choose(
+                title: "KDiff3 Not Found",
+                message: """
+                    KDiff3 is a free tool for file and directory comparison.
 
-            Install via Homebrew:
-              brew install --cask kdiff3
-            """
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Install via brew")
-        alert.addButton(withTitle: "Cancel")
-        if alert.runModal() == .alertFirstButtonReturn {
+                    Install via Homebrew:
+                      brew install --cask kdiff3
+                    """,
+                buttons: ["Install via brew", "Cancel"]
+            )
+            guard choice == 0 else { return }
             let script = """
                 tell application "Terminal"
                     activate
@@ -256,17 +255,17 @@ enum DiffToolLauncher {
     @MainActor
     static func offerInstallXcode() {
         log.debug("\(#function)")
-        let alert = NSAlert()
-        alert.messageText = "FileMerge Not Found"
-        alert.informativeText =
-            "FileMerge is bundled with Xcode and works great for comparing files and folders.\n\nWould you like to install Xcode from the App Store?"
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "Open App Store")
-        alert.addButton(withTitle: "Cancel")
-        if alert.runModal() == .alertFirstButtonReturn {
-            NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
+        Task {
+            let choice = await ErrorAlertService.choose(
+                title: "FileMerge Not Found",
+                message: "FileMerge is bundled with Xcode and works great for comparing files and folders.\n\nWould you like to install Xcode from the App Store?",
+                buttons: ["Open App Store", "Cancel"]
+            )
+            if choice == 0 {
+                NSWorkspace.shared.open(URL(string: "macappstore://apps.apple.com/app/id497799835")!)
+            }
+            log.info("[Compare] offered Xcode via App Store")
         }
-        log.info("[Compare] offered Xcode via App Store")
     }
 
 }
