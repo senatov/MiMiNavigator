@@ -46,6 +46,11 @@ enum WindowPresentationPolicy {
     // MARK: - Role Query
     @MainActor
     static func isStandalone(_ window: NSWindow) -> Bool {
-        window.identifier == standaloneIdentifier
+        if window.identifier == standaloneIdentifier { return true }
+        guard let panel = window as? NSPanel else { return false }
+        return panel.styleMask.contains(.utilityWindow)
+            && !panel.isFloatingPanel
+            && !panel.hidesOnDeactivate
+            && panel.level == .normal
     }
 }

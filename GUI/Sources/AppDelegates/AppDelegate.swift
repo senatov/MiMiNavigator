@@ -19,6 +19,7 @@ import LogKit
 
     weak var appState: AppState?
     private var keyMonitor: Any?
+    private var mainWindowMouseMonitor: Any?
     private let menuBarController = MenuBarController()
     private let tabKeyCode: UInt16 = 48
     private let startupDate = CFAbsoluteTimeGetCurrent()
@@ -82,6 +83,9 @@ import LogKit
         installMainWindowObserver()
         logStartupStep("main window observer installed")
 
+        installMainWindowMouseMonitor()
+        logStartupStep("main window mouse monitor installed")
+
         UpdateCoordinator.shared.startAutomaticChecks()
         logStartupStep("automatic update checks scheduled")
 
@@ -142,15 +146,8 @@ import LogKit
     }
 
     private func installMainWindowObserver() {
-        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleMainWindowDidBecomeKey(_:)),
-            name: NSWindow.didBecomeKeyNotification,
-            object: nil
-        )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleWindowDidMiniaturize(_:)),
@@ -165,18 +162,39 @@ import LogKit
         )
     }
 
+    private func installMainWindowMouseMonitor() {
+        if let mainWindowMouseMonitor { NSEvent.removeMonitor(mainWindowMouseMonitor) }
+        mainWindowMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self, let mainWindow = event.window, mainWindow.isKeyWindow, self.isMainApplicationWindow(mainWindow) else { return event }
+            log.debug("[WindowOrdering] repeated main window click detected")
+            self.scheduleStandaloneWindowOrdering(relativeTo: mainWindow)
+            return event
+        }
+    }
+
     // MARK: - Main Window Focus
-    @objc private func handleMainWindowDidBecomeKey(_ notification: Notification) {
-        guard !isTerminationCleanupRunning, appState?.isTerminating != true, NSApp.isActive else { return }
-        guard let mainWindow = notification.object as? NSWindow, isMainApplicationWindow(mainWindow) else { return }
-        restoreStandaloneWindowOrdering(relativeTo: mainWindow)
+    func applicationDidBecomeActive(_ notification: Notification) {
+        let mainWindow = NSApp.windows.first { isMainApplicationWindow($0) }
+        scheduleStandaloneWindowOrdering(relativeTo: mainWindow)
+    }
+
+    private func scheduleStandaloneWindowOrdering(relativeTo mainWindow: NSWindow?) {
+        guard !isTerminationCleanupRunning, appState?.isTerminating != true, let mainWindow else { return }
+        DispatchQueue.main.async { [weak self, weak mainWindow] in
+            guard let self, let mainWindow, NSApp.isActive, mainWindow.isVisible else { return }
+            self.restoreStandaloneWindowOrdering(relativeTo: mainWindow)
+        }
     }
 
     private func restoreStandaloneWindowOrdering(relativeTo mainWindow: NSWindow) {
-        let standalonePanels = NSApp.orderedWindows.compactMap { $0 as? NSPanel }.filter {
+        let standalonePanels = NSApp.windows.compactMap { $0 as? NSPanel }.filter {
             $0.isVisible && WindowPresentationPolicy.isStandalone($0) && $0 !== mainWindow
         }
-        for panel in standalonePanels.reversed() { panel.orderFront(nil) }
+        guard !standalonePanels.isEmpty else { return }
+        for panel in standalonePanels.reversed() {
+            panel.order(.above, relativeTo: mainWindow.windowNumber)
+        }
+        log.debug("[WindowOrdering] restored \(standalonePanels.count) standalone panels above main window")
     }
 
     // MARK: - Main Window Miniaturization
@@ -203,7 +221,8 @@ import LogKit
 
     private func isMainApplicationWindow(_ object: Any?) -> Bool {
         guard let window = object as? NSWindow, !(window is NSPanel) else { return false }
-        return window.identifier?.rawValue.hasPrefix("main-AppWindow") == true
+        guard window.contentView != nil, window.styleMask.contains(.titled) else { return false }
+        return true
     }
 
     private func logStartupCompletionIfNeeded(reason: String) {
@@ -300,7 +319,9 @@ import LogKit
     func applicationWillTerminate(_ notification: Notification) {
         SingleInstanceController.shared.release()
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+        if let mainWindowMouseMonitor { NSEvent.removeMonitor(mainWindowMouseMonitor) }
         keyMonitor = nil
-        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
+        mainWindowMouseMonitor = nil
+        NotificationCenter.default.removeObserver(self)
     }
 }
