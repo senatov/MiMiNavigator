@@ -13,9 +13,7 @@ struct FindFilesAdvancedCriteriaSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Advanced Search Criteria", systemImage: "slider.horizontal.3")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
+            SectionHeader("Advanced Search Criteria", systemImage: "slider.horizontal.3")
             HStack(spacing: 8) {
                 Text("Name")
                     .frame(width: 72, alignment: .trailing)
@@ -53,15 +51,8 @@ struct FindFilesAdvancedCriteriaSection: View {
             .toggleStyle(.checkbox)
         }
         .font(.system(size: 12))
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(DialogColors.light.opacity(0.98))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
-        )
+        .padding(DesignTokens.Spacing.group)
+        .semanticSurface()
     }
 
     // MARK: - Browse Directory

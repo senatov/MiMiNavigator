@@ -31,7 +31,7 @@ struct HIGDialogButtons: View {
         self.onConfirm = onConfirm
     }
     var body: some View {
-        HStack(spacing: 10) {
+        DialogFooter {
             Button(cancelTitle, action: onCancel)
                 .keyboardShortcut(.cancelAction)
                 .buttonStyle(ThemedButtonStyle())
@@ -46,7 +46,5 @@ struct HIGDialogButtons: View {
                 .focusEffectDisabled()
                 .disabled(isConfirmDisabled)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.top, 6)
     }
 }

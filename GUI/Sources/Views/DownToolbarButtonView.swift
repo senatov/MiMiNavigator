@@ -63,6 +63,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
     var horizontalPadding: CGFloat = 10
     var verticalPadding: CGFloat = 6
     var raised: Bool = false
+    var isSelected: Bool = false
 
     // MARK: -
 
@@ -73,7 +74,8 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             tint: tint,
             horizontalPadding: horizontalPadding,
             verticalPadding: verticalPadding,
-            raised: raised
+            raised: raised,
+            isSelected: isSelected
         )
     }
 }
@@ -87,18 +89,35 @@ private struct DownToolbarGlassButtonBody: View {
     let horizontalPadding: CGFloat
     let verticalPadding: CGFloat
     let raised: Bool
+    let isSelected: Bool
     @Environment(\.isFocused) private var isFocused
+    @Environment(\.isEnabled) private var isEnabled
 
     private var isPressed: Bool {
         configuration.isPressed
     }
 
     private var scale: CGFloat {
-        isPressed ? 0.985 : 1.0
+        state == .pressed ? 0.985 : 1.0
+    }
+
+    private var state: SemanticControlState {
+        .resolve(
+            isEnabled: isEnabled,
+            isPressed: isPressed,
+            isSelected: isSelected,
+            isFocused: isFocused,
+            isHovered: isHovered
+        )
     }
 
     private var shadowOpacity: Double {
-        isPressed ? 0.10 : (isHovered ? (raised ? 0.26 : 0.18) : (raised ? 0.20 : 0.12))
+        switch state {
+        case .disabled: return 0.04
+        case .pressed: return 0.10
+        case .hovered, .focused, .selected: return raised ? 0.26 : 0.18
+        case .normal: return raised ? 0.20 : 0.12
+        }
     }
 
     private var shadowRadius: CGFloat {
@@ -110,7 +129,12 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var borderOpacity: Double {
-        isPressed ? 0.38 : (isHovered ? (raised ? 0.44 : 0.32) : (raised ? 0.34 : 0.22))
+        switch state {
+        case .disabled: return 0.10
+        case .pressed: return 0.38
+        case .hovered, .focused, .selected: return raised ? 0.44 : 0.32
+        case .normal: return raised ? 0.34 : 0.22
+        }
     }
 
     var body: some View {
@@ -125,15 +149,16 @@ private struct DownToolbarGlassButtonBody: View {
             .compositingGroup()
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
+            .opacity(state == .disabled ? 0.52 : 1)
             .animation(.easeOut(duration: 0.10), value: configuration.isPressed)
             .animation(.easeOut(duration: 0.12), value: isHovered)
-            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous))
             .focusEffectDisabled()
     }
 
     private var backgroundLayer: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isPressed
@@ -148,7 +173,7 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var topHighlight: some View {
-        RoundedRectangle(cornerRadius: 6.5, style: .continuous)
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.control - 0.5, style: .continuous)
             .strokeBorder(Color.white.opacity(isPressed ? 0.10 : (raised ? 0.72 : 0.56)), lineWidth: raised ? 1 : 0.75)
             .padding(0.75)
             .mask(alignment: .top) {
@@ -160,14 +185,17 @@ private struct DownToolbarGlassButtonBody: View {
     @ViewBuilder
     private var tintLayer: some View {
         if let tint {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(tint.opacity(isPressed ? 0.28 : (isFocused ? 0.34 : 0.16)))
+            RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
+                .fill(tint.opacity(state == .pressed ? 0.28 : ((state == .focused || state == .selected) ? 0.34 : 0.16)))
         }
     }
 
     private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .strokeBorder(Color.black.opacity(borderOpacity), lineWidth: raised ? 1 : 0.65)
+        RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
+            .strokeBorder(
+                state == .focused ? Color.accentColor.opacity(0.72) : Color.black.opacity(borderOpacity),
+                lineWidth: state == .focused ? DesignTokens.Control.focusBorderWidth : (raised ? DesignTokens.Control.raisedBorderWidth : DesignTokens.Control.borderWidth)
+            )
     }
 
 }

@@ -13,6 +13,7 @@ import SwiftUI
 /// Usage: .buttonStyle(ThemedButtonStyle())
 struct ThemedButtonStyle: ButtonStyle {
     var tint: Color? = nil
+    var isSelected = false
     @State private var isHovered = false
 
     func makeBody(configuration: Configuration) -> some View {
@@ -20,7 +21,8 @@ struct ThemedButtonStyle: ButtonStyle {
             isHovered: isHovered,
             tint: tint,
             horizontalPadding: 12,
-            verticalPadding: 6
+            verticalPadding: 6,
+            isSelected: isSelected
         )
         .makeBody(configuration: configuration)
         .onHover { hovering in

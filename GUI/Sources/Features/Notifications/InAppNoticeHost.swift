@@ -20,8 +20,8 @@ struct InAppNoticeHost: View {
             }
         }
         .animation(.snappy(duration: 0.24), value: center.notice(for: scope)?.id)
-        .padding(.top, 12)
-        .padding(.horizontal, 16)
+        .padding(.top, DesignTokens.Spacing.group)
+        .padding(.horizontal, DesignTokens.Spacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(center.notice(for: scope) != nil)
     }
@@ -33,7 +33,7 @@ private struct InAppNoticeView: View {
     @State private var center = InAppNoticeCenter.shared
 
     var body: some View {
-        HStack(alignment: notice.kind == .banner ? .top : .center, spacing: 11) {
+        HStack(alignment: notice.kind == .banner ? .top : .center, spacing: DesignTokens.Spacing.group) {
             Image(systemName: notice.systemImage)
                 .font(.system(size: 17, weight: .medium))
                 .symbolRenderingMode(.hierarchical)
@@ -59,12 +59,7 @@ private struct InAppNoticeView: View {
         .padding(.trailing, 9)
         .padding(.vertical, notice.kind == .banner ? 11 : 9)
         .frame(maxWidth: notice.kind == .banner ? 520 : 380, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(Color.black.opacity(0.20), lineWidth: 0.8)
-        }
-        .shadow(color: Color.black.opacity(0.18), radius: 8, y: 3)
+        .semanticSurface(cornerRadius: DesignTokens.Radius.card, isRaised: true)
         .accessibilityElement(children: .contain)
     }
 

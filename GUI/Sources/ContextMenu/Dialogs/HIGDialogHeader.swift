@@ -17,11 +17,11 @@ struct HIGDialogHeader: View {
         self.subtitle = subtitle
     }
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: DesignTokens.Dialog.headerSpacing) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 48, height: 48)
+                .frame(width: DesignTokens.Dialog.iconSize, height: DesignTokens.Dialog.iconSize)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
