@@ -113,6 +113,7 @@ struct ConnToSrvrView: View {
         )
         .background(dialogBgColor.ignoresSafeArea())
         .glassEffect()
+        .inAppNoticeHost(scope: .connectToServer)
         .onAppear(perform: handleAppear)
         .onDisappear(perform: handleDisappear)
         .onChange(of: selectedID) { _, newValue in

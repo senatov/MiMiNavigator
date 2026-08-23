@@ -19,7 +19,7 @@ extension ConnToSrvrView {
 
     func handleSelectionChange(_ newID: RemoteServer.ID?) {
         connectionError = ""
-        ConnectErrorPopupController.shared.hide()
+        InAppNoticeCenter.shared.clear(scope: .connectToServer)
         guard let id = newID,
             let server = store.servers.first(where: { $0.id == id })
         else {
@@ -36,6 +36,7 @@ extension ConnToSrvrView {
 
         guard let url = draft.connectionURL else {
             connectionError = "Invalid URL"
+            showConnectionErrorBanner()
             log.warning("[ConnToSrvr] invalid URL for '\(draft.host)'")
             return
         }

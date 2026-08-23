@@ -137,19 +137,15 @@ extension ConnToSrvrView {
     }
 
     var connectionErrorButton: some View {
-        GeometryReader { geo in
-            Button {
-                let frame = geo.frame(in: .global)
-                ConnectErrorPopupController.shared.show(server: draft, anchorFrame: frame)
-            } label: {
-                Label(connectionError, systemImage: "exclamationmark.triangle.fill")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(nsColor: .systemOrange))
-                    .lineLimit(1)
-            }
-            .glassEffect()
-            .help("Tap for full diagnostics")
+        Button(action: showConnectionErrorBanner) {
+            Label(connectionError, systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color(nsColor: .systemOrange))
+                .lineLimit(1)
         }
+        .buttonStyle(.plain)
+        .glassEffect()
+        .help("Show connection diagnostics")
         .frame(height: 18)
     }
 

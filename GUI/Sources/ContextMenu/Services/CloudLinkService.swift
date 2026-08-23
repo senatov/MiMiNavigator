@@ -9,6 +9,7 @@
 
 import AppKit
 import Foundation
+import SwiftUI
 
 
 // MARK: - CloudLinkPermission
@@ -61,7 +62,7 @@ enum CloudLinkService {
         // Apple provides no public API for iCloud sharing links programmatically.
         // Best we can do: open iCloud Drive in browser
         openInBrowser("https://www.icloud.com/iclouddrive/")
-        showNotification("iCloud Drive opened in browser. Use Share button in web UI to generate link.")
+        InAppNoticeCenter.shared.showToast("iCloud Drive opened in the browser", systemImage: "safari.fill", tint: .blue)
         return false
     }
 
@@ -71,7 +72,7 @@ enum CloudLinkService {
     /// OneDrive needs Microsoft Graph auth to create a real sharing URL.
     private static func oneDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
         log.info("[CloudLink] OneDrive Graph sharing is not configured for \(url.lastPathComponent), permission=\(permission.rawValue)")
-        showNotification("OneDrive sharing link requires Microsoft Graph sign-in.")
+        InAppNoticeCenter.shared.showBanner(title: "OneDrive Sign-In Required", message: "Connect a Microsoft account before creating a sharing link.")
         return false
     }
 
@@ -104,13 +105,6 @@ enum CloudLinkService {
             return
         }
         NSWorkspace.shared.open(url)
-    }
-
-
-
-    private static func showNotification(_ message: String) {
-        log.info("[CloudLink] \(message)")
-        // TODO: replace with in-app toast/banner when available
     }
 
 

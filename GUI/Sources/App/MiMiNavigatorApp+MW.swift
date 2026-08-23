@@ -35,6 +35,7 @@ extension MiMiNavigatorApp {
             .navigationTitle("")
             .toolbar { appToolbarContent }
             .glassEffect(.identity)
+            .inAppNoticeHost(scope: .main)
 
             // MARK: - Context Menu
             .contextMenuDialogs(coordinator: cntMenuCoord, appState: appState)

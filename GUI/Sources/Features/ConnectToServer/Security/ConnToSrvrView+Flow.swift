@@ -61,6 +61,7 @@ extension ConnToSrvrView {
 
     func handleDisappear() {
         cancelConnectionTask()
+        InAppNoticeCenter.shared.clear(scope: .connectToServer)
         releaseDividerCursorIfNeeded()
     }
 
@@ -77,6 +78,8 @@ extension ConnToSrvrView {
         guard !Task.isCancelled else { return }
         log.info("[ConnToSrvr] connection SUCCESS host=\(draft.host)")
         connectionError = ""
+        InAppNoticeCenter.shared.dismiss(scope: .connectToServer)
+        InAppNoticeCenter.shared.showToast("Connected to \(draft.displayName)", scope: .connectToServer, systemImage: "network.badge.shield.half.filled", tint: .green)
         onConnect?(url, password)
         isConnecting = false
     }
@@ -92,6 +95,38 @@ extension ConnToSrvrView {
         connectionError = connectionErrorTitle(result: result, detail: draft.lastErrorDetail)
         isConnecting = false
         focusFieldForError(result)
+        showConnectionErrorBanner()
+    }
+
+    // MARK: - Connection Error Banner
+    func showConnectionErrorBanner() {
+        let server = draft
+        InAppNoticeCenter.shared.showBanner(
+            title: connectionError.isEmpty ? "Connection Failed" : connectionError,
+            message: connectionErrorMessage(for: server),
+            scope: .connectToServer,
+            actionTitle: "Retry",
+            action: { connectAction() }
+        )
+    }
+
+    func connectionErrorMessage(for server: RemoteServer) -> String {
+        let endpoint = "\(server.remoteProtocol.rawValue) · \(server.host):\(server.port)"
+        let detail = server.lastErrorDetail.map(ConnectionErrorFormatter.readableDetail) ?? "Check the server address and connection settings."
+        return "\(endpoint)\n\(detail)\n\(connectionRecoveryTip(for: server))"
+    }
+
+    func connectionRecoveryTip(for server: RemoteServer) -> String {
+        switch server.lastResult {
+            case .authFailed: return "Check the username, password, or SSH key."
+            case .timeout: return "Check the network, VPN, firewall, and port."
+            case .refused: return "Make sure the service is running on the remote host."
+            default:
+                if server.remoteProtocol == .smb {
+                    return "Enter a shared folder name for SMB, or use SFTP for a remote filesystem path."
+                }
+                return "Review the host, port, credentials, and remote path."
+        }
     }
 
     func connectionErrorTitle(result: ConnectionResult, detail: String?) -> String {
