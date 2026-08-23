@@ -4,7 +4,6 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Direct single and batch operations for Find Files results.
 
-import AppKit
 import FindFilesKit
 import Foundation
 
@@ -16,17 +15,13 @@ extension FindFilesViewModel {
     }
 
     func copyPaths(for selected: [FindFilesResult]) {
-        let paths = selected.map(\.filePath).joined(separator: "\n")
-        guard !paths.isEmpty else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(paths, forType: .string)
+        guard !selected.isEmpty else { return }
+        FindFilesSystemActions.copyPaths(selected)
         InAppNoticeCenter.shared.showToast("Copied \(selected.count) path\(selected.count == 1 ? "" : "s")", scope: .findFiles, systemImage: "doc.on.clipboard.fill", tint: .blue)
     }
 
     func openResults(_ selected: [FindFilesResult]) {
-        for result in selected where !result.isInsideArchive {
-            NSWorkspace.shared.open(result.fileURL)
-        }
+        selected.filter { !$0.isInsideArchive }.forEach(FindFilesSystemActions.open)
     }
 
     func copyResults(_ selected: [FindFilesResult]) {

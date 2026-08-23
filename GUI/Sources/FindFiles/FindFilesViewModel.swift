@@ -50,15 +50,6 @@ final class FindFilesViewModel {
         set { presentation.errorMessage = newValue }
     }
 
-    // MARK: - Persistence
-    /// Path where last search results are saved between dialog sessions
-    static let savedResultsURL: URL = {
-        let dir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".mimi", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("search_results.json")
-    }()
-
     /// Header info saved alongside results so Export can show query context
     var lastSearchSummary: String = ""
 
@@ -346,7 +337,7 @@ final class FindFilesViewModel {
 }
 
 // MARK: - Saved Search Payload
-struct SavedSearchPayload: Codable {
+struct SavedSearchPayload: Codable, Sendable {
     let summary: String
     let results: [FindFilesResult]
 }

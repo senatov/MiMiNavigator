@@ -7,6 +7,7 @@
 import AppKit
 import FindFilesKit
 import Foundation
+import UniformTypeIdentifiers
 
 // MARK: - Find Files Operation Presenter
 @MainActor
@@ -58,6 +59,20 @@ enum FindFilesOperationPresenter {
         return await withCheckedContinuation { continuation in
             alert.beginSheetModal(for: window) { response in
                 continuation.resume(returning: response == .alertFirstButtonReturn)
+            }
+        }
+    }
+
+    // MARK: - Choose Export Destination
+    static func chooseExportDestination() async -> URL? {
+        guard let window = FindFilesCoordinator.shared.sheetWindow else { return nil }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.nameFieldStringValue = "search_results.txt"
+        panel.prompt = "Export"
+        return await withCheckedContinuation { continuation in
+            panel.beginSheetModal(for: window) { response in
+                continuation.resume(returning: response == .OK ? panel.url : nil)
             }
         }
     }

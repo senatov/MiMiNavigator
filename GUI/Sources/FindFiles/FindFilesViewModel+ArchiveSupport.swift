@@ -41,48 +41,29 @@ extension FindFilesViewModel {
     // MARK: - Result Persistence
     func saveResults() {
         guard !results.isEmpty else { return }
-        do {
-            let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
-            let data = try JSONEncoder().encode(payload)
-            try data.write(to: Self.savedResultsURL, options: .atomic)
-            log.info("[FindFiles] Saved \(results.count) results")
-        } catch {
-            log.warning("[FindFiles] Save failed: \(error.localizedDescription)")
+        let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
+        Task {
+            do {
+                try await FindFilesResultStore.shared.save(payload)
+                log.info("[FindFiles] Saved \(payload.results.count) results")
+            } catch {
+                log.warning("[FindFiles] Save failed: \(error.localizedDescription)")
+            }
         }
     }
 
     func loadSavedResults() {
-        guard FileManager.default.fileExists(atPath: Self.savedResultsURL.path) else { return }
-        do {
-            let data = try Data(contentsOf: Self.savedResultsURL)
-            let payload = try JSONDecoder().decode(SavedSearchPayload.self, from: data)
-            results = payload.results
-            lastSearchSummary = payload.summary
-            searchState = .completed
-            log.info("[FindFiles] Loaded \(results.count) saved results")
-        } catch {
-            log.warning("[FindFiles] Load failed: \(error.localizedDescription)")
+        Task { @MainActor [weak self] in
+            do {
+                guard let payload = try await FindFilesResultStore.shared.load() else { return }
+                self?.results = payload.results
+                self?.lastSearchSummary = payload.summary
+                self?.searchState = .completed
+                log.info("[FindFiles] Loaded \(payload.results.count) saved results")
+            } catch {
+                log.warning("[FindFiles] Load failed: \(error.localizedDescription)")
+            }
         }
     }
 
-    // MARK: - Archive Progress
-    func showArchiveProgress(for archiveURL: URL) -> (ProgressPanel, ActiveArchiveProcess) {
-        let progressPanel = ProgressPanel.shared
-        let handle = ActiveArchiveProcess()
-        progressPanel.show(archiveName: archiveURL.lastPathComponent, destinationPath: archiveURL.deletingLastPathComponent().path)
-        progressPanel.appendLine("Extracting: \(archiveURL.lastPathComponent)")
-        return (progressPanel, handle)
-    }
-
-    func openArchiveWithProgress(_ archiveURL: URL, progressPanel: ProgressPanel, handle: ActiveArchiveProcess) async throws -> URL {
-        try await ArchiveManager.shared.openArchive(
-            at: archiveURL,
-            onProgress: { line in
-                Task { @MainActor in
-                    progressPanel.appendLine(line)
-                }
-            },
-            processHandle: handle
-        )
-    }
 }
