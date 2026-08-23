@@ -154,7 +154,10 @@ enum ErrorAlertService {
 
     // MARK: - Window-Scoped Response
     private static func response(for alert: NSAlert) async -> NSApplication.ModalResponse {
-        guard let parent = presentationWindow else { return alert.runModal() }
+        guard let parent = presentationWindow else {
+            log.warning("[Alerts] decision dialog skipped because no presentation window is available")
+            return .abort
+        }
         return await withCheckedContinuation { continuation in
             alert.beginSheetModal(for: parent) { response in
                 continuation.resume(returning: response)
