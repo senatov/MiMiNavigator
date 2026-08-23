@@ -154,7 +154,7 @@ enum ErrorAlertService {
 
     // MARK: - Window-Scoped Response
     private static func response(for alert: NSAlert) async -> NSApplication.ModalResponse {
-        guard let parent = presentationWindow else {
+        guard let parent = WindowContextResolver.presentationHost() else {
             log.warning("[Alerts] decision dialog skipped because no presentation window is available")
             return .abort
         }
@@ -165,9 +165,4 @@ enum ErrorAlertService {
         }
     }
 
-    private static var presentationWindow: NSWindow? {
-        if let keyWindow = NSApp.keyWindow, keyWindow.isVisible { return keyWindow }
-        if let mainWindow = NSApp.mainWindow, mainWindow.isVisible { return mainWindow }
-        return NSApp.orderedWindows.first { $0.isVisible && !($0 is NSPanel && $0.hidesOnDeactivate) }
-    }
 }

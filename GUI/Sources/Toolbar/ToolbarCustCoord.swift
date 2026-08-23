@@ -37,10 +37,10 @@ final class ToolbarCustomizeCoordinator {
     func show(anchorScreenPoint: NSPoint? = nil) {
         guard !isClosing else { return }
         log.debug("[ToolbarCustomize] show() invoked")
-        let sourceMainWindow = currentPrimaryWindow(excluding: window)
+        let sourceMainWindow = WindowContextResolver.presentationHost(excluding: window, preferMain: true)
         if let existing = window, existing.isVisible {
             position(existing, near: anchorScreenPoint, relativeTo: sourceMainWindow)
-            present(existing, relativeTo: sourceMainWindow)
+            present(existing)
             isVisible = true
             return
         }
@@ -76,7 +76,7 @@ final class ToolbarCustomizeCoordinator {
         panel.delegate = ToolbarCustWindowDelegate.shared
         self.window = panel
         isVisible = true
-        present(panel, relativeTo: sourceMainWindow)
+        present(panel)
         panel.recalculateKeyViewLoop()
         log.info("[ToolbarCustomize] opened ✓")
     }
@@ -101,7 +101,7 @@ final class ToolbarCustomizeCoordinator {
     func bringToFront() {
         guard !isClosing else { return }
         guard let window, isVisible else { return }
-        present(window, relativeTo: currentPrimaryWindow(excluding: window))
+        present(window)
     }
 
     func windowDidClose() {
@@ -119,7 +119,7 @@ final class ToolbarCustomizeCoordinator {
 
 
     private func computeDefaultFrame() -> NSRect {
-        frame(near: nil, relativeTo: currentPrimaryWindow(excluding: window), requestedSize: restoredSize())
+        frame(near: nil, relativeTo: WindowContextResolver.presentationHost(excluding: window, preferMain: true), requestedSize: restoredSize())
     }
 
     private func position(_ panel: NSPanel, near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?) {
@@ -182,27 +182,7 @@ final class ToolbarCustomizeCoordinator {
         log.debug("[ToolbarCustomize] size saved \(width)x\(height)")
     }
 
-    private func currentPrimaryWindow(excluding panel: NSWindow?) -> NSWindow? {
-        if let main = NSApp.mainWindow, main != panel, main.isVisible {
-            return main
-        }
-        if let key = NSApp.keyWindow, key != panel, key.isVisible {
-            return key
-        }
-        return NSApp.windows.first { window in
-            window != panel && window.isVisible && !window.isKind(of: NSPanel.self)
-        }
-    }
-
-    private func orderAbove(_ panel: NSPanel, relativeTo window: NSWindow) {
-        if panel.windowNumber == 0 {
-            panel.orderFront(nil)
-        } else {
-            panel.order(.above, relativeTo: window.windowNumber)
-        }
-    }
-
-    private func present(_ panel: NSPanel, relativeTo window: NSWindow?) {
+    private func present(_ panel: NSPanel) {
         panel.makeKeyAndOrderFront(nil)
 
         // Re-assert key status on the next main turn, after right-click menu tracking settles.

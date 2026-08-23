@@ -36,7 +36,7 @@ final class FileOperationDiagnosticPresenter: NSObject, NSWindowDelegate {
 
     // MARK: - Position
     private func position(_ panel: NSPanel) {
-        if let main = NSApp.mainWindow {
+        if let main = WindowContextResolver.positioningWindow(excluding: panel) {
             let frame = main.frame
             panel.setFrameOrigin(NSPoint(
                 x: frame.midX - panel.frame.width / 2,
