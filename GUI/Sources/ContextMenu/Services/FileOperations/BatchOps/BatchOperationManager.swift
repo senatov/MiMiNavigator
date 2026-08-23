@@ -39,9 +39,15 @@ final class BatchOperationManager {
             let progress = try await engine.copy(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
+                FileOperationOutcomePresenter.success(.copy, itemCount: files.count, resultURL: destination)
+            } else if progress.isCancelled {
+                FileOperationOutcomePresenter.cancelled(.copy)
+            } else {
+                FileOperationOutcomePresenter.failure(.copy, message: progress.completionSummary)
             }
         } catch {
             log.error("[BatchOpMgr] copy failed: \(error.localizedDescription)")
+            FileOperationOutcomePresenter.failure(.copy, error: error)
         }
         await appState.scanner.endBatchMutation()
         await refreshPanels(appState: appState)
@@ -67,9 +73,15 @@ final class BatchOperationManager {
                     await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
                 }
                 appState.clearMarksAfterOperation(on: sourcePanel)
+                FileOperationOutcomePresenter.success(.move, itemCount: files.count, resultURL: destination)
+            } else if progress.isCancelled {
+                FileOperationOutcomePresenter.cancelled(.move)
+            } else {
+                FileOperationOutcomePresenter.failure(.move, message: progress.completionSummary)
             }
         } catch {
             log.error("[BatchOpMgr] move failed: \(error.localizedDescription)")
+            FileOperationOutcomePresenter.failure(.move, error: error)
         }
         await appState.scanner.endBatchMutation()
         await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)
@@ -92,9 +104,15 @@ final class BatchOperationManager {
             let progress = try await engine.delete(items: urls)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
+                FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
+            } else if progress.isCancelled {
+                FileOperationOutcomePresenter.cancelled(.delete)
+            } else {
+                FileOperationOutcomePresenter.failure(.delete, message: progress.completionSummary)
             }
         } catch {
             log.error("[BatchOpMgr] delete failed: \(error.localizedDescription)")
+            FileOperationOutcomePresenter.failure(.delete, error: error)
         }
         await appState.scanner.endBatchMutation()
         await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: sourcePanel)

@@ -21,6 +21,7 @@ struct BatchConfirmationDialog: View {
     
     @State private var showFileList = false
     @State private var deleteEstimate: DeletePreviewEstimate?
+    @State private var conflictCount = 0
 
     // MARK: - Initializers
 
@@ -83,45 +84,8 @@ struct BatchConfirmationDialog: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
             
-            // Summary info
+            FileOperationPreviewCard(rows: previewRows)
             VStack(alignment: .leading, spacing: 6) {
-                // Files/folders count
-                HStack {
-                    if filesCount > 0 {
-                        Label("\(filesCount) files", systemImage: "doc")
-                            .font(.system(size: 12))
-                            .symbolRenderingMode(.multicolor)
-                    }
-                    if directoriesCount > 0 {
-                        Label("\(directoriesCount) folders", systemImage: "folder")
-                            .font(.system(size: 12))
-                            .symbolRenderingMode(.multicolor)
-                    }
-                }
-                .foregroundStyle(secondaryTextColor)
-                
-                // Total size
-                HStack {
-                    Text("Total size:")
-                        .font(.system(size: 12))
-                        .foregroundStyle(secondaryTextColor)
-                    Text(totalSize)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(primaryTextColor)
-                }
-                
-                // Destination (for copy/move)
-                if let dest = destination {
-                    HStack(alignment: .top) {
-                        Text("To:")
-                            .font(.system(size: 12))
-                            .foregroundStyle(secondaryTextColor)
-                        Text(dest.path)
-                            .font(.system(size: 12))
-                            .lineLimit(2)
-                            .truncationMode(.middle)
-                    }
-                }
                 if operationType == .delete && directoriesCount > 0 {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Recursive delete")
@@ -201,8 +165,14 @@ struct BatchConfirmationDialog: View {
         )
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
         .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
-            guard operationType == .delete && directoriesCount > 0 else { return }
-            deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
+            if operationType == .delete && directoriesCount > 0 {
+                deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
+            }
+            guard operationType != .delete, let destination else { return }
+            conflictCount = files.reduce(into: 0) { count, file in
+                let target = destination.appendingPathComponent(file.urlValue.lastPathComponent)
+                if FileManager.default.fileExists(atPath: target.path) { count += 1 }
+            }
         }
     }
     
@@ -253,6 +223,31 @@ struct BatchConfirmationDialog: View {
         case .pack: return Image(systemName: "archivebox.fill")
         }
     }
+
+    private var previewRows: [FileOperationPreviewRow] {
+        var rows = [
+            FileOperationPreviewRow(label: "From", value: sourceDescription, systemImage: "folder"),
+            FileOperationPreviewRow(label: "Items", value: itemSummary, systemImage: "doc.on.doc"),
+            FileOperationPreviewRow(label: "Total size", value: totalSize, systemImage: "externaldrive")
+        ]
+        let target = destination?.path ?? "Trash"
+        rows.insert(FileOperationPreviewRow(label: "To", value: target, systemImage: operationType == .delete ? "trash" : "folder.badge.arrow.forward"), at: 1)
+        if conflictCount > 0 {
+            rows.append(FileOperationPreviewRow(label: "Conflicts", value: "\(conflictCount) will require a decision", systemImage: "exclamationmark.triangle"))
+        }
+        return rows
+    }
+
+    private var sourceDescription: String {
+        let parents = Set(files.map { $0.urlValue.deletingLastPathComponent().path })
+        return parents.count == 1 ? parents.first ?? "" : "Multiple locations"
+    }
+
+    private var itemSummary: String {
+        [filesCount > 0 ? "\(filesCount) files" : nil, directoriesCount > 0 ? "\(directoriesCount) folders" : nil]
+            .compactMap { $0 }
+            .joined(separator: ", ")
+    }
     
     private var iconColor: Color {
         if transferOperation != nil { return .blue }
@@ -284,7 +279,7 @@ struct BatchConfirmationDialog: View {
         switch operationType {
         case .copy: return L10n.Button.copy
         case .move: return L10n.Button.move
-        case .delete: return L10n.Button.delete
+        case .delete: return "Move to Trash"
         case .pack: return L10n.Button.create
         }
     }

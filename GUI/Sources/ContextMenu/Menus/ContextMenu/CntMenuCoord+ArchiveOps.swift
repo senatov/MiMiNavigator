@@ -81,24 +81,28 @@ extension CntMenuCoord {
 
             await MainActor.run {
                 progressPanel.finish(success: true, message: "✅ Packed → \(archiveURL.lastPathComponent)")
+                FileOperationOutcomePresenter.success(.pack, resultURL: archiveURL, displayName: archiveURL.lastPathComponent)
             }
             await refreshAfterArchiveOp(appState: appState, destination: destination, archiveURL: archiveURL)
         } catch is CancellationError {
             log.info("[Pack] cancelled by user")
             await MainActor.run {
                 progressPanel.finish(success: false, message: "⏹ Packing cancelled")
+                FileOperationOutcomePresenter.cancelled(.pack)
             }
         } catch {
             if progressPanel.isCancelled {
                 log.info("[Pack] cancelled by user — \(error.localizedDescription)")
                 await MainActor.run {
                     progressPanel.finish(success: false, message: "⏹ Packing cancelled")
+                    FileOperationOutcomePresenter.cancelled(.pack)
                 }
             } else {
                 log.error("[Pack] FAILED — \(error.localizedDescription)")
                 await MainActor.run {
                     progressPanel.appendLog("Failed: \(error.localizedDescription)")
                     progressPanel.finish(success: false, message: "❌ Could not create \(fullName)")
+                    FileOperationOutcomePresenter.failure(.pack, error: error)
                 }
             }
         }

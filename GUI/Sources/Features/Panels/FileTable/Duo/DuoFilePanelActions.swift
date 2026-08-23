@@ -173,13 +173,16 @@
                         log.info("[DELETE] ✅ FileOpsEngine.delete finished in \(String(format: "%.3f", elapsed))s with \(progress.errors.count) error(s)")
                         guard progress.errors.isEmpty else {
                             log.warning("[DELETE] refresh skipped because delete finished with \(progress.errors.count) error(s)")
+                            FileOperationOutcomePresenter.failure(.delete, message: progress.completionSummary)
                             return
                         }
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
                         log.debug("[DELETE] ⏱ END performDelete")
                     } catch {
                         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
                         log.error("[DELETE] ❌ FileOpsEngine.delete FAILED after \(String(format: "%.3f", elapsed))s — \(error.localizedDescription)")
+                        FileOperationOutcomePresenter.failure(.delete, error: error)
                     }
                 }
             }
@@ -209,6 +212,13 @@
                 }
                 let success = deletedCount == deletableFiles.count
                 progressPanel.finish(success: success, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
+                if progressPanel.isCancelled {
+                    FileOperationOutcomePresenter.cancelled(.delete)
+                } else if success {
+                    FileOperationOutcomePresenter.success(.delete, itemCount: deletedCount)
+                } else {
+                    FileOperationOutcomePresenter.failure(.delete, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
+                }
                 await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                 log.info("[DELETE] remote delete finished deleted=\(deletedCount)/\(deletableFiles.count)")
             }

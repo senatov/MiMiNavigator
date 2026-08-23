@@ -142,20 +142,19 @@ extension BatchOpsCoord {
 
         if cancelledDownload {
             panel.finish(success: false, message: "⏹ Cancelled — \(ok) downloaded, \(fail) failed")
+            FileOperationOutcomePresenter.cancelled(.copy)
         } else if fail > 0 {
             panel.finish(success: false, message: "⚠️ \(ok) downloaded, \(fail) failed")
         } else {
             panel.finish(success: true, message: "✅ \(ok) item(s) downloaded")
+            FileOperationOutcomePresenter.success(.copy, itemCount: ok, resultURL: destination)
         }
 
         if fail > 0,
            let firstErrorTitle,
            let firstErrorMessage {
-            ErrorAlertService.show(
-                title: firstErrorTitle,
-                message: firstErrorMessage,
-                style: .warning
-            )
+            log.warning("[BatchOps] \(firstErrorTitle): \(firstErrorMessage)")
+            FileOperationOutcomePresenter.failure(.copy, message: firstErrorMessage)
         }
 
         await appState.refreshFiles(for: sourcePanel == .left ? .right : .left, force: true)
@@ -244,20 +243,19 @@ extension BatchOpsCoord {
 
         if cancelledUpload {
             panel.finish(success: false, message: "⏹ Cancelled — \(ok) uploaded, \(fail) failed")
+            FileOperationOutcomePresenter.cancelled(.copy)
         } else if fail > 0 {
             panel.finish(success: false, message: "⚠️ \(ok) uploaded, \(fail) failed")
         } else {
             panel.finish(success: true, message: "✅ \(ok) item(s) uploaded")
+            FileOperationOutcomePresenter.success(.copy, itemCount: ok)
         }
 
         if fail > 0,
            let firstErrorTitle,
            let firstErrorMessage {
-            ErrorAlertService.show(
-                title: firstErrorTitle,
-                message: firstErrorMessage,
-                style: .warning
-            )
+            log.warning("[BatchOps] \(firstErrorTitle): \(firstErrorMessage)")
+            FileOperationOutcomePresenter.failure(.copy, message: firstErrorMessage)
         }
 
         await appState.refreshRemoteFiles(for: destinationPanel)

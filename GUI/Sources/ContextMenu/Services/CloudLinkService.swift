@@ -24,6 +24,7 @@ enum CloudLinkPermission: String, Sendable {
 
 @MainActor
 enum CloudLinkService {
+    private static var activeTask: Task<Void, Never>?
 
     /// Generate or open cloud link for the given URL.
     /// Returns true if a link was copied to clipboard, false if web UI was opened instead.
@@ -48,8 +49,10 @@ enum CloudLinkService {
     /// Dropbox supports view-only links for copied Public items.
     private static func dropboxLink(url: URL, permission: CloudLinkPermission) -> Bool {
         guard permission == .readOnly else { return false }
-        Task {
-            await DropboxShareService.copyShareLink(for: url)
+        activeTask?.cancel()
+        activeTask = Task {
+            _ = await DropboxShareService.copyShareLink(for: url)
+            activeTask = nil
         }
         return true
     }
@@ -81,10 +84,18 @@ enum CloudLinkService {
     // MARK: - Google Drive
     /// Google Drive — open web UI
     private static func googleDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
-        Task {
-            await GoogleDriveShareService.copyShareLink(for: url, permission: permission)
+        activeTask?.cancel()
+        activeTask = Task {
+            _ = await GoogleDriveShareService.copyShareLink(for: url, permission: permission)
+            activeTask = nil
         }
         return true
+    }
+
+    // MARK: - Cancel Active Share
+    static func cancelActiveShare() {
+        activeTask?.cancel()
+        activeTask = nil
     }
 
 

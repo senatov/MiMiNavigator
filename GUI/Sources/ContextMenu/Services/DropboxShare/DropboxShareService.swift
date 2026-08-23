@@ -15,7 +15,13 @@ enum DropboxShareService {
 
     static func copyShareLink(for sourceURL: URL) async -> Bool {
         let panel = ProgressPanel.shared
-        panel.show(icon: "link.badge.plus", title: "Share+Link: \(sourceURL.lastPathComponent)", status: "Authenticating with Dropbox…", operationKey: "dropbox-share")
+        panel.show(
+            icon: "link.badge.plus",
+            title: "Share+Link: \(sourceURL.lastPathComponent)",
+            status: "Authenticating with Dropbox…",
+            operationKey: "dropbox-share",
+            cancelHandler: { CloudLinkService.cancelActiveShare() }
+        )
         panel.updateProgress(nil)
         panel.appendKeyValueLog("Source", value: sourceURL.path)
         var createdDestination: URL?
@@ -23,6 +29,7 @@ enum DropboxShareService {
             guard let publicFolder = DropboxMountedPaths.publicFolderURL() else { throw DropboxError.missingPublicFolder }
             panel.appendLog("Authenticating with Dropbox…")
             let token = try await DropboxOAuthClient.accessToken()
+            try Task.checkCancellation()
             let destination = uniqueDestination(for: sourceURL, in: publicFolder)
             panel.appendLog("Copying item to Dropbox Public…")
             try FileManager.default.copyItem(at: sourceURL, to: destination)
@@ -30,6 +37,7 @@ enum DropboxShareService {
             panel.appendLog("Waiting for Dropbox sync and creating public link…")
             let path = "/Public/\(destination.lastPathComponent)"
             let originalLink = try await DropboxAPIClient(accessToken: token).sharedLink(for: path)
+            try Task.checkCancellation()
             panel.appendLog("Creating MiMiNavi short link…")
             let copiedLink: String
             let copiedLinkLabel: String
@@ -46,12 +54,24 @@ enum DropboxShareService {
             panel.appendKeyValueLog("Dropbox path", value: path)
             panel.appendKeyValueLog(copiedLinkLabel, value: copiedLink)
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
+            FileOperationOutcomePresenter.success(
+                .shareLink,
+                resultURL: URL(string: copiedLink),
+                displayName: "for \(sourceURL.lastPathComponent)"
+            )
             log.info("[CloudLink] Dropbox link copied path='\(path)' link='\(copiedLink)'")
             return true
+        } catch is CancellationError {
+            removeCreatedDestination(createdDestination, panel: panel)
+            panel.finish(success: false, message: "Share+Link cancelled")
+            FileOperationOutcomePresenter.cancelled(.shareLink)
+            log.info("[CloudLink] Dropbox share cancelled")
+            return false
         } catch {
             removeCreatedDestination(createdDestination, panel: panel)
             panel.appendLog("❌ \(error.localizedDescription)")
             panel.finish(success: false, message: "Dropbox Share+Link failed")
+            FileOperationOutcomePresenter.failure(.shareLink, error: error)
             log.error("[CloudLink] Dropbox share failed: \(error.localizedDescription)")
             return false
         }

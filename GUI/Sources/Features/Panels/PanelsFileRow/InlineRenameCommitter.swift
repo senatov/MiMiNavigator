@@ -26,6 +26,15 @@ enum InlineRenameCommitter {
             log.warning("[Rename] inline commit panel mismatch: expected=\(panel) result=\(resultPanel)")
             return
         }
+        let targetURL = file.urlValue.deletingLastPathComponent().appendingPathComponent(result.newName)
+        if targetURL.standardizedFileURL != file.urlValue.standardizedFileURL,
+           FileManager.default.fileExists(atPath: targetURL.path) {
+            InAppNoticeCenter.shared.showBanner(
+                title: "Rename Conflict",
+                message: "An item named “\(result.newName)” already exists in this folder. Choose another name."
+            )
+            return
+        }
         Task {
             await CntMenuCoord.shared.performRename(
                 file: file,

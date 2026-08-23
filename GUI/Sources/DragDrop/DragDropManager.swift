@@ -308,8 +308,18 @@ final class DragDropManager {
                     log.info("[DnD] archive dirty by source URL: \(markedCount)/\(urls.count)")
                 }
             }
+            let outcome: FileOperationOutcomePresenter.Operation = kind == .move ? .move : .copy
+            if progress.isCancelled {
+                FileOperationOutcomePresenter.cancelled(outcome)
+            } else if progress.errors.isEmpty {
+                FileOperationOutcomePresenter.success(outcome, itemCount: urls.count, resultURL: dest)
+            } else {
+                FileOperationOutcomePresenter.failure(outcome, message: progress.completionSummary)
+            }
         } catch {
             log.error("[DnD] \(kind) failed: \(error.localizedDescription)")
+            let outcome: FileOperationOutcomePresenter.Operation = kind == .move ? .move : .copy
+            FileOperationOutcomePresenter.failure(outcome, error: error)
         }
         await refreshAffectedPanels(appState: appState, operation: operation)
     }

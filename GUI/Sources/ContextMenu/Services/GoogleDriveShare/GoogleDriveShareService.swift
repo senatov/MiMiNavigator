@@ -20,12 +20,14 @@ enum GoogleDriveShareService {
             icon: "link.badge.plus",
             title: "Share+Link: \(url.lastPathComponent)",
             status: "Uploading to Google Drive…",
-            operationKey: "google-drive-share"
+            operationKey: "google-drive-share",
+            cancelHandler: { CloudLinkService.cancelActiveShare() }
         )
         panel.updateProgress(nil)
         panel.appendKeyValueLog("Source", value: url.path)
         do {
             log.info("[CloudLink] Google Drive upload start file='\(url.lastPathComponent)' permission=\(permission.rawValue)")
+            try Task.checkCancellation()
             panel.appendLog("Authenticating with Google Drive…")
             let token = try await GoogleDriveOAuthClient.accessToken()
             let client = GoogleDriveAPIClient(accessToken: token)
@@ -33,6 +35,7 @@ enum GoogleDriveShareService {
             let publicFolder = try await client.ensurePublicFolder()
             panel.appendLog("Uploading item…")
             let uploaded = try await client.uploadEntry(at: url, parentID: publicFolder.id)
+            try Task.checkCancellation()
             panel.appendLog("Applying public \(permission.rawValue) permission…")
             try await client.applyPermission(fileID: uploaded.id, permission: permission)
             let metadata = try await client.fileMetadata(fileID: uploaded.id)
@@ -56,13 +59,22 @@ enum GoogleDriveShareService {
             panel.appendKeyValueLog(copiedLinkLabel, value: copiedLink)
             panel.appendLog("Share link copied to clipboard.")
             panel.finish(success: true, message: "Share+Link ready: link copied to clipboard")
-            showNotification("Google Drive share link copied.")
+            FileOperationOutcomePresenter.success(
+                .shareLink,
+                resultURL: URL(string: copiedLink),
+                displayName: "for \(url.lastPathComponent)"
+            )
             log.info("[CloudLink] Google Drive link copied fileID='\(uploaded.id)' link='\(copiedLink)'")
             return true
+        } catch is CancellationError {
+            panel.finish(success: false, message: "Share+Link cancelled")
+            FileOperationOutcomePresenter.cancelled(.shareLink)
+            log.info("[CloudLink] Google Drive share cancelled")
+            return false
         } catch {
             panel.appendLog("❌ \(error.localizedDescription)")
             panel.finish(success: false, message: "Share+Link failed")
-            showNotification("Google Drive share link failed: \(error.localizedDescription)")
+            FileOperationOutcomePresenter.failure(.shareLink, error: error)
             log.error("[CloudLink] Google Drive share failed: \(error.localizedDescription)")
             if case GoogleDriveError.missingClientSecret = error {
                 log.error("[CloudLink] bundled or local Google desktop OAuth JSON is missing client_secret")
@@ -91,9 +103,4 @@ enum GoogleDriveShareService {
         pb.setString(text, forType: .string)
     }
 
-    // MARK: - Notification
-
-    private static func showNotification(_ message: String) {
-        log.info("[CloudLink] \(message)")
-    }
 }

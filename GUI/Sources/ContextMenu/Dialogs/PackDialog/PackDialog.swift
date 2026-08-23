@@ -121,6 +121,19 @@ struct PackDialog: View {
         return FileManager.default.fileExists(atPath: path, isDirectory: &isDir) && isDir.boolValue
     }
 
+    private var resultURL: URL {
+        resolvedDestination.appendingPathComponent(anticipatedResultName)
+    }
+
+    private var anticipatedResultName: String {
+        let normalized = normalizedArchiveNameForSubmit()
+        return mode == .pack ? "\(normalized).\(selectedFormat.fileExtension)" : normalized
+    }
+
+    private var resultAlreadyExists: Bool {
+        FileManager.default.fileExists(atPath: resultURL.path)
+    }
+
     private var itemsDescription: String {
         files.count == 1 ? files[0].nameStr : L10n.Items.count(files.count)
     }
@@ -168,6 +181,19 @@ struct PackDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
+            HIGDialogHeader(dialogTitle, subtitle: "Review the source, destination, and archive options before continuing.")
+            FileOperationPreviewCard(rows: [
+                FileOperationPreviewRow(label: "From", value: sourcePath, systemImage: "folder"),
+                FileOperationPreviewRow(label: "To", value: resolvedDestination.path, systemImage: "folder.badge.arrow.forward"),
+                FileOperationPreviewRow(label: "Items", value: itemsDescription, systemImage: "doc.on.doc"),
+                FileOperationPreviewRow(label: "Result", value: anticipatedResultName, systemImage: "archivebox")
+            ])
+            if resultAlreadyExists {
+                Label("An item with this archive name already exists. Choose another name before continuing.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             PackArchiveNameField(
                 label: L10n.Dialog.Pack.archiveNameLabel,
                 placeholder: L10n.PathInput.nameLabel,
@@ -232,7 +258,7 @@ struct PackDialog: View {
 
             HIGDialogButtons(
                 confirmTitle: confirmTitle,
-                isConfirmDisabled: !isValidName || !isValidDestination,
+                isConfirmDisabled: !isValidName || !isValidDestination || resultAlreadyExists,
                 onCancel: onCancel,
                 onConfirm: performPack
             )

@@ -201,9 +201,7 @@ extension CntMenuCoord {
                 )
             }
 
-            if !moveToArchive {
-                InAppNoticeCenter.shared.showToast("Created \(result.lastPathComponent)", systemImage: "archivebox.fill", tint: .green)
-            }
+            FileOperationOutcomePresenter.success(.pack, resultURL: result, displayName: result.lastPathComponent)
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             await MainActor.run {
@@ -219,8 +217,10 @@ extension CntMenuCoord {
                         : "❌ \(error.localizedDescription)"
                 )
             }
-            if !progressPanel.isCancelled {
-                activeDialog = .error(title: "Compress Failed", message: error.localizedDescription)
+            if progressPanel.isCancelled {
+                FileOperationOutcomePresenter.cancelled(.pack)
+            } else {
+                FileOperationOutcomePresenter.failure(.pack, error: error)
             }
         }
     }

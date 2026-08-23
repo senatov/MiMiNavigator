@@ -50,9 +50,11 @@ extension CntMenuCoord {
             let panel = panelForPath(firstFile.urlValue.deletingLastPathComponent().path, appState: appState)
             await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
             refreshOppositePanel(of: panel, appState: appState)
+            FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
             log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
+            FileOperationOutcomePresenter.failure(.delete, error: error)
         }
     }
 
@@ -85,10 +87,11 @@ extension CntMenuCoord {
             if !AppState.isAppManagedNetworkMountPath(newURL) {
                 refreshOppositePanel(of: panel, appState: appState)
             }
+            FileOperationOutcomePresenter.success(.rename, resultURL: newURL, displayName: newURL.lastPathComponent)
             log.info("[Rename] 🏁 END SUCCESS")
         } catch {
             log.error("[Rename] ❌ FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Rename Failed", message: error.localizedDescription)
+            FileOperationOutcomePresenter.failure(.rename, error: error)
         }
     }
 

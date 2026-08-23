@@ -64,18 +64,22 @@ extension CntMenuCoord {
         isProcessing = true
         defer { isProcessing = false }
         let destination = getDestinationPath(for: panel, appState: appState)
+        let operation: FileOperationOutcomePresenter.Operation = clipboard.isCut ? .move : .copy
+        let itemCount = max(clipboard.files.count, 1)
         log.debug("\(#function) destination='\(destination.path)'")
         let result = await clipboard.paste(to: destination)
         switch result {
             case .success(let urls):
                 log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
                 refreshPanels(appState: appState)
+                FileOperationOutcomePresenter.success(operation, itemCount: itemCount, resultURL: destination)
             case .failure(let error):
                 if case FileOpsError.operationCancelled = error {
                     log.info("\(#function) cancelled by user")
+                    FileOperationOutcomePresenter.cancelled(operation)
                 } else {
                     log.error("\(#function) FAILED: \(error.localizedDescription)")
-                    activeDialog = .error(title: "Paste Failed", message: error.localizedDescription)
+                    FileOperationOutcomePresenter.failure(operation, error: error)
                 }
         }
     }

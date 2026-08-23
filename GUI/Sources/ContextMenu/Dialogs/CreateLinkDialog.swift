@@ -6,6 +6,7 @@
 
 import SwiftUI
 import FileModelKit
+import Foundation
 
 // MARK: - Link Type
 enum LinkType: String, CaseIterable, Identifiable, CustomStringConvertible {
@@ -57,7 +58,11 @@ struct CreateLinkDialog: View {
     }
 
     private var isValidName: Bool {
-        !linkName.isEmpty && !linkName.contains("/") && !linkName.contains(":")
+        !linkName.isEmpty && !linkName.contains("/") && !linkName.contains(":") && !linkAlreadyExists
+    }
+
+    private var linkAlreadyExists: Bool {
+        FileManager.default.fileExists(atPath: destinationPath.appendingPathComponent(linkName).path)
     }
 
     var body: some View {
@@ -68,6 +73,12 @@ struct CreateLinkDialog: View {
                 subtitle: L10n.Dialog.CreateLink.inLocation(destinationPath.path)
             )
             .frame(maxWidth: .infinity)
+
+            FileOperationPreviewCard(rows: [
+                FileOperationPreviewRow(label: "From", value: file.urlValue.path, systemImage: "doc"),
+                FileOperationPreviewRow(label: "To", value: destinationPath.path, systemImage: "folder.badge.arrow.forward"),
+                FileOperationPreviewRow(label: "Result", value: linkName, systemImage: "link")
+            ])
 
             // Link name field
             VStack(alignment: .leading, spacing: 6) {
@@ -120,6 +131,8 @@ struct CreateLinkDialog: View {
             errorMessage = L10n.Error.nameEmpty
         } else if name.contains("/") || name.contains(":") {
             errorMessage = L10n.Error.nameInvalidChars
+        } else if linkAlreadyExists {
+            errorMessage = "An item with this name already exists in the destination."
         } else {
             errorMessage = nil
         }
