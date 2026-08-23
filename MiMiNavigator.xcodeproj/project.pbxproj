@@ -59,6 +59,7 @@
 				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
+				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
@@ -70,6 +71,7 @@
 				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
+				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
@@ -488,7 +490,7 @@
 				CODE_SIGN_ENTITLEMENTS = Gui/MiMiNavigator.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "Gui/Sources/Preview\\ Content";
 				ENABLE_APP_SANDBOX = NO;
@@ -513,7 +515,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = YES;
@@ -540,7 +542,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "Gui/Sources/Preview\\ Content";
 				ENABLE_APP_SANDBOX = NO;
@@ -565,7 +567,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigator;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
@@ -584,11 +586,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -602,11 +604,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -619,11 +621,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -636,11 +638,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 141;
+				CURRENT_PROJECT_VERSION = 142;
 				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.9.9.7.4;
+				MARKETING_VERSION = 0.9.9.7.5;
 				PRODUCT_BUNDLE_IDENTIFIER = Senatov.MiMiNavigatorUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;

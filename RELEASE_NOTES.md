@@ -1,40 +1,48 @@
-# MiMiNavigator v0.9.9.7.4
+# MiMiNavigator v0.9.9.7.5
 
-A focused workspace update adding persistent file previews, a clearer Commander-style action bar, and unified in-app feedback.
+A broad design and architecture update focused on clearer search, predictable macOS window behavior, and maintainable presentation boundaries.
 
 ## Highlights
 
-- Added a persistent, resizable Preview pane that follows the active panel selection and keeps essential file metadata visible.
-- Refined the bottom command bar with clearer separation between icons, shortcuts, and action names while preserving MiMiNavigator's dimensional control style.
-- Introduced a shared toast and banner system with scoped queues, actionable connection errors, and concise success feedback.
+- Expanded Find Files with PDF and Microsoft Office text extraction, clearer advanced filters, compact paths, and panel-consistent result styling.
+- Made standalone windows, sheets, popovers, progress panels, and system file pickers respect their originating window without floating above unrelated applications.
+- Added read-only Git state badges and directory summaries without turning MiMiNavigator into a Git client.
+- Established shared semantic typography, dimensional controls, section headers, dialog structure, and accessibility behavior across the application.
 
 ## Added
 
-- Toggle Preview from the toolbar, the Show and View menus, or with `⇧⌘P`.
-- Remember Preview visibility and width between application sessions.
-- Display native previews for selected files together with kind, size, modification date, and source path.
-- Show connection failures as in-app banners with endpoint details, readable recovery guidance, and a Retry action.
-- Show short success notifications for completed connections and relevant Cloud Share actions.
+- Search text in PDF, DOCX, XLSX, PPTX, and compatible document containers using native and package-contained extraction paths.
+- Show modified, untracked, ignored, and conflicted Git states in file panels together with a concise directory summary.
+- Display active Advanced Search filters as compact chips with incompatibility guidance and a focused reset action.
+- Use explicit presentation roles and lifecycle policies for standalone windows, decisions, transient popups, and progress UI.
+- Cover presentation policies, advanced-search normalization, and media-conversion phases with focused tests.
 
 ## Changed
 
-- Give bottom command buttons more room, a stronger border, a clearer top highlight, and a short dimensional shadow.
-- Use crisp SF Symbols and lighter system typography for command icons, shortcuts, and labels.
-- Separate command icon, shortcut, and title with restrained dividers instead of bright internal tiles.
-- Route main-window and Connect to Server notifications through one shared mechanism while keeping each notice in its originating window.
+- Align Find Files typography, rows, columns, empty states, and controls with the main dual-panel workspace.
+- Prioritize file names in search results and truncate long locations to the available column width while preserving the full path for inspection.
+- Persist manually edited Find Files criteria and normalize folder-only presets before content searches.
+- Use light semantic typography for ordinary labels and shortcuts while reserving stronger hierarchy for genuine headings.
+- Respect Increased Contrast and Reduce Motion, and provide clearer VoiceOver descriptions and keyboard-adjustable split controls.
+- Route archive, OAuth, external-tool, file-operation, and system-panel decisions through asynchronous window-scoped presentation.
+- Separate media conversion, search execution, scanning publication, remote operations, and drag geometry from presentation state.
 
-## Removed
+## Fixed
 
-- Remove the legacy `ConnectErrorPopupController` after migrating connection diagnostics to the unified banner system.
+- Prevent Find Files and other standalone windows from disappearing permanently behind the main window or competing for focus.
+- Prevent application-wide modal loops and floating panels from blocking unrelated MiMiNavigator windows or other applications.
+- Restore content searches after applying incompatible folder presets.
+- Keep manual Search In edits instead of restoring an older path on the next session.
+- Cancel media conversion safely while awaiting fallback decisions and prevent duplicate progress lifecycles.
 
 ## Validation
 
-- The application passes a Debug build with Swift 6.2 after the Preview and notification integrations.
-- Release metadata and public download documentation are synchronized for `v0.9.9.7.4`.
+- FavoritesKit and NetworkKit package tests pass on Swift 6.2.
+- The application is validated with the macOS Debug build and focused presentation-state tests.
 - The release pipeline performs a clean Developer ID build, signed DMG creation, notarization, stapling, and Gatekeeper verification.
 
 ## Download
 
 The DMG is signed and notarized by Apple and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.3...v0.9.9.7.4
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.4...v0.9.9.7.5

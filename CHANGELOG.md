@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.5] — 2026-08-23
+
+> **Release notes**
+> Clearer document search, read-only Git status, consistent macOS window behavior, and stronger internal presentation boundaries.
+
+### Added
+- **Document content search** — Find Files searches text in PDF and Microsoft Office documents in addition to ordinary text files.
+- **Git state presentation** — unobtrusive modified, untracked, ignored, and conflicted badges accompany a compact directory summary without adding repository mutation commands.
+- **Active search filters** — Advanced Search exposes current restrictions as concise chips with conflict guidance and a targeted reset action.
+- **Presentation policy tests** — focused coverage protects standalone-window restoration, modal decisions, search normalization, and media-conversion phase transitions.
+
+### Changed
+- **Find Files presentation** — search rows, columns, typography, controls, and empty states follow the main file-panel design; file names take priority and long locations truncate within their column.
+- **Find Files persistence** — manually edited criteria remain authoritative across sessions, and incompatible folder presets normalize automatically before content searches.
+- **Window ownership** — independent windows, sheets, file panels, transient popups, and progress UI follow explicit roles and remain scoped to the application and originating window.
+- **Semantic design system** — light typography, dimensional controls, section headers, dialog structure, focus, contrast, motion, and accessibility behavior use shared primitives.
+- **Architecture boundaries** — presentation state is separated from search execution, scanning publication, media conversion, remote operations, and drag geometry.
+- **Build metadata** — marketing version updated to `0.9.9.7.5`; build number updated to `142`.
+
+### Fixed
+- **Standalone window restoration** — Find Files and other independent windows return with the main application without stealing focus from unrelated applications.
+- **Application-wide blocking** — legacy modal loops and detached floating panels no longer block unrelated workflows.
+- **Content-search presets** — folder-only filters can no longer silently suppress PDF, Office, or ordinary file-content results.
+- **Conversion cancellation** — cancellation during fallback decisions cannot resume processing or create a duplicate progress lifecycle.
+
 ## [0.9.9.7.4] — 2026-08-23
 
 > **Release notes**
