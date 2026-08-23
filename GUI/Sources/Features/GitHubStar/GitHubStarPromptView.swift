@@ -133,10 +133,10 @@ struct GitHubStarBadge: View {
                     .foregroundStyle(.yellow)
                 VStack(alignment: .leading, spacing: 0) {
                     Text("STAR ON GITHUB")
-                        .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                        .font(.system(size: 9.5, weight: .semibold, design: .default))
                         .tracking(0.45)
                     Text("Help the project grow")
-                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                        .font(.system(size: 9.5, weight: .regular, design: .default))
                         .foregroundStyle(.secondary)
                 }
             }

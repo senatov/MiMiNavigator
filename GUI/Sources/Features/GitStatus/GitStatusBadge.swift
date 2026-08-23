@@ -12,7 +12,7 @@ struct GitStatusBadge: View {
 
     var body: some View {
         Text(state.badge)
-            .font(.system(size: 9, weight: .medium, design: .rounded))
+            .font(.system(size: 9.5, weight: .medium, design: .default))
             .foregroundStyle(tint)
             .frame(minWidth: 14, minHeight: 13)
             .background(tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 4, style: .continuous))

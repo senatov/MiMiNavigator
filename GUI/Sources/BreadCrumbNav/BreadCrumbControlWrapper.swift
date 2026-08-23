@@ -211,9 +211,9 @@ struct BreadCrumbControlWrapper: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.orange)
-                .font(.system(size: 11.5, weight: .regular, design: .rounded))
+                .font(.system(size: 11.5, weight: .regular, design: .default))
             Text("Search Results")
-                .font(.system(size: 11.5, weight: .regular, design: .rounded))
+                .font(.system(size: 11.5, weight: .regular, design: .default))
                 .foregroundStyle(.primary)
             Text("\(appState.displayedFiles(for: panelSide).filter { !ParentDirectoryEntry.isParentEntry($0) }.count) files")
                 .font(.system(size: 11))

@@ -146,7 +146,6 @@ private struct DownToolbarGlassButtonBody: View {
             .background { backgroundLayer }
             .overlay { buttonBorder }
             .overlay(alignment: .top) { topHighlight }
-            .compositingGroup()
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .scaleEffect(scale)
             .opacity(state == .disabled ? 0.52 : 1)

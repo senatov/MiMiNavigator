@@ -38,7 +38,6 @@ struct ParentStripButtonStyle: ButtonStyle {
                         lineWidth: isLifted ? 0.9 : 0.75
                     )
             )
-            .compositingGroup()
             .shadow(color: .black.opacity(shadowOpacity(isPressed: isPressed)), radius: shadowRadius(isPressed: isPressed), x: 0.8, y: shadowY(isPressed: isPressed))
             .scaleEffect(isPressed ? 0.982 : isDropContact ? 1.018 : keyboardPulse ? 1.016 : isHighlighted ? 1.006 : 1)
             .offset(y: isPressed ? 0.8 : isLifted ? -0.6 : 0)

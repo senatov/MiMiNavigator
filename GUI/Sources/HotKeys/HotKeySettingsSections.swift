@@ -191,7 +191,7 @@ struct HotKeyCategorySidebar: View {
                 Spacer()
 
                 Text("\(count)")
-                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .font(.system(size: 10.5, weight: .regular, design: .default))
                     .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
             }
             .padding(.horizontal, 10)

@@ -87,7 +87,6 @@ struct LiquidGlassButtonStyle: ButtonStyle {
                 )
                 .opacity(isHighlighted ? 0.75 : 0.5)
             )
-            .compositingGroup()
             .shadow(color: .black.opacity(0.22), radius: 2, x: 0.6, y: 1.4)
             // ── press + highlight animation ──
             .scaleEffect(configuration.isPressed ? 0.90 : 1)

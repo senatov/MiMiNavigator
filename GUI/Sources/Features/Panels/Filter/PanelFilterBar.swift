@@ -37,7 +37,7 @@ struct PanelFilterBar: View {
                 .padding(.leading, 7)
 
             Text("LOCAL")
-                .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                .font(.system(size: 8.5, weight: .semibold, design: .default))
                 .tracking(0.35)
                 .foregroundStyle(Color.accentColor.opacity(0.82))
                 .padding(.leading, 4)

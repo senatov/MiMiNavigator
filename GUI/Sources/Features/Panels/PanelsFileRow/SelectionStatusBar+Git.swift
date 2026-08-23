@@ -37,7 +37,7 @@ extension SelectionStatusBar {
     private func summaryBadge(_ label: String, count: Int, tint: Color) -> some View {
         if count > 0 {
             Text("\(label) \(count)")
-                .font(.system(size: 9, weight: .medium, design: .rounded))
+                .font(.system(size: 9.5, weight: .medium, design: .default))
                 .foregroundStyle(tint)
         }
     }

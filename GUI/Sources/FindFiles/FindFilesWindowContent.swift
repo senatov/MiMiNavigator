@@ -98,7 +98,7 @@ struct FindFilesWindowContent: View {
                     Image(systemName: "magnifyingglass.circle.fill")
                         .foregroundStyle(Color.accentColor)
                     Text("GLOBAL FILE SEARCH")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .font(.system(size: 9.5, weight: .semibold, design: .default))
                         .tracking(0.55)
                     Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
                         .font(.system(size: 10.5, design: .monospaced))

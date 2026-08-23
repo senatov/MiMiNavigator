@@ -62,11 +62,11 @@ private struct DevBuildBadge: View {
             DevBuildCatMedallion()
             VStack(alignment: .leading, spacing: 1) {
                 Text("TEST BUILD")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(.system(size: 10, weight: .semibold, design: .default))
                     .tracking(0.55)
                     .foregroundStyle(.primary.opacity(0.82))
                 Text(version)
-                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                    .font(.system(size: 9.5, weight: .regular, design: .default))
                     .monospacedDigit()
                     .foregroundStyle(.primary.opacity(0.72))
                     .lineLimit(1)

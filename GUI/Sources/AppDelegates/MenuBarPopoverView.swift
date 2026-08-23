@@ -51,7 +51,7 @@ struct MenuBarPopoverView: View {
                 Text("MiMiNavigator")
                     .font(.system(size: 14, weight: .semibold))
                 Text("TEST BUILD · \(version)")
-                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                    .font(.system(size: 9.5, weight: .regular, design: .default))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -91,7 +91,7 @@ struct MenuBarPopoverView: View {
                     .foregroundStyle(issues.isEmpty ? Color.green : Color.orange)
                 Spacer()
                 Text(issues.isEmpty ? "CLEAR" : "\(issues.count) RECENT")
-                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 9, weight: .semibold, design: .default))
                     .foregroundStyle(.secondary)
             }
             if issues.isEmpty {

@@ -41,7 +41,6 @@ struct TabItemView: View {
             .overlay(tabInnerHighlight)
             .overlay(tabBorder)
             .contentShape(tabShape)
-            .compositingGroup()
             .shadow(color: tabShadowColor, radius: isActive ? 2.2 : 1.2, x: 0, y: isActive ? 1.2 : 0.7)
             .background(frameReader)
             .onTapGesture { onSelect() }

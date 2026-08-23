@@ -334,7 +334,7 @@ private struct AutoCompletePopupView: View {
     private func keyHint(_ key: String, label: String) -> some View {
         HStack(spacing: 4) {
             Text(key)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(size: 10.5, weight: .medium, design: .default))
                 .padding(.horizontal, 5)
                 .frame(minHeight: 18)
                 .background(.primary.opacity(0.07), in: .rect(cornerRadius: 5))
