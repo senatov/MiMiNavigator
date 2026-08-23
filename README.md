@@ -72,37 +72,46 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview0.png" alt="MiMiNavigator dual-panel workspace" width="100%"></td>
+    <td><img src="GUI/Docs/dual-panel-workspace.png" alt="MiMiNavigator dual-panel workspace with persistent file lists" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>Two-panel file management with persistent views</em></td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td><img src="GUI/Docs/Preview1.png" alt="MiMiNavigator Find Files interface" width="100%"></td>
-  </tr>
-  <tr>
-    <td align="center"><em>Find Files and focused cleanup presets</em></td>
+    <td align="center"><em>Two-panel file management with persistent tabs, paths, sorting, and file metadata</em></td>
   </tr>
 </table>
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview2.png" alt="MiMiNavigator settings and keyboard shortcuts" width="100%"></td>
+    <td><img src="GUI/Docs/advanced-file-search.png" alt="MiMiNavigator advanced Find Files interface and search results" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>Customizable keyboard shortcuts and command groups</em></td>
+    <td align="center"><em>Advanced Find Files criteria, safe cleanup templates, archive search, and actionable results</em></td>
   </tr>
 </table>
 
 <table>
   <tr>
-    <td><img src="GUI/Docs/Preview3.png" alt="MiMiNavigator network and saved servers" width="100%"></td>
+    <td><img src="GUI/Docs/external-tools-diagnostics.png" alt="MiMiNavigator external tools diagnostics settings" width="100%"></td>
   </tr>
   <tr>
-    <td align="center"><em>Network discovery and saved remote connections</em></td>
+    <td align="center"><em>Built-in diagnostics for optional archive, media, search, and conversion tools</em></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td><img src="GUI/Docs/network-neighborhood.png" alt="MiMiNavigator network neighborhood and saved server editor" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Network discovery alongside reusable SFTP, FTP, SMB, and AFP connection profiles</em></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td><img src="GUI/Docs/media-converter.png" alt="MiMiNavigator media metadata, preview, and conversion presets" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Media metadata, inline preview, and video, audio, image, or GIF conversion presets</em></td>
   </tr>
 </table>
 
