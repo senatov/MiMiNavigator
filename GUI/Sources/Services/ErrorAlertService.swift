@@ -86,6 +86,29 @@ enum ErrorAlertService {
         }
     }
 
+    // MARK: - Secure Text Prompt
+    static func promptSecureText(
+        title: String,
+        message: String,
+        placeholder: String = "Password…",
+        confirmButton: String = "OK",
+        cancelButton: String = "Cancel"
+    ) async -> String? {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = title
+        alert.informativeText = message
+        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+        field.placeholderString = placeholder
+        alert.accessoryView = field
+        alert.addButton(withTitle: confirmButton)
+        alert.addButton(withTitle: cancelButton)
+        alert.window.initialFirstResponder = field
+        guard await response(for: alert) == .alertFirstButtonReturn else { return nil }
+        let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
     // MARK: - Text Prompt
     static func promptText(
         title: String,

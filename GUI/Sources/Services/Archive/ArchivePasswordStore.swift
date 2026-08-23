@@ -9,7 +9,6 @@
 //   One global password is used for all encrypted archive formats (ZIP, 7z, RAR).
 //   On open: tries saved password first, prompts user if it fails.
 
-import AppKit
 import Foundation
 import Security
 
@@ -56,40 +55,6 @@ final class ArchivePasswordStore {
         #else
         deletePasswordFromKeychain()
         #endif
-    }
-
-    // MARK: - Try password, then prompt
-    /// Tries saved password. Returns password to use, or nil if user cancelled.
-    /// `testPassword` closure should return true if password works.
-    func resolvePassword(test testPassword: (String) -> Bool) -> String? {
-        if let savedPassword = loadPassword(), !savedPassword.isEmpty {
-            if testPassword(savedPassword) {
-                return savedPassword
-            }
-            log.info("[ArchivePassword] saved password did not work, prompting user")
-        }
-
-        return promptForPassword()
-    }
-
-    /// Shows a modal password dialog. Returns entered password or nil on cancel.
-    private func promptForPassword() -> String? {
-        let alert = NSAlert()
-        alert.messageText = "Archive Password Required"
-        alert.informativeText = "This archive is password-protected. Enter the password to continue."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.addButton(withTitle: "Cancel")
-
-        let input = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        input.placeholderString = "Password…"
-        alert.accessoryView = input
-
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return nil }
-
-        let password = input.stringValue
-        return password.isEmpty ? nil : password
     }
 
     #if !DEBUG

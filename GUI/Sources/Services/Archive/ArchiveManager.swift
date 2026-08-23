@@ -5,7 +5,6 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Central archive session coordinator — open, close, dirty tracking
 
-import AppKit
 import Foundation
 
 // MARK: - Archive Manager
@@ -45,26 +44,12 @@ actor ArchiveManager {
     }
 
     private func promptArchivePassword(for archiveURL: URL, wrongPassword: Bool) async -> String? {
-        await MainActor.run {
-            let alert = NSAlert()
-            alert.messageText = wrongPassword ? "Wrong Archive Password" : "Archive Password Required"
-            alert.informativeText = wrongPassword
+        await ErrorAlertService.promptSecureText(
+            title: wrongPassword ? "Wrong Archive Password" : "Archive Password Required",
+            message: wrongPassword
                 ? "The password for \(archiveURL.lastPathComponent) is incorrect. Enter a new password to continue."
                 : "\(archiveURL.lastPathComponent) is password-protected. Enter the password to continue."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "OK")
-            alert.addButton(withTitle: "Cancel")
-
-            let input = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
-            input.placeholderString = "Password…"
-            alert.accessoryView = input
-
-            let response = alert.runModal()
-            guard response == .alertFirstButtonReturn else { return nil }
-
-            let password = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-            return password.isEmpty ? nil : password
-        }
+        )
     }
 
     private func resetTempDirectory(_ tempDirectory: URL) throws {
