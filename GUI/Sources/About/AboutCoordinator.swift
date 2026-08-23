@@ -71,11 +71,8 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         p.titlebarAppearsTransparent = true
         p.titleVisibility = .hidden
         p.backgroundColor = .windowBackgroundColor
-        p.isFloatingPanel = false
         p.becomesKeyOnlyIfNeeded = false
-        p.level = .normal
-        p.hidesOnDeactivate = false
-        p.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: p)
 
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()

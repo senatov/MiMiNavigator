@@ -78,11 +78,8 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.toolbarStyle = .unified
         newPanel.animationBehavior = .default
         newPanel.isMovableByWindowBackground = false
-        newPanel.hidesOnDeactivate = false
-        newPanel.isFloatingPanel = true
-        newPanel.level = .normal
+        WindowPresentationPolicy.apply(.standalone, to: newPanel)
         newPanel.collectionBehavior.insert(.fullScreenAuxiliary)
-        newPanel.tabbingMode = .disallowed
         newPanel.autorecalculatesKeyViewLoop = true
         // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
         newPanel.becomesKeyOnlyIfNeeded = false

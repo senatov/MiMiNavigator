@@ -163,9 +163,7 @@ extension ConvertMediaCoord {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
-        panel.hidesOnDeactivate = false
-        panel.level = .normal
-        panel.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.delegate = ConvertMediaWindowDelegate.shared
     }
 

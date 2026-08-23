@@ -45,9 +45,7 @@ final class MultiRenameCoordinator {
         PanelTitleHelper.applyIconTitle(to: panelWindow, systemImage: "text.line.2.summary", title: "Multi-Rename Tool")
         panelWindow.toolbarStyle = .unified
         panelWindow.animationBehavior = .utilityWindow
-        panelWindow.hidesOnDeactivate = false
-        panelWindow.level = .normal
-        panelWindow.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: panelWindow)
         panelWindow.autorecalculatesKeyViewLoop = true
         if !panelWindow.setFrameUsingName(frameAutosaveName) { panelWindow.center() }
         panelWindow.setFrameAutosaveName(frameAutosaveName)

@@ -17,9 +17,7 @@ final class FileOperationDiagnosticPresenter {
         panel.isReleasedWhenClosed = false
         panel.titlebarAppearsTransparent = false
         panel.toolbarStyle = .unified
-        panel.hidesOnDeactivate = true
-        panel.tabbingMode = .disallowed
-        panel.level = .modalPanel
+        WindowPresentationPolicy.apply(.modalDecision, to: panel)
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "exclamationmark.triangle", title: "File Operation Error")
 
         panel.contentView = NSHostingView(

@@ -129,7 +129,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        panel.level = .modalPanel
+        WindowPresentationPolicy.apply(.progress, to: panel)
         panel.orderFront(nil)
     }
     // MARK: - Convenience: extraction

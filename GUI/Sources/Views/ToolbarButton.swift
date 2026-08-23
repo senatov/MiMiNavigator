@@ -60,8 +60,7 @@ private final class TooltipWindow {
         )
         p.isOpaque = false
         p.backgroundColor = .clear
-        p.level = .floating
-        p.hidesOnDeactivate = true
+        WindowPresentationPolicy.apply(.transientPopup, to: p)
         p.hasShadow = true
         p.contentView = hosting
         p.isReleasedWhenClosed = false

@@ -35,12 +35,10 @@ final class TabTooltipPopupController {
             backing: .buffered,
             defer: true
         )
-        tooltipPanel.isFloatingPanel = true
-        tooltipPanel.hidesOnDeactivate = true
+        WindowPresentationPolicy.apply(.transientPopup, to: tooltipPanel)
         tooltipPanel.hasShadow = true
         tooltipPanel.isOpaque = false
         tooltipPanel.backgroundColor = .clear
-        tooltipPanel.level = .floating
         tooltipPanel.ignoresMouseEvents = true
         tooltipPanel.contentView = hosting
         tooltipPanel.setFrameOrigin(clampedOrigin(for: hosting.frame.size, anchorFrame: anchorFrame))

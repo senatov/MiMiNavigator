@@ -76,16 +76,12 @@ final class UpdateCoordinator {
         p.contentView = hostingView
         p.isMovableByWindowBackground = false
         p.backgroundColor = .windowBackgroundColor
-        p.isFloatingPanel = false
-        p.level = .normal
-        p.hidesOnDeactivate = false
-        p.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: p)
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()
         }
         p.setFrameAutosaveName(frameAutosaveName)
         p.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         self.panel = p
         if startCheck {
             Task {

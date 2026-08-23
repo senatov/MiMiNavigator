@@ -20,14 +20,12 @@ extension MediaInfoPanel {
             defer: false
         )
         panel.isReleasedWhenClosed = false
-        panel.hidesOnDeactivate = false
+        WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.isMovableByWindowBackground = false
         panel.collectionBehavior = [.fullScreenAuxiliary]
-        panel.level = .normal
         panel.titlebarAppearsTransparent = false
         panel.toolbarStyle = .unified
         panel.animationBehavior = .default
-        panel.tabbingMode = .disallowed
         panel.standardWindowButton(.closeButton)?.keyEquivalent = "\u{1b}"
         panel.minSize = LayoutConstants.minPanelSize
         panel.delegate = MediaInfoPanelWindowDelegate.shared
@@ -42,7 +40,6 @@ extension MediaInfoPanel {
         self.panel = panel
     }
 }
-
 
 
 

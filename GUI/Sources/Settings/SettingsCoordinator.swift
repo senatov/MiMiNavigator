@@ -65,9 +65,7 @@ final class SettingsCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = true
-        panel.hidesOnDeactivate = false
-        panel.level = .normal
-        panel.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.autorecalculatesKeyViewLoop = true
 
         if !panel.setFrameUsingName(frameAutosaveName) {

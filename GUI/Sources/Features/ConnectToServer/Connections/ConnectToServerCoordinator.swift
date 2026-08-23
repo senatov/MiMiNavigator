@@ -82,9 +82,7 @@ final class ConnectToServerCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
-        panel.level = .normal
-        panel.hidesOnDeactivate = false
-        panel.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.autorecalculatesKeyViewLoop = true
 
         if !panel.setFrameUsingName(frameAutosaveName) {

@@ -68,10 +68,7 @@ final class ToolbarCustomizeCoordinator {
         panel.toolbarStyle = .unified
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
-        panel.hidesOnDeactivate = false
-        panel.isFloatingPanel = true
-        panel.level = .normal
-        panel.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.becomesKeyOnlyIfNeeded = false
         panel.autorecalculatesKeyViewLoop = true
         panel.hasShadow = true

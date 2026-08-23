@@ -136,12 +136,10 @@ class InfoPopupController {
             styleMask: [.nonactivatingPanel],
             backing: .buffered, defer: true
         )
-        p.isFloatingPanel = true
-        p.hidesOnDeactivate = true
+        WindowPresentationPolicy.apply(.transientPopup, to: p)
         p.hasShadow = true
         p.isOpaque = false
         p.backgroundColor = .clear
-        p.level = .floating
 
         let container = NSView()
         container.wantsLayer = true

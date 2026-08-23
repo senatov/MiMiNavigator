@@ -45,9 +45,7 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.titlebarAppearsTransparent = false
         panel.hasShadow = true
-        panel.hidesOnDeactivate = true
-        panel.level = .floating
-        panel.tabbingMode = .disallowed
+        WindowPresentationPolicy.apply(.modalDecision, to: panel)
         panel.animationBehavior = .utilityWindow
         panel.delegate = self
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "doc.badge.exclamationmark", title: "File Conflict")
