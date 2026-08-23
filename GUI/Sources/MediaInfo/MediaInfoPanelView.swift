@@ -14,7 +14,7 @@ struct MediaInfoPanelView: View {
     @ObservedObject var controller: MediaInfoPanel
     private var colorTheme: ColorTheme { ColorThemeStore.shared.activeTheme }
 
-    private enum Layout {
+    enum Layout {
         static let minWidth: CGFloat = 720
         static let idealWidth: CGFloat = 920
         static let minHeight: CGFloat = 460
@@ -340,79 +340,6 @@ struct MediaInfoPanelView: View {
         }
     }
 
-    private var previewCard: some View {
-        Group {
-            switch controller.previewMode {
-                case .image:
-                    if let image = controller.previewImage {
-                        if controller.isAnimatedImagePreview {
-                            MediaInfoAnimatedImagePreview(image: image)
-                        } else {
-                            Image(nsImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    } else {
-                        previewPlaceholder
-                    }
-                case .video:
-                    MediaInfoVideoPreview(controller: controller)
-                case .none:
-                    previewPlaceholder
-            }
-        }
-        .frame(minWidth: Layout.previewMinWidth, idealWidth: Layout.previewIdealWidth, maxWidth: .infinity, maxHeight: .infinity)
-        .background(sectionBackground)
-        .overlay(sectionBorder)
-        .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
-    }
-
-    private var previewPlaceholder: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "photo.on.rectangle")
-                .font(.largeTitle)
-                .foregroundStyle(.tertiary)
-            Text("Preview unavailable")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var buttonBar: some View {
-        HStack(spacing: Layout.bottomButtonSpacing) {
-            DownToolbarButtonView(
-                title: "Copy Path",
-                systemImage: "link",
-                action: controller.copyPathAction
-            )
-
-            DownToolbarButtonView(
-                title: "Copy All",
-                systemImage: "doc.on.doc",
-                action: controller.copyAllAction
-            )
-
-            Spacer()
-
-            DownToolbarButtonView(
-                title: "Reveal",
-                systemImage: "folder",
-                action: controller.revealAction
-            )
-
-            DownToolbarButtonView(
-                title: "Close",
-                systemImage: "xmark.circle",
-                action: controller.closeAction
-            )
-        }
-        .padding(.horizontal, Layout.compactHorizontalPadding)
-        .padding(.bottom, 10)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
     private var panelBackground: some View {
         RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous)
             .fill(.clear)
@@ -423,12 +350,12 @@ struct MediaInfoPanelView: View {
             .strokeBorder(.quaternary, lineWidth: 0.8)
     }
 
-    private var sectionBackground: some View {
+    var sectionBackground: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .fill(.clear)
     }
 
-    private var sectionBorder: some View {
+    var sectionBorder: some View {
         RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
             .strokeBorder(.quaternary, lineWidth: 0.8)
     }

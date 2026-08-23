@@ -73,8 +73,7 @@ struct DuoFilePanelView: View {
                             DuoPanelFilePanelsSection(
                                 leftPanelWidth: $leftPanelWidth,
                                 containerWidth: panelWidth,
-                                containerHeight: panelsHeight,
-                                fetchFiles: fetchFiles
+                                containerHeight: panelsHeight
                             )
                             DuoPanelTabsSection(
                                 leftPanelWidth: leftPanelWidth,
@@ -269,24 +268,8 @@ struct DuoFilePanelView: View {
     private var actions: DuoFilePanelActions {
         DuoFilePanelActions(
             appState: appState,
-            refreshBothPanels: refreshBothPanels
+            refreshBothPanels: { await appState.refreshPanels() }
         )
-    }
-}
-
-// MARK: - File Operations
-extension DuoFilePanelView {
-    @MainActor
-    private func fetchFiles(for side: FavPanelSide) async {
-        log.debug("\(#function) side=\(side)")
-        await appState.scanner.refreshFiles(currSide: side)
-    }
-
-    @MainActor
-    private func refreshBothPanels() async {
-        log.debug("\(#function)")
-        await fetchFiles(for: .left)
-        await fetchFiles(for: .right)
     }
 }
 

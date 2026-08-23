@@ -25,20 +25,34 @@ final class FindFilesViewModel {
     var useRegex: Bool = false
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
-    var activeModule: FindFilesTab = .general
     var advancedSettings = FindFilesSearchSettings()
 
     // MARK: - Results & State
     var results: [FindFilesResult] = []
     var searchState: FindFilesState = .idle
     var stats: FindFilesStats = FindFilesStats()
-    var selectedResult: FindFilesResult?
-    var selectedResultIDs: Set<FindFilesResult.ID> = []
-    var errorMessage: String?
+    var presentation = FindFilesPresentationState()
+
+    var activeModule: FindFilesTab {
+        get { presentation.activeModule }
+        set { presentation.activeModule = newValue }
+    }
+    var selectedResult: FindFilesResult? {
+        get { presentation.selectedResult }
+        set { presentation.selectedResult = newValue }
+    }
+    var selectedResultIDs: Set<FindFilesResult.ID> {
+        get { presentation.selectedResultIDs }
+        set { presentation.selectedResultIDs = newValue }
+    }
+    var errorMessage: String? {
+        get { presentation.errorMessage }
+        set { presentation.errorMessage = newValue }
+    }
 
     // MARK: - Persistence
     /// Path where last search results are saved between dialog sessions
-    private static let savedResultsURL: URL = {
+    static let savedResultsURL: URL = {
         let dir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".mimi", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -46,12 +60,21 @@ final class FindFilesViewModel {
     }()
 
     /// Header info saved alongside results so Export can show query context
-    private(set) var lastSearchSummary: String = ""
+    var lastSearchSummary: String = ""
 
     // MARK: - Archive Password Dialog
-    var showPasswordDialog: Bool = false
-    var passwordArchiveName: String = ""
-    var archivePassword: String = ""
+    var showPasswordDialog: Bool {
+        get { presentation.showPasswordDialog }
+        set { presentation.showPasswordDialog = newValue }
+    }
+    var passwordArchiveName: String {
+        get { presentation.passwordArchiveName }
+        set { presentation.passwordArchiveName = newValue }
+    }
+    var archivePassword: String {
+        get { presentation.archivePassword }
+        set { presentation.archivePassword = newValue }
+    }
     var passwordContinuation: CheckedContinuation<ArchivePasswordResponse, Never>?
 
     // MARK: - Engine
@@ -319,237 +342,6 @@ final class FindFilesViewModel {
         stats = FindFilesStats()
     }
 
-    // MARK: - Advanced Presets
-
-    func applyPotentialBallastPreset() {
-        applyLargeStaleFilesPreset()
-    }
-
-    func applyLargeStaleFilesPreset() {
-        advancedSettings.activePreset = .largeStaleFiles
-        log.info("[FindFiles] Applied preset: \(FindFilesPreset.largeStaleFiles.rawValue)")
-        advancedSettings.fileNamePattern = "*"
-        advancedSettings.searchText = ""
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
-        advancedSettings.caseSensitive = false
-        advancedSettings.useRegex = false
-        advancedSettings.searchInSubdirectories = true
-        advancedSettings.searchInArchives = false
-        advancedSettings.itemTypeFilter = .filesOnly
-        advancedSettings.excludeSystemLocations = true
-        advancedSettings.deletableOnly = true
-        advancedSettings.emptyFoldersOnly = false
-        advancedSettings.useSizeFilter = true
-        advancedSettings.fileSizeMin = "100"
-        advancedSettings.fileSizeMax = ""
-        advancedSettings.fileSizeUnit = .megabytes
-        advancedSettings.useDateFilter = false
-        advancedSettings.useStaleItemFilter = true
-        advancedSettings.staleCriterionMode = .age
-        advancedSettings.staleTimestampFilter = .both
-        advancedSettings.staleAgeAmount = "12"
-        advancedSettings.staleAgeUnit = .months
-    }
-
-    func applyApplicationLeftoversPreset() {
-        advancedSettings.activePreset = .applicationLeftovers
-        log.info("[FindFiles] Applied preset: \(FindFilesPreset.applicationLeftovers.rawValue)")
-        advancedSettings.fileNamePattern = "*"
-        advancedSettings.searchText = ""
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library", isDirectory: true).path
-        advancedSettings.caseSensitive = false
-        advancedSettings.useRegex = false
-        advancedSettings.searchInSubdirectories = false
-        advancedSettings.searchInArchives = false
-        advancedSettings.itemTypeFilter = .filesAndFolders
-        advancedSettings.excludeSystemLocations = true
-        advancedSettings.deletableOnly = true
-        advancedSettings.emptyFoldersOnly = false
-        advancedSettings.useSizeFilter = false
-        advancedSettings.useDateFilter = false
-        advancedSettings.useStaleItemFilter = true
-        advancedSettings.staleCriterionMode = .age
-        advancedSettings.staleTimestampFilter = .modified
-        advancedSettings.staleAgeAmount = "24"
-        advancedSettings.staleAgeUnit = .months
-    }
-
-    func applyEmptyStaleFoldersPreset() {
-        advancedSettings.activePreset = .emptyStaleFolders
-        log.info("[FindFiles] Applied preset: \(FindFilesPreset.emptyStaleFolders.rawValue)")
-        advancedSettings.fileNamePattern = "*"
-        advancedSettings.searchText = ""
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
-        advancedSettings.caseSensitive = false
-        advancedSettings.useRegex = false
-        advancedSettings.searchInSubdirectories = true
-        advancedSettings.searchInArchives = false
-        advancedSettings.itemTypeFilter = .foldersOnly
-        advancedSettings.excludeSystemLocations = true
-        advancedSettings.deletableOnly = true
-        advancedSettings.emptyFoldersOnly = true
-        advancedSettings.useSizeFilter = false
-        advancedSettings.useDateFilter = false
-        advancedSettings.useStaleItemFilter = true
-        advancedSettings.staleCriterionMode = .age
-        advancedSettings.staleTimestampFilter = .modified
-        advancedSettings.staleAgeAmount = "12"
-        advancedSettings.staleAgeUnit = .months
-    }
-
-    private func ageInDays(amount: String, unit: FindFilesAgeUnit) -> Int? {
-        guard let value = Int(amount.trimmingCharacters(in: .whitespacesAndNewlines)), value > 0 else {
-            return nil
-        }
-        switch unit {
-        case .days:
-            return value
-        case .months:
-            return value * 30
-        case .years:
-            return value * 365
-        }
-    }
-
-    private var activeSearchSettings: FindFilesSearchSettings {
-        if activeModule == .advanced { return advancedSettings }
-        var settings = FindFilesSearchSettings()
-        settings.fileNamePattern = fileNamePattern
-        settings.invertFileNamePattern = invertFileNamePattern
-        settings.searchText = searchText
-        settings.searchDirectory = searchDirectory
-        settings.caseSensitive = caseSensitive
-        settings.useRegex = useRegex
-        settings.searchInSubdirectories = searchInSubdirectories
-        settings.searchInArchives = searchInArchives
-        return settings
-    }
-
-    private func staleAgeDaysIfNeeded() -> Int? {
-        let settings = activeSearchSettings
-        guard activeModule == .advanced, settings.useStaleItemFilter, settings.staleCriterionMode == .age else { return nil }
-        guard let days = ageInDays(amount: settings.staleAgeAmount, unit: settings.staleAgeUnit) else {
-            errorMessage = "Enter a positive age value."
-            return nil
-        }
-        return days
-    }
-
-    private func applyStaleCriteria(
-        to criteria: inout FindFilesCriteria,
-        settings: FindFilesSearchSettings,
-        staleAgeDays: Int?
-    ) {
-        guard activeModule == .advanced, settings.useStaleItemFilter else { return }
-        let appliesToModified = settings.staleTimestampFilter == .modified || settings.staleTimestampFilter == .both
-        let appliesToAccessed = settings.staleTimestampFilter == .accessed || settings.staleTimestampFilter == .both
-
-        switch settings.staleCriterionMode {
-        case .age:
-            if appliesToModified { criteria.modificationOlderThanDays = staleAgeDays }
-            if appliesToAccessed { criteria.accessOlderThanDays = staleAgeDays }
-        case .date:
-            if appliesToModified { criteria.modificationBeforeDate = settings.staleSinceDate }
-            if appliesToAccessed { criteria.accessBeforeDate = settings.staleSinceDate }
-        }
-    }
-
-    // MARK: - Archive Password Handling
-
-    @Sendable
-    private func requestArchivePassword(archiveName: String) async -> ArchivePasswordResponse {
-        return await withCheckedContinuation { continuation in
-            Task { @MainActor [weak self] in
-                guard let self else {
-                    continuation.resume(returning: .skip)
-                    return
-                }
-                self.passwordArchiveName = archiveName
-                self.archivePassword = ""
-                self.passwordContinuation = continuation
-                self.showPasswordDialog = true
-            }
-        }
-    }
-
-    /// Called from UI when user provides archive password
-    func submitArchivePassword() {
-        let pwd = archivePassword
-        showPasswordDialog = false
-        passwordContinuation?.resume(returning: .password(pwd))
-        passwordContinuation = nil
-    }
-
-    /// Called from UI when user skips password-protected archive
-    func skipArchive() {
-        showPasswordDialog = false
-        passwordContinuation?.resume(returning: .skip)
-        passwordContinuation = nil
-    }
-
-    // MARK: - Persistence
-
-    func saveResults() {
-        guard !results.isEmpty else { return }
-        do {
-            let payload = SavedSearchPayload(summary: lastSearchSummary, results: results)
-            let data = try JSONEncoder().encode(payload)
-            try data.write(to: Self.savedResultsURL, options: .atomic)
-            log.info("[FindFiles] Saved \(results.count) results")
-        } catch {
-            log.warning("[FindFiles] Save failed: \(error.localizedDescription)")
-        }
-    }
-
-
-
-    func loadSavedResults() {
-        guard FileManager.default.fileExists(atPath: Self.savedResultsURL.path) else { return }
-        do {
-            let data = try Data(contentsOf: Self.savedResultsURL)
-            let payload = try JSONDecoder().decode(SavedSearchPayload.self, from: data)
-            results = payload.results
-            lastSearchSummary = payload.summary
-            searchState = .completed
-            log.info("[FindFiles] Loaded \(results.count) saved results")
-        } catch {
-            log.warning("[FindFiles] Load failed: \(error.localizedDescription)")
-        }
-    }
-
-
-
-    // MARK: - Archive Progress Helpers
-
-    func showArchiveProgress(for archiveURL: URL) -> (ProgressPanel, ActiveArchiveProcess) {
-        let progressPanel = ProgressPanel.shared
-        let handle = ActiveArchiveProcess()
-        progressPanel.show(
-            archiveName: archiveURL.lastPathComponent,
-            destinationPath: archiveURL.deletingLastPathComponent().path
-        )
-        progressPanel.appendLine("Extracting: \(archiveURL.lastPathComponent)")
-        return (progressPanel, handle)
-    }
-
-
-
-    func openArchiveWithProgress(
-        _ archiveURL: URL,
-        progressPanel: ProgressPanel,
-        handle: ActiveArchiveProcess
-    ) async throws -> URL {
-        try await ArchiveManager.shared.openArchive(
-            at: archiveURL,
-            onProgress: { line in
-                Task { @MainActor in
-                    progressPanel.appendLine(line)
-                }
-            },
-            processHandle: handle
-        )
-    }
 }
 
 // MARK: - Saved Search Payload

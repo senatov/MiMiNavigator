@@ -16,14 +16,14 @@ import NetworkKit
 // MARK: - Network Neighborhood View
 struct NetworkNeighborhoodView: View {
 
-    @ObservedObject private var provider = NetworkNeighborhoodProvider.shared
+    @ObservedObject var provider = NetworkNeighborhoodProvider.shared
     var onNavigate: ((URL) -> Void)?
     var onDismiss: (() -> Void)?
 
     @State private var expanded: Set<NetworkHost.ID> = []
-    @State private var authTarget: NetworkHost? = nil
+    @State var authTarget: NetworkHost? = nil
 
-    private enum Layout {
+    enum Layout {
         static let minWidth: CGFloat = 380
         static let idealWidth: CGFloat = 460
         static let minHeight: CGFloat = 280
@@ -352,156 +352,6 @@ struct NetworkNeighborhoodView: View {
         .contextMenu {
             hostContextMenu(host)
         }
-    }
-
-    // MARK: - Context menu: copy name / IP / URL (for keyboard warriors and power users)
-    @ViewBuilder
-    private func hostContextMenu(_ host: NetworkHost) -> some View {
-        Button {
-            copy(host.hostDisplayName)
-        } label: {
-            Label("Copy Name: \"\(host.hostDisplayName)\"", systemImage: "doc.on.doc")
-        }
-
-        let ip = resolvedIP(host)
-        if !ip.isEmpty {
-            Button { copy(ip) } label: {
-                Label("Copy IP: \(ip)", systemImage: "number")
-            }
-        }
-
-        if let url = host.webUIURL {
-            Button { copy(url.absoluteString) } label: {
-                Label("Copy Web URL: \(url.absoluteString)", systemImage: "link")
-            }
-            Divider()
-            Button { NSWorkspace.shared.open(url) } label: {
-                Label("Open Web UI", systemImage: "safari")
-            }
-        }
-
-        if let mountURL = host.mountURL {
-            Button { copy(mountURL.absoluteString) } label: {
-                Label("Copy Mount URL", systemImage: "externaldrive")
-            }
-        }
-
-        if let mac = host.macAddress {
-            Divider()
-            Button { copy(mac) } label: {
-                Label("Copy MAC: \(mac)", systemImage: "antenna.radiowaves.left.and.right")
-            }
-        }
-
-        Divider()
-        Button {
-            let lines = buildCopyText(host)
-            copy(lines)
-        } label: {
-            Label("Copy All Info", systemImage: "doc.on.clipboard")
-        }
-    }
-
-    // MARK: - Build multi-line copy text for "Copy All Info"
-    private func buildCopyText(_ host: NetworkHost) -> String {
-        var lines = ["Name: \(host.hostDisplayName)"]
-        let ip = resolvedIP(host)
-        if !ip.isEmpty { lines.append("IP: \(ip)") }
-        if let mac = host.macAddress { lines.append("MAC: \(mac)") }
-        if !host.deviceClass.label.isEmpty { lines.append("Type: \(host.deviceClass.label)") }
-        if let url = host.webUIURL { lines.append("Web UI: \(url.absoluteString)") }
-        if let url = host.mountURL { lines.append("Mount: \(url.absoluteString)") }
-        if !host.bonjourServices.isEmpty {
-            let svcs = host.bonjourServices.sorted().joined(separator: ", ")
-            lines.append("Services: \(svcs)")
-        }
-        return lines.joined(separator: "\n")
-    }
-
-    // MARK: - Copy to clipboard
-    private func copy(_ text: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-    }
-
-    // MARK: - Best IP for display / copy
-    private func resolvedIP(_ host: NetworkHost) -> String {
-        if !host.hostIP.isEmpty { return host.hostIP }
-        let hn = host.hostName
-        if !hn.isEmpty && hn != "(nil)" && !hn.contains("@") { return hn }
-        return ""
-    }
-
-    // MARK: - Loading row
-    private var sharesLoadingRow: some View {
-        HStack(spacing: 8) {
-            ProgressView().scaleEffect(0.7)
-            Text("Connecting…").font(.caption).foregroundStyle(.secondary)
-        }
-        .padding(.leading, 40)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Share status row
-    private func shareStatusRow(for host: NetworkHost) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: statusIconName(for: host))
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-            Text(shareStatusText(for: host))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-            if shouldShowSignIn(for: host) {
-                Button { authTarget = host } label: {
-                    Label("Sign In", systemImage: "key.fill")
-                        .font(.caption).padding(.horizontal, 8).padding(.vertical, 3)
-                }
-                .buttonStyle(ThemedButtonStyle()).controlSize(.mini)
-            }
-        }
-        .padding(.leading, 40)
-        .padding(.trailing, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func shareStatusText(for host: NetworkHost) -> String {
-        switch host.shareLoadState {
-        case .authRequired:
-            return "Authentication required to view shared folders"
-        case .unavailable:
-            return "Share list is unavailable right now"
-        case .noShares:
-            return host.isLocalhost ? "No shared folders configured" : "No visible shared folders. Try signing in again."
-        case .loaded, .idle:
-            return host.isLocalhost ? "No shared folders configured" : "No shares found"
-        }
-    }
-
-    private func statusIconName(for host: NetworkHost) -> String {
-        switch host.shareLoadState {
-        case .authRequired:
-            return "lock.fill"
-        case .unavailable:
-            return "exclamationmark.triangle.fill"
-        case .noShares, .loaded, .idle:
-            return "folder.badge.questionmark"
-        }
-    }
-
-    private func shouldShowSignIn(for host: NetworkHost) -> Bool {
-        guard !host.isLocalhost,
-              !host.deviceClass.isMobile,
-              !host.deviceClass.isRouter
-        else {
-            return false
-        }
-
-        return host.shareLoadState == .authRequired
-            || host.shareLoadState == .unavailable
-            || host.shareLoadState == .noShares
     }
 
     private func shouldAutoPromptForAuthentication(for host: NetworkHost) -> Bool {

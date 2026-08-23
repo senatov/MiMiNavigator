@@ -17,7 +17,6 @@ struct PanelsRowView: View {
     @Binding var leftPanelWidth: CGFloat
     let containerWidth: CGFloat
     let containerHeight: CGFloat
-    let fetchFiles: @MainActor (FavPanelSide) async -> Void
 
     @State private var divider = DividerDragState()
 
@@ -67,7 +66,6 @@ struct PanelsRowView: View {
             selectedSide: .left,
             containerWidth: containerWidth,
             leftPanelWidth: $leftPanelWidth,
-            fetchFiles: fetchFiles,
             appState: appState
         )
         .id("panel-left")
@@ -87,7 +85,6 @@ struct PanelsRowView: View {
             selectedSide: .right,
             containerWidth: containerWidth,
             leftPanelWidth: $leftPanelWidth,
-            fetchFiles: fetchFiles,
             appState: appState
         )
         .id("panel-right")

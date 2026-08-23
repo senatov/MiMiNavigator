@@ -23,6 +23,7 @@ struct FileRowView: View {
     var onSelect: (CustomFile) -> Void = { _ in }
     var onDoubleClick: (CustomFile) -> Void = { _ in }
     private let colorStore = ColorThemeStore.shared
+    @State private var gitStatusStore = GitPanelStatusStore.shared
 
     // MARK: - Constants
     private static let nameWeight: Font.Weight = .light
@@ -139,11 +140,19 @@ struct FileRowView: View {
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
+                if let gitState {
+                    GitStatusBadge(state: gitState)
+                }
             }
             .overlay(alignment: .trailing) {
                 FileInfoButton(file: file, isSelected: isSelected)
             }
             .layoutPriority(0)
         }
+    }
+
+    private var gitState: GitFileState? {
+        let directory = file.urlValue.deletingLastPathComponent()
+        return gitStatusStore.state(for: file.urlValue, in: directory)
     }
 }

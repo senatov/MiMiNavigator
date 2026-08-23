@@ -202,14 +202,7 @@ extension CntMenuCoord {
             }
 
             if !moveToArchive {
-                ArchiveInfoPopupController.shared.showArchiveCreated(
-                    archiveName: result.lastPathComponent,
-                    destination: destination,
-                    fileCount: files.count,
-                    format: .zip,
-                    compressionLevel: compressionLevel,
-                    encrypted: password != nil && !password!.isEmpty
-                )
+                InAppNoticeCenter.shared.showToast("Created \(result.lastPathComponent)", systemImage: "archivebox.fill", tint: .green)
             }
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")

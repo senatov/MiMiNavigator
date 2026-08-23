@@ -38,6 +38,7 @@ struct SelectionStatusBar: View {
 
     @State private var colorStore = ColorThemeStore.shared
     @State private var viewModeStore = PanelViewModeStore.shared
+    @State var gitStatusStore = GitPanelStatusStore.shared
 
     // MARK: - Derived Data
 
@@ -87,7 +88,7 @@ struct SelectionStatusBar: View {
     }
 
     /// Current URL for this panel
-    private var currentURL: URL {
+    var currentURL: URL {
         isLeftPanel ? appState.leftURL : appState.rightURL
     }
 
@@ -219,6 +220,7 @@ struct SelectionStatusBar: View {
         HStack(spacing: 6) {
             leftInfoSection
             remoteBadgeSection
+            gitSummarySection
             filterSection
             Spacer()
             thumbnailSliderSection
@@ -245,6 +247,10 @@ struct SelectionStatusBar: View {
         .animation(.easeInOut(duration: 0.15), value: currentViewMode)
         .animation(.easeInOut(duration: 0.15), value: markedCount)
         .animation(.easeInOut(duration: 0.15), value: isFocused)
+        .task(id: "\(currentPath)|\(unfilteredItemCount)") {
+            guard currentURL.isFileURL else { return }
+            await gitStatusStore.refresh(directory: currentURL)
+        }
     }
 
 }

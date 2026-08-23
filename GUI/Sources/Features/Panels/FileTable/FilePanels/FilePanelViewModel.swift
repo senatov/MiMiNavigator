@@ -14,17 +14,10 @@ import SwiftUI
 final class FilePanelViewModel {
     let panelSide: FavPanelSide
     private let appState: AppState
-    // TODO: Remove fetchFiles — navigation now goes through AppState.navigateToDirectory
-    private let fetchFiles: @Sendable @concurrent (FavPanelSide) async -> Void
 
-    init(
-        panelSide: FavPanelSide,
-        appState: AppState,
-        fetchFiles: @escaping @Sendable @concurrent (FavPanelSide) async -> Void
-    ) {
+    init(panelSide: FavPanelSide, appState: AppState) {
         self.panelSide = panelSide
         self.appState = appState
-        self.fetchFiles = fetchFiles
     }
 
     // MARK: - Get sorted files (uses AppState's unified sorting)

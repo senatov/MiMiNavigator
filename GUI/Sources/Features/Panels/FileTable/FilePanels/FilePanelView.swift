@@ -67,7 +67,6 @@ struct FilePanelView: View {
         selectedSide: FavPanelSide,
         containerWidth: CGFloat,
         leftPanelWidth: Binding<CGFloat>,
-        fetchFiles: @escaping @Sendable @concurrent (FavPanelSide) async -> Void,
         appState: AppState
     ) {
         self._leftPanelWidth = leftPanelWidth
@@ -75,8 +74,7 @@ struct FilePanelView: View {
         self._viewModel = State(
             initialValue: FilePanelViewModel(
                 panelSide: selectedSide,
-                appState: appState,
-                fetchFiles: fetchFiles
+                appState: appState
             )
         )
     }
