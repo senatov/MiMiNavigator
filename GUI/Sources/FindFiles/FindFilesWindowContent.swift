@@ -43,7 +43,7 @@ struct FindFilesWindowContent: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 5)
                 }
-                .font(.system(size: 12))
+                .font(DesignTokens.Typography.body)
                 .keyboardFocusSection()
             }
         }
@@ -96,10 +96,10 @@ struct FindFilesWindowContent: View {
                     Image(systemName: "magnifyingglass.circle.fill")
                         .foregroundStyle(Color.accentColor)
                     Text("GLOBAL FILE SEARCH")
-                        .font(.system(size: 9.5, weight: .semibold, design: .default))
+                        .font(DesignTokens.Typography.micro)
                         .tracking(0.55)
                     Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
-                        .font(.system(size: 10.5, design: .monospaced))
+                        .font(DesignTokens.Typography.path)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -281,7 +281,7 @@ struct FindFilesWindowContent: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .font(.system(size: 11))
+                .font(DesignTokens.Typography.caption)
 
                 FindFilesCriteriaHeader(criteria: viewModel.activeCriteriaSummary)
                 Spacer()
@@ -303,13 +303,13 @@ struct FindFilesWindowContent: View {
                                 .foregroundStyle(.orange)
                         }
                     }
-                    .font(.system(size: 11).monospacedDigit())
+                    .font(DesignTokens.Typography.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                 }
             }
             if viewModel.searchState == .searching, !viewModel.stats.currentPath.isEmpty {
                 Text(viewModel.stats.currentPath)
-                    .font(.system(size: 11, weight: .regular, design: .monospaced))
+                    .font(DesignTokens.Typography.path)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)

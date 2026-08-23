@@ -290,11 +290,11 @@ struct FindFilesAdvancedTab: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 7) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(DesignTokens.Typography.label)
                     .foregroundStyle(tint)
                     .frame(width: 18)
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(DesignTokens.Typography.sectionTitle)
                     .foregroundStyle(.primary)
                 Spacer()
             }

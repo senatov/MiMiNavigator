@@ -135,10 +135,10 @@ struct FindFilesGeneralTab: View {
     private func sectionHeader(title: String, icon: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .light))
+                .font(DesignTokens.Typography.label)
                 .foregroundStyle(color)
             Text(title)
-                .font(.system(size: 13, weight: .bold))
+                .font(DesignTokens.Typography.sectionTitle)
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -168,7 +168,7 @@ struct FindFilesGeneralTab: View {
                     .foregroundStyle(iconColor)
                     .frame(width: 18, alignment: .center)
                 Text(label)
-                    .font(.system(size: 12))
+                    .font(DesignTokens.Typography.body)
                     .foregroundStyle(.secondary)
             }
             content()
@@ -184,7 +184,7 @@ struct FindFilesGeneralTab: View {
     ) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(DesignTokens.Typography.label)
                 .foregroundStyle(iconColor)
                 .frame(width: 22, alignment: .center)
             Text(title)

@@ -18,7 +18,7 @@ struct FindFilesCriteriaHeader: View {
                 HStack(spacing: 4) {
                     ForEach(criteria, id: \.self) { value in
                         Text(value)
-                            .font(.system(size: 10))
+                            .font(DesignTokens.Typography.micro)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                         if value != criteria.last {
@@ -49,7 +49,7 @@ struct FindFilesActiveFiltersBar: View {
                     HStack(spacing: 6) {
                         ForEach(viewModel.activeAdvancedFilterChips, id: \.self) { value in
                             Text(value)
-                                .font(.system(size: 11, weight: .regular))
+                                .font(DesignTokens.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
@@ -57,7 +57,7 @@ struct FindFilesActiveFiltersBar: View {
                         }
                         if let warning = viewModel.advancedCriteriaWarning {
                             Label(warning, systemImage: "exclamationmark.triangle.fill")
-                                .font(.system(size: 11, weight: .regular))
+                                .font(DesignTokens.Typography.caption)
                                 .foregroundStyle(.orange)
                         }
                     }
@@ -66,7 +66,7 @@ struct FindFilesActiveFiltersBar: View {
                     viewModel.resetAdvancedFilters()
                 }
                 .buttonStyle(.borderless)
-                .font(.system(size: 11, weight: .regular))
+                .font(DesignTokens.Typography.caption)
                 .disabled(viewModel.searchState == .searching)
             }
             .padding(.horizontal, 12)

@@ -36,6 +36,19 @@ enum DesignTokens {
         static let dialog: CGFloat = 12
     }
 
+    // MARK: - Semantic Typography
+    enum Typography {
+        static let body = Font.system(size: 12, weight: .light)
+        static let label = Font.system(size: 13, weight: .light)
+        static let sectionTitle = Font.system(size: 13, weight: .regular)
+        static let caption = Font.system(size: 11, weight: .light)
+        static let micro = Font.system(size: 10, weight: .light)
+        static let path = Font.system(size: 11, weight: .light, design: .monospaced)
+        static let tableCell = Font.system(size: 12, weight: .light)
+        static let tableMono = Font.system(size: 12, weight: .light, design: .monospaced)
+        static let hotKey = Font.system(size: 12, weight: .light)
+    }
+
     // MARK: - Control Metrics
     enum Control {
         static let horizontalPadding: CGFloat = 12

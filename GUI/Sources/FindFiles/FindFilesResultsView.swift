@@ -253,10 +253,10 @@ struct FindFilesResultsView: View {
                             Image(systemName: "lock.fill").foregroundStyle(.red)
                             Text("Password protected").foregroundStyle(.red)
                         }
-                        .font(.system(size: 12, weight: .light))
+                        .font(DesignTokens.Typography.tableCell)
                     } else if let context = result.matchContext, let line = result.lineNumber {
                         Text("L\(line): \(context)")
-                            .font(.system(size: 12, design: .monospaced))
+                            .font(DesignTokens.Typography.tableMono)
                             .foregroundStyle(theme.columnNameColor)
                             .lineLimit(1).truncationMode(.tail)
                     } else if let context = result.matchContext {

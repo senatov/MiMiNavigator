@@ -139,7 +139,7 @@ private struct DownToolbarGlassButtonBody: View {
 
     var body: some View {
         configuration.label
-            .font(.system(size: 12, weight: .medium))
+            .font(DesignTokens.Typography.hotKey)
             .foregroundStyle(Color.primary.opacity(isPressed ? 0.96 : 0.90))
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)

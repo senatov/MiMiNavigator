@@ -33,7 +33,7 @@ struct ArchivePasswordDialog: View {
                         .foregroundStyle(.secondary)
 
                     Text(archiveName)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(DesignTokens.Typography.body)
                         .lineLimit(2)
                         .truncationMode(.middle)
                 }

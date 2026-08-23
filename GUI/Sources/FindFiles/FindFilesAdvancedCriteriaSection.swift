@@ -52,7 +52,7 @@ struct FindFilesAdvancedCriteriaSection: View {
             }
             .toggleStyle(.checkbox)
         }
-        .font(.system(size: 12))
+        .font(DesignTokens.Typography.body)
         .padding(DesignTokens.Spacing.group)
         .semanticSurface()
     }
