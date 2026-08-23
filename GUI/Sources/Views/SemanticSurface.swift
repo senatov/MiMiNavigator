@@ -41,17 +41,17 @@ struct SectionHeader: View {
             HStack(spacing: DesignTokens.Spacing.related) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(DesignTokens.Typography.label)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(DesignTokens.Typography.sectionTitle)
                     .foregroundStyle(.primary)
             }
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 11, weight: .regular))
+                    .font(DesignTokens.Typography.caption)
                     .foregroundStyle(.secondary)
             }
         }

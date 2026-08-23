@@ -17,21 +17,27 @@ enum ScrollBarSetup {
 
     /// Configure an NSScrollView with values from ScrollBarConfig.
     static func apply(to scrollView: NSScrollView) {
-        if !(scrollView.verticalScroller is PanelVerticalScroller) {
+        applySystemStyle(to: scrollView)
+        if scrollView.scrollerStyle == .legacy, !(scrollView.verticalScroller is PanelVerticalScroller) {
             scrollView.verticalScroller = PanelVerticalScroller()
         }
         scrollView.hasVerticalScroller = ScrollBarConfig.hasVerticalScroller
         scrollView.hasHorizontalScroller = ScrollBarConfig.hasHorizontalScroller
-        scrollView.autohidesScrollers = ScrollBarConfig.autohidesScrollers
-        scrollView.scrollerStyle = .legacy
-        scrollView.scrollerInsets = NSEdgeInsets(
-            top: ScrollBarConfig.jumpButtonTrackInset,
-            left: 0,
-            bottom: ScrollBarConfig.jumpButtonTrackInset,
-            right: 0
-        )
+        scrollView.scrollerInsets = scrollView.scrollerStyle == .legacy
+            ? NSEdgeInsets(top: ScrollBarConfig.jumpButtonTrackInset, left: 0, bottom: ScrollBarConfig.jumpButtonTrackInset, right: 0)
+            : NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
+    }
+
+    // MARK: - System Style
+    static func applySystemStyle(to scrollView: NSScrollView) {
+        let preferredStyle = NSScroller.preferredScrollerStyle
+        scrollView.scrollerStyle = preferredStyle
+        scrollView.autohidesScrollers = preferredStyle == .overlay || ScrollBarConfig.autohidesScrollers
+        if preferredStyle == .overlay, scrollView.verticalScroller is PanelVerticalScroller {
+            scrollView.verticalScroller = NSScroller()
+        }
     }
 }
 

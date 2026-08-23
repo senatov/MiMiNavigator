@@ -74,6 +74,9 @@ final class FindFilesResultsTableProbe: NSView {
         tableView.usesAlternatingRowBackgroundColors = false
         tableView.backgroundColor = tableBackgroundColor
         tableView.enclosingScrollView?.backgroundColor = tableBackgroundColor
+        if let scrollView = tableView.enclosingScrollView {
+            ScrollBarSetup.applySystemStyle(to: scrollView)
+        }
         tableView.tableColumns.forEach {
             $0.headerCell.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         }
