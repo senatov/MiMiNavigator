@@ -43,7 +43,7 @@ extension ProgressPanel {
     func configurePanel(_ panel: NSPanel) {
         panel.becomesKeyOnlyIfNeeded = false
         panel.isFloatingPanel = true
-        panel.hidesOnDeactivate = false
+        panel.hidesOnDeactivate = true
         panel.hasShadow = true
         panel.isOpaque = false
         panel.level = .modalPanel

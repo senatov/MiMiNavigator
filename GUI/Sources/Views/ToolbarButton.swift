@@ -61,6 +61,7 @@ private final class TooltipWindow {
         p.isOpaque = false
         p.backgroundColor = .clear
         p.level = .floating
+        p.hidesOnDeactivate = true
         p.hasShadow = true
         p.contentView = hosting
         p.isReleasedWhenClosed = false

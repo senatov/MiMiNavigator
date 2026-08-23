@@ -5,8 +5,7 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: NSApplicationDelegate. Handles Tab key interception, bookmark restore,
 //   and companion panel visibility (Network Neighborhood, Find Files).
-//   applicationDidBecomeActive raises companion panels only when MiMiNavigator
-//   itself gets focus — not when other apps become active.
+//   Auxiliary windows follow standard macOS ordering and are raised only by explicit user actions.
 //
 // Termination strategy:
 //   applicationShouldTerminate returns .terminateLater, fires async cleanup,
@@ -143,22 +142,8 @@ import LogKit
     }
 
     private func installMainWindowObserver() {
-        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
-        NotificationCenter.default.removeObserver(self, name: NSWindow.didUpdateNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleWindowDidBecomeKey(_:)),
-            name: NSWindow.didBecomeKeyNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleWindowDidUpdate(_:)),
-            name: NSWindow.didUpdateNotification,
-            object: nil
-        )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleWindowDidMiniaturize(_:)),
@@ -171,19 +156,6 @@ import LogKit
             name: NSWindow.didDeminiaturizeNotification,
             object: nil
         )
-    }
-
-    @objc private func handleWindowDidBecomeKey(_ notification: Notification) {
-        guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
-        guard let window = notification.object as? NSWindow else { return }
-        guard window == NSApp.mainWindow else { return }
-        bringAuxiliaryPanelsToFront()
-    }
-
-    @objc private func handleWindowDidUpdate(_ notification: Notification) {
-        guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
-        guard let panel = notification.object as? NSPanel else { return }
-        enforceAuxiliaryWindowLevel(for: panel)
     }
 
     // MARK: - Main Window Miniaturization
@@ -227,33 +199,6 @@ import LogKit
             return
         }
 
-        bringAuxiliaryPanelsToFront()
-    }
-
-    private func bringAuxiliaryPanelsToFront() {
-        NSApp.windows.compactMap { $0 as? NSPanel }.forEach(enforceAuxiliaryWindowLevel)
-        NetworkNeighborhoodCoordinator.shared.bringToFront()
-        PackDialogCoordinator.shared.bringToFront()
-        ConnectToServerCoordinator.shared.bringToFront()
-        FindFilesCoordinator.shared.bringToFront()
-        MultiRenameCoordinator.shared.bringToFront()
-        SettingsCoordinator.shared.bringToFront()
-        ToolbarCustomizeCoordinator.shared.bringToFront()
-        MediaInfoPanel.shared.bringToFront()
-        PanelDialogCoordinator.history.bringToFront()
-        PanelDialogCoordinator.favorites.bringToFront()
-        AboutCoordinator.shared.bringToFront()
-        FeedbackCoordinator.shared.bringToFront()
-        UpdateCoordinator.shared.bringToFront()
-        ProgressPanel.shared.bringToFront()
-    }
-
-    private func enforceAuxiliaryWindowLevel(for panel: NSPanel) {
-        guard panel.identifier?.rawValue != "PathAutoCompletePanel" else { return }
-        guard !(panel is ProgressPanelWindow) else { return }
-        guard panel.level != .floating else { return }
-        panel.level = .floating
-        log.warning("[WindowLevel] corrected auxiliary panel to floating: \(panel.title)")
     }
 
     // MARK: - Termination

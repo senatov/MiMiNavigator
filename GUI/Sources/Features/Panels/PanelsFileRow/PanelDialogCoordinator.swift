@@ -80,7 +80,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.isMovableByWindowBackground = false
         newPanel.hidesOnDeactivate = false
         newPanel.isFloatingPanel = true
-        newPanel.level = .floating
+        newPanel.level = .normal
         newPanel.collectionBehavior.insert(.fullScreenAuxiliary)
         newPanel.tabbingMode = .disallowed
         newPanel.autorecalculatesKeyViewLoop = true
@@ -146,8 +146,8 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Present Above Main Window
     private func presentAboveMain(_ panel: NSPanel) {
         NSApp.activate(ignoringOtherApps: true)
-        panel.level = .floating
-        panel.orderFrontRegardless()
+        panel.level = .normal
+        panel.orderFront(nil)
         panel.makeKeyAndOrderFront(nil)
     }
 

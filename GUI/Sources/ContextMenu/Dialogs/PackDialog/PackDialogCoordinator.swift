@@ -6,7 +6,7 @@
 // Description: Manages Create Archive as a standalone NSPanel.
 //   - Non-modal, glass-style, movable, resizable
 //   - Persists frame position via frameAutosaveName
-//   - hidesOnDeactivate=false: stays visible when app loses focus
+//   - normal window level: never floats above other applications
 //   - Rises to front via AppDelegate.applicationDidBecomeActive
 //   - Mirrors NetworkNeighborhoodCoordinator behavior
 
@@ -91,7 +91,7 @@ final class PackDialogCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
-        panel.level = .floating
+        panel.level = .normal
         panel.tabbingMode = .disallowed
     }
 

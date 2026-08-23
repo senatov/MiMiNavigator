@@ -169,7 +169,7 @@ import SwiftUI
         let wasMiniaturized = window.isMiniaturized
         if wasMiniaturized { window.deminiaturize(nil) }
         window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
+        window.orderFront(nil)
         NSApp.arrangeInFront(nil)
         log.info(
             "[MenuBar] raised main window id='\(window.identifier?.rawValue ?? "nil")' minimized=\(wasMiniaturized) visible=\(window.isVisible)"

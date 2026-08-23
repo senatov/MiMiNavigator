@@ -42,7 +42,7 @@ extension ConvertMediaDialog {
     func configure(window: NSWindow) {
         window.styleMask.insert(.resizable)
         window.minSize = NSSize(width: Layout.minWidth, height: Layout.minHeight)
-        window.level = .floating
+        window.level = .normal
         window.collectionBehavior.insert(.fullScreenAuxiliary)
         window.isMovableByWindowBackground = true
     }
@@ -63,7 +63,7 @@ extension ConvertMediaDialog {
 
 
     func bringWindowToFront(_ window: NSWindow) {
-        window.orderFrontRegardless()
+        window.orderFront(nil)
         window.makeKeyAndOrderFront(nil)
     }
 

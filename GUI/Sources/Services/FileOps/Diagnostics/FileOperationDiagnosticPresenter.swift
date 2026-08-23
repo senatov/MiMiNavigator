@@ -17,7 +17,7 @@ final class FileOperationDiagnosticPresenter {
         panel.isReleasedWhenClosed = false
         panel.titlebarAppearsTransparent = false
         panel.toolbarStyle = .unified
-        panel.hidesOnDeactivate = false
+        panel.hidesOnDeactivate = true
         panel.tabbingMode = .disallowed
         panel.level = .modalPanel
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "exclamationmark.triangle", title: "File Operation Error")

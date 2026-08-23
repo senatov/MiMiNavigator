@@ -46,7 +46,7 @@ final class MultiRenameCoordinator {
         panelWindow.toolbarStyle = .unified
         panelWindow.animationBehavior = .utilityWindow
         panelWindow.hidesOnDeactivate = false
-        panelWindow.level = .floating
+        panelWindow.level = .normal
         panelWindow.tabbingMode = .disallowed
         panelWindow.autorecalculatesKeyViewLoop = true
         if !panelWindow.setFrameUsingName(frameAutosaveName) { panelWindow.center() }

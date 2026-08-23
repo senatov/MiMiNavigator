@@ -70,7 +70,7 @@ final class ToolbarCustomizeCoordinator {
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.isFloatingPanel = true
-        panel.level = .floating
+        panel.level = .normal
         panel.tabbingMode = .disallowed
         panel.becomesKeyOnlyIfNeeded = false
         panel.autorecalculatesKeyViewLoop = true
@@ -233,7 +233,7 @@ final class ToolbarCustomizeCoordinator {
 
     private func orderAbove(_ panel: NSPanel, relativeTo window: NSWindow) {
         if panel.windowNumber == 0 {
-            panel.orderFrontRegardless()
+            panel.orderFront(nil)
         } else {
             panel.order(.above, relativeTo: window.windowNumber)
         }

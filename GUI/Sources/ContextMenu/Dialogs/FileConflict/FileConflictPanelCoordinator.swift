@@ -45,7 +45,7 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.titlebarAppearsTransparent = false
         panel.hasShadow = true
-        panel.hidesOnDeactivate = false
+        panel.hidesOnDeactivate = true
         panel.level = .floating
         panel.tabbingMode = .disallowed
         panel.animationBehavior = .utilityWindow

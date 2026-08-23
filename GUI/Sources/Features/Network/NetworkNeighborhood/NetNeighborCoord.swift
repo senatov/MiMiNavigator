@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 23.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Network Neighborhood as a standalone NSPanel.
-//   - hidesOnDeactivate=false: stays visible when app loses focus
+//   - normal window level: never floats above other applications
 //   - Rises to front via AppDelegate.applicationDidBecomeActive (only when MiMi is active)
 //   - Movable, resizable, persists position via frameAutosaveName
 //   - close() only for file:// URLs; smb:// stays open until mount completes
@@ -79,7 +79,7 @@ final class NetworkNeighborhoodCoordinator {
         panel.animationBehavior = .utilityWindow
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
-        panel.level = .floating
+        panel.level = .normal
         panel.tabbingMode = .disallowed
     }
 
