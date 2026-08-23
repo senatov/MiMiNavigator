@@ -69,6 +69,17 @@ struct SelectionStatusBar: View {
         isLeftPanel ? appState.displayedLeftFiles.count : appState.displayedRightFiles.count
     }
 
+    private var gitRefreshKey: Int {
+        var hasher = Hasher()
+        hasher.combine(currentPath)
+        for file in appState.displayedFiles(for: panelSide) {
+            hasher.combine(file.id)
+            hasher.combine(file.sizeInBytes)
+            hasher.combine(file.modifiedDateFormatted)
+        }
+        return hasher.finalize()
+    }
+
     private var markedFiles: [CustomFile] {
         let marked = appState.markedFiles(for: panelSide)
         return displayedPanelFiles.filter { marked.contains($0.id) }
@@ -247,7 +258,7 @@ struct SelectionStatusBar: View {
         .animation(.easeInOut(duration: 0.15), value: currentViewMode)
         .animation(.easeInOut(duration: 0.15), value: markedCount)
         .animation(.easeInOut(duration: 0.15), value: isFocused)
-        .task(id: "\(currentPath)|\(unfilteredItemCount)") {
+        .task(id: gitRefreshKey) {
             guard currentURL.isFileURL else { return }
             await gitStatusStore.refresh(directory: currentURL)
         }

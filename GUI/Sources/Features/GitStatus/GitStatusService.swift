@@ -37,13 +37,14 @@ actor GitStatusService: GitStatusProviding {
         process.standardError = FileHandle.nullDevice
         do {
             try process.run()
-            process.waitUntilExit()
         } catch {
             log.warning("[GitStatus] command failed: \(error.localizedDescription)")
             return nil
         }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
         guard process.terminationStatus == 0 else { return nil }
-        return output.fileHandleForReading.readDataToEndOfFile()
+        return data
     }
 
     private func parsePorcelain(_ data: Data) -> [String: GitFileState] {
@@ -57,7 +58,7 @@ actor GitStatusService: GitStatusProviding {
                 continue
             }
             let status = String(decoding: field.prefix(2), as: UTF8.self)
-            let path = String(decoding: field.dropFirst(3), as: UTF8.self)
+            let path = String(decoding: field.dropFirst(3), as: UTF8.self).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
             states[path] = state(for: status)
             if status.first == "R" || status.first == "C" { index += 1 }
             index += 1

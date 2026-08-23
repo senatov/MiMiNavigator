@@ -65,6 +65,9 @@ struct GitStatusSnapshot: Sendable {
         for (path, state) in statesByRelativePath where path.hasPrefix(prefix) {
             if strongest == nil || state.rawValue > strongest!.rawValue { strongest = state }
         }
+        for (path, state) in statesByRelativePath where state == .ignored && relativePath.hasPrefix(path + "/") {
+            if strongest == nil || state.rawValue > strongest!.rawValue { strongest = state }
+        }
         return strongest
     }
 

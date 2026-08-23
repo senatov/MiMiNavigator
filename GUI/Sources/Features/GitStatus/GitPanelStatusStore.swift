@@ -13,7 +13,6 @@ final class GitPanelStatusStore {
     static let shared = GitPanelStatusStore()
 
     private var snapshotsByDirectory: [String: GitStatusSnapshot] = [:]
-    private var refreshTasks: [String: Task<Void, Never>] = [:]
     private let provider: any GitStatusProviding
 
     private init(provider: any GitStatusProviding = GitStatusService.shared) {
@@ -22,15 +21,9 @@ final class GitPanelStatusStore {
 
     func refresh(directory: URL) async {
         let key = directory.standardizedFileURL.path
-        refreshTasks[key]?.cancel()
-        let task = Task { [provider] in
-            let snapshot = await provider.snapshot(for: directory)
-            guard !Task.isCancelled else { return }
-            snapshotsByDirectory[key] = snapshot
-        }
-        refreshTasks[key] = task
-        await task.value
-        refreshTasks[key] = nil
+        let snapshot = await provider.snapshot(for: directory)
+        guard !Task.isCancelled else { return }
+        snapshotsByDirectory[key] = snapshot
     }
 
     func state(for url: URL, in directory: URL) -> GitFileState? {

@@ -10,15 +10,21 @@ import SwiftUI
 extension SelectionStatusBar {
     @ViewBuilder
     var gitSummarySection: some View {
-        if let summary = gitStatusStore.summary(for: currentURL), !summary.isEmpty {
+        if let summary = gitStatusStore.summary(for: currentURL) {
             HStack(spacing: 4) {
                 Image(systemName: "arrow.triangle.branch")
                     .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(.secondary)
-                summaryBadge("M", count: summary.modified, tint: Color(nsColor: .systemOrange))
-                summaryBadge("?", count: summary.untracked, tint: Color(nsColor: .systemGreen))
-                summaryBadge("I", count: summary.ignored, tint: Color(nsColor: .secondaryLabelColor))
-                summaryBadge("!", count: summary.conflicted, tint: Color(nsColor: .systemRed))
+                if summary.isEmpty {
+                    Text("Clean")
+                        .font(.system(size: 9, weight: .regular))
+                        .foregroundStyle(.secondary)
+                } else {
+                    summaryBadge("M", count: summary.modified, tint: Color(nsColor: .systemOrange))
+                    summaryBadge("?", count: summary.untracked, tint: Color(nsColor: .systemGreen))
+                    summaryBadge("I", count: summary.ignored, tint: Color(nsColor: .secondaryLabelColor))
+                    summaryBadge("!", count: summary.conflicted, tint: Color(nsColor: .systemRed))
+                }
             }
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
