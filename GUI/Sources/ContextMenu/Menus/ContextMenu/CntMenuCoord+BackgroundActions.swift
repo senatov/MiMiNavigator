@@ -129,7 +129,8 @@ extension CntMenuCoord {
         // guard: reject remote / mangled paths
         guard !AppState.isRemotePath(directory) && directory.isFileURL else {
             log.error("\(#function) aborted — directory is remote: \(directory.absoluteString)")
-            activeDialog = .error(
+            activeDialog = nil
+            InAppNoticeCenter.shared.showError(
                 title: L10n.Error.failedToCreateFile, message: "Can't create file in remote path: \(directory.lastPathComponent)")
             return
         }
@@ -150,7 +151,8 @@ extension CntMenuCoord {
             log.info("\(#function) ok — '\(createdName)' created, selecting on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: L10n.Error.failedToCreateFile, message: error.localizedDescription)
+            activeDialog = nil
+            InAppNoticeCenter.shared.showError(title: L10n.Error.failedToCreateFile, message: error.localizedDescription)
         }
     }
 

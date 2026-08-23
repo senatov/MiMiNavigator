@@ -68,7 +68,7 @@ final class ExternalApplicationLauncher {
             if let error {
                 log.error("[ExternalOpen] NSWorkspace failed bundle='\(bundleID)' error='\(error.localizedDescription)'")
                 Task { @MainActor in
-                    CntMenuCoord.shared.activeDialog = .error(title: "Open Failed", message: error.localizedDescription)
+                    InAppNoticeCenter.shared.showError(title: "Open Failed", message: error.localizedDescription)
                 }
                 return
             }

@@ -69,7 +69,7 @@ extension CntMenuCoord {
             if showsProgress {
                 progressPanel.finish(success: false, message: error.localizedDescription)
             }
-            activeDialog = .error(title: "Temp-Backup Failed", message: error.localizedDescription)
+            InAppNoticeCenter.shared.showError(title: "Temp-Backup Failed", message: error.localizedDescription)
         }
     }
 }

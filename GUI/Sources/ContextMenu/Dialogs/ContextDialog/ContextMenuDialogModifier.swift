@@ -75,9 +75,6 @@ struct ContextMenuDialogModifier: ViewModifier {
                 .createLink,
                 .fileConflict:
                 primaryDialogContent(for: dialog)
-            case .error,
-                .success:
-                alertDialogContent(for: dialog)
             case .batchCopyConfirmation,
                 .batchMoveConfirmation,
                 .batchDeleteConfirmation,

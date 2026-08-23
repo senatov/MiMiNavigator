@@ -82,7 +82,7 @@ extension CntMenuCoord {
             await appState.refreshAndSelect(name: result.lastPathComponent, on: panel)
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Duplicate Failed", message: error.localizedDescription)
+            InAppNoticeCenter.shared.showError(title: "Duplicate Failed", message: error.localizedDescription)
         }
     }
 
@@ -266,7 +266,7 @@ extension CntMenuCoord {
             log.info("\(#function) SUCCESS created link '\(linkName)'")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: "Create Link Failed", message: error.localizedDescription)
+            InAppNoticeCenter.shared.showError(title: "Create Link Failed", message: error.localizedDescription)
         }
     }
 

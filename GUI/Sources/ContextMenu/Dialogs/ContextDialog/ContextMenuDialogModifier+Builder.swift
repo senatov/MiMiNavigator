@@ -104,34 +104,6 @@ extension ContextMenuDialogModifier {
     }
 
     @ViewBuilder
-    func alertDialogContent(for dialog: ActiveDialog) -> some View {
-        switch dialog {
-            case .error(let title, let message):
-                HIGAlertDialog(
-                    icon: "xmark.circle.fill",
-                    iconColor: .red,
-                    title: title,
-                    message: message,
-                    onDismiss: {
-                        coordinator.dismissDialog()
-                    }
-                )
-            case .success(let title, let message):
-                HIGAlertDialog(
-                    icon: "checkmark.circle.fill",
-                    iconColor: .green,
-                    title: title,
-                    message: message,
-                    onDismiss: {
-                        coordinator.dismissDialog()
-                    }
-                )
-            default:
-                EmptyView()
-        }
-    }
-
-    @ViewBuilder
     func batchDialogContent(for dialog: ActiveDialog) -> some View {
         switch dialog {
             case .batchCopyConfirmation(let files, let destination, let sourcePanel):

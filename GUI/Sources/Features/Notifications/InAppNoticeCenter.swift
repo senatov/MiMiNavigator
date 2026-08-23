@@ -71,6 +71,17 @@ final class InAppNoticeCenter {
         present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
     }
 
+    // MARK: - Present Error
+    func showError(
+        title: String,
+        message: String,
+        scope: InAppNotice.Scope = .main,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        showBanner(title: title, message: message, scope: scope, systemImage: "xmark.circle.fill", tint: .red, actionTitle: actionTitle, action: action)
+    }
+
     // MARK: - Current Notice
     func notice(for scope: InAppNotice.Scope) -> InAppNotice? {
         visibleNotices[scope]

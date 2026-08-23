@@ -32,7 +32,8 @@ extension CntMenuCoord {
         // guard: reject remote / mangled URLs — can't create local folder there
         guard !AppState.isRemotePath(parentURL) && parentURL.isFileURL else {
             log.error("\(#function) aborted — parentURL is remote or non-local: \(parentURL.absoluteString)")
-            activeDialog = .error(
+            activeDialog = nil
+            InAppNoticeCenter.shared.showError(
                 title: L10n.Error.failedToCreateFolder, message: "Can't create folder in remote path: \(parentURL.lastPathComponent)")
             return
         }
@@ -49,7 +50,8 @@ extension CntMenuCoord {
             log.info("\(#function) ok — '\(name)' created, selected on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
-            activeDialog = .error(title: L10n.Error.failedToCreateFolder, message: error.localizedDescription)
+            activeDialog = nil
+            InAppNoticeCenter.shared.showError(title: L10n.Error.failedToCreateFolder, message: error.localizedDescription)
         }
     }
 

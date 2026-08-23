@@ -52,9 +52,10 @@ extension CntMenuCoord {
     }
 
     private func showUnknownSourceFormatError(_ fileExtension: String) {
-        activeDialog = .error(
+        InAppNoticeCenter.shared.showError(
             title: "Convert Failed",
-            message: "Unknown source format: .\(fileExtension)"
+            message: "Unknown source format: .\(fileExtension)",
+            scope: .mediaConvert
         )
     }
 
@@ -109,9 +110,10 @@ extension CntMenuCoord {
         let progressPanel: ProgressPanel = .shared
         guard !progressPanel.isCancelled else { return }
 
-        activeDialog = .error(
+        InAppNoticeCenter.shared.showError(
             title: "Conversion Failed",
-            message: error.localizedDescription
+            message: error.localizedDescription,
+            scope: .mediaConvert
         )
     }
 
