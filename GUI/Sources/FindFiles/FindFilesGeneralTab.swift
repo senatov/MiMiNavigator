@@ -209,14 +209,14 @@ struct FindFilesGeneralTab: View {
 
     // MARK: - Browse
     private func browseDirectory() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: viewModel.searchDirectory)
-        panel.prompt = "Select"
-        panel.message = "Choose directory, file, or archive to search in"
-        if panel.runModal() == .OK, let url = panel.url {
+        Task { @MainActor in
+            let initialURL = viewModel.searchDirectory.isEmpty ? nil : URL(fileURLWithPath: viewModel.searchDirectory)
+            guard let url = await FindFilesOperationPresenter.chooseLocation(
+                prompt: "Select",
+                message: "Choose directory, file, or archive to search in",
+                initialURL: initialURL,
+                canChooseFiles: true
+            ) else { return }
             viewModel.searchDirectory = url.path
         }
     }

@@ -158,7 +158,7 @@ struct FindFilesResultsView: View {
             Menu {
                 columnToggle("Number", id: "number")
                 columnToggle("Name", id: "name")
-                columnToggle("Path", id: "path")
+                columnToggle("Location", id: "path")
                 columnToggle("Date Modified", id: "date")
                 columnToggle("Size", id: "size")
                 columnToggle("Match", id: "match")
@@ -199,16 +199,12 @@ struct FindFilesResultsView: View {
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
-            .width(min: 50, ideal: 320)
+            .width(min: 220, ideal: 420)
             .customizationID("name")
 
-            TableColumn("Path", value: \.filePath) { result in
+            TableColumn("Location", value: \.filePath) { result in
                 rowCell(result) {
-                    Text(
-                        result.isInsideArchive
-                            ? "\u{1F4E6} [\((result.archivePath as NSString?)?.lastPathComponent ?? "archive")] \(result.filePath)"
-                            : result.filePath
-                    )
+                    Text(displayedLocation(for: result))
                     .font(Self.rowFont)
                     .foregroundStyle(
                         result.isPasswordProtected
@@ -226,7 +222,7 @@ struct FindFilesResultsView: View {
                     )
                 }
             }
-            .width(min: 50, ideal: 180)
+            .width(min: 160, ideal: 260, max: 320)
             .customizationID("path")
 
             TableColumn("Date Mod.", value: \.sortableDate) { result in
@@ -236,7 +232,7 @@ struct FindFilesResultsView: View {
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
                 }
             }
-            .width(min: 50, ideal: 180)
+            .width(min: 130, ideal: 150, max: 170)
             .customizationID("date")
 
             TableColumn("Size", value: \.fileSize) { result in
@@ -333,6 +329,8 @@ struct FindFilesResultsView: View {
                             : (result.isInsideArchive ? theme.archivePathColor : theme.columnNameColor)
                     )
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(result.fileName)
             }
         }
     }
@@ -389,6 +387,13 @@ struct FindFilesResultsView: View {
     }
 
     // MARK: - Helpers
+
+    private func displayedLocation(for result: FindFilesResult) -> String {
+        let parentPath = (result.filePath as NSString).deletingLastPathComponent
+        guard result.isInsideArchive else { return parentPath }
+        let archiveName = (result.archivePath as NSString?)?.lastPathComponent ?? "archive"
+        return "\u{1F4E6} [\(archiveName)] \(parentPath)"
+    }
 
     private static func formatSize(_ bytes: Int64) -> String {
         bytes == 0 ? "0 bytes" : sizeFormatter.string(fromByteCount: bytes)

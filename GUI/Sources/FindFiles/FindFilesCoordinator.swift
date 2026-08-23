@@ -4,8 +4,6 @@
 // Created by Iakov Senatov on 10.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Manages Find Files as a standalone NSPanel with persistent frame.
-//   bringToFront() is called by AppDelegate when MiMiNavigator becomes active,
-//   so the panel rises together with the main window (not above other apps).
 
 import AppKit
 import FileModelKit
@@ -24,6 +22,7 @@ final class FindFilesCoordinator {
     // MARK: - State
     private(set) var isVisible = false
     private var findWindow: NSWindow?
+    var sheetWindow: NSWindow? { findWindow }
     private let viewModel = FindFilesViewModel()
     /// Reference to AppState for "Show in Panel" feature
     var appState: AppState?
@@ -105,12 +104,6 @@ final class FindFilesCoordinator {
         findWindow?.close()
         isVisible = false
         log.info("[FindFiles] Window closed")
-    }
-
-    // MARK: - Raise to front (called by AppDelegate.applicationDidBecomeActive)
-    func bringToFront() {
-        guard isVisible else { return }
-        findWindow?.orderFront(nil)
     }
 
     // MARK: - Notify Closed (called by delegate)

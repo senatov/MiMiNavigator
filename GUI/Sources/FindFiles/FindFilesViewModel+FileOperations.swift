@@ -30,20 +30,24 @@ extension FindFilesViewModel {
     }
 
     func copyResults(_ selected: [FindFilesResult]) {
-        guard let destination = chooseDestination(prompt: "Copy") else { return }
-        performTransfer(selected, destination: destination, move: false)
+        Task { @MainActor [weak self] in
+            guard let destination = await FindFilesOperationPresenter.chooseDestination(prompt: "Copy") else { return }
+            self?.performTransfer(selected, destination: destination, move: false)
+        }
     }
 
     func moveResults(_ selected: [FindFilesResult]) {
-        guard let destination = chooseDestination(prompt: "Move") else { return }
-        performTransfer(selected, destination: destination, move: true)
+        Task { @MainActor [weak self] in
+            guard let destination = await FindFilesOperationPresenter.chooseDestination(prompt: "Move") else { return }
+            self?.performTransfer(selected, destination: destination, move: true)
+        }
     }
 
     func trashResults(_ selected: [FindFilesResult]) {
         let actionable = actionableResults(selected)
-        guard !actionable.isEmpty, confirmTrash(actionable) else { return }
-        let urls = actionable.map(\.fileURL)
         Task { @MainActor [weak self] in
+            guard !actionable.isEmpty, await FindFilesOperationPresenter.confirmTrash(actionable) else { return }
+            let urls = actionable.map(\.fileURL)
             do {
                 try await FindFilesOperationService.shared.execute(urls: urls, operation: .trash)
                 self?.removeMissingResults(from: actionable)
@@ -79,29 +83,6 @@ extension FindFilesViewModel {
 
     private func actionableResults(_ selected: [FindFilesResult]) -> [FindFilesResult] {
         FindFilesOperationSelection.actionableResults(from: selected)
-    }
-
-    private func chooseDestination(prompt: String) -> URL? {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = prompt
-        panel.message = "\(prompt) selected search results to folder"
-        return panel.runModal() == .OK ? panel.url : nil
-    }
-
-    private func confirmTrash(_ results: [FindFilesResult]) -> Bool {
-        let paths = results.prefix(8).map { "• \($0.fileURL.path)" }.joined(separator: "\n")
-        let remainder = results.count > 8 ? "\n…and \(results.count - 8) more" : ""
-        let alert = NSAlert()
-        alert.messageText = "Move \(results.count) item\(results.count == 1 ? "" : "s") to Trash?"
-        alert.informativeText = "Review the actual top-level paths before continuing:\n\n\(paths)\(remainder)"
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Move to Trash")
-        alert.addButton(withTitle: "Cancel")
-        return alert.runModal() == .alertFirstButtonReturn
     }
 
     private func removeMissingResults(from operated: [FindFilesResult]) {

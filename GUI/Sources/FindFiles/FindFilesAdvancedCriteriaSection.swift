@@ -4,7 +4,6 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Independent base criteria for the Advanced Search module.
 
-import AppKit
 import SwiftUI
 
 // MARK: - Advanced Search Criteria Section
@@ -57,11 +56,15 @@ struct FindFilesAdvancedCriteriaSection: View {
 
     // MARK: - Browse Directory
     private func browseDirectory() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url {
+        Task { @MainActor in
+            let path = viewModel.advancedSettings.searchDirectory
+            let initialURL = path.isEmpty ? nil : URL(fileURLWithPath: path)
+            guard let url = await FindFilesOperationPresenter.chooseLocation(
+                prompt: "Select",
+                message: "Choose a directory to search",
+                initialURL: initialURL,
+                canChooseFiles: false
+            ) else { return }
             viewModel.advancedSettings.searchDirectory = url.path
         }
     }
