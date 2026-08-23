@@ -21,7 +21,7 @@ struct MenuBarPopoverView: View {
 
     // MARK: - Body
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 11) {
             header
             statusOverview
             locationCard
@@ -29,13 +29,13 @@ struct MenuBarPopoverView: View {
             actionCard
             footer
         }
-        .padding(12)
-        .frame(width: 336)
+        .padding(14)
+        .frame(width: 344)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 11) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color.accentColor.gradient)
@@ -44,12 +44,13 @@ struct MenuBarPopoverView: View {
                     .renderingMode(.template)
                     .foregroundStyle(.white)
                     .scaledToFit()
-                    .padding(7)
+                    .padding(6)
             }
-            .frame(width: 38, height: 38)
+            .frame(width: 40, height: 40)
+            .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
             VStack(alignment: .leading, spacing: 2) {
                 Text("MiMiNavigator")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14.5, weight: .semibold))
                 Text("TEST BUILD · \(version)")
                     .font(.system(size: 9.5, weight: .regular, design: .default))
                     .foregroundStyle(.secondary)
@@ -60,7 +61,7 @@ struct MenuBarPopoverView: View {
                 .fill(issues.isEmpty ? Color.green : Color.orange)
                 .frame(width: 8, height: 8)
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 3)
     }
 
     private var statusOverview: some View {
@@ -126,19 +127,32 @@ struct MenuBarPopoverView: View {
     }
 
     private var footer: some View {
-        HStack {
+        HStack(spacing: 10) {
             Text("Right-click the menu bar icon to open")
-                .font(.system(size: 9.5))
+                .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
+                .lineLimit(1)
             Spacer()
             Button(action: onQuit) {
                 Label("Quit", systemImage: "power")
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(.red)
+                    .frame(minWidth: 70, minHeight: 27)
+                    .background {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(Color.red.opacity(0.07))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .stroke(Color.red.opacity(0.22), lineWidth: 0.75)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             }
             .buttonStyle(.plain)
+            .help("Quit MiMiNavigator")
         }
-        .padding(.horizontal, 4)
+        .padding(.leading, 4)
+        .padding(.top, 1)
     }
 
     private func metric(symbol: String, title: String, value: String) -> some View {
@@ -185,7 +199,7 @@ struct MenuBarPopoverView: View {
             }
             .contentShape(Rectangle())
             .padding(.horizontal, 7)
-            .padding(.vertical, 6)
+            .frame(minHeight: 31)
         }
         .buttonStyle(.plain)
     }
@@ -197,5 +211,6 @@ struct MenuBarPopoverView: View {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
             }
+            .shadow(color: Color.black.opacity(0.035), radius: 1.5, y: 1)
     }
 }

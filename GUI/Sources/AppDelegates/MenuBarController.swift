@@ -87,7 +87,7 @@ import SwiftUI
         let popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
-        popover.contentSize = NSSize(width: 336, height: 470)
+        popover.contentSize = NSSize(width: 344, height: 476)
         popover.contentViewController = NSHostingController(rootView: MenuBarPopoverView(
             version: AppBuildInfo.versionString(),
             memory: memoryLabel,
@@ -141,7 +141,7 @@ import SwiftUI
     private func makeStatusImage() -> NSImage? {
         let image = NSImage(named: "MenuBarIcon")
             ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
-        image?.size = NSSize(width: 18, height: 18)
+        image?.size = NSSize(width: 19, height: 19)
         image?.isTemplate = true
         return image
     }
