@@ -45,7 +45,7 @@ extension FindFilesViewModel {
         let urls = actionable.map(\.fileURL)
         Task { @MainActor [weak self] in
             do {
-                _ = try await FileOpsEngine.shared.delete(items: urls)
+                try await FindFilesOperationService.shared.execute(urls: urls, operation: .trash)
                 self?.removeMissingResults(from: actionable)
                 InAppNoticeCenter.shared.showToast("Moved \(actionable.count) item\(actionable.count == 1 ? "" : "s") to Trash", scope: .findFiles, systemImage: "trash.fill", tint: .green)
             } catch {
@@ -61,11 +61,12 @@ extension FindFilesViewModel {
         let urls = actionable.map(\.fileURL)
         Task { @MainActor [weak self] in
             do {
+                let operation = move
+                    ? FindFilesOperationService.Operation.move(destination: destination)
+                    : FindFilesOperationService.Operation.copy(destination: destination)
+                try await FindFilesOperationService.shared.execute(urls: urls, operation: operation)
                 if move {
-                    _ = try await FileOpsEngine.shared.move(items: urls, to: destination)
                     self?.removeMissingResults(from: actionable)
-                } else {
-                    _ = try await FileOpsEngine.shared.copy(items: urls, to: destination)
                 }
                 let verb = move ? "Moved" : "Copied"
                 InAppNoticeCenter.shared.showToast("\(verb) \(actionable.count) item\(actionable.count == 1 ? "" : "s")", scope: .findFiles)
@@ -77,22 +78,7 @@ extension FindFilesViewModel {
     }
 
     private func actionableResults(_ selected: [FindFilesResult]) -> [FindFilesResult] {
-        let existing = selected.filter {
-            !$0.isInsideArchive
-                && !$0.isPasswordProtected
-                && FileManager.default.fileExists(atPath: $0.fileURL.path)
-        }
-        let ordered = existing.sorted {
-            $0.fileURL.standardizedFileURL.pathComponents.count
-                < $1.fileURL.standardizedFileURL.pathComponents.count
-        }
-        var acceptedPaths: [String] = []
-        return ordered.filter { result in
-            let path = result.fileURL.standardizedFileURL.path
-            let isNested = acceptedPaths.contains { path == $0 || path.hasPrefix($0 + "/") }
-            if !isNested { acceptedPaths.append(path) }
-            return !isNested
-        }
+        FindFilesOperationSelection.actionableResults(from: selected)
     }
 
     private func chooseDestination(prompt: String) -> URL? {
