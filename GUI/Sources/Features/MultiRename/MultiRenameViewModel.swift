@@ -26,7 +26,7 @@ final class MultiRenameViewModel {
     private var appState: AppState?
     private var panel = FavPanelSide.left
     private var configurationID = UUID()
-    private let engine = MultiRenameEngine()
+    private let operationCoordinator = MultiRenameOperationCoordinator()
 
     var canUseSelection: Bool { !selectedSources.isEmpty }
     var activeSources: [MultiRenameSource] { scope == .selection ? selectedSources : allSources }
@@ -69,12 +69,11 @@ final class MultiRenameViewModel {
         errorMessage = nil
         Task {
             do {
-                let result = try await engine.rename(items)
-                if let operationAppState {
-                    await operationAppState.scanner.clearCooldown(for: operationPanel)
-                    await operationAppState.refreshFiles(for: operationPanel, force: true)
-                    operationAppState.setMarkedFiles([], for: operationPanel)
-                }
+                let result = try await operationCoordinator.execute(
+                    items: items,
+                    appState: operationAppState,
+                    panel: operationPanel
+                )
                 if configurationID == operationConfigurationID {
                     completionMessage = "Renamed \(result.renamedCount) item(s)"
                     if let operationAppState {
