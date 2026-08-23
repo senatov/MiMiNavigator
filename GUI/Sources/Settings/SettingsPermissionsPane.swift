@@ -30,7 +30,7 @@ struct SettingsPermissionsPane: View {
             authorizedFoldersCard
             accessGuideCard
         }
-        .onAppear { loadAuthorizedFolders() }
+        .task { await loadAuthorizedFolders() }
     }
 
     // MARK: - Full Disk Access Card
@@ -173,9 +173,9 @@ struct SettingsPermissionsPane: View {
 
     // MARK: - Load Authorized Folders
 
-    private func loadAuthorizedFolders() {
-        let dict = (MiMiDefaults.shared.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
-        authorizedFolders = dict.keys.sorted().map { path in
+    private func loadAuthorizedFolders() async {
+        let paths = await BookmarkStore.shared.storedBookmarkPaths()
+        authorizedFolders = paths.map { path in
             AuthorizedFolder(
                 path: path,
                 displayName: URL(fileURLWithPath: path).lastPathComponent,
@@ -207,7 +207,7 @@ struct SettingsPermissionsPane: View {
                 let granted = await BookmarkStore.shared.persistAccess(for: url)
                 log.info("[Permissions] addFolders: \(url.path) granted=\(granted)")
             }
-            loadAuthorizedFolders()
+            await loadAuthorizedFolders()
             showRestartBanner = true
         }
     }
@@ -217,11 +217,11 @@ struct SettingsPermissionsPane: View {
     private func removeSelectedFolder() {
         guard let selectedFolderID,
               let folder = authorizedFolders.first(where: { $0.id == selectedFolderID }) else { return }
-        var dict = (MiMiDefaults.shared.dictionary(forKey: "FavoritesKit.Bookmarks.v1") as? [String: Data]) ?? [:]
-        dict.removeValue(forKey: folder.path)
-        MiMiDefaults.shared.set(dict, forKey: "FavoritesKit.Bookmarks.v1")
         self.selectedFolderID = nil
-        loadAuthorizedFolders()
-        log.info("[Permissions] removed folder '\(folder.path)'")
+        Task { @MainActor in
+            let removed = await BookmarkStore.shared.removeBookmark(for: URL(fileURLWithPath: folder.path))
+            await loadAuthorizedFolders()
+            log.info("[Permissions] removed folder '\(folder.path)' removed=\(removed)")
+        }
     }
 }
