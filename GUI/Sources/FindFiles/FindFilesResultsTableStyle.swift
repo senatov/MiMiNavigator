@@ -11,6 +11,7 @@ import SwiftUI
 struct FindFilesResultsTableStyle: NSViewRepresentable {
     let selectionVersion: Int
     let themeVersion: Int
+    let rowHeight: CGFloat
 
     func makeNSView(context _: Context) -> FindFilesResultsTableProbe {
         FindFilesResultsTableProbe()
@@ -25,6 +26,10 @@ struct FindFilesResultsTableStyle: NSViewRepresentable {
             NSColor(theme.selectionBorder).alphaComponent * 0.5
         )
         view.borderWidth = theme.selectionLineWidth
+        view.rowHeight = rowHeight
+        view.evenRowColor = NSColor(theme.zebraActiveEven)
+        view.oddRowColor = NSColor(theme.zebraActiveOdd)
+        view.tableBackgroundColor = NSColor(theme.warmWhite)
         view.applyWhenReady()
     }
 }
@@ -36,6 +41,10 @@ final class FindFilesResultsTableProbe: NSView {
     var activeBorderColor: NSColor = .clear
     var inactiveBorderColor: NSColor = .clear
     var borderWidth: CGFloat = 1
+    var rowHeight: CGFloat = 22
+    var evenRowColor: NSColor = .clear
+    var oddRowColor: NSColor = .clear
+    var tableBackgroundColor: NSColor = .controlBackgroundColor
     private weak var observedTable: NSTableView?
 
     override func viewDidMoveToWindow() {
@@ -60,6 +69,13 @@ final class FindFilesResultsTableProbe: NSView {
         guard let tableView = matchingTableView() else { return false }
         if observedTable !== tableView {
             observe(tableView)
+        }
+        tableView.rowHeight = rowHeight
+        tableView.usesAlternatingRowBackgroundColors = false
+        tableView.backgroundColor = tableBackgroundColor
+        tableView.enclosingScrollView?.backgroundColor = tableBackgroundColor
+        tableView.tableColumns.forEach {
+            $0.headerCell.font = NSFont.systemFont(ofSize: 11.5, weight: .regular)
         }
         tableView.selectionHighlightStyle = .none
         updateVisibleRows(in: tableView)
@@ -108,6 +124,7 @@ final class FindFilesResultsTableProbe: NSView {
         let upperBound = min(visibleRows.location + visibleRows.length, tableView.numberOfRows)
         for row in visibleRows.location ..< upperBound {
             guard let rowView = tableView.rowView(atRow: row, makeIfNecessary: false) else { continue }
+            rowView.backgroundColor = row.isMultiple(of: 2) ? evenRowColor : oddRowColor
             let background = selectionBackground(in: rowView)
             let isSelected = tableView.selectedRowIndexes.contains(row)
             let isActive = tableView.window?.isKeyWindow == true

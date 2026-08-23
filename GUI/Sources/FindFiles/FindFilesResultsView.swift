@@ -38,6 +38,7 @@ struct FindFilesResultsView: View {
     // MARK: - Fonts (static - same as FileRow)
 
     private static let rowFont: Font = .system(size: 12)
+    private static let nameFont: Font = .system(size: 14, weight: .light)
     private static let monoFont: Font = .system(size: 12).monospacedDigit()
 
     // MARK: - Formatters (static - allocated once)
@@ -286,7 +287,8 @@ struct FindFilesResultsView: View {
         .background(
             FindFilesResultsTableStyle(
                 selectionVersion: viewModel.selectedResultIDs.hashValue,
-                themeVersion: colorStore.themeVersion
+                themeVersion: colorStore.themeVersion,
+                rowHeight: FilePanelStyle.rowHeight
             )
         )
     }
@@ -315,14 +317,10 @@ struct FindFilesResultsView: View {
                 Image(nsImage: FileRowView.getSmartIcon(for: result.fileURL))
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: 16, height: 16)
+                    .frame(width: DesignTokens.Row.iconSize, height: DesignTokens.Row.iconSize)
                     .opacity(result.isInsideArchive ? 0.75 : 1.0)
                 Text(result.fileName)
-                    .font(
-                        Self.rowFont.weight(
-                            result.isInsideArchive || result.isPasswordProtected ? .light : .regular
-                        )
-                    )
+                    .font(Self.nameFont)
                     .foregroundStyle(
                         result.isPasswordProtected
                             ? .red
