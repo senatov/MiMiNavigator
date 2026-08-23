@@ -16,19 +16,6 @@ actor DirectorySizeService {
     /// IMPORTANT: Do not format/display this as a real size.
     static let unavailableSize: Int64 = -1
 
-    /// Best-effort wrapper for sandboxed locations.
-    /// If the URL is not security-scoped, startAccessingSecurityScopedResource() returns false and we still try.
-    nonisolated private func withSecurityScope<T>(_ url: URL, _ work: () throws -> T) rethrows -> T {
-        let isFileURL = url.isFileURL
-        let didStart = isFileURL ? url.startAccessingSecurityScopedResource() : false
-        defer {
-            if didStart {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-        return try work()
-    }
-
     // MARK: - Concurrency
     /// Limit simultaneous directory scans
     private let semaphore = DispatchSemaphore(value: 2)
@@ -155,7 +142,7 @@ actor DirectorySizeService {
 
     func fileModificationTime(forResolvedPath path: String, urlForScope: URL) -> TimeInterval? {
         let attrs: [FileAttributeKey: Any]?
-        attrs = try? withSecurityScope(urlForScope) {
+        attrs = try? DirectorySizeSecurityScope.access(urlForScope) {
             try FileManager.default.attributesOfItem(atPath: path)
         }
         guard let attrs, let mtime = attrs[.modificationDate] as? Date else {
@@ -276,11 +263,7 @@ actor DirectorySizeService {
         cancellation: DirectorySizeCancellationState
     ) async -> Int64 {
         await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
-            queue.async { [semaphore, weak self] in
-                guard let self else {
-                    continuation.resume(returning: Self.unavailableSize)
-                    return
-                }
+            queue.async { [semaphore] in
                 semaphore.wait()
                 defer { semaphore.signal() }
                 guard !Self.cancellation.isCancelled, !cancellation.isCancelled else {
@@ -288,7 +271,7 @@ actor DirectorySizeService {
                     return
                 }
                 // Phase 2 + 3 native calculation (security-scoped best-effort)
-                let size: Int64 = self.withSecurityScope(url) {
+                let size: Int64 = DirectorySizeSecurityScope.access(url) {
                     DirectorySizeNativeCalculator.directorySize(url, cancellation: cancellation)
                 }
                 continuation.resume(returning: size)
@@ -389,16 +372,12 @@ actor DirectorySizeService {
         }
         //log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
         let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
-            queue.async { [weak self] in
-                guard let self else {
-                    continuation.resume(returning: Self.unavailableSize)
-                    return
-                }
+            queue.async {
                 guard !Self.cancellation.isCancelled else {
                     continuation.resume(returning: Self.unavailableSize)
                     return
                 }
-                let size: Int64 = self.withSecurityScope(resolvedURL) {
+                let size: Int64 = DirectorySizeSecurityScope.access(resolvedURL) {
                     DirectorySizeNativeCalculator.shallowSize(resolvedURL)
                 }
                 continuation.resume(returning: size)
