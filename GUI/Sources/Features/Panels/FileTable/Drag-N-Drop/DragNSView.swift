@@ -358,43 +358,4 @@ final class DragNSView: NSView, NSDraggingSource {
         lastLoggedTargetPath = nil
     }
 
-    // MARK: - Helpers
-    func panelFrameInWindowCoordinates() -> NSRect {
-        guard self.window != nil else { return .zero }
-        return convert(bounds, to: nil)
-    }
-
-    func currentMouseScreenPoint(fallback: NSPoint) -> NSPoint {
-        let mouseLocation = NSEvent.mouseLocation
-        if mouseLocation == .zero {
-            return fallback
-        }
-        return mouseLocation
-    }
-
-    private func dropTargetProbeScreenPoint(from cursorScreenPoint: NSPoint) -> NSPoint {
-        NSPoint(
-            x: cursorScreenPoint.x,
-            y: cursorScreenPoint.y + DragNSViewUI.dropTargetProbeYOffset
-        )
-    }
-
-    private var isPrimaryMouseDown: Bool { NSEvent.pressedMouseButtons == 1 }
-
-    private var isResizeCursor: Bool {
-        let c = NSCursor.current
-        return c == .resizeLeftRight || c == .resizeLeft || c == .resizeRight
-    }
-
-    private func shouldHandlePrimaryDrag(_ event: NSEvent) -> Bool {
-        event.type == .leftMouseDragged && isPrimaryMouseDown && !event.modifierFlags.contains(.control)
-    }
-
-    private func expandedBounds(tolerance: CGFloat) -> NSRect {
-        bounds.insetBy(dx: -tolerance, dy: -tolerance)
-    }
-
-    private func passedDragThreshold(from start: NSPoint, to current: NSPoint) -> Bool {
-        hypot(current.x - start.x, current.y - start.y) >= DragNSViewUI.dragThreshold
-    }
 }

@@ -74,7 +74,7 @@ final class RemoteConnectionManager {
     }
 
     // MARK: - Connection Lookup
-    private func indexOfConnection(id: UUID) -> Int? {
+    func indexOfConnection(id: UUID) -> Int? {
         connections.firstIndex { $0.id == id }
     }
 
@@ -356,31 +356,9 @@ final class RemoteConnectionManager {
         return expectedSMBMountPointPaths(for: server).contains(where: Self.isSMBMounted(atPath:))
     }
 
-    // MARK: - Remote operations
-    func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
-        log.debug("\(#function) active=\(activeConnection?.displayName ?? "none")")
-        let connection = try requireActiveConnection()
-        let items = try await connection.provider.listDirectory(path)
-        updateCurrentPath(path, for: connection.id)
-        return items
-    }
-
-    private func updateCurrentPath(_ path: String, for connectionID: UUID) {
-        guard let idx = indexOfConnection(id: connectionID) else { return }
-        connections[idx].currentPath = path
-    }
-
-    func downloadFile(remotePath: String) async throws -> URL {
-        log.debug(#function + " active=\(activeConnection?.displayName ?? "none")")
-        let connection = try requireActiveConnection()
-        log.info("\(#function) '\(remotePath)'")
-        return try await connection.provider.downloadFile(remotePath: remotePath)
-    }
-
-    func navigateUp() async throws -> [RemoteFileItem] {
-        let connection = try requireActiveConnection()
-        let parentPath = parentPath(for: connection.currentPath)
-        return try await listDirectory(parentPath)
+    func updateCurrentPath(_ path: String, for connectionID: UUID) {
+        guard let index = indexOfConnection(id: connectionID) else { return }
+        connections[index].currentPath = path
     }
 
     private func notifyConnectionActivated(_ connection: RemoteConnection) {
