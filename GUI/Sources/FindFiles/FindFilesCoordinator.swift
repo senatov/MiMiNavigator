@@ -98,9 +98,9 @@ final class FindFilesCoordinator {
     // MARK: - Close
 
     func close() {
+        findWindow?.makeFirstResponder(nil)
         viewModel.savePreferences()
         viewModel.cancelSearch()
-        findWindow?.makeFirstResponder(nil)
         findWindow?.close()
         isVisible = false
         log.info("[FindFiles] Window closed")

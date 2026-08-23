@@ -166,6 +166,7 @@ final class FindFilesViewModel {
         if !settings.searchText.isEmpty {
             SearchHistoryManager.shared.add(settings.searchText, for: .searchText)
         }
+        savePreferences()
         // Clear previous results
         results.removeAll()
         selectedResultIDs.removeAll()

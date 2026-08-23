@@ -46,13 +46,16 @@ struct SearchHistoryComboBox: NSViewRepresentable {
     }
 
     func updateNSView(_ comboBox: NSComboBox, context: Context) {
-        if comboBox.stringValue != text {
+        context.coordinator.parent = self
+        if comboBox.currentEditor() == nil, comboBox.stringValue != text {
             comboBox.stringValue = text
         }
-        // Refresh history items
         let items = SearchHistoryManager.shared.history(for: historyKey)
-        comboBox.removeAllItems()
-        comboBox.addItems(withObjectValues: items)
+        let currentItems = comboBox.objectValues.compactMap { $0 as? String }
+        if comboBox.currentEditor() == nil, currentItems != items {
+            comboBox.removeAllItems()
+            comboBox.addItems(withObjectValues: items)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -62,7 +65,7 @@ struct SearchHistoryComboBox: NSViewRepresentable {
     // MARK: - Coordinator
 
     class Coordinator: NSObject, NSComboBoxDelegate, NSTextFieldDelegate {
-        let parent: SearchHistoryComboBox
+        var parent: SearchHistoryComboBox
 
         init(_ parent: SearchHistoryComboBox) {
             self.parent = parent
