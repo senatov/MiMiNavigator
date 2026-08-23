@@ -9,8 +9,10 @@
 import AppKit
 import FileModelKit
 import Foundation
+import Observation
 
 @MainActor
+@Observable
 final class MediaConversionService {
     static let shared = MediaConversionService()
 
@@ -24,6 +26,7 @@ final class MediaConversionService {
 
     var activeProcess: Process?
     var approvedOversizedGIFTargets: Set<String> = []
+    private(set) var phase: MediaConversionPhase = .idle
 
     private init() {}
 
@@ -40,33 +43,30 @@ final class MediaConversionService {
         onCancel: @escaping () -> Void
     ) async throws {
         let conversionPreset = preset ?? MediaConversionPreset.defaultPreset(for: sourceFormat, target: targetFormat)
-        let tool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
-        logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: tool)
+        let requestedTool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
+        var executionTool = requestedTool
+        logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: requestedTool)
         approvedOversizedGIFTargets.remove(target.path)
         defer { approvedOversizedGIFTargets.remove(target.path) }
-
+        phase = .preparing
         let toolReady = await ExternalToolDoctor.shared.ensureReady(
-            conversionTool: tool,
-            context: "Media conversion needs \(tool.rawValue) for \(sourceFormat.rawValue) → \(targetFormat.rawValue)."
+            conversionTool: requestedTool,
+            context: "Media conversion needs \(requestedTool.rawValue) for \(sourceFormat.rawValue) → \(targetFormat.rawValue)."
         )
-        guard toolReady else {
-            if tool == .gifski {
-                return try await handleMissingGifski(
-                    source: source,
-                    target: target,
-                    targetFormat: targetFormat,
-                    onCancel: onCancel
-                )
-            }
-            throw ConversionError.toolMissing(tool.rawValue)
+        if !toolReady, requestedTool == .gifski, ConversionTool.ffmpeg.isAvailable {
+            executionTool = .ffmpeg
+            log.info("[MediaConvert] gifski unavailable after repair flow; using ffmpeg fallback")
+        } else if !toolReady {
+            let error = ConversionError.toolMissing(requestedTool.rawValue)
+            phase = .failed(message: error.localizedDescription)
+            throw error
         }
-
         let panel = ProgressPanel.shared
         showProgressPanel(panel, source: source, targetFormat: targetFormat, onCancel: onCancel)
-
+        phase = .running(tool: executionTool.rawValue)
         do {
             try await runConversion(
-                tool: tool,
+                tool: executionTool,
                 source: source,
                 target: target,
                 sourceFormat: sourceFormat,
@@ -78,8 +78,14 @@ final class MediaConversionService {
                 try await enforceGIFLimit(target: target, panel: panel)
             }
             finishSuccess(panel: panel, target: target)
+            phase = .completed(output: target)
+        } catch is CancellationError {
+            phase = .cancelled
+            panel.finish(success: false, message: "⏹ Cancelled")
+            throw CancellationError()
         } catch {
             finishFailure(panel: panel, error: error)
+            phase = .failed(message: error.localizedDescription)
             throw error
         }
     }
@@ -96,10 +102,22 @@ final class MediaConversionService {
     }
 
     func cancelActiveConversion() {
+        guard phase.isActive else { return }
         activeProcess?.terminate()
         activeProcess = nil
+        phase = .cancelled
         ProgressPanel.shared.finish(success: false, message: "⏹ Cancelled")
         log.info("[MediaConvert] cancelled by user")
+    }
+
+    // MARK: - User Decision
+    func requestOversizedGIFDecision(size: String) async -> GifSizeDecision {
+        let previousPhase = phase
+        phase = .awaitingDecision(reason: "GIF size is \(size)")
+        let decision = await GifSizeGuard.promptOversizedGIF(size: size)
+        guard phase != .cancelled else { return .cancel }
+        phase = previousPhase
+        return decision
     }
 
     // MARK: - Conversion Routing

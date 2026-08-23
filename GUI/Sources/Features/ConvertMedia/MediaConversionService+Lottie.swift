@@ -169,7 +169,7 @@ extension MediaConversionService {
     ) async throws {
         let firstPassSize = GifSizeGuard.fileSizeMB(target)
         panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
-        switch await GifSizeGuard.promptOversizedGIF(size: firstPassSize) {
+        switch await requestOversizedGIFDecision(size: firstPassSize) {
             case .keep:
                 approvedOversizedGIFTargets.insert(target.path)
                 panel.appendLine("Keeping GIF above 19.5 MB by user choice")
