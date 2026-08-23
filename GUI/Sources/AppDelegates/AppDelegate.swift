@@ -142,8 +142,15 @@ import LogKit
     }
 
     private func installMainWindowObserver() {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didBecomeKeyNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didMiniaturizeNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSWindow.didDeminiaturizeNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMainWindowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleWindowDidMiniaturize(_:)),
@@ -156,6 +163,20 @@ import LogKit
             name: NSWindow.didDeminiaturizeNotification,
             object: nil
         )
+    }
+
+    // MARK: - Main Window Focus
+    @objc private func handleMainWindowDidBecomeKey(_ notification: Notification) {
+        guard !isTerminationCleanupRunning, appState?.isTerminating != true, NSApp.isActive else { return }
+        guard let mainWindow = notification.object as? NSWindow, isMainApplicationWindow(mainWindow) else { return }
+        restoreStandaloneWindowOrdering(relativeTo: mainWindow)
+    }
+
+    private func restoreStandaloneWindowOrdering(relativeTo mainWindow: NSWindow) {
+        let standalonePanels = NSApp.orderedWindows.compactMap { $0 as? NSPanel }.filter {
+            $0.isVisible && $0.level == .normal && $0 !== mainWindow
+        }
+        for panel in standalonePanels.reversed() { panel.orderFront(nil) }
     }
 
     // MARK: - Main Window Miniaturization
@@ -189,16 +210,6 @@ import LogKit
         guard !didLogStartupCompletion else { return }
         didLogStartupCompletion = true
         logStartupStep("startup checkpoint reached: \(reason)")
-    }
-
-    // MARK: - Focus
-
-    func applicationDidBecomeActive(_ notification: Notification) {
-        if isTerminationCleanupRunning || appState?.isTerminating == true {
-            log.info("[AppDelegate] applicationDidBecomeActive ignored — app is terminating")
-            return
-        }
-
     }
 
     // MARK: - Termination
