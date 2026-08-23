@@ -133,30 +133,18 @@ final class MultiSelectionManager {
     /// Show pattern dialog and mark/unmark matching files
     func markByPattern(shouldMark: Bool) {
         guard let state = appState else { return }
-
-        let alert = NSAlert()
-        alert.messageText =
-            shouldMark
-            ? L10n.Selection.markByPattern
-            : L10n.Selection.unmarkByPattern
-        alert.informativeText = L10n.Selection.patternHint
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: L10n.Button.ok)
-        alert.addButton(withTitle: L10n.Button.cancel)
-
-        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
-        textField.stringValue = "*.*"
-        textField.placeholderString = "*.txt, *.jpg, photo*"
-        alert.accessoryView = textField
-        alert.window.initialFirstResponder = textField
-
-        let response = alert.runModal()
-        guard response == .alertFirstButtonReturn else { return }
-
-        let pattern = textField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !pattern.isEmpty else { return }
-
-        applyPattern(pattern, shouldMark: shouldMark, on: state.focusedPanel)
+        let panel = state.focusedPanel
+        Task { [weak self] in
+            guard let pattern = await ErrorAlertService.promptText(
+                title: shouldMark ? L10n.Selection.markByPattern : L10n.Selection.unmarkByPattern,
+                message: L10n.Selection.patternHint,
+                initialValue: "*.*",
+                placeholder: "*.txt, *.jpg, photo*",
+                confirmButton: L10n.Button.ok,
+                cancelButton: L10n.Button.cancel
+            ) else { return }
+            self?.applyPattern(pattern, shouldMark: shouldMark, on: panel)
+        }
     }
 
     /// Apply pattern to mark/unmark files

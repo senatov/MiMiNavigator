@@ -61,7 +61,7 @@ extension AppState {
 
     @MainActor
     private func confirmRepackSearchResult(archiveName: String) async -> Bool {
-        ErrorAlertService.confirm(
+        await ErrorAlertService.confirm(
             title: "Archive Modified",
             message: "\"\(archiveName)\" was modified while viewing search results.\n\nRepack?",
             confirmButton: "Repack",

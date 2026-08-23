@@ -135,7 +135,7 @@ extension AppState {
         let desc = error.localizedDescription
         let isEncrypted = desc.lowercased().contains("password") || desc.lowercased().contains("encrypted")
         if isEncrypted {
-            let (password, openWithApp) = ErrorAlertService.promptPassword(archiveName: archiveName)
+            let (password, openWithApp) = await ErrorAlertService.promptPassword(archiveName: archiveName)
             if openWithApp {
                 NSWorkspace.shared.open(archiveURL)
             } else if let pwd = password {
@@ -153,7 +153,7 @@ extension AppState {
     // MARK: - Repack Confirmation
     @MainActor
     func confirmRepack(archiveName: String) async -> Bool {
-        ErrorAlertService.confirm(
+        await ErrorAlertService.confirm(
             title: "Archive Modified",
             message: "\"\(archiveName)\" has been modified.\n\nRepack the archive with your changes?",
             confirmButton: "Repack",

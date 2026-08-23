@@ -42,7 +42,7 @@ enum ErrorAlertService {
         confirmButton: String,
         cancelButton: String = "Cancel",
         style: NSAlert.Style = .warning
-    ) -> Bool {
+    ) async -> Bool {
         log.debug("\(#function) '\(title)'")
         let alert = NSAlert()
         alert.alertStyle = style
@@ -50,7 +50,7 @@ enum ErrorAlertService {
         alert.informativeText = message
         alert.addButton(withTitle: confirmButton)
         alert.addButton(withTitle: cancelButton)
-        return alert.runModal() == .alertFirstButtonReturn
+        return await response(for: alert) == .alertFirstButtonReturn
     }
 
     // MARK: - Password prompt (archive unlock)
@@ -61,7 +61,7 @@ enum ErrorAlertService {
         confirmButton: String = "Open",
         openWithAppButton: String = "Open with App",
         cancelButton: String = "Cancel"
-    ) -> (password: String?, openWithApp: Bool) {
+    ) async -> (password: String?, openWithApp: Bool) {
         log.debug("\(#function) archive='\(archiveName)'")
         let alert = NSAlert()
         alert.alertStyle = .warning
@@ -74,7 +74,7 @@ enum ErrorAlertService {
         alert.addButton(withTitle: openWithAppButton)
         alert.addButton(withTitle: cancelButton)
         alert.window.initialFirstResponder = field
-        let resp = alert.runModal()
+        let resp = await response(for: alert)
         switch resp {
         case .alertFirstButtonReturn:
             let pwd = field.stringValue
@@ -84,5 +84,46 @@ enum ErrorAlertService {
         default:
             return (nil, false)
         }
+    }
+
+    // MARK: - Text Prompt
+    static func promptText(
+        title: String,
+        message: String,
+        initialValue: String,
+        placeholder: String,
+        confirmButton: String,
+        cancelButton: String = "Cancel"
+    ) async -> String? {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = title
+        alert.informativeText = message
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        field.stringValue = initialValue
+        field.placeholderString = placeholder
+        alert.accessoryView = field
+        alert.addButton(withTitle: confirmButton)
+        alert.addButton(withTitle: cancelButton)
+        alert.window.initialFirstResponder = field
+        guard await response(for: alert) == .alertFirstButtonReturn else { return nil }
+        let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    // MARK: - Window-Scoped Response
+    private static func response(for alert: NSAlert) async -> NSApplication.ModalResponse {
+        guard let parent = presentationWindow else { return alert.runModal() }
+        return await withCheckedContinuation { continuation in
+            alert.beginSheetModal(for: parent) { response in
+                continuation.resume(returning: response)
+            }
+        }
+    }
+
+    private static var presentationWindow: NSWindow? {
+        if let keyWindow = NSApp.keyWindow, keyWindow.isVisible { return keyWindow }
+        if let mainWindow = NSApp.mainWindow, mainWindow.isVisible { return mainWindow }
+        return NSApp.orderedWindows.first { $0.isVisible && !($0 is NSPanel && $0.hidesOnDeactivate) }
     }
 }
