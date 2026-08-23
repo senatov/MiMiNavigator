@@ -62,6 +62,7 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
     var tint: Color? = nil
     var horizontalPadding: CGFloat = 10
     var verticalPadding: CGFloat = 6
+    var raised: Bool = false
 
     // MARK: -
 
@@ -71,7 +72,8 @@ struct DownToolbarGlassButtonStyle: ButtonStyle {
             isHovered: isHovered,
             tint: tint,
             horizontalPadding: horizontalPadding,
-            verticalPadding: verticalPadding
+            verticalPadding: verticalPadding,
+            raised: raised
         )
     }
 }
@@ -84,6 +86,7 @@ private struct DownToolbarGlassButtonBody: View {
     let tint: Color?
     let horizontalPadding: CGFloat
     let verticalPadding: CGFloat
+    let raised: Bool
     @Environment(\.isFocused) private var isFocused
 
     private var isPressed: Bool {
@@ -95,19 +98,19 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var shadowOpacity: Double {
-        isPressed ? 0.08 : (isHovered ? 0.18 : 0.12)
+        isPressed ? 0.10 : (isHovered ? (raised ? 0.26 : 0.18) : (raised ? 0.20 : 0.12))
     }
 
     private var shadowRadius: CGFloat {
-        isPressed ? 0.5 : (isHovered ? 3 : 1.5)
+        isPressed ? 0.5 : (isHovered ? (raised ? 3.5 : 3) : (raised ? 2.25 : 1.5))
     }
 
     private var shadowYOffset: CGFloat {
-        isPressed ? 0.5 : 1.5
+        isPressed ? 0.5 : (raised ? 2 : 1.5)
     }
 
     private var borderOpacity: Double {
-        isPressed ? 0.30 : (isHovered ? 0.32 : 0.22)
+        isPressed ? 0.38 : (isHovered ? (raised ? 0.44 : 0.32) : (raised ? 0.34 : 0.22))
     }
 
     var body: some View {
@@ -135,7 +138,7 @@ private struct DownToolbarGlassButtonBody: View {
                     LinearGradient(
                         colors: isPressed
                             ? [Color.black.opacity(0.10), Color.white.opacity(0.12)]
-                            : [Color.white.opacity(isHovered ? 0.72 : 0.56), Color.primary.opacity(isHovered ? 0.10 : 0.075)],
+                            : [Color.white.opacity(isHovered ? 0.76 : (raised ? 0.66 : 0.56)), Color.primary.opacity(isHovered ? 0.12 : (raised ? 0.11 : 0.075))],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -146,7 +149,7 @@ private struct DownToolbarGlassButtonBody: View {
 
     private var topHighlight: some View {
         RoundedRectangle(cornerRadius: 6.5, style: .continuous)
-            .strokeBorder(Color.white.opacity(isPressed ? 0.10 : 0.56), lineWidth: 0.75)
+            .strokeBorder(Color.white.opacity(isPressed ? 0.10 : (raised ? 0.72 : 0.56)), lineWidth: raised ? 1 : 0.75)
             .padding(0.75)
             .mask(alignment: .top) {
                 Rectangle().frame(height: 12)
@@ -164,7 +167,7 @@ private struct DownToolbarGlassButtonBody: View {
 
     private var buttonBorder: some View {
         RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .strokeBorder(Color.black.opacity(borderOpacity), lineWidth: 0.65)
+            .strokeBorder(Color.black.opacity(borderOpacity), lineWidth: raised ? 1 : 0.65)
     }
 
 }
