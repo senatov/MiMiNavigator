@@ -382,13 +382,16 @@ struct DiffToolEditSheet: View {
     }
 
     private func browse() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true; panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.unixExecutable, .application]
-        panel.message = "Choose a diff tool executable or .app bundle"
-        panel.prompt = "Select"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        appPath = url.path
-        if name.isEmpty { name = url.deletingPathExtension().lastPathComponent }
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = true
+            panel.canChooseDirectories = false
+            panel.allowedContentTypes = [.unixExecutable, .application]
+            panel.message = "Choose a diff tool executable or .app bundle"
+            panel.prompt = "Select"
+            guard await SystemPanelPresenter.response(for: panel) == .OK, let url = panel.url else { return }
+            appPath = url.path
+            if name.isEmpty { name = url.deletingPathExtension().lastPathComponent }
+        }
     }
 }

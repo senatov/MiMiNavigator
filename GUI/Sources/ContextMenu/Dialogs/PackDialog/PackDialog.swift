@@ -292,24 +292,23 @@ struct PackDialog: View {
     // MARK: - Actions
 
     private func browseForFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
-        panel.prompt = L10n.Button.select
-
-        // Start from current custom destination or source panel
-        let startPath = customDestination.isEmpty ? sourcePath : customDestination
-        if FileManager.default.fileExists(atPath: startPath) {
-            panel.directoryURL = URL(fileURLWithPath: startPath)
-        }
-
-        if panel.runModal() == .OK, let url = panel.url {
-            customDestination = url.path
-            destinationMode = .custom
-            prefs.updateCustomDestination(url.path)
-            prefs.updateDestinationMode(.custom)
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.canCreateDirectories = true
+            panel.prompt = L10n.Button.select
+            let startPath = customDestination.isEmpty ? sourcePath : customDestination
+            if FileManager.default.fileExists(atPath: startPath) {
+                panel.directoryURL = URL(fileURLWithPath: startPath)
+            }
+            if await SystemPanelPresenter.response(for: panel) == .OK, let url = panel.url {
+                customDestination = url.path
+                destinationMode = .custom
+                prefs.updateCustomDestination(url.path)
+                prefs.updateDestinationMode(.custom)
+            }
         }
     }
 

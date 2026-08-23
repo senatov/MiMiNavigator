@@ -198,7 +198,7 @@ struct SettingsPermissionsPane: View {
             panel.directoryURL = URL(fileURLWithPath: "/")
             panel.message = "Choose folders that MiMiNavigator may access"
             panel.prompt = "Authorize"
-            let response = panel.runModal()
+            let response = await SystemPanelPresenter.response(for: panel)
             guard response == .OK, !panel.urls.isEmpty else {
                 log.info("[Permissions] addFolders: user cancelled")
                 return

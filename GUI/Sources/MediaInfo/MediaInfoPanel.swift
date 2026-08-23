@@ -215,14 +215,16 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
 
     func chooseOutputDir() {
-        let openPanel = NSOpenPanel()
-        openPanel.canChooseFiles = false
-        openPanel.canChooseDirectories = true
-        openPanel.allowsMultipleSelection = false
-        openPanel.prompt = "Choose"
-        openPanel.directoryURL = URL(fileURLWithPath: outputDir)
-        if openPanel.runModal() == .OK, let url = openPanel.url {
-            outputDir = url.path
+        Task {
+            let openPanel = NSOpenPanel()
+            openPanel.canChooseFiles = false
+            openPanel.canChooseDirectories = true
+            openPanel.allowsMultipleSelection = false
+            openPanel.prompt = "Choose"
+            openPanel.directoryURL = URL(fileURLWithPath: outputDir)
+            if await SystemPanelPresenter.response(for: openPanel) == .OK, let url = openPanel.url {
+                outputDir = url.path
+            }
         }
     }
 

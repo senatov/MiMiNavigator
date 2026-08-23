@@ -20,14 +20,16 @@ extension ConvertMediaDialog {
     }
 
     func chooseOutputDir() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = "Choose"
-        panel.directoryURL = URL(fileURLWithPath: outputDir)
-        if panel.runModal() == .OK, let url = panel.url {
-            outputDir = url.path
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.prompt = "Choose"
+            panel.directoryURL = URL(fileURLWithPath: outputDir)
+            if await SystemPanelPresenter.response(for: panel) == .OK, let url = panel.url {
+                outputDir = url.path
+            }
         }
     }
 }

@@ -269,15 +269,16 @@ extension ConnToSrvrView {
     }
 
     func chooseKeyFile() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory() + "/.ssh")
-        panel.title = "Select Private Key"
-
-        if panel.runModal() == .OK, let url = panel.url {
-            draft.privateKeyPath = url.path
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = true
+            panel.canChooseDirectories = false
+            panel.allowsMultipleSelection = false
+            panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory() + "/.ssh")
+            panel.title = "Select Private Key"
+            if await SystemPanelPresenter.response(for: panel) == .OK, let url = panel.url {
+                draft.privateKeyPath = url.path
+            }
         }
     }
 
