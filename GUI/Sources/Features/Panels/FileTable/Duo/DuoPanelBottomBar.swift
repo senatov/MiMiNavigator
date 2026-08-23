@@ -81,6 +81,7 @@ private struct CommanderActionButton: View {
     let iconTint: Color
     let action: () -> Void
     @State private var isHovered = false
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Body
     var body: some View {
@@ -90,13 +91,13 @@ private struct CommanderActionButton: View {
                 elementDivider
                 if !shortcut.isEmpty {
                     Text(shortcut)
-                        .font(.system(size: 12, weight: .regular))
-                        .foregroundStyle(Color.accentColor)
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundStyle(shortcutColor)
                         .fixedSize()
                     elementDivider
                 }
                 Text(title)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundStyle(.primary)
             }
             .lineLimit(1)
@@ -115,7 +116,7 @@ private struct CommanderActionButton: View {
 
     private var icon: some View {
         Image(systemName: systemImage)
-            .font(.system(size: 16, weight: .regular))
+            .font(.system(size: 17, weight: .regular))
             .symbolRenderingMode(.monochrome)
             .foregroundStyle(iconTint)
             .frame(width: 18, height: 18)
@@ -125,5 +126,10 @@ private struct CommanderActionButton: View {
         Rectangle()
             .fill(Color(nsColor: .separatorColor))
             .frame(width: 1, height: 17)
+    }
+
+    private var shortcutColor: Color {
+        if colorScheme == .dark { return Color(nsColor: .systemBlue) }
+        return Color(#colorLiteral(red: 0.07450980392, green: 0.2666666667, blue: 0.5098039216, alpha: 1))
     }
 }
