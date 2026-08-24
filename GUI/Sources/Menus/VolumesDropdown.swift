@@ -38,7 +38,8 @@ struct VolumesDropdown: View {
             TopDropdownLabel(title: "Volumes", systemImage: "externaldrive", tint: .accentColor)
         }
         .menuStyle(.borderlessButton)
-        .controlSize(.regular)
+        .controlSize(.small)
+        .buttonStyle(TopMenuButtonStyle())
         .help("Mounted volumes and cloud storage")
         .onAppear(perform: refreshLocations)
         .onChange(of: scenePhase) { _, phase in

@@ -46,7 +46,8 @@ struct RemoteConnectionsDropdown: View {
             dropdownLabel
         }
         .menuStyle(.borderlessButton)
-        .controlSize(.regular)
+        .controlSize(.small)
+        .buttonStyle(TopMenuButtonStyle())
         .help("Remote connections")
     }
 
