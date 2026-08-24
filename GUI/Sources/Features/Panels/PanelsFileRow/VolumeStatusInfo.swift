@@ -23,6 +23,7 @@ enum VolumeStatusInfo {
 
     // MARK: - Capacity Info
     static func capacity(for url: URL) -> Capacity? {
+        guard !AppState.isAppManagedNetworkMountPath(url) else { return nil }
         guard let volumeURL = mountedVolumeRoot(for: url) else { return nil }
         guard let free = availableCapacity(for: volumeURL) else { return nil }
         let freeText = formatBytes(free)

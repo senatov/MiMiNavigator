@@ -150,6 +150,7 @@ struct SelectionStatusBar: View {
 
     /// Available disk space for the current path
     private var availableDiskSpace: String {
+        guard !AppState.isAppManagedNetworkMountPath(currentURL) else { return "—" }
         if let capacity = availableCapacityFromResourceValues(for: currentURL) {
             return formatFileSize(capacity)
         }

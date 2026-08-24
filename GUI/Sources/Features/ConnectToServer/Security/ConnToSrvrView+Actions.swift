@@ -78,7 +78,9 @@ extension ConnToSrvrView {
     }
 
     func saveAction() {
-        log.debug("[ConnToSrvr] saveAction host=\(draft.host) id=\(draft.id)")
+        log.debug(
+            "[ConnToSrvr] saveAction host=\(draft.host) id=\(draft.id) keepPassword=\(keepPassword) hasPassword=\(!password.isEmpty) connectOnStart=\(draft.connectOnStart)"
+        )
 
         if draft.name.isEmpty {
             draft.name = draft.host

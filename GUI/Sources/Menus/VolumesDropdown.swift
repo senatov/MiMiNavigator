@@ -39,7 +39,6 @@ struct VolumesDropdown: View {
         }
         .menuStyle(.borderlessButton)
         .controlSize(.small)
-        .buttonStyle(TopMenuButtonStyle())
         .help("Mounted volumes and cloud storage")
         .onAppear(perform: refreshLocations)
         .onChange(of: scenePhase) { _, phase in

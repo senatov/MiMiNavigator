@@ -51,7 +51,14 @@ extension RemoteServerKeychain {
 
         let query = passwordReadQuery(for: server)
         var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        var status = SecItemCopyMatching(query as CFDictionary, &item)
+        var loadedLegacyPassword = false
+        if status == errSecItemNotFound {
+            let legacyQuery = legacyPasswordReadQuery(for: server)
+            status = SecItemCopyMatching(legacyQuery as CFDictionary, &item)
+            loadedLegacyPassword = status == errSecSuccess
+            log.info("[Keychain] exact endpoint miss, legacy lookup status=\(statusDescription(status)) for \(endpointDescription(for: server))")
+        }
 
         guard status == errSecSuccess else {
             handleLoadFailure(status, for: server)
@@ -70,6 +77,10 @@ extension RemoteServerKeychain {
             return ""
         }
 
+        if loadedLegacyPassword {
+            savePassword(password, for: server)
+            log.info("[Keychain] migrated legacy password to exact endpoint for \(endpointDescription(for: server))")
+        }
         cachePassword(password, for: server)
         updatePasswordIndex(for: server, hasPassword: true, lastLoadAt: Date())
         log.debug(

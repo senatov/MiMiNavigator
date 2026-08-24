@@ -217,6 +217,17 @@ extension RemoteServerKeychain {
         ]
     }
 
+    static func legacyPasswordReadQuery(for server: RemoteServer) -> [CFString: Any] {
+        [
+            kSecClass: kSecClassInternetPassword,
+            kSecAttrServer: server.host,
+            kSecAttrAccount: server.user,
+            kSecAttrProtocol: protocolAttr(server.remoteProtocol),
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne,
+        ]
+    }
+
     static func passwordDeleteQuery(for server: RemoteServer) -> [CFString: Any] {
         passwordIdentityQuery(for: server)
     }

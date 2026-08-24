@@ -32,8 +32,10 @@ struct RemoteConnectionsDropdown: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(servers) { server in
-                    serverMenuRow(server)
+                Section("Servers") {
+                    ForEach(servers) { server in
+                        serverMenuRow(server)
+                    }
                 }
             }
             Divider()
@@ -47,7 +49,6 @@ struct RemoteConnectionsDropdown: View {
         }
         .menuStyle(.borderlessButton)
         .controlSize(.small)
-        .buttonStyle(TopMenuButtonStyle())
         .help("Remote connections")
     }
 
@@ -90,7 +91,11 @@ struct RemoteConnectionsDropdown: View {
                 Label("Disconnect", systemImage: "xmark.circle")
             }
         } label: {
-            serverRowLabel(server: server, connected: true)
+            Label {
+                Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
+            } icon: {
+                Image(systemName: "network.badge.shield.half.filled")
+            }
         }
     }
 
@@ -100,25 +105,11 @@ struct RemoteConnectionsDropdown: View {
         Button {
             connectServer(server)
         } label: {
-            serverRowLabel(server: server, connected: false)
-        }
-    }
-
-
-    // MARK: - Shared Row Label
-    private func serverRowLabel(server: RemoteServer, connected: Bool) -> some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(resolveLampColor(server: server, connected: connected))
-                .frame(width: 7, height: 7)
-            Text(server.displayName)
-                .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                .foregroundStyle(resolveNameColor(server: server, connected: connected))
-                .lineLimit(1)
-            Spacer()
-            Text(server.remoteProtocol.rawValue)
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.secondary)
+            Label {
+                Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
+            } icon: {
+                Image(systemName: "network")
+            }
         }
     }
 
@@ -320,26 +311,4 @@ struct RemoteConnectionsDropdown: View {
     }
 
 
-    // MARK: - Name Color
-    private func resolveNameColor(server: RemoteServer, connected: Bool) -> Color {
-        if connected { return Color(nsColor: .systemGreen) }
-        switch server.lastResult {
-            case .authFailed, .timeout, .refused, .error:
-                return Color(nsColor: .systemRed)
-            default:
-                return .primary
-        }
-    }
-
-
-    // MARK: - Lamp Color
-    private func resolveLampColor(server: RemoteServer, connected: Bool) -> Color {
-        if connected { return .green }
-        switch server.lastResult {
-            case .authFailed, .timeout, .refused, .error:
-                return Color(nsColor: .systemRed)
-            default:
-                return Color(nsColor: .systemGray).opacity(0.6)
-        }
-    }
 }

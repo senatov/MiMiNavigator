@@ -122,6 +122,18 @@ struct ConnToSrvrView: View {
         .onChange(of: focusedField) { _, newValue in
             persistFocusedField(newValue)
         }
+        .onChange(of: password) { oldValue, newValue in
+            guard oldValue.isEmpty, !newValue.isEmpty, draft.authType == .password else { return }
+            keepPassword = true
+            log.debug("[ConnToSrvr] password entered, keepPassword enabled for \(draft.displayName)")
+        }
+        .onChange(of: keepPassword) { _, newValue in
+            log.debug("[ConnToSrvr] keepPassword changed to \(newValue) for \(draft.displayName)")
+        }
+        .onChange(of: draft.connectOnStart) { _, newValue in
+            if newValue, draft.authType == .password { keepPassword = true }
+            log.debug("[ConnToSrvr] connectOnStart changed to \(newValue) for \(draft.displayName)")
+        }
         .onExitCommand {
             onDismiss?()
         }
