@@ -55,6 +55,9 @@ import LogKit
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !isDuplicateInstance else { return }
         logStartupStep("applicationDidFinishLaunching begin")
+        Task {
+            await TemporaryArtifactCleaner.cleanup(reason: "startup")
+        }
 
         // Ensure app is a regular Dock citizen from the very start
         NSApp.setActivationPolicy(.regular)
@@ -304,6 +307,9 @@ import LogKit
         log.info("[AppDelegate] cleanup step archive cleanup begin")
         await ArchiveManager.shared.cleanup()
         log.info("[AppDelegate] cleanup step archive cleanup done")
+        log.info("[AppDelegate] cleanup step temporary artifacts begin")
+        await TemporaryArtifactCleaner.cleanup(reason: "termination")
+        log.info("[AppDelegate] cleanup step temporary artifacts done")
         // 4. Release security-scoped bookmarks — actor hop, fast
         log.info("[AppDelegate] cleanup step bookmarks stop begin")
         await BookmarkStore.shared.stopAll()

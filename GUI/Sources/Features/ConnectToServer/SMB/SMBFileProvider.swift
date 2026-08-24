@@ -162,7 +162,9 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
     @concurrent
     func downloadFile(remotePath: String) async throws -> URL {
-        let tempDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let tempDirectoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MiMiSMB", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDirectoryURL, withIntermediateDirectories: true)
         let destinationURL = tempDirectoryURL.appendingPathComponent(URL(fileURLWithPath: remotePath).lastPathComponent)
         try await downloadToLocal(remotePath: remotePath, localPath: destinationURL.path, recursive: false)
         return destinationURL
