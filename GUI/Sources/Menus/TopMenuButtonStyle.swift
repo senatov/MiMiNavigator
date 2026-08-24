@@ -66,7 +66,7 @@ struct TopMenuButtonStyle: ButtonStyle {
         private var menuHighlight: Color {
             if isSelected { return Color.accentColor.opacity(colorScheme == .dark ? 0.20 : 0.12) }
             if configuration.isPressed { return Color.primary.opacity(0.13) }
-            return Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.065)
+            return Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.11)
         }
     }
 }

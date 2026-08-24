@@ -135,7 +135,8 @@ private struct DownToolbarGlassButtonBody: View {
         switch state {
         case .disabled: return 0.10
         case .pressed: return 0.38
-        case .hovered, .focused, .selected: return raised ? 0.44 : 0.32
+        case .hovered: return raised ? 0.54 : 0.42
+        case .focused, .selected: return raised ? 0.44 : 0.32
         case .normal: return raised ? 0.34 : 0.22
         }
     }

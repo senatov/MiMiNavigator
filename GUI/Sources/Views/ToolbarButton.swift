@@ -163,6 +163,7 @@ struct ToolbarButton: View {
             ToolbarIcon(name: systemImage, color: iconColor)
         }
         .buttonStyle(.borderless)
+        .toolbarHoverHighlight()
         .fastTooltip(help)
     }
 }
@@ -182,6 +183,7 @@ struct ToolbarToggleButton: View {
             ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
         .buttonStyle(.borderless)
+        .toolbarHoverHighlight()
         .fastTooltip(isActive ? helpActive : helpInactive)
     }
 }
@@ -214,6 +216,39 @@ struct FeedbackToolbarButton: View {
                 )
         }
         .buttonStyle(.borderless)
+        .toolbarHoverHighlight()
         .fastTooltip("Open feedback options")
+    }
+}
+
+// MARK: - Toolbar Hover Highlight
+private struct ToolbarHoverHighlight: ViewModifier {
+    @State private var isHovered = false
+
+    // MARK: - Body
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if isHovered {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.primary.opacity(0.10))
+                }
+            }
+            .overlay {
+                if isHovered {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.18), lineWidth: 0.65)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
+            }
+    }
+}
+
+private extension View {
+    func toolbarHoverHighlight() -> some View {
+        modifier(ToolbarHoverHighlight())
     }
 }

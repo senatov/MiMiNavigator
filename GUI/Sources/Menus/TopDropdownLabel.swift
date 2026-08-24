@@ -12,6 +12,7 @@ struct TopDropdownLabel: View {
     let title: String
     let systemImage: String
     let tint: Color
+    @State private var isHovered = false
 
     // MARK: - Body
     var body: some View {
@@ -26,5 +27,20 @@ struct TopDropdownLabel: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
+        .background {
+            if isHovered {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color.primary.opacity(0.10))
+            }
+        }
+        .overlay {
+            if isHovered {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.6)
+            }
+        }
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
+        }
     }
 }
