@@ -105,9 +105,23 @@ extension ConnToSrvrView {
         }
 
         log.info("[ConnToSrvr] disconnecting from \(draft.host)")
+        let displayName = connection.displayName
+        InAppNoticeCenter.shared.showBanner(
+            title: "Disconnecting \(displayName)…",
+            message: "The panel is being restored now. The remote session will close in the background.",
+            scope: .main,
+            systemImage: "externaldrive.badge.minus",
+            tint: .blue
+        )
+        onDisconnect?()
         Task {
             await connectionManager.disconnect(id: connection.id)
-            onDisconnect?()
+            InAppNoticeCenter.shared.showToast(
+                "Disconnected from \(displayName)",
+                scope: .main,
+                systemImage: "checkmark.circle.fill",
+                tint: .green
+            )
         }
     }
 
@@ -144,9 +158,23 @@ extension ConnToSrvrView {
             return
         }
 
+        let displayName = connection.displayName
+        InAppNoticeCenter.shared.showBanner(
+            title: "Disconnecting \(displayName)…",
+            message: "The panel is being restored now. The remote session will close in the background.",
+            scope: .main,
+            systemImage: "externaldrive.badge.minus",
+            tint: .blue
+        )
+        onDisconnect?()
         Task {
             await connectionManager.disconnect(id: connection.id)
-            onDisconnect?()
+            InAppNoticeCenter.shared.showToast(
+                "Disconnected from \(displayName)",
+                scope: .main,
+                systemImage: "checkmark.circle.fill",
+                tint: .green
+            )
         }
     }
 

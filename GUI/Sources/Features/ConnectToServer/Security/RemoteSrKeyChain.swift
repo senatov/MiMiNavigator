@@ -185,6 +185,24 @@ extension RemoteServerKeychain {
         ]
     }
 
+    static func passwordIdentityQuery(for server: RemoteServer) -> [CFString: Any] {
+        [
+            kSecClass: kSecClassInternetPassword,
+            kSecAttrServer: server.host,
+            kSecAttrPort: server.port,
+            kSecAttrAccount: server.user,
+            kSecAttrProtocol: protocolAttr(server.remoteProtocol),
+        ]
+    }
+
+    static func passwordUpdateAttributes(_ password: String, for server: RemoteServer) -> [CFString: Any] {
+        [
+            kSecValueData: Data(password.utf8),
+            kSecAttrAccessible: keychainAccessibility(),
+            kSecAttrLabel: keychainLabel(for: server),
+        ]
+    }
+
     static func passwordReadQuery(for server: RemoteServer) -> [CFString: Any] {
         let authContext = nonInteractiveAuthenticationContext()
         return [
@@ -200,14 +218,6 @@ extension RemoteServerKeychain {
     }
 
     static func passwordDeleteQuery(for server: RemoteServer) -> [CFString: Any] {
-        let authContext = nonInteractiveAuthenticationContext()
-        return [
-            kSecClass: kSecClassInternetPassword,
-            kSecAttrServer: server.host,
-            kSecAttrPort: server.port,
-            kSecAttrAccount: server.user,
-            kSecAttrProtocol: protocolAttr(server.remoteProtocol),
-            kSecUseAuthenticationContext: authContext,
-        ]
+        passwordIdentityQuery(for: server)
     }
 }

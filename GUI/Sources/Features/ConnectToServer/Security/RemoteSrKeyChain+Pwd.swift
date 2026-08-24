@@ -20,13 +20,12 @@ extension RemoteServerKeychain {
 
         bootstrapPasswordIndexFileIfNeeded()
 
-        let query = passwordWriteQuery(password, for: server)
-        let deleteStatus = SecItemDelete(query as CFDictionary)
-        if deleteStatus != errSecSuccess && deleteStatus != errSecItemNotFound {
-            logKeychainFailure("delete-before-save", status: deleteStatus, server: server)
-        }
-
-        let status = SecItemAdd(query as CFDictionary, nil)
+        let identityQuery = passwordIdentityQuery(for: server)
+        let updateAttributes = passwordUpdateAttributes(password, for: server)
+        let updateStatus = SecItemUpdate(identityQuery as CFDictionary, updateAttributes as CFDictionary)
+        let status = updateStatus == errSecItemNotFound
+            ? SecItemAdd(passwordWriteQuery(password, for: server) as CFDictionary, nil)
+            : updateStatus
         if status == errSecSuccess {
             log.info(
                 "[Keychain] saved password for \(endpointDescription(for: server)) accessibility=afterFirstUnlock noUserPresence=true"
