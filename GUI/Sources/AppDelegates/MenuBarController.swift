@@ -47,20 +47,6 @@ import SwiftUI
             return
         }
         closeStatusPopover()
-        toggleApplicationVisibility()
-    }
-
-    private func toggleApplicationVisibility() {
-        if let window = existingMainWindow,
-           window.isVisible,
-           !window.isMiniaturized,
-           window.isKeyWindow,
-           NSApp.isActive
-        {
-            window.miniaturize(nil)
-            log.info("[MenuBar] minimized main window to Dock")
-            return
-        }
         showApplication()
     }
 
@@ -167,12 +153,20 @@ import SwiftUI
 
     private func raise(_ window: NSWindow) {
         let wasMiniaturized = window.isMiniaturized
+        let originalCollectionBehavior = window.collectionBehavior
         if wasMiniaturized { window.deminiaturize(nil) }
+        if !originalCollectionBehavior.contains(.canJoinAllSpaces) {
+            window.collectionBehavior.insert(.moveToActiveSpace)
+        }
+        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-        window.orderFront(nil)
-        NSApp.arrangeInFront(nil)
+        window.orderFrontRegardless()
+        DispatchQueue.main.async { [weak window] in
+            window?.collectionBehavior = originalCollectionBehavior
+        }
+        let screenFrame = window.screen?.visibleFrame ?? .zero
         log.info(
-            "[MenuBar] raised main window id='\(window.identifier?.rawValue ?? "nil")' minimized=\(wasMiniaturized) visible=\(window.isVisible)"
+            "[MenuBar] raised main window id='\(window.identifier?.rawValue ?? "nil")' minimized=\(wasMiniaturized) visible=\(window.isVisible) key=\(window.isKeyWindow) occlusion=\(window.occlusionState.rawValue) frame=\(NSStringFromRect(window.frame)) screen=\(NSStringFromRect(screenFrame))"
         )
     }
 

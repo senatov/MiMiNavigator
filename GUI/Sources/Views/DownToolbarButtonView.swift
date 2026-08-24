@@ -118,14 +118,13 @@ private struct DownToolbarGlassButtonBody: View {
         switch state {
         case .disabled: return 0.04
         case .pressed: return 0.10
-        case .hovered: return raised ? 0.22 : 0.14
-        case .focused, .selected: return raised ? 0.26 : 0.18
+        case .hovered, .focused, .selected: return raised ? 0.26 : 0.18
         case .normal: return raised ? 0.20 : 0.12
         }
     }
 
     private var shadowRadius: CGFloat {
-        isPressed ? 0.5 : (isHovered ? (raised ? 2.6 : 2) : (raised ? 2.25 : 1.5))
+        isPressed ? 0.5 : (isHovered ? (raised ? 3.5 : 3) : (raised ? 2.25 : 1.5))
     }
 
     private var shadowYOffset: CGFloat {
@@ -136,8 +135,7 @@ private struct DownToolbarGlassButtonBody: View {
         switch state {
         case .disabled: return 0.10
         case .pressed: return 0.38
-        case .hovered: return raised ? 0.38 : 0.27
-        case .focused, .selected: return raised ? 0.44 : 0.32
+        case .hovered, .focused, .selected: return raised ? 0.44 : 0.32
         case .normal: return raised ? 0.34 : 0.22
         }
     }
@@ -167,7 +165,7 @@ private struct DownToolbarGlassButtonBody: View {
                     LinearGradient(
                         colors: isPressed
                             ? [Color.black.opacity(0.10), Color.white.opacity(0.12)]
-                            : [Color.white.opacity(isHovered ? (raised ? 0.70 : 0.60) : (raised ? 0.66 : 0.56)), Color.primary.opacity(isHovered ? (raised ? 0.115 : 0.085) : (raised ? 0.11 : 0.075))],
+                            : [Color.white.opacity(isHovered ? 0.76 : (raised ? 0.66 : 0.56)), Color.primary.opacity(isHovered ? 0.12 : (raised ? 0.11 : 0.075))],
                         startPoint: .top,
                         endPoint: .bottom
                     )

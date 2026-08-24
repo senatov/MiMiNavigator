@@ -162,7 +162,7 @@ struct ToolbarButton: View {
         Button(action: action) {
             ToolbarIcon(name: systemImage, color: iconColor)
         }
-        .buttonStyle(ToolbarHoverButtonStyle())
+        .buttonStyle(.borderless)
         .fastTooltip(help)
     }
 }
@@ -181,7 +181,7 @@ struct ToolbarToggleButton: View {
         Button(action: action) {
             ToolbarIcon(name: isActive ? activeImage : systemImage, active: isActive)
         }
-        .buttonStyle(ToolbarHoverButtonStyle())
+        .buttonStyle(.borderless)
         .fastTooltip(isActive ? helpActive : helpInactive)
     }
 }
@@ -213,39 +213,7 @@ struct FeedbackToolbarButton: View {
                         .strokeBorder(Color.white.opacity(0.55), lineWidth: 0.7)
                 )
         }
-        .buttonStyle(ToolbarHoverButtonStyle())
+        .buttonStyle(.borderless)
         .fastTooltip("Open feedback options")
-    }
-}
-
-// MARK: - Toolbar Hover Button Style
-private struct ToolbarHoverButtonStyle: ButtonStyle {
-    // MARK: - Body
-    func makeBody(configuration: Configuration) -> some View {
-        ToolbarHoverButtonBody(configuration: configuration)
-    }
-
-    private struct ToolbarHoverButtonBody: View {
-        let configuration: ButtonStyle.Configuration
-        @State private var isHovered = false
-
-        // MARK: - Body
-        var body: some View {
-            configuration.label
-                .frame(minWidth: 24, minHeight: 22)
-                .padding(.horizontal, 2)
-                .background {
-                    if isHovered || configuration.isPressed {
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(Color.primary.opacity(configuration.isPressed ? 0.09 : 0.055))
-                    }
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .onHover { hovering in
-                    withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
-                }
-                .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
-                .focusEffectDisabled()
-        }
     }
 }
