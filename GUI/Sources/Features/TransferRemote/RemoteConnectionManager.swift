@@ -274,6 +274,7 @@ final class RemoteConnectionManager {
         let connection = connections[connectionIndex]
         removeConnection(at: connectionIndex)
         updateActiveConnectionAfterDisconnect(id: id)
+        disableConnectOnStartAfterManualDisconnect(for: connection.server)
         await disconnectConnection(connection)
         await AppState.cleanupStaleAppManagedMounts()
 
@@ -292,6 +293,18 @@ final class RemoteConnectionManager {
     private func updateActiveConnectionAfterDisconnect(id: UUID) {
         guard activeConnectionID == id else { return }
         activeConnectionID = connections.first?.id
+    }
+
+    private func disableConnectOnStartAfterManualDisconnect(for server: RemoteServer) {
+        guard server.connectOnStart else {
+            log.debug("[RemoteConnectionManager] manual disconnect keeps connectOnStart=false for \(server.displayName)")
+            return
+        }
+        var updated = server
+        updated.connectOnStart = false
+        updated.lastErrorDetail = nil
+        RemoteServerStore.shared.update(updated)
+        log.info("[RemoteConnectionManager] manual disconnect disabled reconnect on start for \(server.displayName)")
     }
 
     func disconnectAll() async {

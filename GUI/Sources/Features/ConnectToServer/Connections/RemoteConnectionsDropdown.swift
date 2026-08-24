@@ -10,6 +10,7 @@
 //   Idle = grey lamp + standard color.
 //   Compact, crisp monospaced font — mirrors macOS Selection popup style.
 
+import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -56,11 +57,15 @@ struct RemoteConnectionsDropdown: View {
     // MARK: - Dropdown Label (collapsed state)
     private var dropdownLabel: some View {
         let activeCount = servers.filter { manager.hasConnection(for: $0) }.count
-        return TopDropdownLabel(
-            title: activeCount > 0 ? "Connections · \(activeCount)" : "Connections",
-            systemImage: "antenna.radiowaves.left.and.right",
-            tint: activeCount > 0 ? .green : .accentColor
-        )
+        return HStack(spacing: 5) {
+            ConnectionStatusIcon(kind: .antenna, isActive: activeCount > 0)
+            Text(activeCount > 0 ? "Connections · \(activeCount)" : "Connections")
+                .font(.system(size: 14, weight: .light))
+                .foregroundStyle(Color.primary.opacity(0.92))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
     }
 
 
@@ -94,7 +99,7 @@ struct RemoteConnectionsDropdown: View {
             Label {
                 Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
             } icon: {
-                Image(systemName: "network.badge.shield.half.filled")
+                ConnectionStatusIcon(kind: .lamp, isActive: true)
             }
         }
     }
@@ -108,7 +113,7 @@ struct RemoteConnectionsDropdown: View {
             Label {
                 Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
             } icon: {
-                Image(systemName: "network")
+                ConnectionStatusIcon(kind: .lamp, isActive: false)
             }
         }
     }
@@ -311,4 +316,61 @@ struct RemoteConnectionsDropdown: View {
     }
 
 
+}
+
+// MARK: - Connection Status Icon
+private struct ConnectionStatusIcon: View {
+    enum Kind {
+        case antenna
+        case lamp
+    }
+    let kind: Kind
+    let isActive: Bool
+
+    // MARK: - Body
+    var body: some View {
+        Image(nsImage: iconImage)
+            .renderingMode(.original)
+            .frame(width: kind == .antenna ? 15 : 12, height: 15)
+    }
+
+    private var iconImage: NSImage {
+        switch kind {
+            case .antenna:
+                return Self.coloredSymbol(
+                    named: "antenna.radiowaves.left.and.right",
+                    color: statusColor
+                )
+            case .lamp:
+                return Self.lampImage(color: statusColor)
+        }
+    }
+
+    private var statusColor: NSColor {
+        isActive
+            ? #colorLiteral(red: 0.235, green: 0.555, blue: 0.325, alpha: 1)
+            : .systemGray
+    }
+
+    // MARK: - Colored Symbol
+    private static func coloredSymbol(named name: String, color: NSColor) -> NSImage {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .light)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [color]))
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) ?? NSImage(size: NSSize(width: 15, height: 15))
+        image.isTemplate = false
+        return image
+    }
+
+    // MARK: - Lamp Image
+    private static func lampImage(color: NSColor) -> NSImage {
+        let size = NSSize(width: 12, height: 12)
+        let image = NSImage(size: size, flipped: false) { rect in
+            color.setFill()
+            NSBezierPath(ovalIn: rect.insetBy(dx: 2, dy: 2)).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
 }
