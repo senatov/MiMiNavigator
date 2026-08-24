@@ -22,6 +22,7 @@ struct RemoteConnectionsDropdown: View {
 
     @State private var store = RemoteServerStore.shared
     @State private var manager = RemoteConnectionManager.shared
+    @State private var isLabelHovered = false
     private var servers: [RemoteServer] { store.servers }
 
 
@@ -66,6 +67,15 @@ struct RemoteConnectionsDropdown: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
+        .background {
+            if isLabelHovered {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color.primary.opacity(0.06))
+            }
+        }
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.12)) { isLabelHovered = hovering }
+        }
     }
 
 
