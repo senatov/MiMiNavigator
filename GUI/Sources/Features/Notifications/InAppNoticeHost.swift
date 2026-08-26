@@ -38,12 +38,12 @@ private struct InAppNoticeHistoryView: View {
     var body: some View {
         Group {
             if center.history.isEmpty {
-                NoticeCard(notice: nil, showsControls: false)
+                NoticeCard(notice: nil, showsControls: false, historyNumber: nil)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(center.history) { notice in
-                            NoticeCard(notice: notice, showsControls: false)
+                        ForEach(Array(center.history.enumerated()), id: \.element.id) { index, notice in
+                            NoticeCard(notice: notice, showsControls: false, historyNumber: index + 1)
                         }
                     }
                     .padding(.vertical, 4)
@@ -63,7 +63,7 @@ private struct InAppNoticeView: View {
     @State private var center = InAppNoticeCenter.shared
 
     var body: some View {
-        NoticeCard(notice: notice, showsControls: true)
+        NoticeCard(notice: notice, showsControls: true, historyNumber: nil)
     }
 }
 
@@ -71,7 +71,9 @@ private struct InAppNoticeView: View {
 private struct NoticeCard: View {
     let notice: InAppNotice?
     let showsControls: Bool
+    let historyNumber: Int?
     @State private var center = InAppNoticeCenter.shared
+    @State private var colorStore = ColorThemeStore.shared
 
     var body: some View {
         HStack(alignment: notice?.kind == .banner ? .top : .center, spacing: 11) {
@@ -128,9 +130,9 @@ private struct NoticeCard: View {
     private var noticeText: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
-                Text(notice?.title ?? "No recent messages")
+                Text(numberedTitle)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(colorStore.activeTheme.panelText)
                 Spacer()
                 if !showsControls, let notice {
                     Text(notice.createdAt, format: .dateTime.day().month().year().hour().minute().second())
@@ -140,13 +142,39 @@ private struct NoticeCard: View {
                 }
             }
             if let message = notice?.message {
-                Text(message)
-                    .font(.system(size: 12, weight: .regular))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                messageText(message)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var numberedTitle: String {
+        guard let historyNumber else { return notice?.title ?? "No recent messages" }
+        return "\(historyNumber). \(notice?.title ?? "No recent messages")"
+    }
+
+    @ViewBuilder
+    private func messageText(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(Array(message.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
+                let value = String(line)
+                if value.hasPrefix("From: ") || value.hasPrefix("To: ") {
+                    let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(parts.first ?? ""):")
+                            .foregroundStyle(colorStore.activeTheme.panelText)
+                        Text(parts.count > 1 ? parts[1].trimmingCharacters(in: .whitespaces) : "")
+                            .foregroundStyle(colorStore.activeTheme.accentColor)
+                            .textSelection(.enabled)
+                    }
+                } else {
+                    Text(value)
+                        .foregroundStyle(colorStore.activeTheme.panelText)
+                }
+            }
+        }
+        .font(.system(size: 12, weight: .regular))
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

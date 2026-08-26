@@ -23,8 +23,8 @@ struct InAppNotice: Identifiable {
         case mediaConvert
     }
 
-    let id = UUID()
-    let createdAt = Date()
+    let id: UUID
+    let createdAt: Date
     let kind: Kind
     let scope: Scope
     let title: String
@@ -33,12 +33,45 @@ struct InAppNotice: Identifiable {
     let tint: Color
     let actionTitle: String?
     let action: (() -> Void)?
+
+    init(
+        id: UUID = UUID(),
+        createdAt: Date = Date(),
+        kind: Kind,
+        scope: Scope,
+        title: String,
+        message: String?,
+        systemImage: String,
+        tint: Color,
+        actionTitle: String?,
+        action: (() -> Void)?
+    ) {
+        self.id = id
+        self.createdAt = createdAt
+        self.kind = kind
+        self.scope = scope
+        self.title = title
+        self.message = message
+        self.systemImage = systemImage
+        self.tint = tint
+        self.actionTitle = actionTitle
+        self.action = action
+    }
 }
 
 // MARK: - In-App Notice Center
 @MainActor
 @Observable
 final class InAppNoticeCenter {
+    private struct PersistedNotice: Codable {
+        let id: UUID
+        let createdAt: Date
+        let isBanner: Bool
+        let title: String
+        let message: String?
+        let systemImage: String
+    }
+
     static let shared = InAppNoticeCenter()
 
     private(set) var visibleNotices: [InAppNotice.Scope: InAppNotice] = [:]
@@ -47,8 +80,11 @@ final class InAppNoticeCenter {
     private var queuedNotices: [InAppNotice.Scope: [InAppNotice]] = [:]
     private var dismissalTasks: [InAppNotice.Scope: Task<Void, Never>] = [:]
     private let historyLimit = 32
+    private let historyDefaultsKey = "inAppNotice.history.v1"
 
-    private init() {}
+    private init() {
+        restoreHistory()
+    }
 
     // MARK: - Present Toast
     func showToast(
@@ -129,6 +165,7 @@ final class InAppNoticeCenter {
         if history.count > historyLimit {
             history.removeLast(history.count - historyLimit)
         }
+        persistHistory()
         if visibleNotices[notice.scope] == nil {
             display(notice)
             return
@@ -151,5 +188,49 @@ final class InAppNoticeCenter {
         let next = queue.removeFirst()
         queuedNotices[scope] = queue
         display(next)
+    }
+
+    // MARK: - History Persistence
+    private func persistHistory() {
+        let persisted = history.map {
+            PersistedNotice(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                isBanner: $0.kind == .banner,
+                title: $0.title,
+                message: $0.message,
+                systemImage: $0.systemImage
+            )
+        }
+        guard let data = try? JSONEncoder().encode(persisted) else { return }
+        UserDefaults.standard.set(data, forKey: historyDefaultsKey)
+    }
+
+    private func restoreHistory() {
+        guard let data = UserDefaults.standard.data(forKey: historyDefaultsKey),
+              let persisted = try? JSONDecoder().decode([PersistedNotice].self, from: data)
+        else { return }
+        history = persisted.prefix(historyLimit).map {
+            InAppNotice(
+                id: $0.id,
+                createdAt: $0.createdAt,
+                kind: $0.isBanner ? .banner : .toast,
+                scope: .main,
+                title: $0.title,
+                message: $0.message,
+                systemImage: $0.systemImage,
+                tint: restoredTint(for: $0.systemImage),
+                actionTitle: nil,
+                action: nil
+            )
+        }
+        log.info("[NoticeHistory] restored \(history.count) message(s)")
+    }
+
+    private func restoredTint(for systemImage: String) -> Color {
+        if systemImage.contains("xmark") || systemImage.contains("octagon") { return .red }
+        if systemImage.contains("exclamationmark") { return .orange }
+        if systemImage.contains("stop") { return .secondary }
+        return .green
     }
 }
