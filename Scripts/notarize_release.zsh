@@ -261,6 +261,7 @@ xattr -cr "${PROJECT_DIR}/GUI"
 # ── Step 5: Resolve packages ─────────────────────────────────────────────────
 echo "[5/10] Resolving packages..."
 xcodebuild -resolvePackageDependencies \
+    -skipPackageUpdates \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
     -destination "platform=macOS" \
