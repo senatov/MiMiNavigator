@@ -59,32 +59,61 @@ private struct DevBuildBadge: View {
     // MARK: - Body
 
     var body: some View {
-        Button { center.toggleHistory() } label: {
-            HStack(spacing: 9) {
-                DevBuildCatMedallion()
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("TEST BUILD")
-                        .font(.system(size: 10, weight: .semibold, design: .default))
-                        .tracking(0.55)
-                        .foregroundStyle(.primary.opacity(0.82))
-                    Text(version)
-                        .font(.system(size: 9.5, weight: .regular, design: .default))
-                        .monospacedDigit()
-                        .foregroundStyle(.primary.opacity(0.72))
-                        .lineLimit(1)
-                }
+        VStack(spacing: -1) {
+            badgeLabel
+            Button {
+                center.toggleHistory()
+                log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
+            } label: {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)),
+                                Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1)),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 13, height: 13)
+                    .overlay { Circle().strokeBorder(Color.black.opacity(0.28), lineWidth: 0.75) }
+                    .overlay(alignment: .topLeading) {
+                        Circle()
+                            .fill(Color.white.opacity(0.72))
+                            .frame(width: 4, height: 4)
+                            .padding(2)
+                    }
+                    .shadow(color: Color.black.opacity(0.28), radius: 1.5, y: 1)
             }
-            .padding(.leading, 7)
-            .padding(.trailing, 11)
-            .padding(.vertical, 5)
-            .background { DevBuildBadgeSurface() }
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .buttonStyle(.plain)
+            .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+            .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
         }
-        .buttonStyle(.plain)
-        .offset(y: 6)
-        .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Test build \(version), recent messages")
+        .padding(.top, 8)
+    }
+
+    private var badgeLabel: some View {
+        HStack(spacing: 9) {
+            DevBuildCatMedallion()
+            VStack(alignment: .leading, spacing: 1) {
+                Text("TEST BUILD")
+                    .font(.system(size: 10, weight: .semibold, design: .default))
+                    .tracking(0.55)
+                    .foregroundStyle(.primary.opacity(0.82))
+                Text(version)
+                    .font(.system(size: 9.5, weight: .regular, design: .default))
+                    .monospacedDigit()
+                    .foregroundStyle(.primary.opacity(0.72))
+                    .lineLimit(1)
+            }
+        }
+        .padding(.leading, 7)
+        .padding(.trailing, 11)
+        .padding(.vertical, 5)
+        .background { DevBuildBadgeSurface() }
+        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .help("Current test build version")
     }
 }
 

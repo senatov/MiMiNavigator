@@ -74,7 +74,7 @@ extension CntMenuCoord {
             case .success(let urls):
                 log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
                 refreshPanels(appState: appState)
-                FileOperationOutcomePresenter.success(operation, itemCount: itemCount, resultURL: destination)
+                FileOperationOutcomePresenter.success(operation, itemCount: itemCount, resultURL: destination, sourceURLs: clipboard.files)
             case .failure(let error):
                 if case FileOpsError.operationCancelled = error {
                     log.info("\(#function) cancelled by user")

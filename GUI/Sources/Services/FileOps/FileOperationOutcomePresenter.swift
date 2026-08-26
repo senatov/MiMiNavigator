@@ -64,11 +64,13 @@ enum FileOperationOutcomePresenter {
         _ operation: Operation,
         itemCount: Int = 1,
         resultURL: URL? = nil,
-        displayName: String? = nil
+        displayName: String? = nil,
+        sourceURLs: [URL] = []
     ) {
         let object = displayName ?? countDescription(itemCount)
         InAppNoticeCenter.shared.showToast(
             "\(operation.completedVerb) \(object)",
+            message: operationDetails(sourceURLs: sourceURLs, resultURL: resultURL),
             systemImage: operation.icon,
             tint: .green,
             actionTitle: resultURL == nil ? nil : "Open Result",
@@ -103,6 +105,18 @@ enum FileOperationOutcomePresenter {
 
     private static func countDescription(_ count: Int) -> String {
         count == 1 ? "1 item" : "\(count) items"
+    }
+
+    private static func operationDetails(sourceURLs: [URL], resultURL: URL?) -> String? {
+        var details: [String] = []
+        if let first = sourceURLs.first {
+            let suffix = sourceURLs.count > 1 ? " (+\(sourceURLs.count - 1) more)" : ""
+            details.append("From: \(first.path)\(suffix)")
+        }
+        if let resultURL {
+            details.append("To: \(resultURL.isFileURL ? resultURL.path : resultURL.absoluteString)")
+        }
+        return details.isEmpty ? nil : details.joined(separator: "\n")
     }
 
     private static func openAction(for url: URL?) -> (() -> Void)? {

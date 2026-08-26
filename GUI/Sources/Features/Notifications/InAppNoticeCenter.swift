@@ -53,13 +53,14 @@ final class InAppNoticeCenter {
     // MARK: - Present Toast
     func showToast(
         _ title: String,
+        message: String? = nil,
         scope: InAppNotice.Scope = .main,
         systemImage: String = "checkmark.circle.fill",
         tint: Color = .green,
         actionTitle: String? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .toast, scope: scope, title: title, message: nil, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
+        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
     }
 
     // MARK: - Present Banner

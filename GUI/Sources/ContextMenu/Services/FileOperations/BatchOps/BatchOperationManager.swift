@@ -39,7 +39,7 @@ final class BatchOperationManager {
             let progress = try await engine.copy(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.copy, itemCount: files.count, resultURL: destination)
+                FileOperationOutcomePresenter.success(.copy, itemCount: files.count, resultURL: destination, sourceURLs: urls)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.copy)
             } else {
@@ -73,7 +73,7 @@ final class BatchOperationManager {
                     await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
                 }
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.move, itemCount: files.count, resultURL: destination)
+                FileOperationOutcomePresenter.success(.move, itemCount: files.count, resultURL: destination, sourceURLs: urls)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.move)
             } else {
