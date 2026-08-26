@@ -54,33 +54,37 @@ enum AppBuildInfo {
 
 private struct DevBuildBadge: View {
     let version: String
+    @State private var center = InAppNoticeCenter.shared
 
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: 9) {
-            DevBuildCatMedallion()
-            VStack(alignment: .leading, spacing: 1) {
-                Text("TEST BUILD")
-                    .font(.system(size: 10, weight: .semibold, design: .default))
-                    .tracking(0.55)
-                    .foregroundStyle(.primary.opacity(0.82))
-                Text(version)
-                    .font(.system(size: 9.5, weight: .regular, design: .default))
-                    .monospacedDigit()
-                    .foregroundStyle(.primary.opacity(0.72))
-                    .lineLimit(1)
+        Button { center.toggleHistory() } label: {
+            HStack(spacing: 9) {
+                DevBuildCatMedallion()
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("TEST BUILD")
+                        .font(.system(size: 10, weight: .semibold, design: .default))
+                        .tracking(0.55)
+                        .foregroundStyle(.primary.opacity(0.82))
+                    Text(version)
+                        .font(.system(size: 9.5, weight: .regular, design: .default))
+                        .monospacedDigit()
+                        .foregroundStyle(.primary.opacity(0.72))
+                        .lineLimit(1)
+                }
             }
+            .padding(.leading, 7)
+            .padding(.trailing, 11)
+            .padding(.vertical, 5)
+            .background { DevBuildBadgeSurface() }
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
-        .padding(.leading, 7)
-        .padding(.trailing, 11)
-        .padding(.vertical, 5)
-        .background { DevBuildBadgeSurface() }
+        .buttonStyle(.plain)
         .offset(y: 6)
-        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .help("Current test build version")
+        .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Test build \(version)")
+        .accessibilityLabel("Test build \(version), recent messages")
     }
 }
 

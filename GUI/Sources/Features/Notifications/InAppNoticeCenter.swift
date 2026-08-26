@@ -24,6 +24,7 @@ struct InAppNotice: Identifiable {
     }
 
     let id = UUID()
+    let createdAt = Date()
     let kind: Kind
     let scope: Scope
     let title: String
@@ -41,8 +42,11 @@ final class InAppNoticeCenter {
     static let shared = InAppNoticeCenter()
 
     private(set) var visibleNotices: [InAppNotice.Scope: InAppNotice] = [:]
+    private(set) var history: [InAppNotice] = []
+    private(set) var isHistoryVisible = false
     private var queuedNotices: [InAppNotice.Scope: [InAppNotice]] = [:]
     private var dismissalTasks: [InAppNotice.Scope: Task<Void, Never>] = [:]
+    private let historyLimit = 32
 
     private init() {}
 
@@ -109,8 +113,21 @@ final class InAppNoticeCenter {
         notice.action?()
     }
 
+    // MARK: - History
+    func toggleHistory() {
+        isHistoryVisible.toggle()
+    }
+
+    func hideHistory() {
+        isHistoryVisible = false
+    }
+
     // MARK: - Queue Management
     private func present(_ notice: InAppNotice) {
+        history.insert(notice, at: 0)
+        if history.count > historyLimit {
+            history.removeLast(history.count - historyLimit)
+        }
         if visibleNotices[notice.scope] == nil {
             display(notice)
             return
