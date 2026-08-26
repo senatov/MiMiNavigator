@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.6] — 2026-08-26
+
+> **Release notes**
+> Crisper Commander controls, folder-sheet bottom tabs, and a persistent history for detailed in-app operation messages.
+
+### Added
+- **Notice history** — a dedicated yellow rivet beneath the passive Test Build badge reveals a numbered, scrollable list of the 32 most recent notices.
+- **Operation context** — copy and move results include available source and destination paths together with an exact timestamp.
+- **History persistence** — recent notice snapshots survive application restarts without retaining transient action closures.
+
+### Changed
+- **History presentation** — saved notices use the same animated pale-yellow card format as individual messages and follow the configured panel-text and accent colors.
+- **Bottom tabs** — taller attached-sheet shapes, 14-point light labels, and refined folder icons align tabs with the bottom Commander controls.
+- **Rename action** — the command bar uses the conventional text-cursor rename symbol.
+- **Build metadata** — marketing version updated to `0.9.9.7.6`; build number updated to `143`.
+
+### Fixed
+- **Toolbar text clarity** — pressed controls no longer apply fractional scaling that blurred light-weight labels.
+- **History rivet hit testing** — the separate 13-point control stays within the fixed toolbar bounds and exposes an 18-point click target.
+- **Badge interaction** — clicking the Test Build badge itself no longer toggles notice history.
+
 ## [0.9.9.7.5] — 2026-08-23
 
 > **Release notes**
