@@ -100,10 +100,6 @@ private struct DownToolbarGlassButtonBody: View {
         configuration.isPressed
     }
 
-    private var scale: CGFloat {
-        state == .pressed ? 0.985 : 1.0
-    }
-
     private var state: SemanticControlState {
         .resolve(
             isEnabled: isEnabled,
@@ -151,7 +147,6 @@ private struct DownToolbarGlassButtonBody: View {
             .overlay { buttonBorder }
             .overlay(alignment: .top) { topHighlight }
             .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
-            .scaleEffect(scale)
             .opacity(state == .disabled ? 0.52 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: configuration.isPressed)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)

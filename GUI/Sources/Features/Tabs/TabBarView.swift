@@ -64,10 +64,10 @@ struct TabBarView: View {
                         }
                     }
                 }
-                .frame(height: 28)
+                .frame(height: 31)
                 addTabButton
             }
-            .frame(height: 29)
+            .frame(height: 32)
             .onChange(of: activeID) { _, newID in
                 withAnimation(.easeInOut(duration: 0.2)) {
                     proxy.scrollTo(newID, anchor: .center)

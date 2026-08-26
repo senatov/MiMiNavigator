@@ -27,7 +27,7 @@ struct TabItemView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Layout constants
-    private let tabHeight: CGFloat = 27
+    private let tabHeight: CGFloat = 30
     private let minTabWidth: CGFloat = 132
     private let maxTabWidth: CGFloat = 260
     private let cornerRadius: CGFloat = 9
@@ -66,12 +66,12 @@ struct TabItemView: View {
         HStack(spacing: 5) {
             // Favicon-style folder icon
             Image(systemName: tab.isArchive ? "doc.zipper" : "folder.fill")
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.system(size: 13, weight: .regular))
                 .foregroundStyle(isActive ? activeIconColor : inactiveForeground.opacity(0.72))
                 .frame(width: 14)
 
             Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.system(size: 12.5, weight: isActive ? .semibold : .regular, design: .default))
+                .font(.system(size: 14, weight: .light))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
 
@@ -239,10 +239,10 @@ struct TabItemView: View {
 
     private var tabShape: UnevenRoundedRectangle {
         UnevenRoundedRectangle(
-            topLeadingRadius: cornerRadius,
-            bottomLeadingRadius: 5.5,
-            bottomTrailingRadius: 5.5,
-            topTrailingRadius: cornerRadius,
+            topLeadingRadius: 2,
+            bottomLeadingRadius: cornerRadius,
+            bottomTrailingRadius: cornerRadius,
+            topTrailingRadius: 2,
             style: .continuous
         )
     }

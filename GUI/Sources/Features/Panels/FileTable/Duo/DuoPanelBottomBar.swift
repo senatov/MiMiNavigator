@@ -32,7 +32,7 @@ struct DuoPanelBottomToolbarSection: View {
         let store = HotKeyStore.shared
         VStack(spacing: 0) {
             HStack(spacing: Layout.toolbarButtonSpacing) {
-                commanderButton(title: L10n.Toolbar.rename, action: .renameFile, icon: "pencil", tint: .orange, handler: onRename)
+                commanderButton(title: L10n.Toolbar.rename, action: .renameFile, icon: "character.cursor.ibeam", tint: .orange, handler: onRename)
                 CommanderActionButton(
                     title: L10n.Toolbar.tempBackup,
                     shortcut: store.shortcutString(for: .backupFiles),
