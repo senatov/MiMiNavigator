@@ -59,7 +59,7 @@ private struct DevBuildBadge: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: -1) {
+        VStack(spacing: -8) {
             badgeLabel
             Button {
                 center.toggleHistory()
@@ -85,12 +85,14 @@ private struct DevBuildBadge: View {
                             .padding(2)
                     }
                     .shadow(color: Color.black.opacity(0.28), radius: 1.5, y: 1)
+                    .frame(width: 18, height: 18)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
         }
-        .padding(.top, 8)
+        .frame(height: 51, alignment: .center)
     }
 
     private var badgeLabel: some View {
