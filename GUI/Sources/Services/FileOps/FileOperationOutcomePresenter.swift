@@ -50,7 +50,7 @@ enum FileOperationOutcomePresenter {
         var icon: String {
             switch self {
             case .copy: return "doc.on.doc.fill"
-            case .move: return "folder.fill.badge.arrow.forward"
+            case .move: return "folder.fill"
             case .delete: return "trash.fill"
             case .rename: return "pencil.line"
             case .pack: return "archivebox.fill"
