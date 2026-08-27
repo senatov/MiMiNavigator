@@ -65,16 +65,68 @@ enum FileOperationOutcomePresenter {
         itemCount: Int = 1,
         resultURL: URL? = nil,
         displayName: String? = nil,
-        sourceURLs: [URL] = []
+        sourceURLs: [URL] = [],
+        undo: UndoOperation? = nil
     ) {
         let object = displayName ?? countDescription(itemCount)
         InAppNoticeCenter.shared.showToast(
             "\(operation.completedVerb) \(object)",
-            message: operationDetails(sourceURLs: sourceURLs, resultURL: resultURL),
+            message: operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL),
             systemImage: operation.icon,
             tint: .green,
-            actionTitle: resultURL == nil ? nil : "Open Result",
-            action: openAction(for: resultURL)
+            actionTitle: undo == nil ? (resultURL == nil ? nil : "Open Result") : "UNDO",
+            isActionAvailable: undo?.isAvailable,
+            action: undo?.action ?? openAction(for: resultURL)
+        )
+    }
+
+    // MARK: - Undo Operation
+    struct UndoOperation {
+        let isAvailable: () -> Bool
+        let action: () -> Void
+    }
+
+    static func moveUndo(from currentURLs: [URL], to originalURLs: [URL], refresh: @escaping () -> Void) -> UndoOperation? {
+        guard currentURLs.count == originalURLs.count, !currentURLs.isEmpty else { return nil }
+        return UndoOperation(
+            isAvailable: {
+                zip(currentURLs, originalURLs).allSatisfy {
+                    FileManager.default.fileExists(atPath: $0.0.path) && !FileManager.default.fileExists(atPath: $0.1.path)
+                }
+            },
+            action: {
+                do {
+                    for (current, original) in zip(currentURLs, originalURLs) {
+                        try FileManager.default.moveItem(at: current, to: original)
+                    }
+                    refresh()
+                    log.info("[FileOps] undo restored \(currentURLs.count) item(s)")
+                } catch {
+                    log.error("[FileOps] undo failed: \(error.localizedDescription)")
+                    InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
+                }
+            }
+        )
+    }
+
+    static func copyUndo(copiedURLs: [URL], refresh: @escaping () -> Void) -> UndoOperation? {
+        guard !copiedURLs.isEmpty else { return nil }
+        return UndoOperation(
+            isAvailable: {
+                copiedURLs.allSatisfy { FileManager.default.fileExists(atPath: $0.path) }
+            },
+            action: {
+                do {
+                    for copiedURL in copiedURLs {
+                        try FileManager.default.trashItem(at: copiedURL, resultingItemURL: nil)
+                    }
+                    refresh()
+                    log.info("[FileOps] undo removed \(copiedURLs.count) copied item(s)")
+                } catch {
+                    log.error("[FileOps] undo failed: \(error.localizedDescription)")
+                    InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
+                }
+            }
         )
     }
 
@@ -107,11 +159,15 @@ enum FileOperationOutcomePresenter {
         count == 1 ? "1 item" : "\(count) items"
     }
 
-    private static func operationDetails(sourceURLs: [URL], resultURL: URL?) -> String? {
+    private static func operationDetails(operation: Operation, sourceURLs: [URL], resultURL: URL?) -> String? {
         var details: [String] = []
-        if let first = sourceURLs.first {
-            let suffix = sourceURLs.count > 1 ? " (+\(sourceURLs.count - 1) more)" : ""
-            details.append("From: \(first.path)\(suffix)")
+        let sourceLabel: String
+        switch operation {
+            case .delete: sourceLabel = "Removed"
+            default: sourceLabel = "From"
+        }
+        for sourceURL in sourceURLs {
+            details.append("\(sourceLabel): \(sourceURL.isFileURL ? sourceURL.path : sourceURL.absoluteString)")
         }
         if let resultURL {
             details.append("To: \(resultURL.isFileURL ? resultURL.path : resultURL.absoluteString)")

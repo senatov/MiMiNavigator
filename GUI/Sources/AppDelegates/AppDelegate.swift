@@ -128,6 +128,10 @@ import LogKit
 
     private func installKeyMonitor() {
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.keyCode == 53, InAppNoticeCenter.shared.isHistoryVisible {
+                InAppNoticeCenter.shared.hideHistory()
+                return nil
+            }
             guard let self, let appState = self.appState else { return event }
             if CntMenuCoord.shared.activeDialog != nil { return event }
             let flags = event.modifierFlags

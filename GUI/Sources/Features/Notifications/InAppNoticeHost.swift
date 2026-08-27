@@ -12,7 +12,12 @@ struct InAppNoticeHost: View {
     @State private var center = InAppNoticeCenter.shared
 
     var body: some View {
-        Group {
+        ZStack(alignment: .top) {
+            if scope == .main && center.isHistoryVisible {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { center.hideHistory() }
+            }
             if scope == .main && center.isHistoryVisible {
                 InAppNoticeHistoryView()
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -28,6 +33,11 @@ struct InAppNoticeHost: View {
         .padding(.horizontal, DesignTokens.Spacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(center.notice(for: scope) != nil || (scope == .main && center.isHistoryVisible))
+        .onExitCommand {
+            if scope == .main && center.isHistoryVisible {
+                center.hideHistory()
+            }
+        }
     }
 }
 
@@ -43,7 +53,7 @@ private struct InAppNoticeHistoryView: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(Array(center.history.enumerated()), id: \.element.id) { index, notice in
-                            NoticeCard(notice: notice, showsControls: false, historyNumber: index + 1)
+                            NoticeCard(notice: notice, showsControls: true, historyNumber: index + 1)
                         }
                     }
                     .padding(.vertical, 4)
@@ -83,13 +93,13 @@ private struct NoticeCard: View {
                 .foregroundStyle(notice?.tint ?? .secondary)
                 .frame(width: 20, height: 20)
             noticeText
-            if showsControls, let notice, let actionTitle = notice.actionTitle {
+            if let notice, let actionTitle = notice.actionTitle, center.isActionAvailable(for: notice) {
                 Button(actionTitle) { center.performAction(for: notice) }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .keyboardShortcut(.defaultAction)
             }
-            if showsControls, let notice {
+            if showsControls, historyNumber == nil, let notice {
                 Button { center.dismiss(scope: notice.scope) } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
@@ -103,7 +113,7 @@ private struct NoticeCard: View {
         .padding(.leading, 13)
         .padding(.trailing, 9)
         .padding(.vertical, notice?.kind == .banner ? 11 : 9)
-        .frame(maxWidth: showsControls && notice?.kind != .banner ? 380 : 520, alignment: .leading)
+        .frame(maxWidth: historyNumber == nil && notice?.kind != .banner ? 380 : 520, alignment: .leading)
         .background(
             Color(#colorLiteral(red: 1, green: 0.969, blue: 0.82, alpha: 0.96)),
             in: RoundedRectangle(cornerRadius: 11, style: .continuous)
@@ -134,7 +144,7 @@ private struct NoticeCard: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(colorStore.activeTheme.panelText)
                 Spacer()
-                if !showsControls, let notice {
+                if historyNumber != nil, let notice {
                     Text(notice.createdAt, format: .dateTime.day().month().year().hour().minute().second())
                         .font(.system(size: 10, weight: .light))
                         .foregroundStyle(.secondary)
@@ -158,7 +168,7 @@ private struct NoticeCard: View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(Array(message.split(separator: "\n", omittingEmptySubsequences: false).enumerated()), id: \.offset) { _, line in
                 let value = String(line)
-                if value.hasPrefix("From: ") || value.hasPrefix("To: ") {
+                if value.hasPrefix("From: ") || value.hasPrefix("To: ") || value.hasPrefix("Removed: ") {
                     let parts = value.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text("\(parts.first ?? ""):")
@@ -173,7 +183,7 @@ private struct NoticeCard: View {
                 }
             }
         }
-        .font(.system(size: 12, weight: .regular))
+        .font(.system(size: 11, weight: .light))
         .fixedSize(horizontal: false, vertical: true)
     }
 }

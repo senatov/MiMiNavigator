@@ -177,7 +177,7 @@
                             return
                         }
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
+                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls)
                         log.debug("[DELETE] ⏱ END performDelete")
                     } catch {
                         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
@@ -215,7 +215,7 @@
                 if progressPanel.isCancelled {
                     FileOperationOutcomePresenter.cancelled(.delete)
                 } else if success {
-                    FileOperationOutcomePresenter.success(.delete, itemCount: deletedCount)
+                    FileOperationOutcomePresenter.success(.delete, itemCount: deletedCount, sourceURLs: deletableFiles.map(\.urlValue))
                 } else {
                     FileOperationOutcomePresenter.failure(.delete, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
                 }

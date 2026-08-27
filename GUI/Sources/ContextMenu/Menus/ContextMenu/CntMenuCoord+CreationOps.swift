@@ -68,13 +68,24 @@ extension CntMenuCoord {
         let destination = getDestinationPath(for: panel, appState: appState)
         let operation: FileOperationOutcomePresenter.Operation = clipboard.isCut ? .move : .copy
         let itemCount = max(clipboard.files.count, 1)
+        let sourceURLs = clipboard.files
         log.debug("\(#function) destination='\(destination.path)'")
         let result = await clipboard.paste(to: destination)
         switch result {
             case .success(let urls):
                 log.info("\(#function) SUCCESS pasted \(urls.count) item(s)")
                 refreshPanels(appState: appState)
-                FileOperationOutcomePresenter.success(operation, itemCount: itemCount, resultURL: destination, sourceURLs: clipboard.files)
+                let refresh = { @MainActor in self.refreshPanels(appState: appState) }
+                let undo: FileOperationOutcomePresenter.UndoOperation?
+                switch operation {
+                    case .move:
+                        undo = FileOperationOutcomePresenter.moveUndo(from: urls, to: sourceURLs, refresh: refresh)
+                    case .copy:
+                        undo = FileOperationOutcomePresenter.copyUndo(copiedURLs: urls, refresh: refresh)
+                    default:
+                        undo = nil
+                }
+                FileOperationOutcomePresenter.success(operation, itemCount: itemCount, resultURL: destination, sourceURLs: sourceURLs, undo: undo)
             case .failure(let error):
                 if case FileOpsError.operationCancelled = error {
                     log.info("\(#function) cancelled by user")

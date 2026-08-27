@@ -35,7 +35,7 @@ extension CntMenuCoord {
 
         do {
             let urls = files.map { $0.urlValue }
-            _ = try await fileOps.deleteFiles(urls)
+            let trashedURLs = try await fileOps.deleteFiles(urls)
 
             for file in files where file.isFromArchiveSearch {
                 await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
@@ -50,7 +50,13 @@ extension CntMenuCoord {
             let panel = panelForPath(firstFile.urlValue.deletingLastPathComponent().path, appState: appState)
             await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
             refreshOppositePanel(of: panel, appState: appState)
-            FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
+            let undo = FileOperationOutcomePresenter.moveUndo(from: trashedURLs, to: urls) {
+                Task { @MainActor in
+                    await appState.refreshFiles(for: .left, force: true)
+                    await appState.refreshFiles(for: .right, force: true)
+                }
+            }
+            FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls, undo: undo)
             log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
@@ -87,7 +93,13 @@ extension CntMenuCoord {
             if !AppState.isAppManagedNetworkMountPath(newURL) {
                 refreshOppositePanel(of: panel, appState: appState)
             }
-            FileOperationOutcomePresenter.success(.rename, resultURL: newURL, displayName: newURL.lastPathComponent)
+            let undo = FileOperationOutcomePresenter.moveUndo(from: [newURL], to: [oldURL]) {
+                Task { @MainActor in
+                    await appState.refreshFiles(for: .left, force: true)
+                    await appState.refreshFiles(for: .right, force: true)
+                }
+            }
+            FileOperationOutcomePresenter.success(.rename, resultURL: newURL, displayName: newURL.lastPathComponent, sourceURLs: [oldURL], undo: undo)
             log.info("[Rename] 🏁 END SUCCESS")
         } catch {
             log.error("[Rename] ❌ FAILED: \(error.localizedDescription)")

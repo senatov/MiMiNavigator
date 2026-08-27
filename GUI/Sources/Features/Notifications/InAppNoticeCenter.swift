@@ -32,6 +32,7 @@ struct InAppNotice: Identifiable {
     let systemImage: String
     let tint: Color
     let actionTitle: String?
+    let isActionAvailable: (() -> Bool)?
     let action: (() -> Void)?
 
     init(
@@ -44,6 +45,7 @@ struct InAppNotice: Identifiable {
         systemImage: String,
         tint: Color,
         actionTitle: String?,
+        isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)?
     ) {
         self.id = id
@@ -55,6 +57,7 @@ struct InAppNotice: Identifiable {
         self.systemImage = systemImage
         self.tint = tint
         self.actionTitle = actionTitle
+        self.isActionAvailable = isActionAvailable
         self.action = action
     }
 }
@@ -79,6 +82,7 @@ final class InAppNoticeCenter {
     private(set) var isHistoryVisible = false
     private var queuedNotices: [InAppNotice.Scope: [InAppNotice]] = [:]
     private var dismissalTasks: [InAppNotice.Scope: Task<Void, Never>] = [:]
+    private var performedActionIDs: Set<UUID> = []
     private let historyLimit = 32
     private let historyDefaultsKey = "inAppNotice.history.v1"
 
@@ -94,9 +98,10 @@ final class InAppNoticeCenter {
         systemImage: String = "checkmark.circle.fill",
         tint: Color = .green,
         actionTitle: String? = nil,
+        isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
+        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
     }
 
     // MARK: - Present Banner
@@ -107,9 +112,10 @@ final class InAppNoticeCenter {
         systemImage: String = "exclamationmark.triangle.fill",
         tint: Color = .orange,
         actionTitle: String? = nil,
+        isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, action: action))
+        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
     }
 
     // MARK: - Present Error
@@ -146,8 +152,14 @@ final class InAppNoticeCenter {
 
     // MARK: - Perform Action
     func performAction(for notice: InAppNotice) {
+        guard isActionAvailable(for: notice) else { return }
+        performedActionIDs.insert(notice.id)
         dismiss(scope: notice.scope)
         notice.action?()
+    }
+
+    func isActionAvailable(for notice: InAppNotice) -> Bool {
+        !performedActionIDs.contains(notice.id) && (notice.isActionAvailable?() ?? (notice.action != nil))
     }
 
     // MARK: - History
@@ -221,6 +233,7 @@ final class InAppNoticeCenter {
                 systemImage: $0.systemImage,
                 tint: restoredTint(for: $0.systemImage),
                 actionTitle: nil,
+                isActionAvailable: nil,
                 action: nil
             )
         }

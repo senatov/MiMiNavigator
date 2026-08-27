@@ -104,7 +104,7 @@ final class BatchOperationManager {
             let progress = try await engine.delete(items: urls)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.delete, itemCount: files.count)
+                FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.delete)
             } else {
