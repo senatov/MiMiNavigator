@@ -143,10 +143,12 @@ private struct DownToolbarGlassButtonBody: View {
             .foregroundStyle(Color.primary.opacity(contrast == .increased ? 1 : (isPressed ? 0.96 : 0.90)))
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
-            .background { backgroundLayer }
+            .background {
+                backgroundLayer
+                    .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
+            }
             .overlay { buttonBorder }
             .overlay(alignment: .top) { topHighlight }
-            .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             .opacity(state == .disabled ? 0.52 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: configuration.isPressed)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
