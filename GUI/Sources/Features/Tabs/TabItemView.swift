@@ -27,21 +27,23 @@ struct TabItemView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Layout constants
-    private let tabHeight: CGFloat = 30
-    private let minTabWidth: CGFloat = 132
-    private let maxTabWidth: CGFloat = 260
-    private let cornerRadius: CGFloat = 9
+    private let tabHeight: CGFloat = 29
+    private let minTabWidth: CGFloat = 112
+    private let maxTabWidth: CGFloat = 236
 
     // MARK: - Body
 
     var body: some View {
         tabContent
             .frame(height: tabHeight)
-            .background { tabFill.clipShape(tabShape) }
+            .background {
+                tabFill
+                    .clipShape(tabShape)
+                    .shadow(color: tabShadowColor, radius: isActive ? 1.8 : 1.1, x: 0.7, y: 1)
+            }
             .overlay(tabInnerHighlight)
             .overlay(tabBorder)
             .contentShape(tabShape)
-            .shadow(color: tabShadowColor, radius: isActive ? 2.2 : 1.2, x: 0, y: isActive ? 1.2 : 0.7)
             .background(frameReader)
             .onTapGesture { onSelect() }
             .onHover(perform: handleHover)
@@ -58,6 +60,7 @@ struct TabItemView: View {
             }
         .animation(.easeOut(duration: 0.15), value: isActive)
         .animation(.easeOut(duration: 0.12), value: isHovered)
+        .zIndex(isActive ? 2 : isHovered ? 1 : 0)
     }
 
     // MARK: - Tab Content
@@ -66,12 +69,12 @@ struct TabItemView: View {
         HStack(spacing: 5) {
             // Favicon-style folder icon
             Image(systemName: tab.isArchive ? "doc.zipper" : "folder.fill")
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 11, weight: .regular))
                 .foregroundStyle(isActive ? activeIconColor : inactiveForeground.opacity(0.72))
-                .frame(width: 14)
+                .frame(width: 12)
 
             Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.system(size: 14, weight: .light))
+                .font(.system(size: 12, weight: .light))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
 
@@ -80,8 +83,8 @@ struct TabItemView: View {
             // Close button — always reserves space, visible on hover/active
             closeButton
         }
-        .padding(.leading, 13)
-        .padding(.trailing, isActive ? 9 : 7)
+        .padding(.leading, 11)
+        .padding(.trailing, isActive ? 8 : 6)
         .frame(minWidth: minTabWidth, maxWidth: maxTabWidth)
     }
 
@@ -102,7 +105,7 @@ struct TabItemView: View {
                     .frame(width: 16, height: 16)
 
                 Image(systemName: "xmark")
-                    .font(.system(size: 7.5, weight: .bold))
+                    .font(.system(size: 7, weight: .semibold))
                     .foregroundStyle(Color.secondary)
             }
             .frame(width: 16, height: 16)
@@ -119,9 +122,9 @@ struct TabItemView: View {
         if isActive {
             LinearGradient(
                 stops: [
-                    .init(color: activeFillTop.opacity(colorScheme == .dark ? 0.72 : 1), location: 0),
-                    .init(color: activeFillMid.opacity(colorScheme == .dark ? 0.54 : 0.98), location: 0.66),
-                    .init(color: activeFillFoot.opacity(colorScheme == .dark ? 0.32 : 0.92), location: 1),
+                    .init(color: activeFillTop.opacity(colorScheme == .dark ? 0.68 : 1), location: 0),
+                    .init(color: activeFillMid.opacity(colorScheme == .dark ? 0.52 : 0.98), location: 0.58),
+                    .init(color: activeFillFoot.opacity(colorScheme == .dark ? 0.38 : 0.94), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -129,8 +132,8 @@ struct TabItemView: View {
         } else if isHovered {
             LinearGradient(
                 stops: [
-                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.32 : 0.72), location: 0),
-                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.26 : 0.64), location: 1),
+                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.30 : 0.64), location: 0),
+                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.24 : 0.58), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -138,8 +141,8 @@ struct TabItemView: View {
         } else {
             LinearGradient(
                 stops: [
-                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.24 : 0.54), location: 0),
-                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.18 : 0.46), location: 1),
+                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.20 : 0.44), location: 0),
+                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.15 : 0.38), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -171,9 +174,9 @@ struct TabItemView: View {
         tabShape
             .strokeBorder(
                 isActive
-                    ? activeBorder.opacity(isPanelFocused ? 0.82 : 0.62)
-                    : inactiveBorder.opacity(isHovered ? 0.56 : 0.38),
-                lineWidth: isActive ? 0.9 : 0.75
+                    ? activeBorder.opacity(isPanelFocused ? 0.94 : 0.72)
+                    : inactiveBorder.opacity(isHovered ? 0.72 : 0.52),
+                lineWidth: isActive ? 0.8 : 0.65
             )
     }
 
@@ -198,7 +201,7 @@ struct TabItemView: View {
     }
 
     private var activeBorder: Color {
-        Color(#colorLiteral(red: 0.333, green: 0.451, blue: 0.651, alpha: 1))
+        Color(#colorLiteral(red: 0.25, green: 0.58, blue: 0.93, alpha: 1))
     }
 
     private var activeFillTop: Color {
@@ -206,23 +209,23 @@ struct TabItemView: View {
     }
 
     private var activeFillMid: Color {
-        Color(#colorLiteral(red: 0.886, green: 0.929, blue: 0.988, alpha: 1))
+        Color(#colorLiteral(red: 0.918, green: 0.949, blue: 0.986, alpha: 1))
     }
 
     private var activeFillFoot: Color {
-        Color(#colorLiteral(red: 0.745, green: 0.819, blue: 0.925, alpha: 1))
+        Color(#colorLiteral(red: 0.82, green: 0.875, blue: 0.95, alpha: 1))
     }
 
     private var inactiveFillTop: Color {
-        Color(#colorLiteral(red: 0.875, green: 0.902, blue: 0.936, alpha: 1))
+        Color(#colorLiteral(red: 0.91, green: 0.925, blue: 0.946, alpha: 1))
     }
 
     private var inactiveFillFoot: Color {
-        Color(#colorLiteral(red: 0.722, green: 0.776, blue: 0.842, alpha: 1))
+        Color(#colorLiteral(red: 0.79, green: 0.82, blue: 0.86, alpha: 1))
     }
 
     private var inactiveBorder: Color {
-        Color(#colorLiteral(red: 0.455, green: 0.536, blue: 0.642, alpha: 1))
+        Color(#colorLiteral(red: 0.49, green: 0.52, blue: 0.57, alpha: 1))
     }
 
     private var frameReader: some View {
@@ -237,14 +240,8 @@ struct TabItemView: View {
         }
     }
 
-    private var tabShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(
-            topLeadingRadius: 2,
-            bottomLeadingRadius: cornerRadius,
-            bottomTrailingRadius: cornerRadius,
-            topTrailingRadius: 2,
-            style: .continuous
-        )
+    private var tabShape: BottomSheetTabShape {
+        BottomSheetTabShape()
     }
 
     private func handleHover(_ hovering: Bool) {
@@ -265,5 +262,37 @@ struct TabItemView: View {
             tooltipTask = nil
             TabTooltipPopupController.shared.hide(immediate: true, reason: "tab hover ended")
         }
+    }
+}
+
+// MARK: - Bottom Sheet Tab Shape
+private struct BottomSheetTabShape: InsettableShape {
+    private var insetAmount: CGFloat = 0
+
+    func path(in rect: CGRect) -> Path {
+        let frame = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        let slope: CGFloat = 6
+        let radius: CGFloat = 6
+        var path = Path()
+        path.move(to: CGPoint(x: frame.minX + 1, y: frame.minY))
+        path.addLine(to: CGPoint(x: frame.maxX - 1, y: frame.minY))
+        path.addLine(to: CGPoint(x: frame.maxX - slope, y: frame.maxY - radius))
+        path.addQuadCurve(
+            to: CGPoint(x: frame.maxX - slope - radius, y: frame.maxY),
+            control: CGPoint(x: frame.maxX - slope, y: frame.maxY)
+        )
+        path.addLine(to: CGPoint(x: frame.minX + slope + radius, y: frame.maxY))
+        path.addQuadCurve(
+            to: CGPoint(x: frame.minX + slope, y: frame.maxY - radius),
+            control: CGPoint(x: frame.minX + slope, y: frame.maxY)
+        )
+        path.closeSubpath()
+        return path
+    }
+
+    func inset(by amount: CGFloat) -> BottomSheetTabShape {
+        var shape = self
+        shape.insetAmount += amount
+        return shape
     }
 }

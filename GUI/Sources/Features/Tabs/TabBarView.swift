@@ -31,11 +31,15 @@ struct TabBarView: View {
         let activeID = tabManager.activeTabID
         let isOnlyTab = tabs.count <= 1
         ScrollViewReader { proxy in
-            HStack(spacing: 2) {
-                tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
-                tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
+            HStack(spacing: 4) {
+                HStack(spacing: 0) {
+                    tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
+                    controlDivider
+                    tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
+                }
+                .background(controlGroupSurface)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
+                    HStack(alignment: .bottom, spacing: -5) {
                         ForEach(tabs) { tab in
                             TabItemView(
                                 tab: tab,
@@ -64,7 +68,7 @@ struct TabBarView: View {
                         }
                     }
                 }
-                .frame(height: 31)
+                .frame(height: 32)
                 addTabButton
             }
             .frame(height: 32)
@@ -97,6 +101,21 @@ struct TabBarView: View {
                 .frame(width: 18, height: 22)
         }
         .buttonStyle(TabStripControlButtonStyle(isEmphasized: false))
+    }
+
+    private var controlDivider: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor).opacity(0.7))
+            .frame(width: 0.5, height: 15)
+    }
+
+    private var controlGroupSurface: some View {
+        RoundedRectangle(cornerRadius: 6, style: .continuous)
+            .fill(Color(nsColor: .controlBackgroundColor).opacity(0.72))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.6)
+            }
     }
 
     // MARK: - Actions
@@ -193,17 +212,21 @@ private struct TabStripControlButtonStyle: ButtonStyle {
                         LinearGradient(
                             colors: configuration.isPressed
                                 ? [Color.black.opacity(0.09), Color.white.opacity(0.12)]
-                                : [Color.white.opacity(0.68), Color.primary.opacity(0.07)],
+                                : isEmphasized
+                                    ? [Color.white.opacity(0.78), Color.accentColor.opacity(0.10)]
+                                    : [Color.clear, Color.primary.opacity(0.025)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(Color.black.opacity(configuration.isPressed ? 0.25 : 0.16), lineWidth: 0.6)
+                if isEmphasized {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color.accentColor.opacity(configuration.isPressed ? 0.44 : 0.28), lineWidth: 0.6)
+                }
             }
-            .shadow(color: Color.black.opacity(configuration.isPressed ? 0.04 : 0.12), radius: 1, y: configuration.isPressed ? 0 : 1)
+            .shadow(color: Color.black.opacity(isEmphasized ? 0.10 : 0), radius: 1, y: 1)
             .offset(y: configuration.isPressed ? 0.5 : 0)
     }
 }

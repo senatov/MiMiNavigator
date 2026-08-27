@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Duo Panel Tabs Section
 /// Separate tab strip row below the file panels.
 struct DuoPanelTabsSection: View {
-    static let height: CGFloat = 31
+    static let height: CGFloat = 33
 
     let leftPanelWidth: CGFloat
     let containerWidth: CGFloat
@@ -35,8 +35,8 @@ struct DuoPanelTabsSection: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(nsColor: .controlBackgroundColor).opacity(0.88),
-                    Color(nsColor: .windowBackgroundColor).opacity(0.96)
+                    Color(nsColor: .controlBackgroundColor).opacity(0.78),
+                    Color(nsColor: .windowBackgroundColor).opacity(0.92)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -44,7 +44,7 @@ struct DuoPanelTabsSection: View {
         )
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Color(nsColor: .separatorColor).opacity(0.72))
+                .fill(Color(nsColor: .separatorColor).opacity(0.52))
                 .frame(height: 0.5)
         }
         .overlay(alignment: .bottom) {
