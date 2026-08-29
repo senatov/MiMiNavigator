@@ -43,7 +43,7 @@ final class BatchOperationManager {
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.copy)
             } else {
-                FileOperationOutcomePresenter.failure(.copy, message: progress.completionSummary)
+                FileOperationOutcomePresenter.failure(.copy, message: progress.failureSummary)
             }
         } catch {
             log.error("[BatchOpMgr] copy failed: \(error.localizedDescription)")
@@ -68,16 +68,17 @@ final class BatchOperationManager {
         await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.move(items: urls, to: destination)
+            let undo = transferUndo(for: progress, appState: appState)
             if progress.errors.isEmpty && !progress.isCancelled {
                 for file in files {
                     await ArchiveManager.shared.markDirtyByTempPath(file.pathStr)
                 }
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.move, itemCount: files.count, resultURL: destination, sourceURLs: urls)
+                FileOperationOutcomePresenter.success(.move, itemCount: files.count, resultURL: destination, sourceURLs: urls, undo: undo)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.move)
             } else {
-                FileOperationOutcomePresenter.failure(.move, message: progress.completionSummary)
+                FileOperationOutcomePresenter.failure(.move, message: progress.failureSummary, undo: undo)
             }
         } catch {
             log.error("[BatchOpMgr] move failed: \(error.localizedDescription)")
@@ -102,13 +103,14 @@ final class BatchOperationManager {
         await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.delete(items: urls)
+            let undo = deleteUndo(for: progress, appState: appState)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls)
+                FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls, undo: undo)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.delete)
             } else {
-                FileOperationOutcomePresenter.failure(.delete, message: progress.completionSummary)
+                FileOperationOutcomePresenter.failure(.delete, message: progress.failureSummary, undo: undo)
             }
         } catch {
             log.error("[BatchOpMgr] delete failed: \(error.localizedDescription)")
@@ -131,6 +133,23 @@ final class BatchOperationManager {
             await appState.refreshFiles(for: .right, force: true)
         } else {
             await appState.refreshFiles(for: .left, force: true)
+        }
+    }
+
+    private func deleteUndo(for progress: FileOpProgress, appState: AppState) -> FileOperationOutcomePresenter.UndoOperation? {
+        transferUndo(for: progress, appState: appState)
+    }
+
+    private func transferUndo(for progress: FileOpProgress, appState: AppState) -> FileOperationOutcomePresenter.UndoOperation? {
+        let transfers = progress.completedTransfers
+        return FileOperationOutcomePresenter.moveUndo(
+            from: transfers.map(\.destination),
+            to: transfers.map(\.source)
+        ) {
+            Task { @MainActor in
+                await appState.refreshFiles(for: .left, force: true)
+                await appState.refreshFiles(for: .right, force: true)
+            }
         }
     }
 }

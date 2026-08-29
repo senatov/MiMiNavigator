@@ -48,13 +48,17 @@ extension FileOpsEngine {
             return
         }
         let itemSize = fileSize(url: url)
-        let result = AppState.isAppManagedNetworkMountPath(url)
-            ? await deleteAppManagedItem(url: url, progress: progress)
+        let isAppManagedItem = AppState.isAppManagedNetworkMountPath(url)
+        let result = isAppManagedItem
+            ? await deleteAppManagedItem(url: url, progress: progress).map { nil }
             : await Self.trashItemOffMainActor(url)
         switch result {
-        case .success:
+        case .success(let trashedURL):
             guard !progress.isCancelled else { return }
             progress.fileCompleted(name: url.lastPathComponent, success: true)
+            if let trashedURL {
+                progress.recordCompletedTransfer(from: url, to: trashedURL)
+            }
             progress.add(bytes: itemSize)
         case .failure(let error):
             guard !progress.isCancelled else { return }
@@ -87,11 +91,12 @@ extension FileOpsEngine {
         }.value
     }
 
-    private nonisolated static func trashItemOffMainActor(_ url: URL) async -> Result<Void, Error> {
+    private nonisolated static func trashItemOffMainActor(_ url: URL) async -> Result<URL?, Error> {
         await Task.detached(priority: .userInitiated) {
             do {
-                try FileManager.default.trashItem(at: url, resultingItemURL: nil)
-                return .success(())
+                var resultingURL: NSURL?
+                try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+                return .success(resultingURL as URL?)
             } catch {
                 return .failure(error)
             }

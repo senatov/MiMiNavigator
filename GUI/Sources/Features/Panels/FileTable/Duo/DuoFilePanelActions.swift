@@ -171,13 +171,24 @@
                         let progress = try await FileOpsEngine.shared.delete(items: urls)
                         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
                         log.info("[DELETE] ✅ FileOpsEngine.delete finished in \(String(format: "%.3f", elapsed))s with \(progress.errors.count) error(s)")
+                        let transfers = progress.completedTransfers
+                        let undo = FileOperationOutcomePresenter.moveUndo(
+                            from: transfers.map(\.destination),
+                            to: transfers.map(\.source)
+                        ) {
+                            Task { @MainActor in
+                                await self.appState.refreshFiles(for: .left, force: true)
+                                await self.appState.refreshFiles(for: .right, force: true)
+                            }
+                        }
                         guard progress.errors.isEmpty else {
-                            log.warning("[DELETE] refresh skipped because delete finished with \(progress.errors.count) error(s)")
-                            FileOperationOutcomePresenter.failure(.delete, message: progress.completionSummary)
+                            await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+                            log.warning("[DELETE] refreshed after partial delete with \(progress.errors.count) error(s)")
+                            FileOperationOutcomePresenter.failure(.delete, message: progress.failureSummary, undo: undo)
                             return
                         }
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls)
+                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls, undo: undo)
                         log.debug("[DELETE] ⏱ END performDelete")
                     } catch {
                         let elapsed = CFAbsoluteTimeGetCurrent() - startTime

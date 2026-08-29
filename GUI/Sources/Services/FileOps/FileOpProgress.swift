@@ -29,6 +29,7 @@ final class FileOpProgress {
     var isCompleted: Bool = false
     var usesProgressPanel: Bool = false
     var errors: [FileOpErrorInfo] = []
+    private(set) var completedTransfers: [FileOpTransfer] = []
 
     // MARK: - Timing
     let startTime: Date = Date()
@@ -57,6 +58,16 @@ final class FileOpProgress {
         if skippedFiles > 0 { parts.append("\(skippedFiles) skipped") }
         if errors.count > 0 { parts.append("\(errors.count) failed") }
         return parts.isEmpty ? "Nothing to do" : parts.joined(separator: ", ")
+    }
+
+    var failureSummary: String {
+        guard !errors.isEmpty else { return completionSummary }
+        var lines = [completionSummary]
+        lines.append(contentsOf: errors.prefix(3).map { "Failed: \($0.error)" })
+        if errors.count > 3 {
+            lines.append("And \(errors.count - 3) more failure(s)")
+        }
+        return lines.joined(separator: "\n")
     }
 
     var bytesText: String {
@@ -118,6 +129,10 @@ final class FileOpProgress {
         updateProgressDisplay()
     }
 
+    func recordCompletedTransfer(from source: URL, to destination: URL) {
+        completedTransfers.append(FileOpTransfer(source: source, destination: destination))
+    }
+
     func fileSkipped(name: String) {
         skippedFiles += 1
         guard usesProgressPanel else { return }
@@ -177,4 +192,10 @@ struct FileOpErrorInfo: Identifiable, Sendable {
     let id = UUID()
     let fileName: String
     let error: String
+}
+
+// MARK: - Completed File Transfer
+struct FileOpTransfer: Sendable {
+    let source: URL
+    let destination: URL
 }

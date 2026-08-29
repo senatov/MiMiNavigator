@@ -187,9 +187,9 @@ final class InAppNoticeCenter {
 
     private func display(_ notice: InAppNotice) {
         visibleNotices[notice.scope] = notice
-        guard notice.kind == .toast else { return }
+        let displayDuration: Duration = notice.kind == .toast ? .seconds(2.4) : .seconds(8)
         dismissalTasks[notice.scope] = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(2.4))
+            try? await Task.sleep(for: displayDuration)
             guard !Task.isCancelled else { return }
             self?.dismiss(scope: notice.scope)
         }

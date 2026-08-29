@@ -309,12 +309,21 @@ final class DragDropManager {
                 }
             }
             let outcome: FileOperationOutcomePresenter.Operation = kind == .move ? .move : .copy
+            let transfers = progress.completedTransfers
+            let undo = kind == .move ? FileOperationOutcomePresenter.moveUndo(
+                from: transfers.map(\.destination),
+                to: transfers.map(\.source)
+            ) {
+                Task { @MainActor in
+                    await self.refreshAffectedPanels(appState: appState, operation: operation)
+                }
+            } : nil
             if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(outcome)
             } else if progress.errors.isEmpty {
-                FileOperationOutcomePresenter.success(outcome, itemCount: urls.count, resultURL: dest)
+                FileOperationOutcomePresenter.success(outcome, itemCount: urls.count, resultURL: dest, undo: undo)
             } else {
-                FileOperationOutcomePresenter.failure(outcome, message: progress.completionSummary)
+                FileOperationOutcomePresenter.failure(outcome, message: progress.failureSummary, undo: undo)
             }
         } catch {
             log.error("[DnD] \(kind) failed: \(error.localizedDescription)")

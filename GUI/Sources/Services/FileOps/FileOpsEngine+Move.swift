@@ -40,13 +40,20 @@ extension FileOpsEngine {
             progress.setCurrentFile(item.lastPathComponent)
             if await tryAtomicMove(from: item, to: target) {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
+                progress.recordCompletedTransfer(from: item, to: target)
             } else if isDirectory(url: item) {
-                _ = await executeOpaqueDirectory(
+                let succeeded = await executeOpaqueDirectory(
                     source: item, target: target,
                     size: fileSize(url: item), operation: .move, progress: progress)
+                if succeeded {
+                    progress.recordCompletedTransfer(from: item, to: target)
+                }
             } else {
                 let plan = await buildPlan(items: [item], destination: destination)
                 try await executeFewLarge(plan: plan, operation: .move, progress: progress)
+                if !fm.fileExists(atPath: item.path), fm.fileExists(atPath: target.path) {
+                    progress.recordCompletedTransfer(from: item, to: target)
+                }
             }
         }
         progress.complete()
@@ -79,6 +86,7 @@ extension FileOpsEngine {
             return nil
         }
         progress.fileCompleted(name: item.lastPathComponent, success: true)
+        progress.recordCompletedTransfer(from: item, to: target)
         progress.complete()
         return progress
     }

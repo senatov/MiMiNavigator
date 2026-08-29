@@ -131,18 +131,19 @@ enum FileOperationOutcomePresenter {
     }
 
     // MARK: - Failure
-    static func failure(_ operation: Operation, error: Error, retry: (() -> Void)? = nil) {
-        failure(operation, message: error.localizedDescription, retry: retry)
+    static func failure(_ operation: Operation, error: Error, retry: (() -> Void)? = nil, undo: UndoOperation? = nil) {
+        failure(operation, message: error.localizedDescription, retry: retry, undo: undo)
     }
 
-    static func failure(_ operation: Operation, message: String, retry: (() -> Void)? = nil) {
+    static func failure(_ operation: Operation, message: String, retry: (() -> Void)? = nil, undo: UndoOperation? = nil) {
         InAppNoticeCenter.shared.showBanner(
             title: operation.failureTitle,
             message: message,
             systemImage: "xmark.octagon.fill",
             tint: .red,
-            actionTitle: retry == nil ? nil : "Retry",
-            action: retry
+            actionTitle: undo == nil ? (retry == nil ? nil : "Retry") : "UNDO",
+            isActionAvailable: undo?.isAvailable,
+            action: undo?.action ?? retry
         )
     }
 
