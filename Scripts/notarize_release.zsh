@@ -49,11 +49,17 @@ SCHEME="MiMiNavigator"
 CONFIG="Release"
 BUILD_DIR="/tmp/mimi_notarize_build"
 BUILD_LOG="/tmp/mimi_notarize_build.log"
+PACKAGE_LOG="/tmp/mimi_package_resolution.log"
 DMG="/tmp/MiMiNavigator-${VERSION}.dmg"
 DMG_STAGE="/tmp/mimi_dmg_notarize"
 DERIVED_DATA_ROOT="${HOME}/Library/Developer/Xcode/DerivedData"
 NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
 TEMP_DMG_DEVICE=""
+ACTIVE_CHILD_PID=""
+STAMP_BACKUP_DIR=""
+RELEASE_SUCCEEDED=false
+PACKAGE_IDLE_TIMEOUT=300
+PACKAGE_MAX_ATTEMPTS=2
 
 cleanup_dmg_mount() {
     if [[ -n "${TEMP_DMG_DEVICE}" ]]; then
@@ -61,6 +67,8 @@ cleanup_dmg_mount() {
         TEMP_DMG_DEVICE=""
     fi
 }
+
+source "${PROJECT_DIR}/Scripts/release_process_guard.zsh"
 
 verify_dmg_volume_icon() {
     local dmg_path="$1"
@@ -225,6 +233,9 @@ fi
 
 # ── Step 1: Version stamp ─────────────────────────────────────────────────────
 echo "[1/10] Updating version stamp..."
+STAMP_BACKUP_DIR="$(mktemp -d /tmp/mimi_release_stamp.XXXXXX)"
+cp "${PROJECT_DIR}/GUI/Resources/curr_version.asc" "${STAMP_BACKUP_DIR}/curr_version.asc"
+cp "${PROJECT_FILE}/project.pbxproj" "${STAMP_BACKUP_DIR}/project.pbxproj"
 RELEASE_VERSION="${VERSION}" Scripts/refreshVersionFile.zsh
 if ! grep -Fq "MARKETING_VERSION = ${VERSION};" "${PROJECT_FILE}/project.pbxproj"; then
     echo "❌ MARKETING_VERSION was not updated to ${VERSION}."
@@ -260,16 +271,7 @@ xattr -cr "${PROJECT_DIR}/GUI"
 
 # ── Step 5: Resolve packages ─────────────────────────────────────────────────
 echo "[5/10] Resolving packages..."
-xcodebuild -resolvePackageDependencies \
-    -skipPackageUpdates \
-    -project "${PROJECT_FILE}" \
-    -scheme "${SCHEME}" \
-    -destination "platform=macOS" \
-    -clonedSourcePackagesDirPath "${PROJECT_DIR}/.spm-checkouts" \
-    2>&1 | tail -5
-
-if [[ ${pipestatus[1]} -ne 0 ]]; then
-    echo "❌ Package resolution failed."
+if ! resolve_release_packages; then
     exit 1
 fi
 
@@ -278,6 +280,7 @@ echo "[6/10] Building ${SCHEME} (${CONFIG}) with Developer ID signing..."
 zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "${BUILD_LOG}"
 xcodebuild clean build \
     -jobs 1 \
+    -skipPackageUpdates \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \
@@ -364,7 +367,6 @@ MOUNT_OUT=$(hdiutil attach -readwrite -noverify -nobrowse "${DMG_RW}" | grep '/V
 DEVICE=$(echo "${MOUNT_OUT}" | head -1 | awk '{print $1}')
 MOUNT_PT=$(echo "${MOUNT_OUT}" | head -1 | sed 's|.*\(/Volumes/.*\)|\1|')
 TEMP_DMG_DEVICE="${DEVICE}"
-trap cleanup_dmg_mount EXIT
 sleep 2
 
 # copy background into hidden .background dir
@@ -406,7 +408,6 @@ apply_dmg_volume_icon "${MOUNT_PT}" "${DMG_VOLUME_ICON}"
 sleep 2
 hdiutil detach "${DEVICE}"
 TEMP_DMG_DEVICE=""
-trap - EXIT
 sleep 1
 
 # convert to compressed read-only DMG
@@ -504,3 +505,4 @@ echo "  GitHub:  https://github.com/senatov/MiMiNavigator/releases/tag/${TAG}"
 echo ""
 echo "  Notarized — no xattr -cr needed! 🎉"
 echo "═══════════════════════════════════════════"
+RELEASE_SUCCEEDED=true
