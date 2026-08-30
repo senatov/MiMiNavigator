@@ -59,7 +59,6 @@ final class AppState {
     private(set) var rightNavigationHistory: PanelNavigationHistory!
     var directorySelectionRestore: [FavPanelSide: [String: URL]] = [.left: [:], .right: [:]]
     var directorySelectionRestoreOrder: [FavPanelSide: [String]] = [.left: [], .right: []]
-    var mountedVolumeObserver: Any?
 
     // MARK: - Autosave
     var configurationAutosaveTask: Task<Void, Never>?
@@ -147,7 +146,6 @@ final class AppState {
         self.multiSelectionManager = MultiSelectionManager(appState: self)
         self.fileActions = FileOperationActions(appState: self)
         self.scanner = DualDirectoryScanner(appState: self)
-        startMountedVolumeObserver()
         applyPreferencesFromSnapshot()
     }
 
