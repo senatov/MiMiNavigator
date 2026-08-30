@@ -20,12 +20,12 @@ struct AutoCompletePopupRow: View {
                 .frame(width: 18, height: 18)
                 .allowsHitTesting(false)
             highlightedName
-                .foregroundStyle(item.isRecent ? Color.accentColor : Color.primary)
+                .foregroundStyle(item.isRecent ? Color.primary.opacity(0.82) : Color.primary)
             Spacer(minLength: 8)
             if item.isRecent {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.caption2)
-                    .foregroundStyle(Color.accentColor.opacity(0.8))
+                    .foregroundStyle(.secondary)
                     .help(L10n.PathInput.recentlyVisited)
             }
             if isSelected {
@@ -56,7 +56,7 @@ struct AutoCompletePopupRow: View {
                 .fill(.primary.opacity(0.055))
         } else if item.isRecent {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.accentColor.opacity(0.065))
+                .fill(.primary.opacity(0.035))
         }
     }
 
@@ -66,7 +66,7 @@ struct AutoCompletePopupRow: View {
                 .fontWeight(.semibold)
             Text(unmatchedSuffix)
         }
-        .font(.system(size: 13))
+        .font(.system(size: 13, weight: item.isRecent ? .medium : .regular))
         .lineLimit(1)
         .truncationMode(.middle)
     }

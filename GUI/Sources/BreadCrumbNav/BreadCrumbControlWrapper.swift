@@ -149,8 +149,8 @@ struct BreadCrumbControlWrapper: View {
         PathAutoCompleteField(
             text: $editedPathStr,
             isFocused: $isTextFieldFocused,
-            recentDirectories: { parentURL in
-                appState.navigationHistory(for: panelSide).recentChildren(of: parentURL)
+            recentDirectories: {
+                appState.navigationHistory(for: panelSide).recentDirectories()
             },
             onNavigate: { path in
                 submitPathUpdate(path)

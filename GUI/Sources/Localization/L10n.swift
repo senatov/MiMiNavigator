@@ -138,6 +138,8 @@ enum L10n {
         static let pathLabel = String(localized: "Path", comment: "Path label")
         static let nameLabel = String(localized: "Name", comment: "Name label")
         static let folders = String(localized: "Folders", comment: "Path autocomplete section title")
+        static let recent = String(localized: "Recent", comment: "Path autocomplete recent section title")
+        static let subdirectories = String(localized: "Subdirectories", comment: "Path autocomplete child directories section title")
         static let select = String(localized: "Select", comment: "Path autocomplete keyboard hint")
         static let complete = String(localized: "Complete", comment: "Path autocomplete keyboard hint")
         static let open = String(localized: "Open", comment: "Path autocomplete keyboard hint")

@@ -202,12 +202,9 @@ final class PanelNavigationHistory {
         return Array(history[start..<end])
     }
 
-    // MARK: - Recent Children
-    func recentChildren(of parentURL: URL, limit: Int = 4) -> [URL] {
-        let parent = parentURL.standardizedFileURL
-        return history.reversed().filter {
-            $0.deletingLastPathComponent().standardizedFileURL == parent
-        }.prefix(limit).map(\.self)
+    // MARK: - Recent Directories
+    func recentDirectories(limit: Int = 4) -> [URL] {
+        Array(history.reversed().prefix(limit))
     }
 
     /// Jump to specific path in history (for dropdown menu)

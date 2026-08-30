@@ -11,13 +11,19 @@ import SwiftUI
 
 // MARK: - Auto Complete Item
 struct AutoCompleteItem: Identifiable, Equatable {
+    enum Section: String {
+        case recent
+        case subdirectory
+    }
+
     let file: CustomFile
-    let isRecent: Bool
+    let section: Section
     let matchPrefix: String
 
-    var id: String { file.id }
+    var id: String { "\(section.rawValue):\(file.id)" }
     var name: String { file.nameStr }
     var isDirectory: Bool { file.isDirectory }
+    var isRecent: Bool { section == .recent }
 }
 
 // MARK: - Auto Complete Popup Model
@@ -69,7 +75,7 @@ final class AutoCompletePopupController {
     private let rowHeight: CGFloat = 34
     private let maxVisibleRows = 8
     private let popupChromeHeight: CGFloat = 76
-    private let recentSeparatorHeight: CGFloat = 7
+    private let sectionHeaderHeight: CGFloat = 25
 
     // MARK: - Show
     func show(
@@ -87,9 +93,9 @@ final class AutoCompletePopupController {
         model.onHighlight = onHighlight
         model.onSelect = onSelect
         let visibleRows = min(items.count, maxVisibleRows)
-        let hasRecentSeparator = items.contains(where: \.isRecent) && items.contains { !$0.isRecent }
-        let separatorHeight = hasRecentSeparator ? recentSeparatorHeight : 0
-        let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight + separatorHeight
+        let sectionCount = Set(items.map(\.section)).count
+        let sectionHeadersHeight = CGFloat(sectionCount) * sectionHeaderHeight
+        let panelHeight = CGFloat(visibleRows) * rowHeight + popupChromeHeight + sectionHeadersHeight
         let panelWidth = max(anchorFrame.width, 420)
         if panel == nil {
             createPanel()
@@ -238,7 +244,7 @@ private struct AutoCompletePopupView: View {
         static let rowCornerRadius: CGFloat = 8
         static let horizontalPadding: CGFloat = 8
         static let rowHeight: CGFloat = 34
-        static let recentSeparatorHeight: CGFloat = 7
+        static let sectionHeaderHeight: CGFloat = 25
     }
 
     var body: some View {
@@ -278,12 +284,8 @@ private struct AutoCompletePopupView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
-                        if index > 0, model.items[index - 1].isRecent, !item.isRecent {
-                            Rectangle()
-                                .fill(.primary.opacity(0.16))
-                                .frame(height: 1)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
+                        if index == 0 || model.items[index - 1].section != item.section {
+                            sectionHeader(for: item.section, isFirst: index == 0)
                         }
                         AutoCompletePopupRow(
                             item: item,
@@ -309,12 +311,25 @@ private struct AutoCompletePopupView: View {
         .frame(
             height: CGFloat(min(model.items.count, 8)) * Layout.rowHeight
                 + 8
-                + (hasRecentSeparator ? Layout.recentSeparatorHeight : 0)
+                + CGFloat(sectionCount) * Layout.sectionHeaderHeight
         )
     }
 
-    private var hasRecentSeparator: Bool {
-        model.items.contains(where: \.isRecent) && model.items.contains { !$0.isRecent }
+    private var sectionCount: Int {
+        Set(model.items.map(\.section)).count
+    }
+
+    private func sectionHeader(for section: AutoCompleteItem.Section, isFirst: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(section == .recent ? L10n.PathInput.recent : L10n.PathInput.subdirectories)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Rectangle()
+                .fill(Color(nsColor: .separatorColor).opacity(isFirst ? 0.45 : 0.8))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 9)
+        .frame(height: Layout.sectionHeaderHeight)
     }
 
     private var footer: some View {

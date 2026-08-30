@@ -13,12 +13,12 @@ import SwiftUI
 struct PathAutoCompleteField: View {
     @Binding var text: String
     @FocusState.Binding var isFocused: Bool
-    let recentDirectories: (URL) -> [URL]
+    let recentDirectories: () -> [URL]
     let onNavigate: (String) -> Void
     let onSubmit: () -> Void
     let onCancel: () -> Void
 
-    @State private var suggestions: [String] = []
+    @State private var suggestions: [AutoCompleteItem] = []
     @State private var showSuggestions = false
     @State private var selectedIndex: Int = 0
     @State private var ghostSuffix: String = ""
@@ -137,8 +137,7 @@ struct PathAutoCompleteField: View {
                 return
             }
             let directoryURL = URL(fileURLWithPath: result.directoryPath)
-            let matches = prioritizeRecent(result.matches, in: directoryURL)
-            applySuggestions(matches, prefix: result.prefix, directoryURL: directoryURL)
+            applySuggestions(result.matches, prefix: result.prefix, directoryURL: directoryURL)
         }
     }
 
@@ -151,43 +150,33 @@ struct PathAutoCompleteField: View {
         return (resolved.expanded as NSString).expandingTildeInPath
     }
 
-    private func prioritizeRecent(_ matches: [String], in directoryURL: URL) -> [String] {
-        let recentRanks = Dictionary(
-            uniqueKeysWithValues: recentDirectories(directoryURL).enumerated().map {
-                ($0.element.standardizedFileURL.path, $0.offset)
-            }
-        )
-        return matches.sorted { lhs, rhs in
-                let lhsRank = recentRanks[directoryURL.appendingPathComponent(lhs).standardizedFileURL.path]
-                let rhsRank = recentRanks[directoryURL.appendingPathComponent(rhs).standardizedFileURL.path]
-                if let lhsRank, let rhsRank { return lhsRank < rhsRank }
-                if lhsRank != nil { return true }
-                if rhsRank != nil { return false }
-                return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
-            }
-    }
-
     private func applySuggestions(_ matches: [String], prefix: String, directoryURL: URL) {
+        let recentItems = recentDirectories().map {
+            AutoCompleteItem(
+                file: CustomFile(name: $0.lastPathComponent, path: $0.path),
+                section: .recent,
+                matchPrefix: ""
+            )
+        }
+        let childItems = matches.map {
+            let url = directoryURL.appendingPathComponent($0)
+            return AutoCompleteItem(
+                file: CustomFile(name: $0, path: url.path),
+                section: .subdirectory,
+                matchPrefix: prefix
+            )
+        }
+        let items = recentItems + childItems
         log.debug(
-            "[PathAutoComplete] suggestions base='\(directoryURL.path)' prefix='\(prefix)' count=\(matches.count)"
+            "[PathAutoComplete] suggestions base='\(directoryURL.path)' prefix='\(prefix)' recent=\(recentItems.count) children=\(childItems.count)"
         )
-        suggestions = matches
+        suggestions = items
         selectedIndex = 0
-        showSuggestions = !matches.isEmpty
+        showSuggestions = !items.isEmpty
 
         updateGhostFromSelection()
 
         if showSuggestions {
-            let recentPaths = Set(recentDirectories(directoryURL).map { $0.standardizedFileURL.path })
-            let items = matches.map {
-                let url = directoryURL.appendingPathComponent($0)
-                return AutoCompleteItem(
-                    file: CustomFile(name: $0, path: url.path),
-                    isRecent: recentPaths.contains(url.standardizedFileURL.path),
-                    matchPrefix: prefix
-                )
-            }
-
             popupController.show(
                 items: items,
                 selectedIndex: 0,
@@ -243,10 +232,12 @@ struct PathAutoCompleteField: View {
         }
         let selected = suggestions[selectedIndex]
         let prefix = currentPrefix()
-        if prefix.isEmpty {
-            ghostSuffix = selected
-        } else if selected.lowercased().hasPrefix(prefix.lowercased()) {
-            ghostSuffix = String(selected.dropFirst(prefix.count))
+        if selected.isRecent {
+            ghostSuffix = ""
+        } else if prefix.isEmpty {
+            ghostSuffix = selected.name
+        } else if selected.name.lowercased().hasPrefix(prefix.lowercased()) {
+            ghostSuffix = String(selected.name.dropFirst(prefix.count))
         } else {
             ghostSuffix = ""
         }
@@ -291,7 +282,7 @@ private extension PathAutoCompleteField {
         await Task.detached(priority: .userInitiated) {
             let fileManager = FileManager.default
             let exactURL = URL(fileURLWithPath: resolvedPath)
-            let browseExactDirectory = !displayPath.hasSuffix("/") && isDirectory(exactURL, fileManager: fileManager)
+            let browseExactDirectory = displayPath.hasSuffix("/") || isDirectory(exactURL, fileManager: fileManager)
             let directoryURL = browseExactDirectory ? exactURL : exactURL.deletingLastPathComponent()
             let prefix = browseExactDirectory || displayPath.hasSuffix("/")
                 ? ""
