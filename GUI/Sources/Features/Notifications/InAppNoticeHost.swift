@@ -84,6 +84,7 @@ private struct NoticeCard: View {
     let historyNumber: Int?
     @State private var center = InAppNoticeCenter.shared
     @State private var colorStore = ColorThemeStore.shared
+    @State private var isActionHovered = false
 
     var body: some View {
         HStack(alignment: notice?.kind == .banner ? .top : .center, spacing: 11) {
@@ -93,10 +94,17 @@ private struct NoticeCard: View {
                 .foregroundStyle(notice?.tint ?? .secondary)
                 .frame(width: 20, height: 20)
             noticeText
-            if let notice, let actionTitle = notice.actionTitle, center.isActionAvailable(for: notice) {
+            if historyNumber == nil, let notice, let actionTitle = notice.actionTitle, center.isActionAvailable(for: notice) {
                 Button(actionTitle) { center.performAction(for: notice) }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .buttonStyle(
+                        DownToolbarGlassButtonStyle(
+                            isHovered: isActionHovered,
+                            horizontalPadding: 8,
+                            verticalPadding: 4,
+                            raised: true
+                        )
+                    )
+                    .onHover { isActionHovered = $0 }
                     .keyboardShortcut(.defaultAction)
             }
             if showsControls, historyNumber == nil, let notice {
@@ -174,7 +182,7 @@ private struct NoticeCard: View {
                         Text("\(parts.first ?? ""):")
                             .foregroundStyle(colorStore.activeTheme.panelText)
                         Text(parts.count > 1 ? parts[1].trimmingCharacters(in: .whitespaces) : "")
-                            .foregroundStyle(colorStore.activeTheme.accentColor)
+                            .foregroundStyle(Color(#colorLiteral(red: 0.039, green: 0.102, blue: 0.42, alpha: 1)))
                             .textSelection(.enabled)
                     }
                 } else {
