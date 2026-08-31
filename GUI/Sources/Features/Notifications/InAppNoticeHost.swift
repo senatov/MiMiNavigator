@@ -24,11 +24,19 @@ struct InAppNoticeHost: View {
             } else if let notice = center.notice(for: scope) {
                 InAppNoticeView(notice: notice)
                     .id(notice.id)
+                    .scaleEffect(
+                        center.automaticDismissalNoticeID == notice.id ? 0.035 : 1,
+                        anchor: .top
+                    )
+                    .offset(y: center.automaticDismissalNoticeID == notice.id ? -34 : 0)
+                    .blur(radius: center.automaticDismissalNoticeID == notice.id ? 2.5 : 0)
+                    .opacity(center.automaticDismissalNoticeID == notice.id ? 0.12 : 1)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.snappy(duration: 0.24), value: center.isHistoryVisible)
         .animation(.snappy(duration: 0.24), value: center.notice(for: scope)?.id)
+        .animation(.easeIn(duration: 0.42), value: center.automaticDismissalNoticeID)
         .padding(.top, DesignTokens.Spacing.group)
         .padding(.horizontal, DesignTokens.Spacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

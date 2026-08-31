@@ -55,6 +55,7 @@ enum AppBuildInfo {
 private struct DevBuildBadge: View {
     let version: String
     @State private var center = InAppNoticeCenter.shared
+    @State private var isRivetPulsing = false
 
     // MARK: - Body
 
@@ -69,8 +70,12 @@ private struct DevBuildBadge: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)),
-                                Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1)),
+                                isRivetPulsing
+                                    ? Color(#colorLiteral(red: 0.12, green: 0.82, blue: 0.55, alpha: 1))
+                                    : Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)),
+                                isRivetPulsing
+                                    ? Color(#colorLiteral(red: 0.00, green: 0.55, blue: 0.34, alpha: 1))
+                                    : Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1)),
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -85,12 +90,20 @@ private struct DevBuildBadge: View {
                             .padding(2)
                     }
                     .shadow(color: Color.black.opacity(0.28), radius: 1.5, y: 1)
+                    .scaleEffect(isRivetPulsing ? 1.14 : 1)
                     .frame(width: 18, height: 18)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+            .task(id: center.historyRivetPulse) {
+                guard center.historyRivetPulse > 0 else { return }
+                withAnimation(.easeOut(duration: 0.12)) { isRivetPulsing = true }
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.28)) { isRivetPulsing = false }
+            }
         }
         .frame(height: 51, alignment: .center)
     }

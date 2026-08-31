@@ -80,6 +80,8 @@ final class InAppNoticeCenter {
     private(set) var visibleNotices: [InAppNotice.Scope: InAppNotice] = [:]
     private(set) var history: [InAppNotice] = []
     private(set) var isHistoryVisible = false
+    private(set) var automaticDismissalNoticeID: UUID?
+    private(set) var historyRivetPulse = 0
     private var queuedNotices: [InAppNotice.Scope: [InAppNotice]] = [:]
     private var dismissalTasks: [InAppNotice.Scope: Task<Void, Never>] = [:]
     private var performedActionIDs: Set<UUID> = []
@@ -138,6 +140,9 @@ final class InAppNoticeCenter {
     func dismiss(scope: InAppNotice.Scope) {
         dismissalTasks[scope]?.cancel()
         dismissalTasks[scope] = nil
+        if automaticDismissalNoticeID == visibleNotices[scope]?.id {
+            automaticDismissalNoticeID = nil
+        }
         visibleNotices[scope] = nil
         showNextIfNeeded(scope: scope)
     }
@@ -191,8 +196,20 @@ final class InAppNoticeCenter {
         dismissalTasks[notice.scope] = Task { @MainActor [weak self] in
             try? await Task.sleep(for: displayDuration)
             guard !Task.isCancelled else { return }
-            self?.dismiss(scope: notice.scope)
+            await self?.automaticallyDismiss(notice)
         }
+    }
+
+    private func automaticallyDismiss(_ notice: InAppNotice) async {
+        guard visibleNotices[notice.scope]?.id == notice.id else { return }
+        automaticDismissalNoticeID = notice.id
+        if notice.scope == .main { historyRivetPulse += 1 }
+        try? await Task.sleep(for: .milliseconds(440))
+        guard !Task.isCancelled, visibleNotices[notice.scope]?.id == notice.id else { return }
+        dismissalTasks[notice.scope] = nil
+        automaticDismissalNoticeID = nil
+        visibleNotices[notice.scope] = nil
+        showNextIfNeeded(scope: notice.scope)
     }
 
     private func showNextIfNeeded(scope: InAppNotice.Scope) {
