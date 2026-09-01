@@ -185,6 +185,13 @@ import LogKit
         scheduleStandaloneWindowOrdering(relativeTo: mainWindow)
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard !flag else { return true }
+        log.info("[MainWindow] reopen requested without visible windows")
+        MainWindowPresenter.shared.open()
+        return true
+    }
+
     private func scheduleStandaloneWindowOrdering(relativeTo mainWindow: NSWindow?) {
         guard !isTerminationCleanupRunning, appState?.isTerminating != true, let mainWindow else { return }
         DispatchQueue.main.async { [weak self, weak mainWindow] in

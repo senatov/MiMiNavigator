@@ -42,6 +42,8 @@ import SwiftUI
 
     // MARK: - Status Item Actions
     @objc private func handleStatusItemClick() {
+        let eventType = NSApp.currentEvent?.type
+        log.info("[MenuBar] status item click type='\(String(describing: eventType))'")
         guard NSApp.currentEvent?.type != .rightMouseUp else {
             toggleStatusPopover()
             return
@@ -55,11 +57,15 @@ import SwiftUI
         NSApp.activate(ignoringOtherApps: true)
         if let window = existingMainWindow {
             raise(window)
+            return
         } else {
-            NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+            let requested = MainWindowPresenter.shared.open()
+            if !requested {
+                let handled = NSApp.sendAction(Selector(("newWindow:")), to: nil, from: nil)
+                log.warning("[MenuBar] AppKit newWindow fallback handled=\(handled)")
+            }
         }
-        DispatchQueue.main.async { [weak self] in self?.raiseExistingMainWindow() }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in self?.raiseExistingMainWindow() }
+        scheduleMainWindowRaise(after: 0.05, remainingAttempts: 4)
     }
 
     private func toggleStatusPopover() {
@@ -143,12 +149,19 @@ import SwiftUI
     }
 
     // MARK: - Raise Main Window
-    private func raiseExistingMainWindow() {
-        guard let window = existingMainWindow else {
-            log.error("[MenuBar] main window unavailable after activation")
-            return
+    private func scheduleMainWindowRaise(after delay: TimeInterval, remainingAttempts: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self else { return }
+            if let window = self.existingMainWindow {
+                self.raise(window)
+                return
+            }
+            guard remainingAttempts > 1 else {
+                log.error("[MenuBar] main window unavailable after SwiftUI open request")
+                return
+            }
+            self.scheduleMainWindowRaise(after: delay * 2, remainingAttempts: remainingAttempts - 1)
         }
-        raise(window)
     }
 
     private func raise(_ window: NSWindow) {
@@ -159,10 +172,18 @@ import SwiftUI
             window.collectionBehavior.insert(.moveToActiveSpace)
         }
         NSApp.activate(ignoringOtherApps: true)
+        NSRunningApplication.current.activate(options: [.activateAllWindows])
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
-        DispatchQueue.main.async { [weak window] in
-            window?.collectionBehavior = originalCollectionBehavior
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak window] in
+            guard let window else { return }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak window] in
+            guard let window else { return }
+            window.collectionBehavior = originalCollectionBehavior
+            log.info("[MenuBar] restored main window Space behavior")
         }
         let screenFrame = window.screen?.visibleFrame ?? .zero
         log.info(

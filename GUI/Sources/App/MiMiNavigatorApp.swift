@@ -36,6 +36,7 @@ struct MiMiNavigatorApp: App {
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) var scenePhase
+    @Environment(\.openWindow) var openWindow
 
     /// App version from CFBundleShortVersionString (e.g. "0.9.4")
     static var appVersion: String {

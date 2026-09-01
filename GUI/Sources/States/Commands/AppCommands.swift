@@ -12,6 +12,14 @@ import SwiftUI
 struct AppCommands: Commands {
     let appState: AppState
 
+    // MARK: - Init
+
+    @MainActor
+    init(appState: AppState, openMainWindow: @escaping () -> Void) {
+        self.appState = appState
+        MainWindowPresenter.shared.install(openWindow: openMainWindow)
+    }
+
     var body: some Commands {
         // Replace default "About" with our custom About window
         CommandGroup(replacing: .appInfo) {

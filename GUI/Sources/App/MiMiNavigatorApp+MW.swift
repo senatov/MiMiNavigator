@@ -18,7 +18,10 @@ extension MiMiNavigatorApp {
         .defaultPosition(.center)
         .windowToolbarStyle(.unifiedCompact)
         .commands {
-            AppCommands(appState: appState)
+            AppCommands(
+                appState: appState,
+                openMainWindow: { openWindow(id: "main") }
+            )
             SettingsCommands()
         }
     }
