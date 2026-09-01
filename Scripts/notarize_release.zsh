@@ -292,7 +292,7 @@ xcodebuild clean build \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
     OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime" \
     CODE_SIGNING_ALLOWED=YES \
-    2>&1 | tee "${BUILD_LOG}" | grep -E "(error:|warning:|BUILD|CLEAN|Signing|CompileSwift)" | tail -40
+    2>&1 | tee "${BUILD_LOG}" | grep -E "(error:|warning:|BUILD|CLEAN|Signing|CompileSwift)"
 
 BUILD_EXIT=${pipestatus[1]}
 if [[ ${BUILD_EXIT} -ne 0 ]]; then

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.7.8] — 2026-09-02
+
+> **Release notes**
+> Reliable Parent-row drops, seamless cached navigation, exact active-panel mirroring, and visible progress during signed Release builds.
+
+### Added
+- **Panel mirroring** — copy the active panel path, view mode, thumbnail size, filter, selection, and complete column arrangement into the opposite panel's active tab.
+- **Parent-row drops** — use the fixed Parent row as a move or copy destination in ordinary local panels.
+
+### Changed
+- **Mirror continuity** — preserve all other tabs, their order, and navigation history while suppressing destination autofit so exact column widths survive mirroring.
+- **Release diagnostics** — stream filtered build activity to the terminal and retain the complete transcript in `/tmp/mimi_notarize_build.log`.
+- **Build metadata** — marketing version updated to `0.9.9.7.8`; build number updated to `145`.
+
+### Fixed
+- **Cached navigation** — load previously visited directory rows before publishing the new path so stale content is never shown under the destination.
+- **Drop resolution** — preserve archive-root behavior and reject filesystem root while resolving local Parent-row destinations.
+- **Release progress** — remove output buffering that made an active signed build appear frozen until `xcodebuild` completed.
+
 ## [0.9.9.7.6] — 2026-08-26
 
 > **Release notes**

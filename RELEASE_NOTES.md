@@ -1,38 +1,37 @@
-# MiMiNavigator v0.9.9.7.7
+# MiMiNavigator v0.9.9.7.8
 
-A focused navigation and release-reliability update that keeps mounted media from disrupting active panels and makes path completion easier to understand.
+A focused panel-workflow update with reliable Parent-row drops, seamless cached navigation, exact panel mirroring, and visible release-build progress.
 
 ## Highlights
 
-- Separated the four most recently selected destinations from actual subdirectories in path autocomplete.
-- Prevented newly mounted local volumes and updater images from automatically focusing and navigating the left panel.
-- Kept mounted media discoverable through the Volumes menu and Finder Sidebar.
-- Hardened the release pipeline against silent SwiftPM resolver stalls.
+- Drop files onto the fixed Parent row in ordinary local panels to move or copy them to the containing directory.
+- Navigate previously visited directories without briefly showing stale rows under the new path.
+- Mirror the active panel path, view mode, thumbnail size, filter, selection, and exact column layout into the opposite panel.
+- Follow Release compilation live in the terminal while retaining the complete diagnostic log.
 
 ## Added
 
-- Show recent destinations in a dedicated autocomplete section with restrained native headers.
-- Preserve section-specific identities when a recent destination is also a child of the entered directory.
+- Preserve the opposite panel's other tabs, tab order, and navigation history when mirroring the active tab.
+- Preserve column order, visibility, and widths without a destination autofit pass overwriting the mirrored layout.
 
 ## Changed
 
-- Keep trailing-slash autocomplete scans inside the explicitly requested directory.
-- Retain mount and unmount observation only in UI surfaces that list available volumes.
-- Record complete package-resolution diagnostics and retry one stalled resolution attempt.
+- Stream filtered signing, compilation, warning, and build-state output during the signed Release build.
+- Keep the full unfiltered build transcript in `/tmp/mimi_notarize_build.log` for diagnostics.
 
 ## Fixed
 
-- Avoid unexpected panel focus and path changes when macOS mounts removable media or temporary updater disk images.
-- Terminate the package resolver process tree after prolonged inactivity or user interruption.
-- Restore generated version files after interrupted or completed release runs.
+- Resolve the fixed Parent row as a local drop destination while preserving archive-root behavior and rejecting filesystem root.
+- Load cached directory content before publishing the destination path so path and rows change together.
+- Avoid a false appearance of a frozen release caused by buffering the last 40 filtered build lines until `xcodebuild` exits.
 
 ## Validation
 
-- The application passes the macOS Debug build on Swift 6.2.
+- Focused navigation and panel-state tests pass on Swift 6.2.
 - The release pipeline performs a clean Developer ID build, signed DMG creation, notarization, stapling, and Gatekeeper verification.
 
 ## Download
 
 The DMG is signed and notarized by Apple and includes an Applications shortcut for drag-to-install.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.5...v0.9.9.7.6
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.7...v0.9.9.7.8
