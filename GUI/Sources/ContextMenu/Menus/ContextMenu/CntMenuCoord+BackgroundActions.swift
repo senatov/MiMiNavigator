@@ -158,12 +158,26 @@ extension CntMenuCoord {
 
     // MARK: - Cross-Panel Operations
 
-    /// Mirror current panel's path to the opposite panel
+    /// Mirror current panel's path and visual configuration to the opposite panel.
     func mirrorPathToOtherPanel(_ panel: FavPanelSide, appState: AppState) {
         let currentPath = getDestinationPath(for: panel, appState: appState)
         let otherPanel: FavPanelSide = panel == .left ? .right : .left
-        log.info("[MirrorPath] '\(currentPath.path)' → panel=\(otherPanel)")
-        navigateTo(currentPath, panel: otherPanel, appState: appState)
+        let sourceMode = appState.tabManager(for: panel).activeViewMode
+        let sourceThumbSize = PanelViewModeStore.shared.thumbSize(for: panel)
+        let sourceLayout = ColumnLayoutStore.shared.snapshot(for: panel)
+        let sourceFilter = panel == .left ? appState.leftFilterQuery : appState.rightFilterQuery
+        let sourceSelectionURL = appState.panel(panel).selectedFile?.urlValue
+        log.info("[MirrorPanel] '\(currentPath.path)' \(panel) → \(otherPanel) mode=\(sourceMode.rawValue)")
+        Task { @MainActor in
+            appState.tabManager(for: otherPanel).setActiveViewMode(sourceMode)
+            PanelViewModeStore.shared.setThumbSize(sourceThumbSize, for: otherPanel)
+            ColumnLayoutStore.shared.apply(sourceLayout, to: otherPanel)
+            if otherPanel == .left { appState.leftFilterQuery = sourceFilter } else { appState.rightFilterQuery = sourceFilter }
+            await appState.navigateToDirectory(currentPath.path, on: otherPanel)
+            ColumnLayoutStore.shared.apply(sourceLayout, to: otherPanel)
+            AutoFitScheduler.shared.preserveMirroredLayout(panel: otherPanel, path: currentPath.path)
+            if let sourceSelectionURL { appState.selectFileByURL(sourceSelectionURL, on: otherPanel) }
+        }
     }
 
     /// Open the first marked directory on the opposite panel

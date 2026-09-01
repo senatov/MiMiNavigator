@@ -174,6 +174,13 @@ final class AutoFitScheduler {
         log.debug("[AutoFit] paused for navigation loading panel=\(panel)")
     }
 
+    func preserveMirroredLayout(panel: FavPanelSide, path: String) {
+        navigationFitTasks[panel]?.cancel()
+        lastAutoFitPath[panel] = path
+        lastAutoFitWidth[panel] = ColumnLayoutStore.shared.layout(for: panel).containerWidth
+        log.debug("[AutoFit] preserved mirrored layout panel=\(panel) path=\(path)")
+    }
+
     func setLoading(_ loading: Bool, panel: FavPanelSide, appState: AppState) {
         if loading {
             loadingPanels.insert(panel)

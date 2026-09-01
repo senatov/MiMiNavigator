@@ -8,6 +8,11 @@ import SwiftUI
 @Observable
 final class ColumnLayoutModel: Codable {
 
+    struct Snapshot: Equatable {
+        let columns: [ColumnSpec]
+        let nameWidth: CGFloat
+    }
+
     static let defaultOrder: [ColumnID] = [
         .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
         .dateCreated, .dateLastOpened, .dateAdded, .group,
@@ -186,6 +191,18 @@ final class ColumnLayoutModel: Codable {
 
     private func incrementLayoutVersion() {
         layoutVersion += 1
+    }
+
+    func makeSnapshot() -> Snapshot {
+        Snapshot(columns: columns, nameWidth: storedNameWidth)
+    }
+
+    @MainActor
+    func applySnapshot(_ snapshot: Snapshot) {
+        columns = snapshot.columns
+        storedNameWidth = snapshot.nameWidth
+        autoFitGeneration += 1
+        incrementLayoutVersion()
     }
 
     private func indexOfColumn(with id: ColumnID) -> Int? {

@@ -63,6 +63,16 @@ final class ColumnLayoutStore {
         side == .left ? left : right
     }
 
+    func snapshot(for side: FavPanelSide) -> ColumnLayoutModel.Snapshot {
+        layout(for: side).makeSnapshot()
+    }
+
+    func apply(_ snapshot: ColumnLayoutModel.Snapshot, to side: FavPanelSide) {
+        layout(for: side).applySnapshot(snapshot)
+        saveToDisk()
+        log.info("[ColumnLayoutStore] mirrored layout to \(side)")
+    }
+
     // MARK: - Save to JSON
     func saveToDisk() {
         let snapshot = LayoutSnapshot(left: left, right: right)
