@@ -31,6 +31,8 @@ extension AppState {
             return
         }
 
+        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+        let cached = await DirectoryContentCache.shared.lookup(newPath, showHidden: showHidden)
         await DirectorySizeService.shared.cancelRequests(under: URL(fileURLWithPath: previousPath))
 
         rememberCurrentSelection(for: panel)
@@ -41,8 +43,7 @@ extension AppState {
         if Self.isMountedVolumeRootPath(newPath) {
             log.info("[Navigate] \(panel): mounted volume root → background refresh")
 
-            let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
-            if let cached = await DirectoryContentCache.shared.lookup(newPath, showHidden: showHidden) {
+            if let cached {
                 log.info("[Navigate] \(panel): mounted volume cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
                 if panel == .left {
                     displayedLeftFiles = cached.files
@@ -86,8 +87,7 @@ extension AppState {
         }
 
         // --- Instant cache hit: show stale listing immediately, refresh in bg ---
-        let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
-        if let cached = await DirectoryContentCache.shared.lookup(newPath, showHidden: showHidden) {
+        if let cached {
             log.info("[Navigate] \(panel): cache HIT (\(cached.files.count) items, stale=\(cached.isStale))")
             if panel == .left { displayedLeftFiles = cached.files } else { displayedRightFiles = cached.files }
             if let f = firstRealFile(in: cached.files) { setSelectedFile(f, for: panel) }

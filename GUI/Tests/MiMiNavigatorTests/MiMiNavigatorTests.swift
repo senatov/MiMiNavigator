@@ -85,4 +85,20 @@ final class MiMiNavigatorTests: XCTestCase {
             directory
         )
     }
+
+    func testLocalParentStripResolvesParentDirectory() {
+        let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
+        XCTAssertEqual(
+            DragDropTargetResolver.parentDestination(currentURL: current),
+            URL(fileURLWithPath: "/Users/senat/Downloads", isDirectory: true)
+        )
+    }
+
+    func testFilesystemRootHasNoParentDropDestination() {
+        XCTAssertNil(
+            DragDropTargetResolver.parentDestination(
+                currentURL: URL(fileURLWithPath: "/", isDirectory: true)
+            )
+        )
+    }
 }

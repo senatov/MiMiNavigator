@@ -208,12 +208,14 @@ final class DragNSView: NSView, NSDraggingSource {
         )
         guard stripFrame.contains(windowPoint) else { return nil }
         let state = appState.archiveState(for: panelSide)
-        guard state.isInsideArchive else { return nil }
         let currentURL = appState.url(for: panelSide)
-        if state.isAtArchiveRoot(currentPath: currentURL.path), let archiveURL = state.archiveURL {
-            return archiveURL.deletingLastPathComponent()
-        }
-        return currentURL.deletingLastPathComponent()
+        let archiveURLAtRoot = state.isInsideArchive && state.isAtArchiveRoot(currentPath: currentURL.path)
+            ? state.archiveURL
+            : nil
+        return DragDropTargetResolver.parentDestination(
+            currentURL: currentURL,
+            archiveURLAtRoot: archiveURLAtRoot
+        )
     }
 
     func updateToParentContact(_ contact: Bool, session: NSDraggingSession) {
