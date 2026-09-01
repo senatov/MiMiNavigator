@@ -10,6 +10,9 @@ import Foundation
 // MARK: - File Operation Outcome Presenter
 @MainActor
 enum FileOperationOutcomePresenter {
+    static let toastDisplayDuration: Duration = .milliseconds(1_600)
+    static let bannerDisplayDuration: Duration = .milliseconds(5_333)
+
     enum Operation {
         case copy
         case move
@@ -74,9 +77,9 @@ enum FileOperationOutcomePresenter {
             message: operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL),
             systemImage: operation.icon,
             tint: .green,
-            actionTitle: undo == nil ? (resultURL == nil ? nil : "Open Result") : "UNDO",
-            isActionAvailable: undo?.isAvailable,
-            action: undo?.action ?? openAction(for: resultURL)
+            displayDuration: toastDisplayDuration,
+            actionTitle: resultURL == nil ? nil : "Open Result",
+            action: openAction(for: resultURL)
         )
     }
 
@@ -141,9 +144,9 @@ enum FileOperationOutcomePresenter {
             message: message,
             systemImage: "xmark.octagon.fill",
             tint: .red,
-            actionTitle: undo == nil ? (retry == nil ? nil : "Retry") : "UNDO",
-            isActionAvailable: undo?.isAvailable,
-            action: undo?.action ?? retry
+            displayDuration: bannerDisplayDuration,
+            actionTitle: retry == nil ? nil : "Retry",
+            action: retry
         )
     }
 
@@ -152,7 +155,8 @@ enum FileOperationOutcomePresenter {
         InAppNoticeCenter.shared.showToast(
             "\(operation.actionTitle) cancelled",
             systemImage: "stop.circle.fill",
-            tint: .secondary
+            tint: .secondary,
+            displayDuration: toastDisplayDuration
         )
     }
 

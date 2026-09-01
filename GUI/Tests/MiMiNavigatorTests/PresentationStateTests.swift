@@ -63,4 +63,11 @@ final class PresentationStateTests: XCTestCase {
         XCTAssertFalse(MediaConversionPhase.cancelled.isActive)
         XCTAssertFalse(MediaConversionPhase.completed(output: URL(fileURLWithPath: "/tmp/out.gif")).isActive)
     }
+
+    // MARK: - File Operation Notices
+
+    func testFileOperationNoticeDurationsAreOneAndAHalfTimesShorter() {
+        XCTAssertEqual(FileOperationOutcomePresenter.toastDisplayDuration, .milliseconds(1_600))
+        XCTAssertEqual(FileOperationOutcomePresenter.bannerDisplayDuration, .milliseconds(5_333))
+    }
 }

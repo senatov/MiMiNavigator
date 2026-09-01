@@ -31,6 +31,7 @@ struct InAppNotice: Identifiable {
     let message: String?
     let systemImage: String
     let tint: Color
+    let displayDuration: Duration?
     let actionTitle: String?
     let isActionAvailable: (() -> Bool)?
     let action: (() -> Void)?
@@ -44,6 +45,7 @@ struct InAppNotice: Identifiable {
         message: String?,
         systemImage: String,
         tint: Color,
+        displayDuration: Duration? = nil,
         actionTitle: String?,
         isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)?
@@ -56,6 +58,7 @@ struct InAppNotice: Identifiable {
         self.message = message
         self.systemImage = systemImage
         self.tint = tint
+        self.displayDuration = displayDuration
         self.actionTitle = actionTitle
         self.isActionAvailable = isActionAvailable
         self.action = action
@@ -99,11 +102,12 @@ final class InAppNoticeCenter {
         scope: InAppNotice.Scope = .main,
         systemImage: String = "checkmark.circle.fill",
         tint: Color = .green,
+        displayDuration: Duration? = nil,
         actionTitle: String? = nil,
         isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
+        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
     }
 
     // MARK: - Present Banner
@@ -113,11 +117,12 @@ final class InAppNoticeCenter {
         scope: InAppNotice.Scope = .main,
         systemImage: String = "exclamationmark.triangle.fill",
         tint: Color = .orange,
+        displayDuration: Duration? = nil,
         actionTitle: String? = nil,
         isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
+        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
     }
 
     // MARK: - Present Error
@@ -192,7 +197,7 @@ final class InAppNoticeCenter {
 
     private func display(_ notice: InAppNotice) {
         visibleNotices[notice.scope] = notice
-        let displayDuration: Duration = notice.kind == .toast ? .seconds(2.4) : .seconds(8)
+        let displayDuration = notice.displayDuration ?? (notice.kind == .toast ? .seconds(2.4) : .seconds(8))
         dismissalTasks[notice.scope] = Task { @MainActor [weak self] in
             try? await Task.sleep(for: displayDuration)
             guard !Task.isCancelled else { return }
