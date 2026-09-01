@@ -14,7 +14,6 @@ extension FileOpsEngine {
     func performDelete(items: [URL]) async throws -> FileOpProgress {
         let totalSize = calculateTotalSize(items: items)
         let progress = FileOpProgress(totalFiles: items.count, totalBytes: totalSize, type: .delete, destination: nil)
-        showPanel(progress: progress, itemCount: items.count, operation: "delete")
         defer { progress.complete() }
         for url in items {
             guard !progress.isCancelled else { break }
