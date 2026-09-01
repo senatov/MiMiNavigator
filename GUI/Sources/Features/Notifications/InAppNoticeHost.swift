@@ -102,18 +102,37 @@ private struct NoticeCard: View {
                 .foregroundStyle(notice?.tint ?? .secondary)
                 .frame(width: 20, height: 20)
             noticeText
-            if historyNumber == nil, let notice, let actionTitle = notice.actionTitle, center.isActionAvailable(for: notice) {
-                Button(actionTitle) { center.performAction(for: notice) }
+            if let notice, let actionTitle = notice.actionTitle, center.isActionAvailable(for: notice) {
+                if historyNumber != nil && actionTitle == "Undo" {
+                    Button { center.performHistoryAction(for: notice) } label: {
+                        Image(systemName: "arrow.uturn.backward")
+                            .font(.system(size: 11, weight: .medium))
+                            .frame(width: 18, height: 16)
+                    }
                     .buttonStyle(
                         DownToolbarGlassButtonStyle(
                             isHovered: isActionHovered,
-                            horizontalPadding: 8,
-                            verticalPadding: 4,
+                            horizontalPadding: 4,
+                            verticalPadding: 3,
                             raised: true
                         )
                     )
                     .onHover { isActionHovered = $0 }
-                    .keyboardShortcut(.defaultAction)
+                    .help("Undo")
+                    .accessibilityLabel("Undo \(notice.title)")
+                } else if historyNumber == nil {
+                    Button(actionTitle) { center.performAction(for: notice) }
+                        .buttonStyle(
+                            DownToolbarGlassButtonStyle(
+                                isHovered: isActionHovered,
+                                horizontalPadding: 8,
+                                verticalPadding: 4,
+                                raised: true
+                            )
+                        )
+                        .onHover { isActionHovered = $0 }
+                        .keyboardShortcut(.defaultAction)
+                }
             }
             if showsControls, historyNumber == nil, let notice {
                 Button { center.dismiss(scope: notice.scope) } label: {
@@ -128,8 +147,8 @@ private struct NoticeCard: View {
         }
         .padding(.leading, 13)
         .padding(.trailing, 9)
-        .padding(.vertical, notice?.kind == .banner ? 11 : 9)
-        .frame(maxWidth: historyNumber == nil && notice?.kind != .banner ? 380 : 520, alignment: .leading)
+        .padding(.vertical, notice?.kind == .banner ? 9 : 6)
+        .frame(maxWidth: historyNumber == nil ? 560 : 520, alignment: .leading)
         .background(
             Color(#colorLiteral(red: 1, green: 0.969, blue: 0.82, alpha: 0.96)),
             in: RoundedRectangle(cornerRadius: 11, style: .continuous)

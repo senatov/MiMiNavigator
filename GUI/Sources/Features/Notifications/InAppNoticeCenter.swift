@@ -168,6 +168,13 @@ final class InAppNoticeCenter {
         notice.action?()
     }
 
+    // MARK: - Perform History Action
+    func performHistoryAction(for notice: InAppNotice) {
+        guard isActionAvailable(for: notice) else { return }
+        performedActionIDs.insert(notice.id)
+        notice.action?()
+    }
+
     func isActionAvailable(for notice: InAppNotice) -> Bool {
         !performedActionIDs.contains(notice.id) && (notice.isActionAvailable?() ?? (notice.action != nil))
     }

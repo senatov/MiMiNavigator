@@ -78,8 +78,9 @@ enum FileOperationOutcomePresenter {
             systemImage: operation.icon,
             tint: .green,
             displayDuration: toastDisplayDuration,
-            actionTitle: resultURL == nil ? nil : "Open Result",
-            action: openAction(for: resultURL)
+            actionTitle: undo == nil ? (resultURL == nil ? nil : "Open Result") : "Undo",
+            isActionAvailable: undo?.isAvailable,
+            action: undo?.action ?? openAction(for: resultURL)
         )
     }
 
@@ -145,8 +146,9 @@ enum FileOperationOutcomePresenter {
             systemImage: "xmark.octagon.fill",
             tint: .red,
             displayDuration: bannerDisplayDuration,
-            actionTitle: retry == nil ? nil : "Retry",
-            action: retry
+            actionTitle: retry == nil ? (undo == nil ? nil : "Undo") : "Retry",
+            isActionAvailable: retry == nil ? undo?.isAvailable : nil,
+            action: retry ?? undo?.action
         )
     }
 
