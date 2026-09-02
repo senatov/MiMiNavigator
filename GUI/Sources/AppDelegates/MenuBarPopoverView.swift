@@ -36,18 +36,13 @@ struct MenuBarPopoverView: View {
 
     private var header: some View {
         HStack(spacing: 11) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.gradient)
-                Image("MenuBarIcon")
-                    .resizable()
-                    .renderingMode(.template)
-                    .foregroundStyle(.white)
-                    .scaledToFit()
-                    .padding(6)
-            }
-            .frame(width: 40, height: 40)
-            .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
+            Image("MenuBarIcon")
+                .resizable()
+                .renderingMode(.template)
+                .foregroundStyle(.primary)
+                .scaledToFit()
+                .padding(5)
+                .frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 2) {
                 Text("MiMiNavigator")
                     .font(.system(size: 14.5, weight: .semibold))
@@ -137,7 +132,7 @@ struct MenuBarPopoverView: View {
                 Label("Quit", systemImage: "power")
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(.red)
-                    .frame(minWidth: 70, minHeight: 27)
+                    .frame(minWidth: 105, minHeight: 41)
                     .background {
                         RoundedRectangle(cornerRadius: 7, style: .continuous)
                             .fill(Color.red.opacity(0.07))
@@ -149,6 +144,7 @@ struct MenuBarPopoverView: View {
                     .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
             }
             .buttonStyle(.plain)
+            .focusable(false)
             .help("Quit MiMiNavigator")
         }
         .padding(.leading, 4)
@@ -202,6 +198,7 @@ struct MenuBarPopoverView: View {
             .frame(minHeight: 31)
         }
         .buttonStyle(.plain)
+        .focusable(false)
     }
 
     private var cardSurface: some View {

@@ -30,7 +30,7 @@ import SwiftUI
         button.imagePosition = .imageOnly
         button.image = makeStatusImage()
         button.toolTip = "MiMiNavigator"
-        button.setAccessibilityLabel("Show MiMiNavigator")
+        button.setAccessibilityLabel("Show or minimize MiMiNavigator")
         item.menu = nil
         item.isVisible = true
         statusItem = item
@@ -49,6 +49,20 @@ import SwiftUI
             return
         }
         closeStatusPopover()
+        toggleApplicationVisibility()
+    }
+
+    private func toggleApplicationVisibility() {
+        if let window = existingMainWindow,
+           window.isVisible,
+           !window.isMiniaturized,
+           window.isKeyWindow,
+           NSApp.isActive
+        {
+            window.miniaturize(nil)
+            log.info("[MenuBar] minimized main window to Dock")
+            return
+        }
         showApplication()
     }
 
