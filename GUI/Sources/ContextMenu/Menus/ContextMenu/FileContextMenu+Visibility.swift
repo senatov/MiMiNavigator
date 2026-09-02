@@ -10,7 +10,7 @@
 extension FileContextMenu {
     // MARK: - Divider Visibility
     func shouldShowDivider(after section: SectionKind) -> Bool {
-        section != .favorites && hasVisibleContent(after: section)
+        section != .cloud && hasVisibleContent(after: section)
     }
 
     // MARK: - Remaining Content
@@ -31,7 +31,7 @@ extension FileContextMenu {
             return true
         case .open, .edit, .operations, .navigation, .info:
             return true
-        case .favorites:
+        case .cloud:
             return true
         }
     }

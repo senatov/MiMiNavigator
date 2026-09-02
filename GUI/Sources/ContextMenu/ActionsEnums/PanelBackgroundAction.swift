@@ -38,9 +38,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
     case mirrorPath
     case openMarkedOnOtherPanel
 
-    // Favorites
-    case addToFavorites
-
     var id: String { rawValue }
 
     var title: String {
@@ -62,7 +59,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .console: return "Console"
         case .mirrorPath: return "Mirror Panel"
         case .openMarkedOnOtherPanel: return "Open Marked Dir on Other Panel"
-        case .addToFavorites: return "Add to Favorites"
         }
     }
 
@@ -85,7 +81,6 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .console: return "apple.terminal.fill"
         case .mirrorPath: return "arrow.left.arrow.right.square"
         case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
-        case .addToFavorites: return "star.fill"
         }
     }
 

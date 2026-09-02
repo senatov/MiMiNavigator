@@ -28,7 +28,12 @@ final class ShareService {
             return
         }
         
-        log.info("\(#function) sharing \(fileURLs.count) item(s): \(fileURLs.map { $0.lastPathComponent })")
+        let inspectedItems = fileURLs.map { url -> String in
+            var isDirectory = ObjCBool(false)
+            let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+            return "'\(url.path)' exists=\(exists) directory=\(isDirectory.boolValue)"
+        }
+        log.info("[Share] presenting exact selected item(s): \(inspectedItems.joined(separator: "; "))")
         
         let picker = NSSharingServicePicker(items: fileURLs)
         

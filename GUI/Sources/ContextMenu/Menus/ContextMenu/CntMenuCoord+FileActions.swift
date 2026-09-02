@@ -6,7 +6,6 @@
 // Description: Handles FileAction dispatching from context menu
 
 import AppKit
-import FavoritesKit
 import FileModelKit
 import Foundation
 
@@ -20,7 +19,7 @@ extension CntMenuCoord {
     /// always operate on the clicked file only.
     func handleFileAction(_ action: FileAction, for file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function + "(\(action), \(file), \(panel))")
-        let batchFiles = appState.filesForOperation(on: panel)
+        let batchFiles = appState.filesForContextAction(clicked: file, on: panel)
         log.debug(
             "[FileActions] action='\(action.rawValue)' file='\(file.nameStr)' path='\(file.urlValue.path)' batch=\(batchFiles.count) panel=\(panel)"
         )
@@ -71,8 +70,6 @@ extension CntMenuCoord {
                 openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
                 activeDialog = .deleteConfirmation(files: batchFiles)
-            case .addToFavorites:
-                addParentToFavorites(file)
             case .mirrorPanel:
                 mirrorPathToOtherPanel(panel, appState: appState)
             case .cloudLinkReadOnly:
@@ -184,15 +181,6 @@ extension CntMenuCoord {
                     appState: appState
                 )
             }
-        }
-    }
-
-    /// For files: add parent directory to favorites, not the file itself
-    private func addParentToFavorites(_ file: CustomFile) {
-        performAsyncMain {
-            let dirURL = file.urlValue.deletingLastPathComponent()
-            UserFavoritesStore.shared.add(url: dirURL)
-            log.info("[Favorites] parent dir added for file '\(file.nameStr)': \(dirURL.path)")
         }
     }
 

@@ -5,7 +5,6 @@
 // Description: Handles MultiSelectionAction dispatching for batch operations
 
 import AppKit
-import FavoritesKit
 import FileModelKit
 import Foundation
 
@@ -30,11 +29,6 @@ extension CntMenuCoord {
                 log.info("[MultiSelectionActionsHandler] copied \(files.count) files")
             case .copyAsPathname:
                 copyPathsToPasteboard(files)
-            case .paste:
-                performAsync { [weak self] in
-                    guard let self = self else { return }
-                    await self.performPaste(to: panel, appState: appState)
-                }
             case .getInfo:
                 GetInfoService.shared.showGetInfo(for: files.map(\.urlValue))
             case .compress:
@@ -47,10 +41,6 @@ extension CntMenuCoord {
                 openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
                 activeDialog = .deleteConfirmation(files: files)
-            case .mirrorPanel:
-                mirrorPathToOtherPanel(panel, appState: appState)
-            case .addToFavorites:
-                addFirstFileDirToFavorites(files: files)
         }
     }
 
@@ -96,13 +86,4 @@ extension CntMenuCoord {
         NSWorkspace.shared.activateFileViewerSelecting(urls)
     }
 
-
-    /// For multi-selection: add containing directory of first file to favorites.
-    /// If first item is a directory — add it directly, otherwise add its parent.
-    private func addFirstFileDirToFavorites(files: [CustomFile]) {
-        guard let first = files.first else { return }
-        let dirURL = first.isDirectory ? first.urlValue : first.urlValue.deletingLastPathComponent()
-        UserFavoritesStore.shared.add(url: dirURL)
-        log.info("[Favorites] multi-sel: added dir '\(dirURL.lastPathComponent)' from \(files.count) items")
-    }
 }

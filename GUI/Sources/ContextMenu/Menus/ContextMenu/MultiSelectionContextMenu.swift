@@ -21,7 +21,6 @@ struct MultiSelectionContextMenu: View {
         Menu {
             menuButton(.cut)
             menuButton(.copy)
-            menuButton(.paste)
             Divider()
             menuButton(.delete)
         } label: {
@@ -47,9 +46,6 @@ struct MultiSelectionContextMenu: View {
         Divider()
         menuButton(.revealInFinder)
         menuButton(.console)
-        Divider()
-        menuButton(.mirrorPanel)
-        menuButton(.addToFavorites)
         Divider()
         menuButton(.getInfo)
     }
@@ -115,16 +111,7 @@ struct MultiSelectionContextMenu: View {
 
     // MARK: - Action State
 
-    private func isActionDisabled(_ action: MultiSelectionAction) -> Bool {
-        switch action {
-        case .paste:
-            let disabled = !ClipboardManager.shared.hasContent
-            log.debug("[MultiSelectionContextMenu] paste availability count=\(markedCount) hasContent=\(!disabled)")
-            return disabled
-        default:
-            return false
-        }
-    }
+    private func isActionDisabled(_: MultiSelectionAction) -> Bool { false }
 }
 
 // MARK: - Preview

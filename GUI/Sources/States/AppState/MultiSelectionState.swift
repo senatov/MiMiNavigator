@@ -47,6 +47,12 @@ extension AppState {
         return []
     }
 
+    // MARK: - Context Action Files
+    func filesForContextAction(clicked file: CustomFile, on panel: FavPanelSide) -> [CustomFile] {
+        guard isMarked(file, on: panel) else { return [file] }
+        return filesForOperation(on: panel)
+    }
+
     /// Count of marked files
     func markedCount(for panel: FavPanelSide) -> Int {
         markedCustomFiles(for: panel).count

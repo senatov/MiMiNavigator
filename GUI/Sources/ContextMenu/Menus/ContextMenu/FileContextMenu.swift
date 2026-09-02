@@ -5,7 +5,6 @@
 // Copyright © 2025-2026 Senatov. All rights reserved.
 // Description: Context menu for files - Finder-style layout with all standard actions
 
-import FavoritesKit
 import FileModelKit
 import SwiftUI
 import UniformTypeIdentifiers
@@ -40,7 +39,7 @@ struct FileContextMenu: View {
         case navigation
         case danger
         case info
-        case favorites
+        case cloud
     }
 
     @MainActor
@@ -85,11 +84,9 @@ struct FileContextMenu: View {
         .edit,
         .operations,
         .navigation,
-        .favorites,
+        .cloud,
         .info,
     ]
-
-    var userFavorites: UserFavoritesStore { .shared }
 
     // Keep submenu data frozen for the lifetime of one context menu instance.
     // File rows share one context menu, so the Launch Services lookup only runs
@@ -131,10 +128,6 @@ struct FileContextMenu: View {
             menuID: resolvedMenuID,
             path: filePath
         )
-    }
-
-    var isFavoriteDirectory: Bool {
-        file.isDirectory && userFavorites.contains(url: file.urlValue)
     }
 
     var isMediaFile: Bool {

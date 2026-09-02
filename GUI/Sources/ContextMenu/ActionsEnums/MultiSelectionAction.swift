@@ -13,7 +13,6 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
     case cut
     case copy
     case copyAsPathname
-    case paste
     case getInfo
 
     // Operations
@@ -27,12 +26,6 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
     // Danger zone
     case delete
 
-    // Cross-panel
-    case mirrorPanel
-
-    // Favorites
-    case addToFavorites
-
     var id: String { rawValue }
 
     /// Human-readable title for each action
@@ -41,15 +34,12 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .cut: return "Cut"
         case .copy: return "Copy"
         case .copyAsPathname: return "Copy as Pathname"
-        case .paste: return "Paste"
         case .getInfo: return "Get Info"
         case .compress: return "Compress"
         case .share: return "Share..."
         case .revealInFinder: return "Show in Finder"
         case .console: return "Console"
         case .delete: return "Move to Trash"
-        case .mirrorPanel: return "Mirror Panel"
-        case .addToFavorites: return "Add to Favorites"
         }
     }
 
@@ -59,15 +49,12 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
         case .copyAsPathname: return "link.circle.fill"
-        case .paste: return "doc.on.clipboard"
         case .getInfo: return "info.circle"
         case .compress: return "archivebox"
         case .share: return "square.and.arrow.up"
         case .revealInFinder: return "folder"
         case .console: return "apple.terminal.fill"
         case .delete: return "trash"
-        case .mirrorPanel: return "arrow.left.arrow.right.square"
-        case .addToFavorites: return "star.fill"
         }
     }
 
@@ -77,10 +64,8 @@ enum MultiSelectionAction: String, CaseIterable, Identifiable {
         case .cut: return "⌘X"
         case .copy: return "⌘C"
         case .copyAsPathname: return "⌥⌘C"
-        case .paste: return "⌘V"
         case .getInfo: return "⌘I"
         case .delete: return "⌘⌫"
-        case .mirrorPanel: return "⌘="
         default: return nil
         }
     }

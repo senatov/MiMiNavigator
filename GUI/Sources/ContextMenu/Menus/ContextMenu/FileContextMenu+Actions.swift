@@ -35,50 +35,13 @@ extension FileContextMenu {
         onAction(action)
     }
 
-    // MARK: - Favorites
-    func addDirectoryToFavorites() {
-        let snapshot = makeSnapshot()
-        FileContextMenuLog.logFavoriteAdd(prefix: debugPrefix, snapshot: snapshot)
-        performAction(.addToFavorites)
-    }
-
-    func removeDirectoryFromFavorites() {
-        let snapshot = makeSnapshot()
-        FileContextMenuLog.logFavoriteRemove(prefix: debugPrefix, snapshot: snapshot)
-        guard isFavoriteDirectory else {
-            logFavoriteRemovalSkipped(path: snapshot.path)
-            return
-        }
-        userFavorites.remove(url: file.urlValue)
-        FileContextMenuLog.logFavoriteRemoved(path: snapshot.path)
-    }
-
-    func logFavoriteRemovalSkipped(path: String) {
-        log.warning("[Favorites] remove skipped")
-        log.warning("[Favorites] reason='directory is not in favorites'")
-        log.warning("[Favorites] path='\(path)'")
-    }
-
     // MARK: - State
-    var isAddToFavoritesDisabled: Bool {
-        !canAddToFavorites()
-    }
-
-    func canAddToFavorites() -> Bool {
-        if file.isDirectory {
-            return !isFavoriteDirectory
-        }
-        return true
-    }
-
     func isActionDisabled(_ action: FileAction) -> Bool {
         switch action {
         case .paste:
             let disabled = !ClipboardManager.shared.hasContent
             log.debug("[FileContextMenu] paste availability file='\(file.nameStr)' hasContent=\(!disabled)")
             return disabled
-        case .addToFavorites:
-            return isAddToFavoritesDisabled
         default:
             return false
         }

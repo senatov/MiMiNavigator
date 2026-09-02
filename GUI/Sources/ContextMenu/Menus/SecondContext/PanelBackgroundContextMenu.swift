@@ -84,14 +84,6 @@ struct PanelBackgroundContextMenu: View {
             if hasMarkedDirectories {
                 menuButton(.openMarkedOnOtherPanel)
             }
-
-            Divider()
-            
-            // ═══════════════════════════════════════════
-            // SECTION 6: Favorites
-            // ═══════════════════════════════════════════
-            menuButton(.addToFavorites)
-
         }
     }
     

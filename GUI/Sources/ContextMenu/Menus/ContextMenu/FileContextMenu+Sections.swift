@@ -29,7 +29,7 @@ extension FileContextMenu {
         case .navigation: navigationSection
         case .danger: dangerSection
         case .info: infoSection
-        case .favorites: favoritesSection
+        case .cloud: cloudActionsSection
         }
     }
 
@@ -102,11 +102,9 @@ extension FileContextMenu {
         menuButton(.getInfo)
     }
 
-    // MARK: - Favorites
+    // MARK: - Cloud Actions
     @ViewBuilder
-    var favoritesSection: some View {
-        menuButton(.mirrorPanel)
-        menuButton(.addToFavorites)
+    var cloudActionsSection: some View {
         cloudLinkSection
     }
 }

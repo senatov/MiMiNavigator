@@ -158,13 +158,10 @@ struct DirectoryContextMenu: View {
     @ViewBuilder
     private var moreFolderOperationsMenu: some View {
         Menu {
-            menuButton(.newFolder)
-            menuButton(.newFile)
             menuButton(.rename)
             Divider()
             menuButton(.cut)
             menuButton(.copy)
-            menuButton(.paste)
             menuButton(.duplicate)
             Divider()
             menuButton(.createLink)
@@ -198,7 +195,6 @@ struct DirectoryContextMenu: View {
     @ViewBuilder
     private var crossPanelSection: some View {
         menuButton(.openOnOtherPanel)
-        menuButton(.mirrorPanel)
     }
 
     @ViewBuilder

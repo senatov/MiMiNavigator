@@ -14,13 +14,10 @@ extension FileContextMenu {
     @ViewBuilder
     var moreFileOperationsMenu: some View {
         Menu {
-            menuButton(.newFolder)
-            menuButton(.newFile)
             menuButton(.rename)
             Divider()
             menuButton(.cut)
             menuButton(.copy)
-            menuButton(.paste)
             menuButton(.duplicate)
             Divider()
             menuButton(.createLink)

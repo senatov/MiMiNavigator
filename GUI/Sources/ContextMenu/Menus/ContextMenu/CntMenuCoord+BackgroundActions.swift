@@ -6,7 +6,6 @@
 // Description: Handles PanelBackgroundAction dispatching from panel empty area context menu
 
 import AppKit
-import FavoritesKit
 import FileModelKit
 import Foundation
 
@@ -48,8 +47,6 @@ extension CntMenuCoord {
                 openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
             case .copyAsPathname:
                 copyCurrentPathToPasteboard(currentPath)
-            case .addToFavorites:
-                addCurrentDirToFavorites(currentPath)
         }
     }
 
@@ -210,13 +207,6 @@ extension CntMenuCoord {
         pasteboard.clearContents()
         pasteboard.setString(url.path, forType: .string)
         log.info("[Background] copied path to clipboard: '\(url.path)'")
-    }
-
-
-    /// Add current directory to favorites
-    private func addCurrentDirToFavorites(_ url: URL) {
-        UserFavoritesStore.shared.add(url: url)
-        log.info("[Favorites] background: added current dir '\(url.lastPathComponent)'")
     }
 
 
