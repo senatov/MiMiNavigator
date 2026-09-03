@@ -16,7 +16,7 @@ Thank you for your interest in contributing to MiMiNavigator! This document prov
 
 ### Requirements
 
-- **macOS**: 26+ (Apple Silicon recommended)
+- **macOS**: 26+ on Apple Silicon (arm64 required)
 - **Xcode**: Latest version with Swift 6.2 support
 - **Git**: Latest stable version
 

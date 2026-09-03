@@ -55,6 +55,7 @@ xcodebuild clean build \
     -project "${PROJECT_FILE}" \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \
+    ARCHS=arm64 \
     CODE_SIGNING_ALLOWED=NO \
     2>&1 | tee /tmp/mimi_build.log | grep -E "(error:|warning:|BUILD|CLEAN)" | tail -30
 

@@ -24,6 +24,7 @@ xcodebuild build \
     -scheme "${SCHEME}" \
     -configuration "${CONFIG}" \
     -destination "platform=macOS" \
+    ARCHS=arm64 \
     CODE_SIGNING_ALLOWED=NO \
     2>&1 | tee "${BUILD_LOG}" | grep -E "(error:|warning:|BUILD)" | tail -60
 

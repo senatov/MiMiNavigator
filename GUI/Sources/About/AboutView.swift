@@ -77,7 +77,7 @@ struct AboutView: View {
         VStack(spacing: 6) {
             infoRow(label: "Version", value: version)
             infoRow(label: "System", value: macOSVersion)
-            infoRow(label: "Architecture", value: architectureString)
+            infoRow(label: "Architecture", value: "Apple Silicon (arm64)")
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 24)
@@ -94,16 +94,6 @@ struct AboutView: View {
             Spacer()
         }
         .font(.system(size: 12))
-    }
-
-    private var architectureString: String {
-        #if arch(arm64)
-            return "Apple Silicon (arm64)"
-        #elseif arch(x86_64)
-            return "Intel (x86_64)"
-        #else
-            return "Unknown"
-        #endif
     }
 
     // MARK: - Links Section

@@ -287,6 +287,7 @@ xcodebuild clean build \
     -destination "platform=macOS" \
     -derivedDataPath "${BUILD_DIR}" \
     -clonedSourcePackagesDirPath "${PROJECT_DIR}/.spm-checkouts" \
+    ARCHS=arm64 \
     CODE_SIGN_IDENTITY="${SIGN_IDENTITY}" \
     CODE_SIGN_STYLE=Manual \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
@@ -309,6 +310,12 @@ if [[ ! -d "${APP}" ]]; then
     echo "❌ .app not found at ${APP}"
     exit 1
 fi
+APP_ARCHS=$(lipo -archs "${APP}/Contents/MacOS/MiMiNavigator")
+if [[ "${APP_ARCHS}" != "arm64" ]]; then
+    echo "❌ Unexpected app architectures: ${APP_ARCHS}"
+    exit 1
+fi
+echo "   Architecture: ${APP_ARCHS}"
 echo "[7/10] Verifying code signature..."
 codesign --verify --deep --strict "${APP}" 2>&1 && echo "   ✅ Signature valid" || {
     echo "❌ Signature verification failed!"
