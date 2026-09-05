@@ -71,7 +71,7 @@ extension CntMenuCoord {
             if deleteSource {
                 for url in sourceURLs {
                     do {
-                        try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+                        _ = try await FileRecycleService.recycle(url)
                         log.debug("[Pack] trashed source: \(url.lastPathComponent)")
                     } catch {
                         log.warning("[Pack] trash failed: \(url.lastPathComponent) — \(error.localizedDescription)")

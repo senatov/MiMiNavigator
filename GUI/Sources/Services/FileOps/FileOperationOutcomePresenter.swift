@@ -120,15 +120,17 @@ enum FileOperationOutcomePresenter {
                 copiedURLs.allSatisfy { FileManager.default.fileExists(atPath: $0.path) }
             },
             action: {
-                do {
-                    for copiedURL in copiedURLs {
-                        try FileManager.default.trashItem(at: copiedURL, resultingItemURL: nil)
+                Task { @MainActor in
+                    do {
+                        for copiedURL in copiedURLs {
+                            _ = try await FileRecycleService.recycle(copiedURL)
+                        }
+                        refresh()
+                        log.info("[FileOps] undo removed \(copiedURLs.count) copied item(s)")
+                    } catch {
+                        log.error("[FileOps] undo failed: \(error.localizedDescription)")
+                        InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
                     }
-                    refresh()
-                    log.info("[FileOps] undo removed \(copiedURLs.count) copied item(s)")
-                } catch {
-                    log.error("[FileOps] undo failed: \(error.localizedDescription)")
-                    InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
                 }
             }
         )

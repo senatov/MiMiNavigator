@@ -47,7 +47,7 @@ extension DragDropManager {
                     recursive: isDirectory
                 )
                 if kind == .move {
-                    try moveLocalItemToTrash(file.urlValue)
+                    try await moveLocalItemToTrash(file.urlValue)
                 }
                 panel.appendLog(isDirectory ? "📁 \(file.nameStr)/" : "📄 \(file.nameStr)")
                 log.info("[DnD] uploaded '\(file.nameStr)' → '\(destinationDisplayName(destination))'")
@@ -151,9 +151,8 @@ extension DragDropManager {
         return message
     }
 
-    private func moveLocalItemToTrash(_ url: URL) throws {
-        var resultingURL: NSURL?
-        try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+    private func moveLocalItemToTrash(_ url: URL) async throws {
+        _ = try await FileRecycleService.recycle(url)
     }
 
     private func stagingDownloadURL(for finalURL: URL) -> URL {

@@ -44,7 +44,7 @@ File operations report concise animated messages in the active window. The Test 
 
 Search by name, content, size, or date, including inside archives. Focused presets help find large forgotten files, empty folders, and recognizable leftovers from removed applications. Results remain actionable, so several items can be reviewed and processed together.
 
-**MiMiNavigator never permanently deletes files or directories.** Every removal goes only and exclusively to the macOS Trash, where it remains recoverable. What you do with those files afterwards—if you are paranoid or enemies are watching you—is none of MiMiNavigator's business.
+**MiMiNavigator uses the appropriate recoverable deletion path whenever one is available.** Local files go to the macOS Trash, while File Provider locations such as OneDrive use Finder-compatible recycling so the provider can move items to its remote recycle bin. Protocol-based remote servers that do not expose a trash facility may delete items directly after the normal MiMiNavigator confirmation.
 
 ### Batch rename and archives
 

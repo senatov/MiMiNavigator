@@ -26,15 +26,12 @@ extension FileOpsService {
                 throw CocoaError(.fileWriteNoPermission)
             }
             do {
-                var resultingURL: NSURL?
                 if AppState.isAppManagedNetworkMountPath(file) {
                     try fileManager.removeItem(at: file)
-                    resultingURL = nil
                 } else {
-                    try fileManager.trashItem(at: file, resultingItemURL: &resultingURL)
-                }
-                if let trashURL = resultingURL as URL? {
-                    trashedURLs.append(trashURL)
+                    if let trashURL = try await FileRecycleService.recycle(file) {
+                        trashedURLs.append(trashURL)
+                    }
                 }
                 log.info("[FileOps] deleted '\(file.lastPathComponent)'")
             } catch {

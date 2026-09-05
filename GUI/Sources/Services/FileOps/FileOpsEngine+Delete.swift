@@ -50,7 +50,7 @@ extension FileOpsEngine {
         let isAppManagedItem = AppState.isAppManagedNetworkMountPath(url)
         let result = isAppManagedItem
             ? await deleteAppManagedItem(url: url, progress: progress).map { nil }
-            : await Self.trashItemOffMainActor(url)
+            : await recycleItem(url)
         switch result {
         case .success(let trashedURL):
             guard !progress.isCancelled else { return }
@@ -90,15 +90,11 @@ extension FileOpsEngine {
         }.value
     }
 
-    private nonisolated static func trashItemOffMainActor(_ url: URL) async -> Result<URL?, Error> {
-        await Task.detached(priority: .userInitiated) {
-            do {
-                var resultingURL: NSURL?
-                try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
-                return .success(resultingURL as URL?)
-            } catch {
-                return .failure(error)
-            }
-        }.value
+    private func recycleItem(_ url: URL) async -> Result<URL?, Error> {
+        do {
+            return .success(try await FileRecycleService.recycle(url))
+        } catch {
+            return .failure(error)
+        }
     }
 }
