@@ -17,12 +17,12 @@ struct ScrollBarJumpButtons: View {
 
     private enum Metrics {
         static let minimumScrollableRows = 50
-        static let buttonWidthInset: CGFloat = 2
-        static let cornerRadius: CGFloat = 4
+        static let buttonWidthInset: CGFloat = 1
+        static let cornerRadius: CGFloat = 3
         static let borderOpacity: Double = 0.16
         static let borderWidth: CGFloat = 0.5
         static let minimumButtonWidth: CGFloat = 12
-        static let symbolSize: CGFloat = 9
+        static let symbolSize: CGFloat = 8
     }
 
     private var shouldShowButtons: Bool {

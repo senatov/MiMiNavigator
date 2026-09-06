@@ -86,7 +86,7 @@ struct FilePanelView: View {
             contentSection
             SelectionStatusBar(panelSide: viewModel.panelSide)
         }
-        .padding(.horizontal, DesignTokens.grid)
+        .padding(.horizontal, DesignTokens.grid / 2)
         .padding(.vertical, DesignTokens.grid - 2)
         .background(panelBackground)
         .frame(width: calculatedWidth)

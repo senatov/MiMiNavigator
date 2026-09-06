@@ -25,8 +25,8 @@ enum PanelDividerMetrics {
     }
 
     // MARK: - Layout
-    /// Invisible hit zone for comfortable drag interaction
-    static let hitAreaWidth: CGFloat = 24
+    /// Compact divider column that remains easy to target with a pointer.
+    static let hitAreaWidth: CGFloat = 12
 
     /// Default divider visual thickness (inactive)
     static let normalWidth: CGFloat = 1.5
@@ -37,8 +37,8 @@ enum PanelDividerMetrics {
     /// Minimal allowed panel width to avoid layout collapse
     static let minPanelWidth: CGFloat = 80
 
-    static let grooveWidth: CGFloat = 6
-    static let handleWidth: CGFloat = 16
+    static let grooveWidth: CGFloat = 4
+    static let handleWidth: CGFloat = 12
     static let handleHeight: CGFloat = 34
     static let handleCornerRadius: CGFloat = 6
     static let glyphWidth: CGFloat = 1.25

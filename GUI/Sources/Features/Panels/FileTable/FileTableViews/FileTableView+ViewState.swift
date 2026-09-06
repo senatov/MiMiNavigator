@@ -93,7 +93,7 @@ extension FileTableView {
     var styledContentView: some View {
         contentView
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.leading, 6)
+            .padding(.leading, 3)
             .padding(.trailing, ScrollBarConfig.trailingPadding)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(panelBorder)
