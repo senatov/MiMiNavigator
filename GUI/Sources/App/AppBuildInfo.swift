@@ -60,7 +60,7 @@ private struct DevBuildBadge: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: -8) {
+        VStack(spacing: -7) {
             badgeLabel
             Button {
                 center.toggleHistory()
@@ -81,17 +81,17 @@ private struct DevBuildBadge: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 13, height: 13)
+                    .frame(width: 11, height: 11)
                     .overlay { Circle().strokeBorder(Color.black.opacity(0.28), lineWidth: 0.75) }
                     .overlay(alignment: .topLeading) {
                         Circle()
                             .fill(Color.white.opacity(0.72))
-                            .frame(width: 4, height: 4)
-                            .padding(2)
+                            .frame(width: 3.5, height: 3.5)
+                            .padding(1.75)
                     }
                     .shadow(color: Color.black.opacity(0.28), radius: 1.5, y: 1)
                     .scaleEffect(isRivetPulsing ? 1.14 : 1)
-                    .frame(width: 18, height: 18)
+                    .frame(width: 17, height: 17)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -105,27 +105,27 @@ private struct DevBuildBadge: View {
                 withAnimation(.easeInOut(duration: 0.28)) { isRivetPulsing = false }
             }
         }
-        .frame(height: 51, alignment: .center)
+        .frame(height: 46, alignment: .center)
     }
 
     private var badgeLabel: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 8) {
             DevBuildCatMedallion()
             VStack(alignment: .leading, spacing: 1) {
                 Text("TEST BUILD")
                     .font(.system(size: 10, weight: .semibold, design: .default))
-                    .tracking(0.55)
+                    .tracking(0.48)
                     .foregroundStyle(.primary.opacity(0.82))
                 Text(version)
                     .font(.system(size: 9.5, weight: .regular, design: .default))
                     .monospacedDigit()
-                    .foregroundStyle(.primary.opacity(0.72))
+                    .foregroundStyle(.primary.opacity(0.66))
                     .lineLimit(1)
             }
         }
-        .padding(.leading, 7)
-        .padding(.trailing, 11)
-        .padding(.vertical, 5)
+        .padding(.leading, 6)
+        .padding(.trailing, 9)
+        .padding(.vertical, 3)
         .background { DevBuildBadgeSurface() }
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .help("Current test build version")
@@ -139,9 +139,9 @@ private struct DevBuildCatMedallion: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(.ultraThickMaterial)
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.white, Color.white.opacity(0.92), Color.blue.opacity(0.035)],
@@ -150,30 +150,30 @@ private struct DevBuildCatMedallion: View {
                     )
                 )
             Text("🐈")
-                .font(.system(size: 19))
+                .font(.system(size: 17))
                 .fixedSize()
                 .offset(y: -0.5)
         }
-        .frame(width: 31, height: 31)
+        .frame(width: 27, height: 27)
         .overlay {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .strokeBorder(
                     LinearGradient(
                         colors: [Color.white, Color.blue.opacity(0.22), Color.black.opacity(0.10)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: 1.25
+                    lineWidth: 1
                 )
         }
         .overlay(alignment: .top) {
             Capsule()
                 .fill(Color.white.opacity(0.75))
-                .frame(width: 18, height: 0.8)
+                .frame(width: 15, height: 0.75)
                 .padding(.top, 1.5)
         }
         .compositingGroup()
-        .shadow(color: Color.black.opacity(0.18), radius: 2.25, x: 0, y: 1.75)
+        .shadow(color: Color.black.opacity(0.14), radius: 1.75, x: 0, y: 1.25)
     }
 }
 
@@ -184,14 +184,14 @@ private struct DevBuildBadgeSurface: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.blue.opacity(0.13))
-                .offset(y: 2.25)
-                .shadow(color: Color.black.opacity(0.16), radius: 4, x: 0, y: 3)
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.blue.opacity(0.10))
+                .offset(y: 1.5)
+                .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 2)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [Color.white.opacity(0.92), Color.white.opacity(0.62), Color.blue.opacity(0.055)],
@@ -201,7 +201,7 @@ private struct DevBuildBadgeSurface: View {
                         )
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(
                             RadialGradient(
                                 colors: [Color.white.opacity(0.52), Color.white.opacity(0.10), Color.clear],
@@ -212,14 +212,14 @@ private struct DevBuildBadgeSurface: View {
                         )
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: [Color.white, Color.blue.opacity(0.25), Color.blue.opacity(0.56)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1
+                            lineWidth: 0.75
                         )
                 }
                 .overlay(alignment: .top) {

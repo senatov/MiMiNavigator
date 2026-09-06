@@ -110,11 +110,11 @@ struct ToolbarButtonGroup<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             content()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(
@@ -126,10 +126,10 @@ struct ToolbarButtonGroup<Content: View>: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(Color.black.opacity(0.15), lineWidth: 0.65)
+                        .strokeBorder(Color.black.opacity(0.13), lineWidth: 0.6)
                 }
         )
-        .shadow(color: Color.black.opacity(0.08), radius: 1, y: 1)
+        .shadow(color: Color.black.opacity(0.065), radius: 1, y: 1)
         .offset(y: 6)
     }
 }

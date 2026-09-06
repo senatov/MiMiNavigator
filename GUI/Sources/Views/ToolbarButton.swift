@@ -21,6 +21,7 @@ private struct ToolbarIcon: View {
             .symbolRenderingMode(.hierarchical)
             .font(.system(size: 15, weight: .medium))
             .foregroundStyle(color ?? (active ? Color.accentColor : Color.primary))
+            .frame(width: 20, height: 20)
     }
 }
 
@@ -196,7 +197,7 @@ struct FeedbackToolbarButton: View {
         Button(action: action) {
             Text("💬")
                 .font(.system(size: 15, weight: .medium, design: .rounded))
-                .frame(width: 24, height: 22)
+                .frame(width: 22, height: 20)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(
