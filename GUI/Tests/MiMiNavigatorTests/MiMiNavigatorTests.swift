@@ -10,7 +10,6 @@ import XCTest
 @testable import MiMiNavigator
 
 final class MiMiNavigatorTests: XCTestCase {
-    private let cloudLinkAliasCharacters = Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before invocation of each test method in class.
@@ -55,15 +54,22 @@ final class MiMiNavigatorTests: XCTestCase {
 
     // MARK: - Cloud Link Alias
 
-    func testCloudLinkAliasesAreLongRandomAndURLSafe() {
-        let aliases = (0..<1_000).map { _ in CloudLinkShortener.makeAlias() }
-        XCTAssertEqual(Set(aliases).count, aliases.count)
-        for alias in aliases {
+    func testCloudLinkAliasesUseThreeShortLatinWords() {
+        let latinLetters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz")
+        let aliasLetters = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        XCTAssertEqual(CloudLinkAliasWords.standard.count, 1_295)
+        XCTAssertEqual(CloudLinkAliasWords.compact.count, 82)
+        for _ in 0..<1_000 {
+            let words = CloudLinkShortener.makeAliasWords()
+            XCTAssertTrue((1..<6).contains(words.first.count))
+            XCTAssertTrue((1..<6).contains(words.second.count))
+            XCTAssertTrue((1..<4).contains(words.third.count))
+            XCTAssertTrue([words.first, words.second, words.third].allSatisfy {
+                $0.unicodeScalars.allSatisfy(latinLetters.contains)
+            })
+            let alias = CloudLinkShortener.makeAlias()
             XCTAssertTrue(alias.hasPrefix("mimiNavi"))
-            XCTAssertEqual(alias.count, 16)
-            let suffix = String(alias.dropFirst("mimiNavi".count))
-            XCTAssertEqual(suffix.count, 8)
-            XCTAssertTrue(suffix.allSatisfy(cloudLinkAliasCharacters.contains))
+            XCTAssertTrue(alias.unicodeScalars.allSatisfy(aliasLetters.contains))
         }
     }
 

@@ -13,8 +13,6 @@ enum CloudLinkShortener {
     private static let endpoint = "https://api.tinyurl.com/create"
     private static let shortURLPrefix = "https://tinyurl.com/"
     private static let aliasPrefix = "mimiNavi"
-    private static let aliasSuffixLength = 8
-    private static let aliasCharacters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     private static let maximumAttempts = 8
 
     // MARK: - Shorten
@@ -101,9 +99,24 @@ enum CloudLinkShortener {
     // MARK: - Alias
 
     static func makeAlias() -> String {
+        let words = makeAliasWords()
+        return aliasPrefix + capitalized(words.first) + capitalized(words.second) + capitalized(words.third)
+    }
+
+    // MARK: - Alias Words
+
+    static func makeAliasWords() -> (first: String, second: String, third: String) {
         var generator = SystemRandomNumberGenerator()
-        let suffix = String((0..<aliasSuffixLength).map { _ in aliasCharacters.randomElement(using: &generator) ?? "0" })
-        return aliasPrefix + suffix
+        let first = CloudLinkAliasWords.standard.randomElement(using: &generator) ?? "apple"
+        let second = CloudLinkAliasWords.standard.randomElement(using: &generator) ?? "river"
+        let third = CloudLinkAliasWords.compact.randomElement(using: &generator) ?? "fox"
+        return (first, second, third)
+    }
+
+    // MARK: - Capitalized
+
+    private static func capitalized(_ word: String) -> String {
+        word.prefix(1).uppercased() + String(word.dropFirst())
     }
 }
 

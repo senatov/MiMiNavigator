@@ -37,24 +37,16 @@ https://api.tinyurl.com/create
 It generates aliases in this format:
 
 ```text
-mimiNavi<8 random Base62 characters>
+mimiNavi<word shorter than 6 letters><word shorter than 6 letters><word shorter than 4 letters>
 ```
 
 Example:
 
 ```text
-https://tinyurl.com/mimiNavi5Jzui456
+https://tinyurl.com/mimiNaviMapleRiverFox
 ```
 
-The suffix alphabet is:
-
-```text
-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
-```
-
-The 8-character `mimiNavi` prefix plus an 8-character Base62 suffix gives approximately 48 bits of random alias space. Do not replace the suffix with counters, timestamps, filenames, short UUID prefixes, or another predictable value.
-
-Keep punctuation out of the suffix. Characters such as `!` may be legal in some URL contexts but introduce escaping and interoperability risks in clipboard, browser, messaging, and API paths.
+The bundled words were sourced from the online EFF Short Wordlist #1 and filtered to lowercase ASCII words with at most five letters. The third word is additionally filtered to at most three letters. Each word is chosen locally and independently with `SystemRandomNumberGenerator`, title-cased, and concatenated without separators. This keeps aliases readable while allowing only Latin letters and avoiding network dependency or URL escaping.
 
 ## Failure Handling
 
@@ -98,11 +90,11 @@ Never log access tokens, refresh tokens, authorization codes, PKCE verifiers, or
 
 ## Regression Coverage
 
-`MiMiNavigatorTests.testCloudLinkAliasesAreLongRandomAndURLSafe` generates 1,000 aliases and verifies:
+`MiMiNavigatorTests.testCloudLinkAliasesUseThreeShortLatinWords` generates 1,000 samples and verifies:
 
 - Every alias starts with `mimiNavi`.
-- Every alias has an 8-character suffix and a 16-character total length.
-- Every suffix contains only Base62 characters.
-- The generated sample contains no duplicates.
+- The first two words contain one to five lowercase Latin letters.
+- The third word contains one to three lowercase Latin letters.
+- The resulting alias contains letters only.
 
 Provider integration still requires manual validation with mounted desktop clients and valid OAuth accounts. Unit tests must not create real public short links because doing so leaves external service state behind.
