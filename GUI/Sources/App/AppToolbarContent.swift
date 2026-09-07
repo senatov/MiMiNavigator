@@ -97,7 +97,6 @@ private struct AppWindowTitle: View {
                 .foregroundStyle(.secondary)
         }
         .fixedSize()
-        .offset(y: 6)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("MiMiNavigator version \(version)")
     }
@@ -130,7 +129,6 @@ struct ToolbarButtonGroup<Content: View>: View {
                 }
         )
         .shadow(color: Color.black.opacity(0.065), radius: 1, y: 1)
-        .offset(y: 6)
     }
 }
 

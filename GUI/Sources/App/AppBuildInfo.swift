@@ -106,6 +106,7 @@ private struct DevBuildBadge: View {
             }
         }
         .frame(height: 46, alignment: .center)
+        .offset(y: 6)
     }
 
     private var badgeLabel: some View {
