@@ -16,7 +16,7 @@ import Observation
 final class MediaConversionService {
     static let shared = MediaConversionService()
 
-    static let ffmpegBannerArguments = ["-hide_banner", "-y"]
+    static let ffmpegBannerArguments = ["-hide_banner", "-nostdin", "-y"]
     static let lottieFrameRate = "15"
     static let lottiePreviewScaleFilter = "fps=15,scale=512:-1:flags=lanczos"
     static let gifskiQuality = "90"
@@ -25,6 +25,7 @@ final class MediaConversionService {
     static let lottieFramePattern = "f_%04d.png"
 
     var activeProcess: Process?
+    private var conversionInFlight = false
     var approvedOversizedGIFTargets: Set<String> = []
     private(set) var phase: MediaConversionPhase = .idle
 
@@ -42,6 +43,18 @@ final class MediaConversionService {
         preset: MediaConversionPreset? = nil,
         onCancel: @escaping () -> Void
     ) async throws {
+        guard !conversionInFlight else { throw ConversionError.conversionAlreadyRunning }
+        try Self.validateDestination(source: source, target: target)
+        conversionInFlight = true
+        defer { conversionInFlight = false }
+        let operationID = UUID().uuidString
+        let started = ContinuousClock.now
+        log.info("[MediaConvert] id=\(operationID) begin source=\(source.path.debugDescription) target=\(target.path.debugDescription)")
+        MemoryDiagnostics.shared.checkpoint("convert.before.\(operationID)")
+        defer {
+            log.info("[MediaConvert] id=\(operationID) end elapsed=\(started.duration(to: .now)) phase=\(phase)")
+            MemoryDiagnostics.shared.checkpoint("convert.after.\(operationID)")
+        }
         let conversionPreset = preset ?? MediaConversionPreset.defaultPreset(for: sourceFormat, target: targetFormat)
         let requestedTool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
         var executionTool = requestedTool
@@ -62,6 +75,7 @@ final class MediaConversionService {
             throw error
         }
         let panel = ProgressPanel.shared
+        guard phase != .cancelled else { throw CancellationError() }
         showProgressPanel(panel, source: source, targetFormat: targetFormat, onCancel: onCancel)
         phase = .running(tool: executionTool.rawValue)
         do {
@@ -74,6 +88,7 @@ final class MediaConversionService {
                 preset: conversionPreset,
                 panel: panel
             )
+            guard phase != .cancelled else { throw CancellationError() }
             if targetFormat == .gif {
                 try await enforceGIFLimit(target: target, panel: panel)
             }
@@ -87,6 +102,24 @@ final class MediaConversionService {
             finishFailure(panel: panel, error: error)
             phase = .failed(message: error.localizedDescription)
             throw error
+        }
+    }
+
+    // MARK: - Destination safety
+    nonisolated static func validateDestination(source: URL, target: URL) throws {
+        let sourcePath = source.standardizedFileURL.resolvingSymlinksInPath().path
+        let targetPath = target.standardizedFileURL.resolvingSymlinksInPath().path
+        guard sourcePath != targetPath else { throw ConversionError.sameSourceAndTarget }
+        let sourceInfo = try? FileManager.default.attributesOfItem(atPath: sourcePath)
+        let targetInfo = try? FileManager.default.attributesOfItem(atPath: targetPath)
+        if let sourceInfo, let targetInfo,
+           let sourceInode = sourceInfo[.systemFileNumber] as? NSNumber,
+           let targetInode = targetInfo[.systemFileNumber] as? NSNumber,
+           sourceInode == targetInode,
+           let sourceDevice = sourceInfo[.systemNumber] as? NSNumber,
+           let targetDevice = targetInfo[.systemNumber] as? NSNumber,
+           sourceDevice == targetDevice {
+            throw ConversionError.sameSourceAndTarget
         }
     }
 
@@ -104,7 +137,6 @@ final class MediaConversionService {
     func cancelActiveConversion() {
         guard phase.isActive else { return }
         activeProcess?.terminate()
-        activeProcess = nil
         phase = .cancelled
         ProgressPanel.shared.finish(success: false, message: "⏹ Cancelled")
         log.info("[MediaConvert] cancelled by user")

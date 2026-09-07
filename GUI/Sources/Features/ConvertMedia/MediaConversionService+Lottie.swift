@@ -22,9 +22,9 @@ extension MediaConversionService {
         let temporaryDirectory = try makeTemporaryLottieDirectory()
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
         let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
-        try prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
+        try await prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
         panel.appendLine("Rendering Lottie frames…")
-        if let lottieConvertPath = resolvedLottieConvertPath(targetFormat: targetFormat) {
+        if let lottieConvertPath = try await resolvedLottieConvertPath(targetFormat: targetFormat, panel: panel) {
             panel.appendLine("Using python-lottie: \(lottieConvertPath)")
             try await runLottieConvertCLI(
                 executablePath: lottieConvertPath,
@@ -64,33 +64,19 @@ extension MediaConversionService {
         source: URL,
         destination: URL,
         panel: ProgressPanel
-    ) throws {
+    ) async throws {
         if source.pathExtension.lowercased() == "tgs" {
             panel.appendLine("Decompressing TGS → JSON…")
-            try decompressTGS(source: source, destination: destination)
+            try await decompressTGS(source: source, destination: destination, panel: panel)
             return
         }
         try FileManager.default.copyItem(at: source, to: destination)
     }
 
-    func decompressTGS(source: URL, destination: URL) throws {
+    func decompressTGS(source: URL, destination: URL, panel: ProgressPanel) async throws {
         let gzipPath = ExternalToolCatalog.gzip.resolvedPath ?? "/usr/bin/gzip"
-        let process = Process()
-        let errorOutput = Pipe()
-        FileManager.default.createFile(atPath: destination.path, contents: nil)
-        let output = try FileHandle(forWritingTo: destination)
-        defer { try? output.close() }
-        process.executableURL = URL(fileURLWithPath: gzipPath)
-        process.arguments = ["-dc", source.path]
-        process.standardOutput = output
-        process.standardError = errorOutput
-        try process.run()
-        process.waitUntilExit()
-        if process.terminationStatus != 0 || isEmptyFile(destination) {
-            let errorData = errorOutput.fileHandleForReading.readDataToEndOfFile()
-            let message = String(data: errorData, encoding: .utf8) ?? source.lastPathComponent
-            throw ConversionError.readFailed(message)
-        }
+        try await runProcess(executablePath: gzipPath, arguments: ["-dc", source.path], panel: panel, outputFile: destination)
+        if isEmptyFile(destination) { throw ConversionError.readFailed(source.lastPathComponent) }
     }
 
     func isEmptyFile(_ url: URL) -> Bool {
@@ -102,31 +88,25 @@ extension MediaConversionService {
         return size == 0
     }
 
-    func resolvedLottieConvertPath(targetFormat: MediaFormat) -> String? {
+    func resolvedLottieConvertPath(targetFormat: MediaFormat, panel: ProgressPanel) async throws -> String? {
         if targetFormat != .gif {
             return ExternalToolCatalog.lottieConvert.resolvedPath
         }
-        return ExternalToolCatalog.lottieConvert.binaryCandidates.first { path in
-            FileManager.default.isExecutableFile(atPath: path) && lottieConvertSupportsGIF(path)
+        for path in ExternalToolCatalog.lottieConvert.binaryCandidates where FileManager.default.isExecutableFile(atPath: path) {
+            if try await lottieConvertSupportsGIF(path, panel: panel) { return path }
         }
+        return nil
     }
 
-    func lottieConvertSupportsGIF(_ path: String) -> Bool {
-        let process = Process()
-        let output = Pipe()
-        process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = ["--help"]
-        process.standardOutput = output
-        process.standardError = output
+    func lottieConvertSupportsGIF(_ path: String, panel: ProgressPanel) async throws -> Bool {
         do {
-            try process.run()
-            process.waitUntilExit()
+            let text = try await runProcess(executablePath: path, arguments: ["--help"], panel: panel)
+            return text.contains("gif")
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             return false
         }
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        let text = String(data: data, encoding: .utf8) ?? ""
-        return text.contains("--gif") || text.contains("gif")
     }
 
     func runLottieConvertCLI(

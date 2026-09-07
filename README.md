@@ -64,6 +64,8 @@ Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local n
 
 Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats.
 
+Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
+
 ## Comparison and synchronization
 
 File comparison, directory comparison, and synchronization are large specialist tasks—not small checkboxes in a file manager. MiMiNavigator deliberately delegates them to mature, well-established applications instead of pretending to replace those tools.

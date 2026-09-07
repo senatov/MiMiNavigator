@@ -5,6 +5,7 @@
 // Description: Low-overhead memory checkpoints and sustained-growth detection.
 
 import CoreGraphics
+import AppKit
 import Darwin
 import Foundation
 
@@ -34,6 +35,7 @@ final class MemoryDiagnostics {
     // MARK: - Monitoring
     func start() {
         guard timer == nil else { return }
+        ResponsivenessDiagnostics.shared.start()
         checkpoint("application.start")
         let timer = Timer(timeInterval: 60, target: self, selector: #selector(periodicCheckpoint), userInfo: nil, repeats: true)
         RunLoop.main.add(timer, forMode: .common)
@@ -41,6 +43,7 @@ final class MemoryDiagnostics {
     }
 
     func stop() {
+        ResponsivenessDiagnostics.shared.stop()
         timer?.invalidate()
         timer = nil
     }
@@ -51,7 +54,10 @@ final class MemoryDiagnostics {
         let resident = Self.megabytes(snapshot.residentBytes)
         let footprint = Self.megabytes(snapshot.footprintBytes)
         let delta = lastSnapshot.map { Int64(snapshot.footprintBytes) - Int64($0.footprintBytes) } ?? 0
-        log.info("[Memory] checkpoint=\(name) resident=\(resident)MB footprint=\(footprint)MB delta=\(Self.signedMegabytes(delta))MB")
+        let windows = NSApp.windows
+        let visible = windows.filter(\.isVisible).count
+        let hidden = windows.filter { !$0.isVisible && $0.contentView != nil }.count
+        log.info("[Memory] checkpoint=\(name) resident=\(resident)MB footprint=\(footprint)MB delta=\(Self.signedMegabytes(delta))MB windows=\(windows.count) visible=\(visible) hiddenWithContent=\(hidden) mediaPhase=\(MediaConversionService.shared.phase)")
         if delta >= Int64(spikeWarningBytes)
             || (snapshot.footprintBytes >= highFootprintBytes && lastSnapshot?.footprintBytes ?? 0 < highFootprintBytes)
         {
@@ -102,7 +108,7 @@ final class MemoryDiagnostics {
         guard sustained, last > first, last - first >= growthWarningBytes else { return }
         log.warning(
             "[Memory] possible sustained growth checkpoint=\(checkpoint) samples=\(sampleLimit) "
-                + "increase=\(Self.megabytes(last - first))MB; capture an Instruments Allocations trace"
+                + "increase=\(Self.megabytes(last - first))MB trendMB=\(recentFootprints.map(Self.megabytes)); capture an Instruments Allocations trace"
         )
     }
 

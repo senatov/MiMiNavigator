@@ -96,6 +96,54 @@ final class PresentationStateTests: XCTestCase {
     }
 }
 
+// MARK: - Media process diagnostics tests
+@MainActor
+final class MediaProcessDiagnosticsTests: XCTestCase {
+    // MARK: - Destination aliases
+    func testRejectsOriginalSymlinkAndHardLink() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("original.gif")
+        try Data("source".utf8).write(to: source)
+        let symbolic = directory.appendingPathComponent("symbolic.gif")
+        let hard = directory.appendingPathComponent("hard.gif")
+        try FileManager.default.createSymbolicLink(at: symbolic, withDestinationURL: source)
+        try FileManager.default.linkItem(at: source, to: hard)
+        for target in [source, symbolic, hard] {
+            XCTAssertThrowsError(try MediaConversionService.validateDestination(source: source, target: target))
+        }
+        XCTAssertNoThrow(try MediaConversionService.validateDestination(source: source, target: directory.appendingPathComponent("new.gif")))
+        XCTAssertEqual(try Data(contentsOf: source), Data("source".utf8))
+    }
+
+    // MARK: - Final output and failure context
+    func testCapturesFinalStderrOnFailure() async {
+        do {
+            try await MediaConversionService.shared.runProcess(executablePath: "/bin/zsh", arguments: ["-c", "print -nu2 'diagnostic-tail'; exit 7"], panel: .shared)
+            XCTFail("Expected exit failure")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("diagnostic-tail"))
+            XCTAssertTrue(error.localizedDescription.contains("7"))
+        }
+    }
+
+    // MARK: - Output draining
+    func testDrainsLargeOutputWithBoundedTail() async throws {
+        let output = try await MediaConversionService.shared.runProcess(executablePath: "/bin/zsh", arguments: ["-c", "repeat 10000 print -n 'abcdefghij'; print -n 'FINAL'"], panel: .shared)
+        XCTAssertEqual(output.utf8.count, 32 * 1024)
+        XCTAssertTrue(output.hasSuffix("FINAL"))
+    }
+
+    // MARK: - File redirection
+    func testRedirectsOutputWithoutPipeWait() async throws {
+        let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: target) }
+        try await MediaConversionService.shared.runProcess(executablePath: "/bin/zsh", arguments: ["-c", "print -n 'file-output'"], panel: .shared, outputFile: target)
+        XCTAssertEqual(try String(contentsOf: target, encoding: .utf8), "file-output")
+    }
+}
+
 // MARK: - Replacement Test Delegate
 @MainActor
 private final class ReplacementTestDelegate: NSObject, NSWindowDelegate {

@@ -18,6 +18,9 @@ enum ConversionError: LocalizedError {
     case readFailed(String)
     case writeFailed(String)
     case processFailed(Int)
+    case processDiagnostic(Int, String)
+    case sameSourceAndTarget
+    case conversionAlreadyRunning
     case unsupportedConversion(String, String)
 
     var errorDescription: String? {
@@ -36,6 +39,12 @@ enum ConversionError: LocalizedError {
                 return "Failed to write: \(name)"
             case .processFailed(let code):
                 return "Process exited with code \(code)"
+            case .processDiagnostic(let code, let detail):
+                return "Process exited with code \(code): \(detail)"
+            case .sameSourceAndTarget:
+                return "Choose a different output filename. The source and destination refer to the same file."
+            case .conversionAlreadyRunning:
+                return "A media conversion is already running. Wait for it to finish or cancel it first."
             case .unsupportedConversion(let from, let to):
                 return "Conversion \(from) → \(to) is not supported"
         }
