@@ -42,6 +42,8 @@ File operations report concise animated messages in the active window. The Test 
 
 Breadcrumbs emphasize the current folder. Hovering expands a segment to its full name with a spring animation, extra spacing, and a raised glass button surface; neighboring segments move aside. Right-click a local or mounted-folder segment to copy its path, open it in the other panel or a new tab, or browse its subfolders in an on-demand chooser. These additional navigation actions are not offered inside virtual archives or protocol-based remote paths.
 
+Thumbnail mode fits each complete image proportionally within the selected size, including upscaling small images. Selection outlines follow the image with a small inset instead of filling wide empty cells. Long filenames are shortened in the middle and expand into complete multiline labels when selected.
+
 ### Find and clean safely
 
 Search by name, content, size, or date, including inside archives. Focused presets help find large forgotten files, empty folders, and recognizable leftovers from removed applications. Results remain actionable, so several items can be reviewed and processed together.

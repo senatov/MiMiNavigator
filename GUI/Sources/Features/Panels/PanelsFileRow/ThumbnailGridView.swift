@@ -34,8 +34,6 @@ struct ThumbnailGridView: View {
     /// Width matching the native scrollbar track — driven by ScrollBarConfig
     private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
 
-    @State private var columnSpans: [CustomFile.ID: Int] = [:]
-
     private let columnSpacing: CGFloat = 8
 
     private let horizontalPadding: CGFloat = 20
@@ -61,26 +59,19 @@ struct ThumbnailGridView: View {
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                AdaptiveThumbnailLayout(cellSize: cellSize, columnSpacing: columnSpacing, rowSpacing: 10) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: min(cellSize, max(1, geometry.size.width - horizontalPadding))), spacing: columnSpacing, alignment: .top)], alignment: .leading, spacing: 10) {
                     ForEach(files, id: \.id) { file in
-                        let requestedSpan = columnSpans[file.id] ?? 1
-                        let span = min(requestedSpan, columnCount(for: geometry.size.width))
                         ThumbnailCellView(
                             file: file,
-                            cellSize: cellSize,
-                            requestedColumnSpan: requestedSpan,
-                            columnSpan: span,
-                            columnSpacing: columnSpacing,
+                            cellSize: min(cellSize, max(1, geometry.size.width - horizontalPadding)),
                             isSelected: selectedID == file.id || markedIDs.contains(file.id),
                             panelSide: panelSide,
                             dragFiles: dragFilesFor(file),
                             onSelect: { modifiers in
                                 handleSelection(for: file, modifiers: modifiers)
                             },
-                            onColumnSpanChange: { columnSpans[file.id] = $0 },
                             onDoubleClick: { onDoubleClick(file) }
                         )
-                        .layoutValue(key: ThumbnailColumnSpanKey.self, value: span)
                     }
                 }
                 .padding(10)
@@ -111,13 +102,6 @@ struct ThumbnailGridView: View {
                 .frame(width: Self.scrollbarWidth)
             }
         }
-    }
-
-    // MARK: - Column Count
-
-    private func columnCount(for width: CGFloat) -> Int {
-        let contentWidth = max(0, width - horizontalPadding)
-        return max(1, Int((contentWidth + columnSpacing) / (cellSize + columnSpacing)))
     }
 
     // MARK: - Scroll Edge Button (3D square, matches scrollbar width)
@@ -166,14 +150,10 @@ private struct ThumbnailCellView: View {
 
     let file: CustomFile
     let cellSize: CGFloat
-    let requestedColumnSpan: Int
-    let columnSpan: Int
-    let columnSpacing: CGFloat
     let isSelected: Bool
     let panelSide: FavPanelSide
     let dragFiles: [CustomFile]
     let onSelect: (NSEvent.ModifierFlags) -> Void
-    let onColumnSpanChange: (Int) -> Void
     let onDoubleClick: () -> Void
 
     @State private var thumbnail: NSImage? = nil
@@ -183,12 +163,17 @@ private struct ThumbnailCellView: View {
     @Environment(DragDropManager.self) private var dragDropManager
 
     private var cellWidth: CGFloat {
-        CGFloat(columnSpan) * cellSize + CGFloat(columnSpan - 1) * columnSpacing
+        cellSize
     }
 
-    private var imageWidth: CGFloat { cellWidth - 12 }
-
-    private var imageHeight: CGFloat { cellSize - 12 }
+    private var imageSize: CGSize {
+        let edge = max(1, cellSize - 8)
+        guard let size = thumbnail?.size, size.width > 0, size.height > 0 else {
+            return CGSize(width: edge, height: edge)
+        }
+        let scale = edge / max(size.width, size.height)
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
 
     // MARK: - Body
     var body: some View {
@@ -200,31 +185,31 @@ private struct ThumbnailCellView: View {
                             ? Color.accentColor.opacity(0.18)
                             : (isHovered ? Color.primary.opacity(0.06) : Color.clear)
                     )
-                    .frame(width: cellWidth, height: cellSize)
+                    .frame(width: imageSize.width + 8, height: imageSize.height + 8)
 
                 if let img = thumbnail {
                     Image(nsImage: img)
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
-                        .frame(width: imageWidth, height: imageHeight)
+                        .frame(width: imageSize.width, height: imageSize.height)
                         .overlay(
                             RoundedRectangle(cornerRadius: 5)
                                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                         )
                 } else {
                     fallbackIcon
-                        .frame(width: imageWidth, height: imageHeight)
+                        .frame(width: imageSize.width, height: imageSize.height)
                 }
 
                 if isSelected {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .strokeBorder(Color.accentColor, lineWidth: 2)
-                        .frame(width: cellWidth, height: cellSize)
+                        .frame(width: imageSize.width + 8, height: imageSize.height + 8)
                 }
             }
 
-            // Name — single line, macOS-style middle truncation
+            // Selected files reveal the complete name without changing the image size.
             nameView
 
             // Size
@@ -254,7 +239,7 @@ private struct ThumbnailCellView: View {
         } preview: {
             DragPreviewPopupView(files: dragFiles, panelSide: panelSide)
         }
-        .task(id: ThumbnailLoadID(path: file.pathStr, width: Int(imageWidth.rounded()))) { await loadThumbnail() }
+        .task(id: ThumbnailLoadID(path: file.pathStr, width: Int(cellSize.rounded()))) { await loadThumbnail() }
     }
 
     // MARK: - Name View
@@ -272,13 +257,23 @@ private struct ThumbnailCellView: View {
             .font(.system(size: 11))
             .frame(width: cellWidth - 4)
         } else {
-            Text(file.nameStr)
+            Text(isSelected ? file.nameStr : compactName)
                 .font(.system(size: 11))
                 .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                .lineLimit(1)
+                .lineLimit(isSelected ? nil : 1)
                 .truncationMode(.middle)
+                .multilineTextAlignment(.center)
                 .frame(width: cellWidth - 4)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(file.nameStr)
         }
+    }
+
+    // MARK: - Compact filename
+    private var compactName: String {
+        let name = file.nameStr
+        guard name.count > 36 else { return name }
+        return String(name.prefix(22)) + "…" + String(name.suffix(13))
     }
 
     // MARK: - Commit Inline Rename
@@ -340,16 +335,11 @@ private struct ThumbnailCellView: View {
     // MARK: - Thumbnail loading via QLThumbnailGenerator
     @MainActor
     private func loadThumbnail() async {
+        thumbnail = nil
         if file.isDirectory { return }
         let url = file.urlValue
-        let sourceSpan = await Task.detached(priority: .utility) {
-            ThumbnailAspectRatioReader.columnSpan(for: url)
-        }.value
-        if let sourceSpan, sourceSpan != requestedColumnSpan {
-            onColumnSpanChange(sourceSpan)
-            return
-        }
-        let size = CGSize(width: imageWidth, height: imageHeight)
+        let edge = max(1, cellSize - 8)
+        let size = CGSize(width: edge, height: edge)
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
         let request = QLThumbnailGenerator.Request(
             fileAt: url,
@@ -359,6 +349,7 @@ private struct ThumbnailCellView: View {
         )
         do {
             let rep = try await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
+            guard !Task.isCancelled else { return }
             self.thumbnail = rep.nsImage
         } catch {
             // Silently fall through to SF Symbol fallback
