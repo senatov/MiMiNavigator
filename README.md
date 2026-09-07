@@ -40,6 +40,8 @@ Browse two locations side by side and copy, move, rename, organize, or inspect f
 
 File operations report concise animated messages in the active window. The Test Build rivet opens a scrollable, numbered history of the 32 most recent notices, including timestamps and available source and destination paths; this history survives application restarts and follows the colors selected in Settings.
 
+Breadcrumbs emphasize the current folder. Hovering expands a segment to its full name with a spring animation, extra spacing, and a raised glass button surface; neighboring segments move aside. Right-click a local or mounted-folder segment to copy its path, open it in the other panel or a new tab, or browse its subfolders in an on-demand chooser. These additional navigation actions are not offered inside virtual archives or protocol-based remote paths.
+
 ### Find and clean safely
 
 Search by name, content, size, or date, including inside archives. Focused presets help find large forgotten files, empty folders, and recognizable leftovers from removed applications. Results remain actionable, so several items can be reviewed and processed together.

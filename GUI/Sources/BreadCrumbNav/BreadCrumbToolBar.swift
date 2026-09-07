@@ -35,7 +35,7 @@ struct BreadCrumbToolBar: View {
 
     private enum Palette {
         static let activeIcon = Color(nsColor: .labelColor)
-        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.45)
+        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.72)
         static let historyIcon = Color(#colorLiteral(red: 0.07843137255, green: 0.3764705882, blue: 0.7058823529, alpha: 1))
         static let favoritesIcon = Color(#colorLiteral(red: 0.6980392157, green: 0.3137254902, blue: 0.04705882353, alpha: 1))
         static let hoverTint = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))

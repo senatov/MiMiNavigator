@@ -3,9 +3,7 @@
 //
 // Created by Iakov Senatov on 10.03.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Breadcrumb segment that expands to full name on hover (Finder-style).
-//   Truncated segments spring-animate to reveal the complete directory name
-//   when the cursor approaches, then collapse back when cursor leaves.
+// Description: Animated expanding breadcrumb segment with a raised glass surface and directory actions.
 
 import AppKit
 import SwiftUI
@@ -26,19 +24,21 @@ struct ExpandableSegmentButton: View {
     let onTap: () -> Void
     let helpText: String
     let copyAction: () -> Void
+    let isCurrent: Bool
+    let directoryURL: URL?
+    let openOtherPanel: () -> Void
+    let openNewTab: () -> Void
+    let navigateToChild: (URL) -> Void
 
     @State private var isHovered = false
     @State private var lastLoggedHover = false
+    @State private var showsSubfolders = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let lensCornerRadius: CGFloat = 10
     /// Show full name when hovered and segment is truncated.
     private var displayText: String {
-        guard isHovered else { return segment.text }
-        return segment.isTruncated ? expandedText : segment.text
-    }
-
-    private var expandedText: String {
-        segment.fullName
+        isHovered ? segment.fullName : segment.text
     }
 
     private var displayColor: Color {
@@ -49,10 +49,11 @@ struct ExpandableSegmentButton: View {
     private var displayFont: Font {
         let requestedSize = isHovered ? hoverFontSize : fontSize
         let resolvedSize = (requestedSize * 2).rounded() / 2
-        let base = Font.system(size: resolvedSize, weight: isHovered ? .medium : .regular, design: .default)
+        let base = Font.system(size: resolvedSize, weight: isHovered || isCurrent ? .medium : .regular, design: .default)
         return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
     }
 
+    // MARK: - Body
     var body: some View {
         Button(action: onTap) {
             label
@@ -66,85 +67,62 @@ struct ExpandableSegmentButton: View {
         }
         .contextMenu {
             Button("Copy path", action: copyAction)
+            if directoryURL != nil {
+                Divider()
+                Button("Open in other panel", action: openOtherPanel)
+                Button("Open in new tab", action: openNewTab)
+                Divider()
+                Button("Show subfolders…") { showsSubfolders = true }
+            }
+        }
+        .popover(isPresented: $showsSubfolders) {
+            if let directoryURL {
+                BreadcrumbSubfoldersView(directory: directoryURL) { url in
+                    showsSubfolders = false
+                    navigateToChild(url)
+                }
+            }
         }
     }
 
+    // MARK: - Expanding label
     private var label: some View {
         Text(displayText)
             .font(displayFont)
             .foregroundStyle(displayColor)
             .lineLimit(1)
             .truncationMode(.middle)
-            .padding(.vertical, isHovered ? 6 : 3)
-            .padding(.horizontal, isHovered ? 11 : 4)
+            .padding(.vertical, isHovered ? 7 : 3)
+            .padding(.horizontal, isHovered ? 14 : 4)
             .fixedSize(horizontal: true, vertical: false)
-            .background(hoverBubble)
-            .overlay(hoverGlow)
+            .background { raisedSurface.opacity(isHovered ? 1 : 0) }
+            .padding(.horizontal, isHovered ? 3 : 0)
             .zIndex(isHovered ? 1_000 : 0)
     }
 
-    @ViewBuilder
-    private var hoverBubble: some View {
-        if isHovered {
-            RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
-                .fill(lensFill)
-                .overlay(lensHighlight)
-                .shadow(color: Color(#colorLiteral(red: 0.08, green: 0.18, blue: 0.30, alpha: 0.30)), radius: 4, x: 0, y: 2)
-                .shadow(color: Color(#colorLiteral(red: 0.12, green: 0.30, blue: 0.48, alpha: 0.16)), radius: 9, x: 0, y: 4)
-                .zIndex(1_000)
-        }
-    }
-
-    @ViewBuilder
-    private var hoverGlow: some View {
-        if isHovered {
-            RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
-                .strokeBorder(lensStroke, lineWidth: 1)
-                .overlay {
-                    RoundedRectangle(cornerRadius: lensCornerRadius - 1, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.70), lineWidth: 0.75)
-                        .padding(1)
-                }
-        }
-    }
-
-    private var lensFill: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color.white.opacity(0.88),
-                hoverBackgroundColor.opacity(0.78),
-                hoverBackgroundColor.opacity(0.66)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    private var lensHighlight: some View {
-        RoundedRectangle(cornerRadius: lensCornerRadius - 2, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.46)),
-                        Color(#colorLiteral(red: 0.86, green: 0.94, blue: 1.0, alpha: 0.08)),
-                        Color.clear
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .padding(1)
-    }
-
-    private var lensStroke: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color.white.opacity(0.92),
-                hoverBorderColor.opacity(0.82)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+    // MARK: - Raised glass surface
+    private var raisedSurface: some View {
+        RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+            .fill(.regularMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [Color.white.opacity(0.70), hoverBackgroundColor.opacity(0.70), hoverBackgroundColor.opacity(0.90)],
+                        startPoint: .top, endPoint: .bottom))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: lensCornerRadius, style: .continuous)
+                    .strokeBorder(LinearGradient(
+                        colors: [Color.white.opacity(0.95), hoverBorderColor.opacity(0.85)],
+                        startPoint: .top, endPoint: .bottom), lineWidth: 1)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: lensCornerRadius - 1, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.45), lineWidth: 0.5)
+                    .padding(1)
+            }
+            .shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 2)
+            .shadow(color: hoverBorderColor.opacity(0.22), radius: 6, x: 0, y: 4)
     }
 
     // MARK: - Hover
@@ -154,6 +132,8 @@ struct ExpandableSegmentButton: View {
             log.debug("[BreadCrumb] hover \(hovering ? "enter" : "exit") index=\(segment.originalIndex) text='\(segment.fullName)'")
             lastLoggedHover = hovering
         }
-        isHovered = hovering
+        withAnimation(reduceMotion ? nil : .spring(response: 0.26, dampingFraction: 0.82)) {
+            isHovered = hovering
+        }
     }
 }

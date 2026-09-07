@@ -135,7 +135,7 @@ struct BreadCrumbView: View {
     }
 
     private func makeLocalDisplayPath(through index: Int) -> String {
-        let joined = pathComponentTexts.prefix(index + 1).joined(separator: "/")
+        let joined = pathComponentTexts.prefix(index + 1).filter { $0 != "/" }.joined(separator: "/")
         return localDisplayPath.hasPrefix("/") ? "/" + joined : joined
     }
 
@@ -246,7 +246,14 @@ struct BreadCrumbView: View {
             hoverFontSize: colorStore.effectiveBreadcrumbHoverFontSize,
             onTap: { handleTap(segment: segment) },
             helpText: tooltip(for: segment),
-            copyAction: { copyPath(for: segment) }
+            copyAction: { copyPath(for: segment) },
+            isCurrent: segment.originalIndex == pathComponents.count - 1,
+            directoryURL: localDirectoryURL(for: segment),
+            openOtherPanel: { openSegment(segment, inNewTab: false) },
+            openNewTab: { openSegment(segment, inNewTab: true) },
+            navigateToChild: { url in
+                Task { await appState.navigateToDirectory(url.path, on: panelSide) }
+            }
         )
     }
 
@@ -294,7 +301,7 @@ struct BreadCrumbView: View {
             return "📂 \(parts.joined(separator: "/"))"
         }
 
-        let fullPath = makeLocalDisplayPath(through: segment.originalIndex)
+        let fullPath = localTargetPath(for: segment)
         return "📂 Open \(fullPath)"
     }
 
@@ -330,11 +337,31 @@ struct BreadCrumbView: View {
         } else if isInsideArchive {
             pathToCopy = archiveCopyPath(for: segment)
         } else {
-            pathToCopy = panelURL.path
+            pathToCopy = localDirectoryURL(for: segment)?.path ?? localTargetPath(for: segment)
         }
 
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(pathToCopy, forType: .string)
         log.debug("[BreadCrumb] copied: \(pathToCopy)")
+    }
+
+    // MARK: - Local segment destination
+    private func localDirectoryURL(for segment: DisplaySegment) -> URL? {
+        guard !isInsideArchive, !AppState.isRemotePath(panelURL), !segment.isCollapsedChain,
+              let expansion = PathEnvironmentResolver.expand(localTargetPath(for: segment)) else { return nil }
+        return URL(fileURLWithPath: (expansion.expanded as NSString).expandingTildeInPath).standardizedFileURL
+    }
+
+    // MARK: - Open segment
+    private func openSegment(_ segment: DisplaySegment, inNewTab: Bool) {
+        guard let url = localDirectoryURL(for: segment) else { return }
+        let destination: FavPanelSide = inNewTab ? panelSide : (panelSide == .left ? .right : .left)
+        if inNewTab {
+            let manager = appState.tabManager(for: destination)
+            let previousID = manager.activeTabID
+            let tab = manager.addTab(url: url)
+            guard tab.id != previousID else { return }
+        }
+        Task { await appState.navigateToDirectory(url.path, on: destination) }
     }
 }

@@ -76,7 +76,7 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                         store.reloadOverrides()
                     }
                     Divider()
-                    sliderRow("Hover font size", help: "Text size for the path segment under the pointer",
+                    sliderRow("Hover font size", help: "Text size of the expanded, raised path segment under the pointer",
                               value: hoverFontSizeBinding, range: 9...20, step: 0.5,
                               displayFormat: "%.1f", unit: " pt") {
                         store.breadcrumbHoverFontSize = storedHoverFontSize
@@ -148,7 +148,12 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                     hoverFontSize: previewHoverFontSize,
                     onTap: {},
                     helpText: segment.fullName,
-                    copyAction: {}
+                    copyAction: {},
+                    isCurrent: index == previewSegments.count - 1,
+                    directoryURL: nil,
+                    openOtherPanel: {},
+                    openNewTab: {},
+                    navigateToChild: { _ in }
                 )
             }
             Spacer(minLength: 4)
@@ -199,7 +204,7 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                 .opacity(0.35)
         }
         .font(.system(size: 15, weight: .light))
-        .foregroundStyle(Color(nsColor: .labelColor).opacity(isActive ? 1 : 0.45))
+        .foregroundStyle(Color(nsColor: .labelColor).opacity(isActive ? 1 : 0.72))
         .frame(height: 28)
         .padding(.leading, 5)
     }
