@@ -49,18 +49,14 @@ final class ConnectToServerCoordinator {
 
     // MARK: - Toggle
     func toggle() {
-        isVisible ? close() : open()
+        open()
     }
 
     // MARK: - Open
     func open() {
         log.debug(#function)
-        if let existing = existingPanel() {
-            window = existing
-            existing.orderFront(nil)
-            isVisible = true
-            return
-        }
+        WindowReplacement.close(window)
+        window = nil
 
         let contentView = ConnToSrvrView(
             onConnect: { [weak self] url, password in
@@ -132,7 +128,10 @@ final class ConnectToServerCoordinator {
     }
 
     // MARK: - Called by delegate
-    func windowDidClose() {
+    func windowDidClose(_ closedWindow: NSWindow) {
+        guard window === closedWindow else { return }
+        closedWindow.contentView = nil
+        closedWindow.delegate = nil
         isVisible = false
         window = nil
     }
@@ -176,8 +175,9 @@ private final class ConnectToServerWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = ConnectToServerWindowDelegate()
 
     func windowWillClose(_ notification: Notification) {
+        guard let closedWindow = notification.object as? NSWindow else { return }
         Task { @MainActor in
-            ConnectToServerCoordinator.shared.windowDidClose()
+            ConnectToServerCoordinator.shared.windowDidClose(closedWindow)
         }
     }
 }

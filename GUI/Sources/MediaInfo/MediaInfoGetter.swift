@@ -29,9 +29,12 @@ final class MediaInfoGetter: @unchecked Sendable {
             appState: appState
         )
 
-        Task.detached(priority: .userInitiated) { [url, fast, panelTitle] in
+        let presentationID = MediaInfoPanel.shared.presentationID
+        Task.detached(priority: .userInitiated) { [url, fast, panelTitle, presentationID] in
             let (info, coords) = await MediaInfoReportBuilder.build(url: url, fast: fast)
             await MainActor.run {
+                guard MediaInfoPanel.shared.presentationID == presentationID,
+                      MediaInfoPanel.shared.panel?.isVisible == true else { return }
                 MediaInfoPanel.shared.update(title: panelTitle, text: info, coordinates: coords)
             }
         }

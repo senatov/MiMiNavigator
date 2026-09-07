@@ -48,17 +48,15 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Toggle
     func toggle<Content: View>(content: Content) {
-        if isVisible { close() } else { open(content: content) }
+        open(content: content)
     }
 
     // MARK: - Open
     func open<Content: View>(content: Content) {
         log.debug(#function)
-        if let existing = panel, existing.isVisible {
-            presentAboveMain(existing)
-            isVisible = true
-            return
-        }
+        savePanelSize()
+        WindowReplacement.close(panel)
+        panel = nil
         let hostingView = NSHostingView(
             rootView: content
         )
@@ -95,6 +93,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Close
     func close() {
         panel?.close()
+        panel = nil
         isVisible = false
         log.info("[\(kind.rawValue)] Window closed")
     }
@@ -112,6 +111,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         savePanelSize()
+        panel = nil
         isVisible = false
     }
 

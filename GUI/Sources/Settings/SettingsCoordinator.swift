@@ -32,7 +32,7 @@ final class SettingsCoordinator {
 
     // MARK: - Toggle
     func toggle() {
-        isVisible ? close() : open()
+        open()
     }
 
     /// Open Settings and navigate to a specific section
@@ -44,11 +44,8 @@ final class SettingsCoordinator {
     // MARK: - Open
     func open() {
         guard !isClosing else { return }
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            isVisible = true
-            return
-        }
+        WindowReplacement.close(window)
+        window = nil
         let contentView = SettingsWindowView(onDismiss: { [weak self] in self?.close() })
             .frame(minWidth: 600, minHeight: 440)
         let panel = NSPanel(

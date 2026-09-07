@@ -85,9 +85,7 @@ final class FindFilesViewModel {
     ///   - searchPath: Current directory of the active panel
     ///   - selectedFile: Currently selected file (optional)
     func configure(searchPath: String, selectedFile: CustomFile? = nil) {
-        if advancedSettings.searchDirectory.isEmpty {
-            advancedSettings.searchDirectory = searchPath
-        }
+        advancedSettings.searchDirectory = searchPath
         // Check if selected file is an archive
         if let file = selectedFile,
             !file.isDirectory,
@@ -103,7 +101,7 @@ final class FindFilesViewModel {
             searchDirectory = file.urlValue.path
             searchInArchives = false
             log.info("[FindFiles] Configured to search in file: \(file.nameStr)")
-        } else if searchDirectory.isEmpty {
+        } else {
             // Normal case — use panel's current directory
             searchDirectory = searchPath
         }

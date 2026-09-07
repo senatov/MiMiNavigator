@@ -24,10 +24,8 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Show
     func showAbout() {
-        if let existing = panel, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            return
-        }
+        WindowReplacement.close(panel)
+        panel = nil
         let p = makePanel()
         p.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

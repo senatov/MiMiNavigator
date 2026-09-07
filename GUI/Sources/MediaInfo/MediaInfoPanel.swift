@@ -51,6 +51,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         .union(supportedAudioExtensions)
 
     var panel: NSPanel?
+    private(set) var presentationID = UUID()
     var playerView: AVPlayerView?
     var player: AVPlayer?
 
@@ -99,6 +100,19 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         panelSide: FavPanelSide? = nil,
         appState: AppState? = nil
     ) {
+        stopVideoPlayback()
+        WindowReplacement.close(panel)
+        panel = nil
+        panelCreated = false
+        presentationID = UUID()
+        previewImage = nil
+        previewMode = .none
+        currentVideoURL = nil
+        isAnimatedImagePreview = false
+        mediaFiles = []
+        currentIndex = 0
+        availableFormats = []
+        availablePresets = []
         ensurePanelExists()
         displayTitle = title
         rawText = text

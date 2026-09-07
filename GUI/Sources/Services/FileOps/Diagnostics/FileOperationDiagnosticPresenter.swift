@@ -11,7 +11,8 @@ final class FileOperationDiagnosticPresenter: NSObject, NSWindowDelegate {
 
     // MARK: - Show
     func show(_ info: FileOperationDiagnosticInfo) {
-        let panel = panel ?? makePanel()
+        WindowReplacement.close(panel)
+        let panel = makePanel()
         panel.contentView = NSHostingView(
             rootView: FileOperationDiagnosticDialog(info: info) { [weak self] in
                 self?.close()

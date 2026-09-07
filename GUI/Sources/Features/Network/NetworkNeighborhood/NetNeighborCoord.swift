@@ -28,17 +28,14 @@ final class NetworkNeighborhoodCoordinator {
 
     // MARK: - Toggle
     func toggle() {
-        isVisible ? close() : open()
+        open()
     }
 
     // MARK: - Open
     func open() {
         log.debug(#function)
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            isVisible = true
-            return
-        }
+        WindowReplacement.close(window)
+        window = nil
         let contentView = NetworkNeighborhoodView(
             onNavigate: { [weak self] url in
                 // Close only for file:// URLs (already mounted / local path)
@@ -94,7 +91,10 @@ final class NetworkNeighborhoodCoordinator {
     }
 
     // MARK: - Called by delegate
-    func windowDidClose() {
+    func windowDidClose(_ closedWindow: NSWindow) {
+        guard window === closedWindow else { return }
+        closedWindow.contentView = nil
+        closedWindow.delegate = nil
         isVisible = false
         window = nil
     }
@@ -137,8 +137,9 @@ private final class NetworkWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = NetworkWindowDelegate()
 
     func windowWillClose(_ notification: Notification) {
+        guard let closedWindow = notification.object as? NSWindow else { return }
         Task { @MainActor in
-            NetworkNeighborhoodCoordinator.shared.windowDidClose()
+            NetworkNeighborhoodCoordinator.shared.windowDidClose(closedWindow)
         }
     }
 }

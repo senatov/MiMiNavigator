@@ -58,6 +58,7 @@ struct ContextMenuDialogModifier: ViewModifier {
             // Dialog content
             if let dialog = coordinator.activeDialog {
                 dialogContent(for: dialog)
+                    .id(coordinator.dialogPresentationID)
                     .transition(.scale(scale: 0.95).combined(with: .opacity))
             }
         }

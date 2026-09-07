@@ -27,6 +27,30 @@ final class PresentationStateTests: XCTestCase {
     }
 
     // MARK: - Find Files Criteria
+    func testRepeatedSearchConfigurationUsesNewPanelDirectory() {
+        let viewModel = FindFilesViewModel()
+        viewModel.searchDirectory = "/old/location"
+        viewModel.advancedSettings.searchDirectory = "/old/advanced"
+        viewModel.configure(searchPath: "/new/location")
+        XCTAssertEqual(viewModel.searchDirectory, "/new/location")
+        XCTAssertEqual(viewModel.advancedSettings.searchDirectory, "/new/location")
+    }
+
+    // MARK: - Window Replacement
+    func testReplacementReleasesHiddenWindowContentAndDelegate() {
+        let panel = NSPanel()
+        panel.isReleasedWhenClosed = false
+        let delegate = ReplacementTestDelegate()
+        panel.delegate = delegate
+        panel.contentView = NSView()
+        panel.orderOut(nil)
+        WindowReplacement.close(panel)
+        XCTAssertNil(panel.contentView)
+        XCTAssertNil(panel.delegate)
+        XCTAssertFalse(panel.isVisible)
+        XCTAssertFalse(delegate.didClose)
+    }
+
     func testContentSearchNormalizesFolderOnlyFilter() {
         let viewModel = FindFilesViewModel()
         viewModel.activeModule = .advanced
@@ -69,5 +93,14 @@ final class PresentationStateTests: XCTestCase {
     func testFileOperationNoticeDurationsAreOneAndAHalfTimesShorter() {
         XCTAssertEqual(FileOperationOutcomePresenter.toastDisplayDuration, .milliseconds(1_600))
         XCTAssertEqual(FileOperationOutcomePresenter.bannerDisplayDuration, .milliseconds(5_333))
+    }
+}
+
+// MARK: - Replacement Test Delegate
+@MainActor
+private final class ReplacementTestDelegate: NSObject, NSWindowDelegate {
+    var didClose = false
+    func windowWillClose(_ notification: Notification) {
+        didClose = true
     }
 }

@@ -38,11 +38,8 @@ final class PackDialogCoordinator {
         onPack: @escaping (String, ArchiveFormat, URL, Bool, CompressionLevel, String?) -> Void
     ) {
         log.debug("[PackPanel] \(#function) mode=\(mode) files=\(files.count)")
-        if let existing = window, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            isVisible = true
-            return
-        }
+        WindowReplacement.close(window)
+        window = nil
         let contentView = PackDialog(
             mode: mode,
             files: files,
@@ -107,7 +104,10 @@ final class PackDialogCoordinator {
 
 
     // MARK: - Called by delegate
-    func windowDidClose() {
+    func windowDidClose(_ closedWindow: NSWindow) {
+        guard window === closedWindow else { return }
+        closedWindow.contentView = nil
+        closedWindow.delegate = nil
         isVisible = false
         window = nil
     }
@@ -147,8 +147,9 @@ private final class PackWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = PackWindowDelegate()
 
     func windowWillClose(_ notification: Notification) {
+        guard let closedWindow = notification.object as? NSWindow else { return }
         Task { @MainActor in
-            PackDialogCoordinator.shared.windowDidClose()
+            PackDialogCoordinator.shared.windowDidClose(closedWindow)
         }
     }
 }

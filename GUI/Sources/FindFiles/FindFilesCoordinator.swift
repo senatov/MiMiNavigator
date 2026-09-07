@@ -23,7 +23,7 @@ final class FindFilesCoordinator {
     private(set) var isVisible = false
     private var findWindow: NSWindow?
     var sheetWindow: NSWindow? { findWindow }
-    private let viewModel = FindFilesViewModel()
+    private var viewModel = FindFilesViewModel()
     /// Reference to AppState for "Show in Panel" feature
     var appState: AppState?
 
@@ -37,23 +37,19 @@ final class FindFilesCoordinator {
 
     func toggle(searchPath: String, selectedFile: CustomFile? = nil, appState: AppState? = nil) {
         if let appState { self.appState = appState }
-        if isVisible {
-            close()
-        } else {
-            open(searchPath: searchPath, selectedFile: selectedFile)
-        }
+        open(searchPath: searchPath, selectedFile: selectedFile)
     }
 
     // MARK: - Open
 
     func open(searchPath: String, selectedFile: CustomFile? = nil) {
+        viewModel.savePreferences()
+        viewModel.cancelSearch()
+        WindowReplacement.close(findWindow)
+        findWindow = nil
+        viewModel = FindFilesViewModel()
         viewModel.configure(searchPath: searchPath, selectedFile: selectedFile)
         log.debug(#function)
-        if let existing = findWindow, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            isVisible = true
-            return
-        }
         let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
             .frame(minWidth: 680, minHeight: 500)
         let hostingView = NSHostingView(rootView: contentView)

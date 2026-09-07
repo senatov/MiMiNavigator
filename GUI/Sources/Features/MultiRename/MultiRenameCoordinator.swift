@@ -13,29 +13,23 @@ final class MultiRenameCoordinator {
     static let shared = MultiRenameCoordinator()
     private(set) var isVisible = false
     private var window: NSWindow?
-    private let viewModel = MultiRenameViewModel()
+    private var viewModel = MultiRenameViewModel()
     private let frameAutosaveName = "MiMiNavigator.MultiRenameWindow"
     private init() {}
 
     func toggle(panel: FavPanelSide, appState: AppState) {
-        if isVisible {
-            close()
-            return
-        }
         open(panel: panel, appState: appState)
     }
 
     func open(panel: FavPanelSide, appState: AppState) {
+        WindowReplacement.close(window)
+        window = nil
+        viewModel = MultiRenameViewModel()
         let allFiles = appState.displayedFiles(for: panel).filter { !$0.isParentEntry }
         let selectedFiles = appState.filesForOperation(on: panel).filter { !$0.isParentEntry }
         let allSources = allFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         let selectedSources = selectedFiles.map { MultiRenameSource(url: $0.urlValue, isDirectory: $0.isDirectory) }
         viewModel.configure(allSources: allSources, selectedSources: selectedSources, panel: panel, appState: appState)
-        if let window, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            isVisible = true
-            return
-        }
         let hostingView = NSHostingView(rootView: MultiRenameWindowContent(viewModel: viewModel).frame(minWidth: 680, minHeight: 520))
         let panelWindow = NSPanel(contentRect: .zero, styleMask: [.titled, .closable, .resizable, .miniaturizable, .utilityWindow], backing: .buffered, defer: false)
         panelWindow.contentView = hostingView

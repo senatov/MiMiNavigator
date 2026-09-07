@@ -22,10 +22,8 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Show
     func show() {
-        if let existing = panel, existing.isVisible {
-            existing.makeKeyAndOrderFront(nil)
-            return
-        }
+        WindowReplacement.close(panel)
+        panel = nil
         let p = makePanel()
         p.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

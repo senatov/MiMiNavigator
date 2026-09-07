@@ -26,7 +26,10 @@ final class CntMenuCoord {
     static let shared = CntMenuCoord()
 
     // MARK: - State
-    var activeDialog: ActiveDialog?
+    var activeDialog: ActiveDialog? {
+        didSet { dialogPresentationID = UUID() }
+    }
+    private(set) var dialogPresentationID = UUID()
     var isProcessing = false
 
     // MARK: - Dependencies (internal for extensions)

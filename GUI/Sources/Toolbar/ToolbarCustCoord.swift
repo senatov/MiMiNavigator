@@ -30,7 +30,7 @@ final class ToolbarCustomizeCoordinator {
 
 
     func toggle() {
-        isVisible ? close() : show()
+        show()
     }
 
 
@@ -38,12 +38,7 @@ final class ToolbarCustomizeCoordinator {
         guard !isClosing else { return }
         log.debug("[ToolbarCustomize] show() invoked")
         let sourceMainWindow = WindowContextResolver.presentationHost(excluding: window, preferMain: true)
-        if let existing = window, existing.isVisible {
-            position(existing, near: anchorScreenPoint, relativeTo: sourceMainWindow)
-            present(existing)
-            isVisible = true
-            return
-        }
+        close()
         let contentView = ToolbarCustomizeRootView(onDismiss: { [weak self] in self?.close() })
             .frame(minWidth: 620, minHeight: 420)
         let initialFrame = frame(near: anchorScreenPoint, relativeTo: sourceMainWindow, requestedSize: restoredSize())
@@ -93,7 +88,7 @@ final class ToolbarCustomizeCoordinator {
             (panel as? ToolbarCustomizePanel)?.onCloseButtonClick = nil
         }
         window = nil
-        panel?.orderOut(nil)
+        WindowReplacement.close(panel)
         isClosing = false
         log.info("[ToolbarCustomize] closed ✓")
     }
@@ -234,26 +229,21 @@ private final class ToolbarCustomizeHostingView<Content: View>: NSHostingView<Co
 
 
 // MARK: - NSWindowDelegate
+@MainActor
 private final class ToolbarCustWindowDelegate: NSObject, NSWindowDelegate {
     @MainActor static let shared = ToolbarCustWindowDelegate()
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         log.debug("[ToolbarCustomize] windowShouldClose routed to coordinator")
-        Task { @MainActor in
-            ToolbarCustomizeCoordinator.shared.close()
-        }
+        ToolbarCustomizeCoordinator.shared.close()
         return false
     }
 
     func windowDidResize(_ notification: Notification) {
-        Task { @MainActor in
-            ToolbarCustomizeCoordinator.shared.windowDidResize()
-        }
+        ToolbarCustomizeCoordinator.shared.windowDidResize()
     }
 
     func windowWillClose(_ notification: Notification) {
-        Task { @MainActor in
-            ToolbarCustomizeCoordinator.shared.windowDidClose()
-        }
+        ToolbarCustomizeCoordinator.shared.windowDidClose()
     }
 }

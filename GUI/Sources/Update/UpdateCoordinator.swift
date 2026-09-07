@@ -58,12 +58,8 @@ final class UpdateCoordinator {
     }
 
     private func showPanel(startCheck: Bool) {
-        // If already open, bring to front
-        if let existing = panel, existing.isVisible {
-            log.info("[Update] panel already visible; bringing front")
-            existing.makeKeyAndOrderFront(nil)
-            return
-        }
+        WindowReplacement.close(panel)
+        panel = nil
         let updateView = UpdateView()
         let hostingView = NSHostingView(rootView: updateView)
         let p = NSPanel(

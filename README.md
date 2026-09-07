@@ -44,6 +44,8 @@ Breadcrumbs emphasize the current folder. Hovering expands a segment to its full
 
 Thumbnail mode fits each complete image proportionally within the selected size, including upscaling small images. Selection outlines follow the image with a small inset instead of filling wide empty cells. Long filenames are shortened in the middle and expand into complete multiline labels when selected.
 
+Explicitly invoking an auxiliary window again replaces its previous presentation, including a hidden or minimized instance, with fresh content for the current action. This applies to search, multi-rename, archive creation, history, favorites, settings, connection and network windows, toolbar customization, media information, About, and Feedback. Saved window geometry is retained; clicking the main window does not trigger this replacement.
+
 ### Find and clean safely
 
 Search by name, content, size, or date, including inside archives. Focused presets help find large forgotten files, empty folders, and recognizable leftovers from removed applications. Results remain actionable, so several items can be reviewed and processed together.
