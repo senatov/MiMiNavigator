@@ -174,6 +174,8 @@ MiMiNavigator uses a **Total Commander/Norton Commander** shortcut layout by def
 
 ## Build from source
 
+The notarized release script uses a fresh temporary build and DMG staging directory for each run. It preserves open Xcode sessions, existing DerivedData, and shared SwiftPM caches. Build artifacts remain available at the paths printed in the release log for verification and later cleanup.
+
 Requirements:
 
 - macOS 26+ on Apple Silicon

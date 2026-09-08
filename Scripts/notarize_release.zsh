@@ -47,12 +47,11 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PROJECT_FILE="${PROJECT_DIR}/MiMiNavigator.xcodeproj"
 SCHEME="MiMiNavigator"
 CONFIG="Release"
-BUILD_DIR="/tmp/mimi_notarize_build"
+BUILD_DIR=""
 BUILD_LOG="/tmp/mimi_notarize_build.log"
 PACKAGE_LOG="/tmp/mimi_package_resolution.log"
 DMG="/tmp/MiMiNavigator-${VERSION}.dmg"
-DMG_STAGE="/tmp/mimi_dmg_notarize"
-DERIVED_DATA_ROOT="${HOME}/Library/Developer/Xcode/DerivedData"
+DMG_STAGE=""
 NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
 TEMP_DMG_DEVICE=""
 ACTIVE_CHILD_PID=""
@@ -242,9 +241,10 @@ if ! grep -Fq "MARKETING_VERSION = ${VERSION};" "${PROJECT_FILE}/project.pbxproj
     exit 1
 fi
 
-# ── Step 2: Kill Xcode ────────────────────────────────────────────────────────
-echo "[2/10] Killing Xcode..."
-killall Xcode 2>/dev/null && sleep 2 || echo "   Xcode not running"
+# ── Step 2: Isolated build workspace ─────────────────────────────────────────
+echo "[2/10] Preparing isolated release workspace; preserving Xcode and developer caches..."
+BUILD_DIR="$(mktemp -d /tmp/mimi_notarize_build.XXXXXX)"
+echo "   Build directory: ${BUILD_DIR}"
 
 # ── Step 2.5: Unlock keychain for codesign ────────────────────────────────────
 if security show-keychain-info ~/Library/Keychains/login.keychain-db 2>/dev/null; then
@@ -254,20 +254,9 @@ else
     security unlock-keychain ~/Library/Keychains/login.keychain-db
 fi
 
-# ── Step 3: Nuke DerivedData ──────────────────────────────────────────────────
-echo "[3/10] Removing DerivedData..."
-for dd in "${DERIVED_DATA_ROOT}"/MiMiNavigator-*(N); do
-    [[ -d "$dd" ]] && rm -rf "$dd" && echo "   Removed: $(basename $dd)"
-done
-rm -rf "${BUILD_DIR}" && echo "   Removed: ${BUILD_DIR}"
-
-# ── Step 4: Nuke SPM caches ──────────────────────────────────────────────────
-echo "[4/10] Clearing SPM caches..."
-rm -rf "${HOME}/Library/Caches/org.swift.swiftpm" 2>/dev/null
-rm -rf "${HOME}/Library/org.swift.swiftpm" 2>/dev/null
-rm -rf "${PROJECT_DIR}/.build" 2>/dev/null
-echo "   Clearing extended attributes from GUI resources..."
-xattr -cr "${PROJECT_DIR}/GUI"
+# ── Steps 3–4: Preserve shared build state ────────────────────────────────────
+echo "[3/10] Fresh DerivedData allocated for this release"
+echo "[4/10] Reusing pinned package checkouts without deleting shared SwiftPM caches"
 
 # ── Step 5: Resolve packages ─────────────────────────────────────────────────
 echo "[5/10] Resolving packages..."
@@ -348,8 +337,7 @@ if [[ ! -f "${DMG_BG}" ]]; then
 fi
 
 # prepare staging folder
-rm -rf "${DMG_STAGE}"
-mkdir -p "${DMG_STAGE}"
+DMG_STAGE="$(mktemp -d /tmp/mimi_dmg_notarize.XXXXXX)"
 cp -R "${APP}" "${DMG_STAGE}/"
 xattr -cr "${DMG_STAGE}/MiMiNavigator.app"
 ln -s /Applications "${DMG_STAGE}/Applications"
