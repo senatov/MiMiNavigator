@@ -32,6 +32,8 @@ It is free, open source, built with SwiftUI, signed, and notarized.
 
 > **Under active development.** Features and interface details may still change.
 
+The menu bar icon is checked after startup and when the application becomes active. If its window geometry remains invalid, MiMiNavigator attempts one recreation per launch. `[MenuBar]` logs record the delayed checks and any unresolved layout failure.
+
 ## What it does
 
 ### Two-panel file work

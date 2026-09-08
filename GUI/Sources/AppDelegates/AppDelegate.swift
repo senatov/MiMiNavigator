@@ -61,7 +61,7 @@ import LogKit
 
         // Ensure app is a regular Dock citizen from the very start
         NSApp.setActivationPolicy(.regular)
-        scheduleMenuBarInstall()
+        menuBarController.install()
         MemoryDiagnostics.shared.start()
 
         UserPreferences.shared.load()
@@ -103,13 +103,6 @@ import LogKit
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self else { return }
             self.logStartupCompletionIfNeeded(reason: "1.0s delayed checkpoint")
-        }
-    }
-
-    // MARK: - Menu Bar Install
-    private func scheduleMenuBarInstall() {
-        DispatchQueue.main.async { [weak self] in
-            self?.menuBarController.install()
         }
     }
 
@@ -188,6 +181,7 @@ import LogKit
 
     // MARK: - Main Window Focus
     func applicationDidBecomeActive(_ notification: Notification) {
+        menuBarController.verifyStatusItem()
         let mainWindow = NSApp.windows.first { isMainApplicationWindow($0) }
         scheduleStandaloneWindowOrdering(relativeTo: mainWindow)
     }

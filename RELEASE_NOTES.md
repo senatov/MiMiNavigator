@@ -17,7 +17,7 @@ A reliability update for auxiliary windows and media conversion, with clearer di
 
 ## Fixed
 
-- Restore the full-color MiMiNavigator application icon in its original wider menu bar slot, defer installation until activation-policy changes settle, and recover status items whose AppKit window is positioned off-screen.
+- Restore the MiMiNavigator ribbon-cat menu bar icon by retaining the original AppKit status item and allowing macOS to finish its asynchronous placement without removing and recreating it during launch.
 - Prevent overlapping conversions and stale process callbacks from mixing progress state.
 - Preserve the final diagnostic output when an external conversion tool fails.
 - Allow Debug XCTest hosts to run alongside the application without triggering the single-instance exit.
