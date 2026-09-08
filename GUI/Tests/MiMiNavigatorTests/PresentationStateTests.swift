@@ -7,6 +7,14 @@ import XCTest
 // MARK: - Presentation State Tests
 @MainActor
 final class PresentationStateTests: XCTestCase {
+    // MARK: - Menu Bar Recovery
+    func testMenuBarRepairDetectsMissingImageAndZeroSizedWindow() {
+        XCTAssertTrue(MenuBarController.statusItemNeedsRepair(isVisible: true, hasImage: false, windowHeight: 30))
+        XCTAssertTrue(MenuBarController.statusItemNeedsRepair(isVisible: true, hasImage: true, windowHeight: 0))
+        XCTAssertTrue(MenuBarController.statusItemNeedsRepair(isVisible: false, hasImage: true, windowHeight: 30))
+        XCTAssertFalse(MenuBarController.statusItemNeedsRepair(isVisible: true, hasImage: true, windowHeight: 30))
+    }
+
     // MARK: - Window Policy
     func testStandaloneWindowPolicyUsesNormalNonFloatingPanel() {
         let panel = NSPanel()

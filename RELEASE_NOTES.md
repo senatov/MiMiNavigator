@@ -17,6 +17,7 @@ A reliability update for auxiliary windows and media conversion, with clearer di
 
 ## Fixed
 
+- Restore the application icon in the macOS menu bar when the status item is created before its window receives a usable layout.
 - Prevent overlapping conversions and stale process callbacks from mixing progress state.
 - Preserve the final diagnostic output when an external conversion tool fails.
 - Allow Debug XCTest hosts to run alongside the application without triggering the single-instance exit.

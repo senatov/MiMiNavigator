@@ -11,6 +11,8 @@ import SwiftUI
 @MainActor final class MenuBarController: NSObject {
     private var statusItem: NSStatusItem?
     private var statusPopover: NSPopover?
+    private var statusVerificationTask: Task<Void, Never>?
+    private var didRecreateStatusItem = false
     private var diagnosticLogOffset: UInt64 = 0
 
     // MARK: - Install
@@ -35,9 +37,7 @@ import SwiftUI
         item.isVisible = true
         statusItem = item
         log.info("[MenuBar] native status item installed visible=\(item.isVisible)")
-        DispatchQueue.main.async { [weak self] in
-            self?.logStatusItemState()
-        }
+        scheduleStatusItemVerification()
     }
 
     // MARK: - Status Item Actions
@@ -145,11 +145,56 @@ import SwiftUI
 
     // MARK: - Status Image
     private func makeStatusImage() -> NSImage? {
-        let image = NSImage(named: "MenuBarIcon")
-            ?? NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
-        image?.size = NSSize(width: 19, height: 19)
-        image?.isTemplate = true
+        guard let source = NSImage(named: "MenuBarIcon") ?? NSApp.applicationIconImage,
+              let image = source.copy() as? NSImage
+        else {
+            log.error("[MenuBar] application icon unavailable")
+            return NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
+        }
+        image.size = NSSize(width: 19, height: 19)
+        image.isTemplate = NSImage(named: "MenuBarIcon") != nil
         return image
+    }
+
+    // MARK: - Status Item Recovery
+    private func scheduleStatusItemVerification() {
+        statusVerificationTask?.cancel()
+        statusVerificationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for delay in [0.15, 0.6, 1.5] {
+                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                guard let item = self.statusItem, let button = item.button else { break }
+                if !Self.statusItemNeedsRepair(
+                    isVisible: item.isVisible,
+                    hasImage: button.image != nil,
+                    windowHeight: button.window?.frame.height ?? 0
+                ) {
+                    self.logStatusItemState()
+                    return
+                }
+                button.image = self.makeStatusImage()
+                item.length = NSStatusItem.squareLength
+                item.isVisible = true
+                log.warning("[MenuBar] repairing invisible status item attemptDelay=\(delay)s image=\(button.image != nil) windowFrame=\(NSStringFromRect(button.window?.frame ?? .zero))")
+            }
+            self.recreateStatusItemIfNeeded()
+        }
+    }
+
+    private func recreateStatusItemIfNeeded() {
+        guard !didRecreateStatusItem else {
+            log.error("[MenuBar] status item remains unavailable after repair")
+            return
+        }
+        didRecreateStatusItem = true
+        if let statusItem { NSStatusBar.system.removeStatusItem(statusItem) }
+        statusItem = nil
+        log.warning("[MenuBar] recreating status item after failed layout")
+        install()
+    }
+
+    nonisolated static func statusItemNeedsRepair(isVisible: Bool, hasImage: Bool, windowHeight: CGFloat) -> Bool {
+        !isVisible || !hasImage || windowHeight <= 0
     }
 
     private var memoryLabel: String {
