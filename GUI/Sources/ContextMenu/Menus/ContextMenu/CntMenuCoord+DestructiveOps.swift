@@ -60,6 +60,8 @@ extension CntMenuCoord {
             log.info("\(#function) SUCCESS deleted \(files.count) item(s) → cursor moved to next file on \(panel)")
         } catch {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
+            await appState.refreshFiles(for: .left, force: true)
+            await appState.refreshFiles(for: .right, force: true)
             FileOperationOutcomePresenter.failure(.delete, error: error)
         }
     }

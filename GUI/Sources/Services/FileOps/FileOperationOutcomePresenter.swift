@@ -99,15 +99,19 @@ enum FileOperationOutcomePresenter {
                 }
             },
             action: {
+                var restoredCount = 0
                 do {
                     for (current, original) in zip(currentURLs, originalURLs) {
                         try FileManager.default.moveItem(at: current, to: original)
+                        restoredCount += 1
                     }
                     refresh()
                     log.info("[FileOps] undo restored \(currentURLs.count) item(s)")
                 } catch {
-                    log.error("[FileOps] undo failed: \(error.localizedDescription)")
-                    InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
+                    if restoredCount > 0 { refresh() }
+                    let message = "Restored \(restoredCount) of \(currentURLs.count) item(s). \(error.localizedDescription)"
+                    log.error("[FileOps] undo failed: \(message)")
+                    InAppNoticeCenter.shared.showError(title: "Undo Failed", message: message)
                 }
             }
         )
@@ -121,15 +125,19 @@ enum FileOperationOutcomePresenter {
             },
             action: {
                 Task { @MainActor in
+                    var recycledCount = 0
                     do {
                         for copiedURL in copiedURLs {
                             _ = try await FileRecycleService.recycle(copiedURL)
+                            recycledCount += 1
                         }
                         refresh()
                         log.info("[FileOps] undo removed \(copiedURLs.count) copied item(s)")
                     } catch {
-                        log.error("[FileOps] undo failed: \(error.localizedDescription)")
-                        InAppNoticeCenter.shared.showError(title: "Undo Failed", message: error.localizedDescription)
+                        if recycledCount > 0 { refresh() }
+                        let message = "Removed \(recycledCount) of \(copiedURLs.count) copied item(s). \(error.localizedDescription)"
+                        log.error("[FileOps] undo failed: \(message)")
+                        InAppNoticeCenter.shared.showError(title: "Undo Failed", message: message)
                     }
                 }
             }
