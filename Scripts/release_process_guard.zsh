@@ -39,6 +39,41 @@ restore_version_stamp() {
     STAMP_BACKUP_DIR=""
 }
 
+repair_corrupt_package_checkout() {
+    local package_name
+    local quarantine_dir
+    local checkout_path
+    local repository_path
+    local repository_name
+    local repository_suffix
+    package_name="$(sed -n "s/.*package ‘\([^’]*\)’.*/\1/p" "${PACKAGE_LOG}" | tail -1)"
+    if [[ -z "${package_name}" ]] || [[ ! "${package_name}" =~ '^[A-Za-z0-9._-]+$' ]]; then
+        return 1
+    fi
+    if ! grep -Fq "fatal: unable to read tree" "${PACKAGE_LOG}"; then
+        return 1
+    fi
+    quarantine_dir="$(mktemp -d "/tmp/mimi_spm_repair.${package_name}.XXXXXX")"
+    checkout_path="${PROJECT_DIR}/.spm-checkouts/checkouts/${package_name}"
+    if [[ -d "${checkout_path}" ]]; then
+        mv "${checkout_path}" "${quarantine_dir}/checkout"
+    fi
+    for repository_path in "${PROJECT_DIR}/.spm-checkouts/repositories/${package_name}-"*(N); do
+        [[ -d "${repository_path}" ]] || continue
+        repository_name="${repository_path:t}"
+        repository_suffix="${repository_name#${package_name}-}"
+        if [[ "${repository_suffix}" =~ '^[[:xdigit:]]+$' ]]; then
+            mv "${repository_path}" "${quarantine_dir}/${repository_path:t}"
+        fi
+    done
+    if [[ -z "$(find "${quarantine_dir}" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+        rmdir "${quarantine_dir}"
+        return 1
+    fi
+    echo "   Quarantined corrupt SwiftPM cache for ${package_name}: ${quarantine_dir}"
+    echo "   The next attempt will download the pinned revision again."
+}
+
 release_cleanup() {
     local exit_code=$?
     terminate_active_child
@@ -107,7 +142,11 @@ resolve_release_packages() {
         echo "   Package resolution attempt ${attempt}/${PACKAGE_MAX_ATTEMPTS} failed."
         tail -20 "${PACKAGE_LOG}"
         if (( attempt < PACKAGE_MAX_ATTEMPTS )); then
-            echo "   Retrying package resolution once..."
+            if repair_corrupt_package_checkout; then
+                echo "   Retrying package resolution with a fresh checkout..."
+            else
+                echo "   Retrying package resolution once..."
+            fi
         fi
     done
     echo "❌ Package resolution failed. Log: ${PACKAGE_LOG}"
