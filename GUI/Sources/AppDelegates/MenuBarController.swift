@@ -19,7 +19,7 @@ import SwiftUI
     func install() {
         guard statusItem == nil else { return }
         diagnosticLogOffset = MenuBarDiagnostics.currentLogOffset()
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        let item = NSStatusBar.system.statusItem(withLength: 34)
         guard let button = item.button else {
             NSStatusBar.system.removeStatusItem(item)
             log.error("[MenuBar] status item button unavailable")
@@ -145,14 +145,12 @@ import SwiftUI
 
     // MARK: - Status Image
     private func makeStatusImage() -> NSImage? {
-        guard let source = NSImage(named: "MenuBarIcon") ?? NSApp.applicationIconImage,
-              let image = source.copy() as? NSImage
-        else {
+        guard let image = NSApp.applicationIconImage.copy() as? NSImage else {
             log.error("[MenuBar] application icon unavailable")
             return NSImage(systemSymbolName: "folder.fill", accessibilityDescription: "MiMiNavigator")
         }
-        image.size = NSSize(width: 19, height: 19)
-        image.isTemplate = NSImage(named: "MenuBarIcon") != nil
+        image.size = NSSize(width: 23, height: 23)
+        image.isTemplate = false
         return image
     }
 
@@ -164,16 +162,18 @@ import SwiftUI
             for delay in [0.15, 0.6, 1.5] {
                 do { try await Task.sleep(for: .seconds(delay)) } catch { return }
                 guard let item = self.statusItem, let button = item.button else { break }
+                let windowFrame = button.window?.frame ?? .zero
                 if !Self.statusItemNeedsRepair(
                     isVisible: item.isVisible,
                     hasImage: button.image != nil,
-                    windowHeight: button.window?.frame.height ?? 0
+                    windowFrame: windowFrame,
+                    screenFrames: NSScreen.screens.map(\.frame)
                 ) {
                     self.logStatusItemState()
                     return
                 }
                 button.image = self.makeStatusImage()
-                item.length = NSStatusItem.squareLength
+                item.length = 34
                 item.isVisible = true
                 log.warning("[MenuBar] repairing invisible status item attemptDelay=\(delay)s image=\(button.image != nil) windowFrame=\(NSStringFromRect(button.window?.frame ?? .zero))")
             }
@@ -193,8 +193,18 @@ import SwiftUI
         install()
     }
 
-    nonisolated static func statusItemNeedsRepair(isVisible: Bool, hasImage: Bool, windowHeight: CGFloat) -> Bool {
-        !isVisible || !hasImage || windowHeight <= 0
+    nonisolated static func statusItemNeedsRepair(
+        isVisible: Bool,
+        hasImage: Bool,
+        windowFrame: NSRect,
+        screenFrames: [NSRect]
+    ) -> Bool {
+        guard isVisible, hasImage, windowFrame.width > 0, windowFrame.height > 0 else { return true }
+        return !screenFrames.contains { screenFrame in
+            let centerIsOnScreen = screenFrame.contains(NSPoint(x: windowFrame.midX, y: windowFrame.midY))
+            let isAtMenuBarEdge = abs(screenFrame.maxY - windowFrame.maxY) <= max(80, windowFrame.height * 2)
+            return centerIsOnScreen && isAtMenuBarEdge
+        }
     }
 
     private var memoryLabel: String {
@@ -257,6 +267,7 @@ import SwiftUI
             return
         }
         let frame = button.window?.frame ?? .zero
-        log.info("[MenuBar] status item ready visible=\(item.isVisible) windowVisible=\(button.window?.isVisible == true) frame=\(NSStringFromRect(frame))")
+        let screenFrames = NSScreen.screens.map { NSStringFromRect($0.frame) }.joined(separator: ", ")
+        log.info("[MenuBar] status item ready visible=\(item.isVisible) windowVisible=\(button.window?.isVisible == true) image=\(button.image != nil) frame=\(NSStringFromRect(frame)) screens=[\(screenFrames)]")
     }
 }
