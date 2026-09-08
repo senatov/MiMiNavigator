@@ -18,6 +18,12 @@ final class SingleInstanceController {
 
     // MARK: - Acquire
     func acquire() -> Bool {
+        #if DEBUG
+        if NSClassFromString("XCTestCase") != nil {
+            log.info("[SingleInstance] XCTest host bypasses application instance lock")
+            return true
+        }
+        #endif
         guard lockFileDescriptor == -1 else { return true }
         let descriptor = open(lockFilePath, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
         guard descriptor >= 0 else {

@@ -99,6 +99,25 @@ final class PresentationStateTests: XCTestCase {
 // MARK: - Media process diagnostics tests
 @MainActor
 final class MediaProcessDiagnosticsTests: XCTestCase {
+    // MARK: - GIF recovery
+    func testGIFRecoveryRestoresBackupAndPreservesConflicts() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let backup = directory.appendingPathComponent("backup.gif")
+        let target = directory.appendingPathComponent("target.gif")
+        let original = Data("original".utf8)
+        try original.write(to: backup)
+        MediaConversionService.restoreGIFBackup(backup, target: target)
+        XCTAssertEqual(try Data(contentsOf: target), original)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: backup.path))
+        let preserved = Data("preserved-backup".utf8)
+        try preserved.write(to: backup)
+        MediaConversionService.restoreGIFBackup(backup, target: target)
+        XCTAssertEqual(try Data(contentsOf: target), original)
+        XCTAssertEqual(try Data(contentsOf: backup), preserved)
+    }
+
     // MARK: - Destination aliases
     func testRejectsOriginalSymlinkAndHardLink() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

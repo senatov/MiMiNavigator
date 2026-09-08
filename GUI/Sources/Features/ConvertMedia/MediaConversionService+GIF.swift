@@ -209,8 +209,13 @@ extension MediaConversionService {
         let reduced = target.deletingLastPathComponent()
             .appendingPathComponent(".mimi_reduced_\(UUID().uuidString).gif")
         try FileManager.default.moveItem(at: target, to: original)
+        var installed = false
         defer {
-            try? FileManager.default.removeItem(at: original)
+            if installed {
+                try? FileManager.default.removeItem(at: original)
+            } else {
+                Self.restoreGIFBackup(original, target: target)
+            }
             try? FileManager.default.removeItem(at: reduced)
         }
         panel.appendLine("Reducing GIF: max width 400px, palette 256 colors, first \(GifSizeGuard.fallbackDurationSeconds)s…")
@@ -221,11 +226,21 @@ extension MediaConversionService {
             try await runGIFReduction(source: original, target: reduced, duration: GifSizeGuard.finalDurationSeconds, fps: GifSizeGuard.finalFPS, panel: panel)
         }
         if GifSizeGuard.exceedsLimit(reduced) {
-            try? FileManager.default.moveItem(at: original, to: target)
             throw ConversionError.gifTooLarge(GifSizeGuard.fileSizeMB(reduced))
         }
         try FileManager.default.moveItem(at: reduced, to: target)
+        installed = true
         panel.appendLine("✅ GIF reduced to \(GifSizeGuard.fileSizeMB(target))")
+    }
+
+    // MARK: - Preserve converted GIF after failed reduction
+    nonisolated static func restoreGIFBackup(_ backup: URL, target: URL) {
+        do {
+            try FileManager.default.moveItem(at: backup, to: target)
+            log.info("[MediaConvert] restored GIF after unsuccessful reduction target=\(target.path.debugDescription)")
+        } catch {
+            log.error("[MediaConvert] GIF recovery requires attention backup=\(backup.path.debugDescription) target=\(target.path.debugDescription) error=\(error.localizedDescription); backup preserved")
+        }
     }
 
     func runGIFReduction(

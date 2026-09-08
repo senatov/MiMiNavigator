@@ -66,6 +66,8 @@ Media files can be previewed, inspected, and converted from the same workflow. O
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
 
+If GIF size reduction fails or is cancelled, the already converted GIF is restored. If a conflicting file prevents restoration, the recovery copy is retained and its exact path is recorded in the diagnostic log.
+
 ## Comparison and synchronization
 
 File comparison, directory comparison, and synchronization are large specialist tasks—not small checkboxes in a file manager. MiMiNavigator deliberately delegates them to mature, well-established applications instead of pretending to replace those tools.
