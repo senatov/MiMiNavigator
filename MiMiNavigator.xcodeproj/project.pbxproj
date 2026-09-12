@@ -268,19 +268,19 @@
 			);
 			mainGroup = 97AD1A252C624E020045C38D;
 			packageReferences = (
-				F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */,
-				F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */,
-				F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */,
+				F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "BinaryPackages/FindFilesKit" */,
+				F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "BinaryPackages/MediaMetadataKit" */,
+				F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "BinaryPackages/ExternalToolsKit" */,
 				97D915672CD5621500EB5FDD /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
-				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */,
-				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */,
-				AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */,
-				BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */,
-				BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */,
-				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */,
+				971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "BinaryPackages/FavoritesKit" */,
+				9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "BinaryPackages/NetworkKit" */,
+				AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "BinaryPackages/LogKit" */,
+				BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "BinaryPackages/FileModelKit" */,
+				BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "BinaryPackages/ScannerKit" */,
+				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "BinaryPackages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
-				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */,
-				CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */,
+				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "BinaryPackages/RenameKit" */,
+				CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "BinaryPackages/CacheKit" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 97AD1A2F2C624E020045C38D /* Products */;
@@ -689,49 +689,49 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */ = {
+		971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "BinaryPackages/FavoritesKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FavoritesKit;
+			relativePath = BinaryPackages/FavoritesKit;
 		};
-		9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */ = {
+		9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "BinaryPackages/NetworkKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/NetworkKit;
+			relativePath = BinaryPackages/NetworkKit;
 		};
-		AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */ = {
+		AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "BinaryPackages/LogKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/LogKit;
+			relativePath = BinaryPackages/LogKit;
 		};
-		BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */ = {
+		BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "BinaryPackages/FileModelKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FileModelKit;
+			relativePath = BinaryPackages/FileModelKit;
 		};
-		BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */ = {
+		BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "BinaryPackages/ScannerKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ScannerKit;
+			relativePath = BinaryPackages/ScannerKit;
 		};
-		BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */ = {
+		BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "BinaryPackages/ArchiveKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ArchiveKit;
+			relativePath = BinaryPackages/ArchiveKit;
 		};
-		CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */ = {
+		CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "BinaryPackages/CacheKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/CacheKit;
+			relativePath = BinaryPackages/CacheKit;
 		};
-		DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */ = {
+		DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "BinaryPackages/RenameKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/RenameKit;
+			relativePath = BinaryPackages/RenameKit;
 		};
-		F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */ = {
+		F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "BinaryPackages/FindFilesKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/FindFilesKit;
+			relativePath = BinaryPackages/FindFilesKit;
 		};
-		F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */ = {
+		F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "BinaryPackages/MediaMetadataKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/MediaMetadataKit;
+			relativePath = BinaryPackages/MediaMetadataKit;
 		};
-		F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */ = {
+		F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "BinaryPackages/ExternalToolsKit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/ExternalToolsKit;
+			relativePath = BinaryPackages/ExternalToolsKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -757,12 +757,12 @@
 /* Begin XCSwiftPackageProductDependency section */
 		52D4533F441E4D78BD910304 /* NetworkKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "Packages/NetworkKit" */;
+			package = 9727CDA52F477FF400C4E234 /* XCLocalSwiftPackageReference "BinaryPackages/NetworkKit" */;
 			productName = NetworkKit;
 		};
 		971A28F82F1B140900094ADE /* FavoritesKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "Packages/FavoritesKit" */;
+			package = 971A28F72F1B140900094ADE /* XCLocalSwiftPackageReference "BinaryPackages/FavoritesKit" */;
 			productName = FavoritesKit;
 		};
 		97D915682CD5624900EB5FDD /* SwiftyBeaver */ = {
@@ -777,27 +777,27 @@
 		};
 		AA000002AA000002AA000002 /* LogKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "Packages/LogKit" */;
+			package = AA000001AA000001AA000001 /* XCLocalSwiftPackageReference "BinaryPackages/LogKit" */;
 			productName = LogKit;
 		};
 		BB000011BB000011BB000011 /* FileModelKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "Packages/FileModelKit" */;
+			package = BB000001BB000001BB000001 /* XCLocalSwiftPackageReference "BinaryPackages/FileModelKit" */;
 			productName = FileModelKit;
 		};
 		BB000012BB000012BB000012 /* ScannerKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "Packages/ScannerKit" */;
+			package = BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "BinaryPackages/ScannerKit" */;
 			productName = ScannerKit;
 		};
 		BB000013BB000013BB000013 /* ArchiveKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "Packages/ArchiveKit" */;
+			package = BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "BinaryPackages/ArchiveKit" */;
 			productName = ArchiveKit;
 		};
 		CA000002CA000002CA000002 /* CacheKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "Packages/CacheKit" */;
+			package = CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "BinaryPackages/CacheKit" */;
 			productName = CacheKit;
 		};
 		CC000002CC000002CC000002 /* Citadel */ = {
@@ -807,22 +807,22 @@
 		};
 		DD000015DD000015DD000015 /* RenameKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "Packages/RenameKit" */;
+			package = DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "BinaryPackages/RenameKit" */;
 			productName = RenameKit;
 		};
 		F1000011F1000011F1000011 /* FindFilesKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "Packages/FindFilesKit" */;
+			package = F1000010F1000010F1000010 /* XCLocalSwiftPackageReference "BinaryPackages/FindFilesKit" */;
 			productName = FindFilesKit;
 		};
 		F2000011F2000011F2000011 /* MediaMetadataKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "Packages/MediaMetadataKit" */;
+			package = F2000010F2000010F2000010 /* XCLocalSwiftPackageReference "BinaryPackages/MediaMetadataKit" */;
 			productName = MediaMetadataKit;
 		};
 		F3000011F3000011F3000011 /* ExternalToolsKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "Packages/ExternalToolsKit" */;
+			package = F3000010F3000010F3000010 /* XCLocalSwiftPackageReference "BinaryPackages/ExternalToolsKit" */;
 			productName = ExternalToolsKit;
 		};
 /* End XCSwiftPackageProductDependency section */

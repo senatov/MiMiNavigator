@@ -131,25 +131,14 @@ final class ArchivePreferencesStore: ObservableObject {
 
     // MARK: - Compression Support
 
-    /// Whether format supports compression level selection
+    // MARK: - Compression Selection
     func supportsCompression(_ format: ArchiveFormat) -> Bool {
-        switch format {
-        case .zip, .gzip, .bzip2, .xz, .lzma, .zstd, .lz4, .lzo, .lzip,
-             .sevenZip, .tarGz, .tarBz2, .tarXz, .tarZst, .tarLz4:
-            return true
-        case .tar, .compressZ, .tarLzma, .tarLzo, .tarLz, .sevenZipGeneric:
-            return false
-        }
+        format.supportsCompressionLevel
     }
 
-    /// Whether format supports password protection
+    // MARK: - Password Support
     func supportsPassword(_ format: ArchiveFormat) -> Bool {
-        switch format {
-        case .zip, .sevenZip:
-            return true
-        default:
-            return false
-        }
+        format.supportsPasswordProtection
     }
 
     // MARK: - Persistence

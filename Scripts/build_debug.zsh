@@ -5,7 +5,7 @@
 
 set -eo pipefail
 
-PROJECT_DIR="/Users/senat/Develop/MiMiNavigator"
+PROJECT_DIR="${0:A:h:h}"
 PROJECT_FILE="${PROJECT_DIR}/MiMiNavigator.xcodeproj"
 SCHEME="MiMiNavigator"
 CONFIG="Debug"

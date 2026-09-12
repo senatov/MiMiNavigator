@@ -137,9 +137,9 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
             hosts[i].shares = result.shares
             hosts[i].sharesLoaded = true
             hosts[i].sharesLoading = false
-            hosts[i].shareLoadState = shareLoadState(for: result)
+            hosts[i].shareLoadState = result.loadState
         }
-        log.info("[Network] '\(host.name)' shares: \(result.shares.map(\.name)) state=\(shareLoadState(for: result).rawValue)")
+        log.info("[Network] '\(host.name)' shares: \(result.shares.map(\.name)) state=\(result.loadState.rawValue)")
     }
 
     func retryFetchShares(for hostID: NetworkHost.ID) async {
@@ -149,19 +149,6 @@ final class NetworkNeighborhoodProvider: NSObject, ObservableObject {
         hosts[idx].shares = []
         hosts[idx].shareLoadState = .idle
         await fetchShares(for: hostID)
-    }
-
-    private func shareLoadState(for result: NetworkShareEnumerationResult) -> NetworkShareLoadState {
-        switch result {
-        case .shares:
-            return .loaded
-        case .noShares:
-            return .noShares
-        case .authRequired:
-            return .authRequired
-        case .unavailable:
-            return .unavailable
-        }
     }
 
     // MARK: - Normalize name for dedup

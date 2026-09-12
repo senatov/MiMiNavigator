@@ -176,16 +176,20 @@ MiMiNavigator uses a **Total Commander/Norton Commander** shortcut layout by def
 
 ## Build from source
 
+MiMiNavigator downloads the compiled MiMiKits libraries through Swift Package
+Manager. Contributors do not need access to their private implementation sources.
+See [Binary package distribution](GUI/Docs/Binary_Packages.md) for the supported
+platform and maintainer workflow.
+
 The notarized release script uses a fresh temporary build and DMG staging directory for each run. It preserves open Xcode sessions, existing DerivedData, and shared SwiftPM caches. If a cached package is missing a pinned Git object, the resolver quarantines only that package checkout and downloads it again. Build artifacts remain available at the paths printed in the release log for verification and later cleanup.
 
 Requirements:
 
 - macOS 26+ on Apple Silicon
 - Current Xcode with Swift 6.2
-- Git submodules
 
 ```zsh
-git clone --recurse-submodules https://github.com/senatov/MiMiNavigator.git
+git clone https://github.com/senatov/MiMiNavigator.git
 cd MiMiNavigator
 zsh Scripts/stamp_version.zsh
 open MiMiNavigator.xcodeproj
@@ -252,7 +256,7 @@ MiMiNavigator is developed by **Iakov Senatov** — Diplom-Ingenieur (Chemical P
 
 ## License
 
-[AGPL-3.0](LICENSE) — Iakov Senatov
+[AGPL-3.0](LICENSE) with an [additional permission for MiMiKits](AGPL_ADDITIONAL_PERMISSION.md) — Iakov Senatov
 
 <p align="center">
   <a href="https://www.linkedin.com/in/iakov-senatov-07060765"><img src="https://img.shields.io/badge/LinkedIn-Iakov_Senatov-0077B5?logo=linkedin&logoColor=white" alt="LinkedIn"></a>
