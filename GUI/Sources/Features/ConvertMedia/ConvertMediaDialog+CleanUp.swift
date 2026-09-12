@@ -63,8 +63,11 @@ extension ConvertMediaDialog {
 
 
     func bringWindowToFront(_ window: NSWindow) {
-        window.orderFront(nil)
-        window.makeKeyAndOrderFront(nil)
+        if let panel = window as? NSPanel, WindowPresentationPolicy.isStandalone(panel) {
+            WindowPresentationPolicy.presentStandalone(panel)
+        } else {
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 
 

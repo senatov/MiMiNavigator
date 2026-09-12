@@ -32,8 +32,24 @@ extension MediaInfoPanelView {
         }
         .frame(minWidth: Layout.previewMinWidth, idealWidth: Layout.previewIdealWidth, maxWidth: .infinity, maxHeight: .infinity)
         .background(sectionBackground)
-        .overlay(sectionBorder)
+        .overlay(previewBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous))
+    }
+
+    private var previewBorder: some View {
+        RoundedRectangle(cornerRadius: Layout.sectionCornerRadius, style: .continuous)
+            .strokeBorder(previewBorderColor, lineWidth: 1)
+    }
+
+    private var previewBorderColor: Color {
+        switch controller.previewMode {
+        case .video:
+            return Color(nsColor: #colorLiteral(red: 0.0431372549, green: 0.2941176471, blue: 0.1450980392, alpha: 1))
+        case .image:
+            return Color(nsColor: #colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1))
+        case .none:
+            return Color(nsColor: .separatorColor)
+        }
     }
 
     private var previewPlaceholder: some View {

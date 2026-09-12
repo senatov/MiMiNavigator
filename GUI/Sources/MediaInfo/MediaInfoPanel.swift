@@ -129,8 +129,9 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         }
 
         positionPanelIfNeeded()
-        panel?.makeKeyAndOrderFront(nil)
-        panel?.makeKey()
+        if let panel {
+            WindowPresentationPolicy.presentStandalone(panel)
+        }
     }
 
     func update(title: String, text: String) {
@@ -149,8 +150,8 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
 
     func bringToFront() {
-        guard panel?.isVisible == true else { return }
-        panel?.orderFront(nil)
+        guard let panel, panel.isVisible else { return }
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
     func ensurePanelExists() {

@@ -54,7 +54,7 @@ final class UpdateCoordinator {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        panel.orderFront(nil)
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
     private func showPanel(startCheck: Bool) {
@@ -77,7 +77,7 @@ final class UpdateCoordinator {
             p.center()
         }
         p.setFrameAutosaveName(frameAutosaveName)
-        p.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(p)
         self.panel = p
         if startCheck {
             Task {

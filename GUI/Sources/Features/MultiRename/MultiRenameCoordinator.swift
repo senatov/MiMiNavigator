@@ -44,7 +44,7 @@ final class MultiRenameCoordinator {
         if !panelWindow.setFrameUsingName(frameAutosaveName) { panelWindow.center() }
         panelWindow.setFrameAutosaveName(frameAutosaveName)
         panelWindow.delegate = MultiRenameWindowDelegate.shared
-        panelWindow.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panelWindow)
         panelWindow.recalculateKeyViewLoop()
         window = panelWindow
         isVisible = true
@@ -58,8 +58,8 @@ final class MultiRenameCoordinator {
     }
 
     func bringToFront() {
-        guard isVisible else { return }
-        window?.orderFront(nil)
+        guard isVisible, let panel = window as? NSPanel else { return }
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
     func windowDidClose(_ closedWindow: NSWindow) {

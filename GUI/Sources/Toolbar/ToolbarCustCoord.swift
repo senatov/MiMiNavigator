@@ -178,13 +178,7 @@ final class ToolbarCustomizeCoordinator {
     }
 
     private func present(_ panel: NSPanel) {
-        panel.makeKeyAndOrderFront(nil)
-
-        // Re-assert key status on the next main turn, after right-click menu tracking settles.
-        DispatchQueue.main.async { [weak self, weak panel] in
-            guard let self, let panel, self.window === panel, self.isVisible else { return }
-            panel.makeKeyAndOrderFront(nil)
-        }
+        WindowPresentationPolicy.presentStandalone(panel)
     }
 }
 

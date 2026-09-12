@@ -25,8 +25,7 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
         WindowReplacement.close(panel)
         panel = nil
         let p = makePanel()
-        p.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        WindowPresentationPolicy.presentStandalone(p)
         panel = p
         log.debug("[Feedback] panel shown")
     }
@@ -34,7 +33,7 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        panel.orderFront(nil)
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
     // MARK: - NSWindowDelegate

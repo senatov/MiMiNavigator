@@ -71,7 +71,7 @@ final class SettingsCoordinator {
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = SettingsWindowDelegate.shared
         log.debug(#function)
-        panel.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panel)
         panel.recalculateKeyViewLoop()
         window = panel
         isVisible = true
@@ -99,8 +99,8 @@ final class SettingsCoordinator {
     }
 
     func bringToFront() {
-        guard isVisible, !isClosing else { return }
-        window?.orderFront(nil)
+        guard isVisible, !isClosing, let window else { return }
+        WindowPresentationPolicy.raiseStandalone(window)
     }
 
     // MARK: - Default frame: centered over main window

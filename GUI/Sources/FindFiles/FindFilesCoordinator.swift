@@ -81,7 +81,7 @@ final class FindFilesCoordinator {
         }
         window.setFrameAutosaveName(frameAutosaveName)
         window.delegate = FindFilesWindowDelegate.shared
-        window.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(window)
         window.recalculateKeyViewLoop()
         findWindow = window
         isVisible = true

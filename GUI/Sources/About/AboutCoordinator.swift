@@ -27,8 +27,7 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         WindowReplacement.close(panel)
         panel = nil
         let p = makePanel()
-        p.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        WindowPresentationPolicy.presentStandalone(p)
         self.panel = p
         log.debug("[AboutCoordinator] panel shown")
     }
@@ -36,7 +35,7 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        panel.orderFront(nil)
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
 

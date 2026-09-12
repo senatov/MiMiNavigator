@@ -19,7 +19,7 @@ final class FileOperationDiagnosticPresenter: NSObject, NSWindowDelegate {
             }
         )
         position(panel)
-        panel.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panel)
         self.panel = panel
     }
 

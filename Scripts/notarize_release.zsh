@@ -141,21 +141,23 @@ if print -r -- "${SUBMODULE_STATUS}" | grep -Eq '^[+-U]'; then
     print -r -- "${SUBMODULE_STATUS}"
     exit 1
 fi
-while IFS= read -r submodule_path; do
-    [[ -z "${submodule_path}" ]] && continue
-    if [[ -n "$(git -C "${submodule_path}" status --porcelain)" ]]; then
-        echo "❌ Submodule has uncommitted changes: ${submodule_path}"
-        git -C "${submodule_path}" status --short
-        exit 1
-    fi
-    submodule_sha="$(git rev-parse "HEAD:${submodule_path}")"
-    git -C "${submodule_path}" fetch --quiet origin
-    if [[ -z "$(git -C "${submodule_path}" branch -r --contains "${submodule_sha}")" ]]; then
-        echo "❌ Submodule commit is not available on origin: ${submodule_path} ${submodule_sha}"
-        echo "   Push the submodule branch before creating the release."
-        exit 1
-    fi
-done < <(git config --file .gitmodules --get-regexp path | awk '{print $2}')
+if [[ -f .gitmodules ]]; then
+    while IFS= read -r submodule_path; do
+        [[ -z "${submodule_path}" ]] && continue
+        if [[ -n "$(git -C "${submodule_path}" status --porcelain)" ]]; then
+            echo "❌ Submodule has uncommitted changes: ${submodule_path}"
+            git -C "${submodule_path}" status --short
+            exit 1
+        fi
+        submodule_sha="$(git rev-parse "HEAD:${submodule_path}")"
+        git -C "${submodule_path}" fetch --quiet origin
+        if [[ -z "$(git -C "${submodule_path}" branch -r --contains "${submodule_sha}")" ]]; then
+            echo "❌ Submodule commit is not available on origin: ${submodule_path} ${submodule_sha}"
+            echo "   Push the submodule branch before creating the release."
+            exit 1
+        fi
+    done < <(git config --file .gitmodules --get-regexp path | awk '{print $2}')
+fi
 if [[ ! -f "${NOTES_FILE}" ]]; then
     echo "❌ Release notes not found: ${NOTES_FILE}"
     exit 1
@@ -203,7 +205,7 @@ if ! git rev-parse -q --verify "refs/tags/${TAG}" &>/dev/null; then
 fi
 TAG_TARGET="$(git rev-list -n 1 "${TAG}")"
 HEAD_SHA="$(git rev-parse HEAD)"
-RETAG_EXISTING_RELEASE=false
+REPUBLISH_EXISTING_RELEASE_REFS=false
 if gh release view "${TAG}" &>/dev/null; then
     echo "   Existing GitHub release ${TAG} found."
     RELEASE_IMMUTABLE="$(gh release view "${TAG}" --json isImmutable --jq '.isImmutable')"
@@ -214,10 +216,21 @@ if gh release view "${TAG}" &>/dev/null; then
         exit 1
     fi
     if [[ "${TAG_TARGET}" != "${HEAD_SHA}" ]]; then
-        RETAG_EXISTING_RELEASE=true
+        REPUBLISH_EXISTING_RELEASE_REFS=true
         echo "   Rebuild commit differs from the existing tag."
         echo "   Tag will move after successful notarization:"
         echo "     ${TAG_TARGET} -> ${HEAD_SHA}"
+    else
+        REMOTE_TAG_TARGET="$(git ls-remote origin "refs/tags/${TAG}^{}" | awk '{print $1}')"
+        if [[ -z "${REMOTE_TAG_TARGET}" ]]; then
+            REMOTE_TAG_TARGET="$(git ls-remote origin "refs/tags/${TAG}" | awk '{print $1}')"
+        fi
+        if [[ "${REMOTE_TAG_TARGET}" != "${HEAD_SHA}" ]]; then
+            REPUBLISH_EXISTING_RELEASE_REFS=true
+            echo "   Remote release tag differs from the rebuild commit."
+            echo "   Remote tag will move after successful notarization:"
+            echo "     ${REMOTE_TAG_TARGET:-missing} -> ${HEAD_SHA}"
+        fi
     fi
     echo "   Rebuild mode: will replace the DMG asset and move the tag only if needed."
 else
@@ -458,20 +471,26 @@ spctl --assess --type open --context context:primary-signature --verbose=2 "${DM
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
 if gh release view "${TAG}" &>/dev/null; then
-    if [[ "${RETAG_EXISTING_RELEASE}" == "true" ]]; then
+    if [[ "${REPUBLISH_EXISTING_RELEASE_REFS}" == "true" ]]; then
         echo "   Publishing ${CURRENT_BRANCH} before moving the release tag..."
         git push origin "${CURRENT_BRANCH}"
-        echo "   Moving ${TAG} to the notarized rebuild commit..."
-        git tag -fa "${TAG}" -m "release ${VERSION}"
+        if [[ "$(git rev-list -n 1 "${TAG}")" != "${HEAD_SHA}" ]]; then
+            echo "   Moving local ${TAG} to the notarized rebuild commit..."
+            git tag -fa "${TAG}" -m "release ${VERSION}"
+        fi
+        echo "   Publishing ${TAG} for the notarized rebuild commit..."
         git push origin "refs/tags/${TAG}" --force
     fi
     echo "   Release ${TAG} exists, attempting upload..."
     if ! gh release upload "${TAG}" "${DMG}" --clobber; then
-        echo "   ❌ Upload failed. Existing release was left untouched."
+        echo "   ❌ Upload failed after notarization. Inspect the existing release before retrying."
         echo "      Check whether the release is immutable or the asset is locked:"
         echo "      https://github.com/senatov/MiMiNavigator/releases/tag/${TAG}"
         exit 1
     fi
+    gh release edit "${TAG}" \
+        --title "${TAG} — MiMiNavigator (notarized)" \
+        --notes-file "${NOTES_FILE}"
 else
     echo "   Publishing ${CURRENT_BRANCH} and ${TAG} after successful notarization..."
     git push origin "${CURRENT_BRANCH}"

@@ -87,7 +87,7 @@ final class ConnectToServerCoordinator {
         panel.setFrameAutosaveName(frameAutosaveName)
 
         panel.delegate = ConnectToServerWindowDelegate.shared
-        panel.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panel)
         panel.recalculateKeyViewLoop()
 
         window = panel
@@ -138,8 +138,8 @@ final class ConnectToServerCoordinator {
 
     // MARK: - Raise to front (called by AppDelegate.applicationDidBecomeActive)
     func bringToFront() {
-        guard isVisible else { return }
-        window?.orderFront(nil)
+        guard isVisible, let window else { return }
+        WindowPresentationPolicy.raiseStandalone(window)
     }
 
     // MARK: - Handle connect action from view

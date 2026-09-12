@@ -67,7 +67,7 @@ final class PackDialogCoordinator {
         }
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = PackWindowDelegate.shared
-        panel.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panel)
         window = panel
         isVisible = true
         log.info("[PackPanel] opened")
@@ -115,8 +115,8 @@ final class PackDialogCoordinator {
 
     // MARK: - Raise to front (called when main window becomes key)
     func bringToFront() {
-        guard isVisible else { return }
-        window?.orderFront(nil)
+        guard isVisible, let window else { return }
+        WindowPresentationPolicy.raiseStandalone(window)
     }
 
 

@@ -101,7 +101,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        panel.orderFront(nil)
+        WindowPresentationPolicy.raiseStandalone(panel)
     }
 
     // MARK: - NSWindowDelegate
@@ -142,8 +142,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
 
     // MARK: - Present Above Main Window
     private func presentAboveMain(_ panel: NSPanel) {
-        panel.orderFront(nil)
-        panel.makeKeyAndOrderFront(nil)
+        WindowPresentationPolicy.presentStandalone(panel)
     }
 
     // MARK: - Window Size Persistence
