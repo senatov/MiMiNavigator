@@ -41,6 +41,9 @@ struct PanelState {
     // MARK: - Version counter for change detection
     var filesVersion: Int = 0
 
+    // MARK: - Disk Space
+    var diskSpaceStatus: VolumeStatusInfo.Capacity?
+
     // MARK: - Saved local URL (before remote connection)
     var savedLocalURL: URL?
 

@@ -68,6 +68,20 @@ extension AppState {
         }
         await refreshDetectedFiles(for: panel, force: force)
         reconcileSelectionAfterRefresh(for: panel)
+        await refreshDiskSpace(for: panel)
+    }
+
+    // MARK: - Refresh Disk Space
+    private func refreshDiskSpace(for panel: FavPanelSide) async {
+        let refreshedURL = self[panel: panel].currentDirectory
+        let status = await Task.detached(priority: .utility) {
+            VolumeStatusInfo.panelStatus(for: refreshedURL)
+        }.value
+        guard self[panel: panel].currentDirectory.standardizedFileURL == refreshedURL.standardizedFileURL else {
+            log.debug("[REFRESH] stale disk space skipped panel=\(panel) path='\(refreshedURL.path)'")
+            return
+        }
+        self[panel: panel].diskSpaceStatus = status
     }
 
     /// Backward-compatible wrapper.

@@ -11,14 +11,17 @@ import Foundation
 enum VolumeStatusInfo {
 
     // MARK: - Capacity
-    struct Capacity {
+    struct Capacity: Equatable, Sendable {
         let label: String
         let systemImage: String
     }
 
-    // MARK: - Capacity Label
-    static func capacityLabel(for url: URL) -> String? {
-        capacity(for: url)?.label
+    // MARK: - Panel Status
+    static func panelStatus(for url: URL) -> Capacity? {
+        guard url.isFileURL, !AppState.isAppManagedNetworkMountPath(url) else { return nil }
+        if let volumeStatus = capacity(for: url) { return volumeStatus }
+        guard let free = availableCapacity(for: url) else { return nil }
+        return Capacity(label: "\(formatBytes(free)) free", systemImage: "internaldrive")
     }
 
     // MARK: - Capacity Info
@@ -52,13 +55,14 @@ enum VolumeStatusInfo {
 
     // MARK: - Available Capacity
     static func availableCapacity(for url: URL) -> Int64? {
+        if let free = fileSystemCapacity(for: url, key: .systemFreeSize) { return free }
         if let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
            let capacity = values.volumeAvailableCapacity,
            capacity > 0
         {
             return Int64(capacity)
         }
-        return fileSystemCapacity(for: url, key: .systemFreeSize)
+        return nil
     }
 
     // MARK: - Total Capacity

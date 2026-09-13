@@ -124,10 +124,6 @@ struct SelectionStatusBar: View {
         return RemoteConnectionManager.shared.activeConnection
     }
 
-    private var isMountedVolumeRoot: Bool {
-        AppState.isMountedVolumeRootPath(currentPath)
-    }
-
     /// Filter binding for the current panel
     private var filterQuery: Binding<String> {
         Binding(
@@ -146,30 +142,7 @@ struct SelectionStatusBar: View {
         )
     }
 
-    // MARK: - Disk Space
-
-    /// Available disk space for the current path
-    private var availableDiskSpace: String {
-        guard !AppState.isAppManagedNetworkMountPath(currentURL) else { return "—" }
-        if let capacity = availableCapacityFromResourceValues(for: currentURL) {
-            return formatFileSize(capacity)
-        }
-
-        if isMountedVolumeRoot {
-            return "—"
-        }
-
-        if let free = availableCapacityFromFileSystemAttributes(forPath: currentPath) {
-            return formatFileSize(free)
-        }
-
-        return "—"
-    }
-
-    private func formatFileSize(_ value: Int64) -> String {
-        ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
-    }
-
+    // MARK: - Format Kilobytes
     private func formatKilobytes(_ value: Int64) -> String {
         let kilobytes = max(0, Int((value + 1_023) / 1_024))
         let formatter = NumberFormatter()
@@ -180,50 +153,13 @@ struct SelectionStatusBar: View {
         return "\(formatted) k"
     }
 
-    private func availableCapacityFromResourceValues(for url: URL) -> Int64? {
-        guard
-            let values = try? url.resourceValues(forKeys: [
-                .volumeAvailableCapacityForImportantUsageKey,
-                .volumeAvailableCapacityKey,
-            ])
-        else {
-            return nil
-        }
-
-        if let important = values.volumeAvailableCapacityForImportantUsage, important > 0 {
-            return important
-        }
-
-        if let basic = values.volumeAvailableCapacity, basic > 0 {
-            return Int64(basic)
-        }
-
-        return nil
-    }
-
-    private func availableCapacityFromFileSystemAttributes(forPath path: String) -> Int64? {
-        guard let attrs = try? FileManager.default.attributesOfFileSystem(forPath: path),
-            let free = attrs[.systemFreeSize] as? Int64,
-            free > 0
-        else {
-            return nil
-        }
-
-        return free
-    }
-
+    // MARK: - Disk Space
     private var diskSpaceLabel: String {
-        if let volumeLabel = VolumeStatusInfo.capacityLabel(for: currentURL) {
-            return volumeLabel
-        }
-
-        return availableDiskSpace == "—"
-            ? "Free space unavailable"
-            : "\(availableDiskSpace) free"
+        diskSpaceStatus?.label ?? "Free space unavailable"
     }
 
-    private var volumeCapacityInfo: VolumeStatusInfo.Capacity? {
-        VolumeStatusInfo.capacity(for: currentURL)
+    private var diskSpaceStatus: VolumeStatusInfo.Capacity? {
+        appState[panel: panelSide].diskSpaceStatus
     }
 
     // MARK: - Body
@@ -288,7 +224,7 @@ extension SelectionStatusBar {
             } else {
 
                 HStack(spacing: 4) {
-                    Image(systemName: volumeCapacityInfo?.systemImage ?? "internaldrive")
+                    Image(systemName: diskSpaceStatus?.systemImage ?? "internaldrive")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
 
