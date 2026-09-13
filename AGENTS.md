@@ -46,6 +46,12 @@ MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and S
 | `CloudLinkShortener` | Shared Google Drive/Dropbox shortener using `mimiNavi` + 8 random Base62 characters |
 | Swift Package (dynamic) | `FavoritesKit`, `LogKit`, `NetworkKit` |
 
+### Private MiMiKits workflow
+- Put reusable domain and service fixes in the owning package under `Packages/`; do not duplicate them in the application as a binary-package workaround.
+- After changing private package sources, run `zsh Scripts/rebuild_private_kits.zsh`. It rebuilds the XCFramework artifacts and compiles a source-free verification copy of MiMiNavigator against those exact binaries.
+- Treat a normal app build against the checked-in remote wrappers as insufficient evidence for uncommitted MiMiKits changes.
+- Keep `Packages/` and the main repository changes separate for review and commit them separately only after explicit user authorization.
+
 ### Firmlink Handling
 macOS firmlinks (`/tmp` ↔ `/private/tmp`, `/var` ↔ `/private/var`, `/etc` ↔ `/private/etc`) cause:
 - `URL.resourceValues(forKeys: [.isDirectoryKey])` returning `isDirectory == false` for `/tmp`

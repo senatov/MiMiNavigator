@@ -29,9 +29,14 @@ UI presentation and interaction policies.
 On the maintainer's Mac, with the private `Packages` checkout present:
 
 ```zsh
-zsh Scripts/build_binary_packages.zsh
-zsh Scripts/verify_binary_packages.zsh
+zsh Scripts/rebuild_private_kits.zsh
 ```
+
+This single entry point rebuilds the private XCFrameworks from the current
+`Packages` sources and then compiles an isolated, source-free copy of
+MiMiNavigator against those exact local artifacts. Use it after every private-kit
+change; a normal application build still resolves the checked-in published
+binary wrappers and cannot validate an unpublished library modification.
 
 The builder stages sources under ignored `build/binary-packages/work`, enables
 library evolution for private modules, and packages only each module's own object
