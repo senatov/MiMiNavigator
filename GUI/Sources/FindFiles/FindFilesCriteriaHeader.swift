@@ -71,9 +71,10 @@ struct FindFilesActiveFiltersBar: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(DialogColors.light.opacity(0.72))
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(DialogColors.border.opacity(0.45)).frame(height: 0.5)
+            .background(DialogColors.stripe.opacity(0.28), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(DialogColors.border.opacity(0.4), lineWidth: 0.5)
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Active advanced search filters")
@@ -85,6 +86,8 @@ struct FindFilesActiveFiltersBar: View {
 struct FindFilesSplitDivider: View {
     @Binding var criteriaHeight: CGFloat
     let totalHeight: CGFloat
+    let persistenceKey: String
+    let minimumHeight: CGFloat
     @State private var dragStartHeight: CGFloat?
     @State private var isHovered = false
 
@@ -111,7 +114,7 @@ struct FindFilesSplitDivider: View {
                 }
                 .onEnded { _ in
                     dragStartHeight = nil
-                    MiMiDefaults.shared.set(Double(criteriaHeight), forKey: "findFiles.criteriaPaneHeight")
+                    MiMiDefaults.shared.set(Double(criteriaHeight), forKey: persistenceKey)
                 }
         )
         .accessibilityLabel("Resize search criteria and results")
@@ -127,11 +130,11 @@ struct FindFilesSplitDivider: View {
     }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
-        min(max(value, 250), max(250, totalHeight - 190))
+        min(max(value, minimumHeight), max(minimumHeight, totalHeight - 190))
     }
 
     private func adjustHeight(by delta: CGFloat) {
         criteriaHeight = clamped(criteriaHeight + delta)
-        MiMiDefaults.shared.set(Double(criteriaHeight), forKey: "findFiles.criteriaPaneHeight")
+        MiMiDefaults.shared.set(Double(criteriaHeight), forKey: persistenceKey)
     }
 }

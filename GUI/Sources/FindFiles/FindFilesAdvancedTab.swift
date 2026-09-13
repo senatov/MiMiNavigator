@@ -20,9 +20,8 @@ struct FindFilesAdvancedTab: View {
                 dateSection
                 infoSection
             }
-            .padding(12)
+            .padding(14)
         }
-        .background(DialogColors.base.opacity(0.96))
         .onChange(of: viewModel.advancedSettings.itemTypeFilter) {
             if viewModel.advancedSettings.itemTypeFilter == .foldersOnly {
                 viewModel.advancedSettings.useSizeFilter = false
@@ -258,22 +257,24 @@ struct FindFilesAdvancedTab: View {
                 Image(systemName: icon)
                     .font(DesignTokens.Typography.label)
                     .foregroundStyle(tint)
-                    .frame(width: 18)
+                    .frame(width: 26, height: 26)
+                    .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 Text(title)
-                    .font(DesignTokens.Typography.sectionTitle)
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                 Spacer()
             }
+            .padding(.bottom, 2)
             content()
         }
-        .padding(12)
+        .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(DialogColors.light.opacity(0.98))
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(DialogColors.light.opacity(0.94))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(DialogColors.border.opacity(0.62), lineWidth: 0.75)
         )
     }
 
@@ -307,14 +308,7 @@ struct FindFilesAdvancedTab: View {
         .padding(.horizontal, 6)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(isOn.wrappedValue ? Color.primary.opacity(0.025) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(
-                    isOn.wrappedValue ? Color(nsColor: .separatorColor).opacity(0.35) : Color.clear,
-                    lineWidth: 0.5
-                )
+                .fill(isOn.wrappedValue ? Color.accentColor.opacity(0.055) : Color.clear)
         )
     }
 

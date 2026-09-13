@@ -11,19 +11,15 @@ struct FindFilesGeneralTab: View {
     @Bindable var viewModel: FindFilesViewModel
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 12) {
             searchCriteria
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor))
-                .frame(width: 1)
-                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .top)
             ScrollView {
                 options
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(DialogColors.base.opacity(0.96))
+        .padding(12)
     }
 
     // MARK: - Search Criteria
@@ -80,9 +76,11 @@ struct FindFilesGeneralTab: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 12)
-            Spacer(minLength: 0)
+            .padding(.bottom, 14)
         }
+        .background(sectionBackground)
+        .overlay(sectionBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Options
@@ -127,8 +125,11 @@ struct FindFilesGeneralTab: View {
                     .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
             )
             .padding(.horizontal, 16)
-            .padding(.bottom, 12)
+            .padding(.bottom, 14)
         }
+        .background(sectionBackground)
+        .overlay(sectionBorder)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Section Header
@@ -142,8 +143,11 @@ struct FindFilesGeneralTab: View {
             Spacer()
         }
         .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.vertical, 11)
+        .background(DialogColors.stripe.opacity(0.24))
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(DialogColors.border.opacity(0.4)).frame(height: 0.5)
+        }
     }
 
     // MARK: - Option Row Divider (inside options block)
@@ -199,12 +203,18 @@ struct FindFilesGeneralTab: View {
         .padding(.vertical, 9)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(isOn.wrappedValue ? iconColor.opacity(0.10) : Color.clear)
+                .fill(isOn.wrappedValue ? Color.accentColor.opacity(0.075) : Color.clear)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(isOn.wrappedValue ? iconColor.opacity(0.65) : Color.clear, lineWidth: 1)
-        )
+    }
+
+    private var sectionBackground: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(DialogColors.light.opacity(0.94))
+    }
+
+    private var sectionBorder: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(DialogColors.border.opacity(0.62), lineWidth: 0.75)
     }
 
     // MARK: - Browse

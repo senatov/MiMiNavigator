@@ -12,7 +12,7 @@ struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState?
     @State private var selectedTab: FindFilesTab = .general
-    @State private var criteriaHeight: CGFloat = 390
+    @State private var criteriaHeight: CGFloat = 280
     @State private var didRestoreLayout = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -33,7 +33,9 @@ struct FindFilesWindowContent: View {
                         .frame(height: clampedCriteriaHeight(totalHeight: geometry.size.height))
                     FindFilesSplitDivider(
                         criteriaHeight: $criteriaHeight,
-                        totalHeight: geometry.size.height
+                        totalHeight: geometry.size.height,
+                        persistenceKey: criteriaHeightKey(for: selectedTab),
+                        minimumHeight: minimumCriteriaHeight
                     )
                     FindFilesResultsView(viewModel: viewModel, appState: appState)
                         .frame(maxHeight: .infinity)
@@ -51,18 +53,20 @@ struct FindFilesWindowContent: View {
         .onAppear {
             guard !didRestoreLayout else { return }
             didRestoreLayout = true
-            let storedHeight = MiMiDefaults.shared.double(forKey: "findFiles.criteriaPaneHeight")
-            if storedHeight > 0 { criteriaHeight = CGFloat(storedHeight) }
             if let rawTab = MiMiDefaults.shared.string(forKey: "findFiles.selectedTab"),
                let restoredTab = FindFilesTab(rawValue: rawTab)
             {
                 selectedTab = restoredTab
             }
+            criteriaHeight = restoredCriteriaHeight(for: selectedTab)
             viewModel.activeModule = selectedTab
         }
-        .onChange(of: selectedTab) {
-            viewModel.activeModule = selectedTab
-            MiMiDefaults.shared.set(selectedTab.rawValue, forKey: "findFiles.selectedTab")
+        .onChange(of: selectedTab) { oldTab, newTab in
+            guard viewModel.activeModule != newTab else { return }
+            MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: oldTab))
+            criteriaHeight = restoredCriteriaHeight(for: newTab)
+            viewModel.activeModule = newTab
+            MiMiDefaults.shared.set(newTab.rawValue, forKey: "findFiles.selectedTab")
         }
         .sheet(isPresented: Binding(
             get: { viewModel.showPasswordDialog },
@@ -85,6 +89,7 @@ struct FindFilesWindowContent: View {
             viewModel.errorMessage = nil
         }
         .onDisappear {
+            MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: selectedTab))
             viewModel.savePreferences()
         }
     }
@@ -93,56 +98,56 @@ struct FindFilesWindowContent: View {
 
     private var criteriaPane: some View {
         VStack(spacing: 0) {
-                HStack(spacing: 7) {
-                    Image(systemName: "magnifyingglass.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                    Text("GLOBAL FILE SEARCH")
-                        .font(DesignTokens.Typography.micro)
-                        .tracking(0.55)
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("File Search")
+                        .font(.system(size: 13, weight: .semibold))
                     Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
                         .font(DesignTokens.Typography.path)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Spacer()
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 9)
-
-                // MARK: - Tab Picker
+                Spacer(minLength: 16)
                 Picker("", selection: $selectedTab) {
                     Text("Search").tag(FindFilesTab.general)
                     Text("Advanced").tag(FindFilesTab.advanced)
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .padding(.horizontal, 16)
-                .padding(.top, 7)
-                .padding(.bottom, 4)
-
-                // MARK: - Input Area with visible border + spinner overlay
-                ZStack {
-                    inputAreaWithBorder
-                    if viewModel.searchState == .searching {
-                        searchSpinnerOverlay
-                    }
+                .frame(width: 210)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(DialogColors.border.opacity(0.55)).frame(height: 0.5)
+            }
+            ZStack {
+                inputAreaWithBorder
+                if viewModel.searchState == .searching {
+                    searchSpinnerOverlay
                 }
-                .padding(.horizontal, 10)
-
-                FindFilesActiveFiltersBar(viewModel: viewModel)
-                    .padding(.horizontal, 10)
-                    .padding(.top, 5)
-
-                // MARK: - Action Bar (Search / Close) — tight to input
-                actionBar
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(actionBarBackground)
-                    .overlay(actionBarBorder)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(.horizontal, 10)
-                    .padding(.top, 6)
-                .padding(.bottom, 6)
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            FindFilesActiveFiltersBar(viewModel: viewModel)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+            actionBar
+                .padding(.horizontal, 16)
+                .padding(.vertical, 9)
+                .background(actionBarBackground)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(DialogColors.border.opacity(0.45)).frame(height: 0.5)
+                }
+                .padding(.top, 8)
         }
     }
 
@@ -160,12 +165,13 @@ struct FindFilesWindowContent: View {
         .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(DialogColors.light.opacity(0.98))
+                .fill(DialogColors.base.opacity(0.72))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.55), lineWidth: 0.75)
+                .strokeBorder(DialogColors.border.opacity(0.72), lineWidth: 0.75)
         )
+        .shadow(color: .black.opacity(0.045), radius: 4, y: 1)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
@@ -235,17 +241,25 @@ struct FindFilesWindowContent: View {
     }
 
     private var actionBarBackground: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(DialogColors.light.opacity(0.98))
-    }
-
-    private var actionBarBorder: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(DialogColors.border.opacity(0.75), lineWidth: 1)
+        DialogColors.stripe.opacity(0.35)
     }
 
     private func clampedCriteriaHeight(totalHeight: CGFloat) -> CGFloat {
-        min(max(criteriaHeight, 250), max(250, totalHeight - 190))
+        min(max(criteriaHeight, minimumCriteriaHeight), max(minimumCriteriaHeight, totalHeight - 190))
+    }
+
+    private func criteriaHeightKey(for tab: FindFilesTab) -> String {
+        "findFiles.criteriaPaneHeight.\(tab.rawValue)"
+    }
+
+    private func restoredCriteriaHeight(for tab: FindFilesTab) -> CGFloat {
+        let storedHeight = MiMiDefaults.shared.double(forKey: criteriaHeightKey(for: tab))
+        guard storedHeight > 0 else { return tab == .general ? 280 : 560 }
+        return CGFloat(storedHeight)
+    }
+
+    private var minimumCriteriaHeight: CGFloat {
+        selectedTab == .general ? 260 : 360
     }
 
     // MARK: - Status Bar
