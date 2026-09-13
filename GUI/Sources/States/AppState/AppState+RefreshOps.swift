@@ -72,7 +72,7 @@ extension AppState {
     }
 
     // MARK: - Refresh Disk Space
-    private func refreshDiskSpace(for panel: FavPanelSide) async {
+    func refreshDiskSpace(for panel: FavPanelSide) async {
         let refreshedURL = self[panel: panel].currentDirectory
         let status = await Task.detached(priority: .utility) {
             VolumeStatusInfo.panelStatus(for: refreshedURL)

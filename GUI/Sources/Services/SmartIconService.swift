@@ -66,6 +66,9 @@ enum SmartIconService {
         if file.isArchiveFile && EncryptedArchiveCheck.isEncrypted(url: url) {
             return encryptedArchiveIcon(size: iconSize)
         }
+        if file.isArchiveFile {
+            return archiveIcon(size: iconSize)
+        }
         if pathExtension.isEmpty {
             let detected = FileMagicDetector.detect(url: url)
             if detected != .unknown {
@@ -205,6 +208,16 @@ enum SmartIconService {
         let fallback = NSImage(systemSymbolName: "key.fill", accessibilityDescription: "Encrypted") ?? NSImage()
         fallback.size = size
         return fallback
+    }
+
+    // MARK: - Archive icon
+    private static func archiveIcon(size: NSSize) -> NSImage {
+        let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.7, weight: .medium)
+            .applying(.init(paletteColors: [.systemBrown, .systemOrange]))
+        let icon = NSImage(systemSymbolName: "archivebox.fill", accessibilityDescription: "Archive") ?? NSImage()
+        let configured = icon.withSymbolConfiguration(config) ?? icon
+        configured.size = size
+        return configured
     }
 
     // MARK: - SF Symbol to NSImage

@@ -55,14 +55,19 @@ enum VolumeStatusInfo {
 
     // MARK: - Available Capacity
     static func availableCapacity(for url: URL) -> Int64? {
-        if let free = fileSystemCapacity(for: url, key: .systemFreeSize) { return free }
+        if let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+           let capacity = values.volumeAvailableCapacityForImportantUsage,
+           capacity > 0
+        {
+            return capacity
+        }
         if let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
            let capacity = values.volumeAvailableCapacity,
            capacity > 0
         {
             return Int64(capacity)
         }
-        return nil
+        return fileSystemCapacity(for: url, key: .systemFreeSize)
     }
 
     // MARK: - Total Capacity

@@ -76,6 +76,17 @@ actor ArchiveManager {
         onProgress: ArchiveExtractor.ProgressLine?,
         processHandle: ActiveArchiveProcess?
     ) async throws {
+        if archiveURL.pathExtension.lowercased() == "rar", let unarPath = findUnar() {
+            try await extractRARWithUnar(
+                executablePath: unarPath,
+                archiveURL: archiveURL,
+                to: tempDir,
+                password: password,
+                onProgress: onProgress,
+                processHandle: processHandle
+            )
+            return
+        }
         try await ArchiveExtractor.extract(
             archiveURL: archiveURL,
             format: format,

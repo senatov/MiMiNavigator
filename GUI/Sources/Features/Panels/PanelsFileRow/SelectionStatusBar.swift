@@ -199,6 +199,12 @@ struct SelectionStatusBar: View {
             guard currentURL.isFileURL else { return }
             await gitStatusStore.refresh(directory: currentURL)
         }
+        .task(id: currentPath) {
+            while !Task.isCancelled {
+                await appState.refreshDiskSpace(for: panelSide)
+                try? await Task.sleep(for: .seconds(15))
+            }
+        }
     }
 
 }

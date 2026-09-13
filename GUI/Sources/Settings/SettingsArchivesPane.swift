@@ -17,6 +17,16 @@ struct SettingsArchivesPane: View {
     @State private var archivePassword: String = ArchivePasswordStore.shared.loadPassword() ?? ""
     @State private var showPassword: Bool = false
     @State private var registry = ExternalToolRegistry.shared
+    @State private var doctor = ExternalToolDoctor.shared
+
+    private let archiveTools: [ExternalTool] = [
+        ExternalToolCatalog.sevenZip,
+        ExternalToolCatalog.unar,
+        ExternalToolCatalog.zip,
+        ExternalToolCatalog.unzip,
+        ExternalToolCatalog.tar,
+        ExternalToolCatalog.ditto,
+    ]
 
     private func prefBinding<T>(_ keyPath: WritableKeyPath<PreferencesSnapshot, T>) -> Binding<T> {
         Binding(
@@ -65,6 +75,24 @@ struct SettingsArchivesPane: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(SettingsVisualStyle.hairline, lineWidth: 0.5)
+                }
+            }
+
+            SettingsGroupBox {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Archive Tools")
+                        .font(.system(size: 13, weight: .semibold))
+                        .padding(.bottom, 6)
+                    Text("Installed archivers and extractors used by MiMiNavigator. Optional tools add RAR, 7z and legacy format support.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
+                        .padding(.bottom, 8)
+                    ForEach(archiveTools) { tool in
+                        archiveToolRow(tool)
+                        if tool.id != archiveTools.last?.id {
+                            Divider().padding(.leading, 30)
+                        }
+                    }
                 }
             }
 
@@ -195,5 +223,43 @@ struct SettingsArchivesPane: View {
                 }
             }
         }
+        .onAppear { registry.refreshAll() }
+    }
+
+    // MARK: - Archive Tool Row
+    private func archiveToolRow(_ tool: ExternalTool) -> some View {
+        let available = registry.isAvailable(tool.id)
+        return HStack(spacing: 8) {
+            Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .foregroundStyle(available ? Color.green : Color.red)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(tool.name).font(.system(size: 12, weight: .medium))
+                Text(tool.resolvedPath ?? tool.purpose)
+                    .font(.system(size: 10, design: tool.resolvedPath == nil ? .default : .monospaced))
+                    .foregroundStyle(SettingsVisualStyle.secondaryText)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer()
+            Text(available ? "Installed" : "Missing")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(available ? Color.green : Color.red)
+            if !available, tool.brewFormula != nil {
+                Button("Install") {
+                    Task {
+                        let report = await doctor.diagnose(tool)
+                        _ = await doctor.promptRepair(tool: tool, report: report, context: tool.purpose)
+                        registry.refreshSingle(tool.id)
+                    }
+                }
+                .controlSize(.small)
+                .disabled(doctor.isRepairing)
+            }
+            if !available {
+                ExternalToolInfoButton(tool: tool)
+            }
+        }
+        .padding(.vertical, 5)
     }
 }

@@ -73,6 +73,7 @@ extension FileContextMenu {
     }
 
     nonisolated static func isMediaFile(_ file: CustomFile) -> Bool {
+        guard !file.isArchiveFile else { return false }
         let fileExtension = file.urlValue.pathExtension.lowercased()
         let resolvedType = UTType(filenameExtension: fileExtension)
         let conformsToMediaType = resolvedType.map { type in
