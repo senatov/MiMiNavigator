@@ -9,6 +9,18 @@ import Foundation
 
 // MARK: - Open With App Info
 extension OpenWithService {
+    // MARK: - Resolve Current Application
+    func resolvedApplicationURL(bundleIdentifier: String, fallbackURL: URL?) -> URL? {
+        let registeredURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier)
+        for candidate in [registeredURL, fallbackURL].compactMap({ $0 }) {
+            let normalizedURL = candidate.standardizedFileURL
+            guard fileManager.fileExists(atPath: normalizedURL.path) else { continue }
+            guard Bundle(url: normalizedURL)?.bundleIdentifier == bundleIdentifier else { continue }
+            return normalizedURL
+        }
+        return nil
+    }
+
     func makeAppInfo(from appURL: URL, isDefault: Bool) -> AppInfo? {
         let normalizedURL = appURL.standardizedFileURL
         let cacheKey = normalizedURL.path

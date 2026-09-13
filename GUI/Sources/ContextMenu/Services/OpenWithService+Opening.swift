@@ -20,13 +20,30 @@ extension OpenWithService {
     // MARK: - Open File
     func openFile(_ fileURL: URL, with app: AppInfo) {
         logInfo("openFile file='\(fileURL.lastPathComponent)' app='\(app.name)'")
-        recordLRU(bundleID: app.bundleIdentifier, ext: fileURL.pathExtension, appURL: app.url)
-        if isRemoteFileURL(fileURL) {
-            logInfo("remote file detected scheme='\(fileURL.scheme ?? "unknown")'")
-            Task { await openRemoteFile(fileURL, with: app) }
+        guard let currentAppURL = resolvedApplicationURL(bundleIdentifier: app.bundleIdentifier, fallbackURL: app.url) else {
+            logError("application unavailable bundle='\(app.bundleIdentifier)' savedPath='\(app.url.path)'")
+            invalidateCache(for: fileURL.pathExtension)
+            InAppNoticeCenter.shared.showError(
+                title: "Application Not Found",
+                message: "\(app.name) is no longer available. Reopen Open With to refresh the application list."
+            )
             return
         }
-        openLocalFile(fileURL, with: app)
+        let currentApp = AppInfo(
+            id: app.id,
+            name: app.name,
+            bundleIdentifier: app.bundleIdentifier,
+            icon: app.icon,
+            url: currentAppURL,
+            isDefault: app.isDefault
+        )
+        recordLRU(bundleID: currentApp.bundleIdentifier, ext: fileURL.pathExtension, appURL: currentAppURL)
+        if isRemoteFileURL(fileURL) {
+            logInfo("remote file detected scheme='\(fileURL.scheme ?? "unknown")'")
+            Task { await openRemoteFile(fileURL, with: currentApp) }
+            return
+        }
+        openLocalFile(fileURL, with: currentApp)
     }
     private func openLocalFile(_ fileURL: URL, with app: AppInfo) {
         ExternalApplicationLauncher.shared.open(fileURL: fileURL, applicationURL: app.url, bundleIdentifier: app.bundleIdentifier)

@@ -196,7 +196,7 @@ final class OpenWithService {
         logDebug("LRU bundles=\(bundles)")
     }
 
-    private func storeAppURLIfNeeded(_ appURL: URL?, for bundleID: String) {
+    func storeAppURLIfNeeded(_ appURL: URL?, for bundleID: String) {
         guard let appURL else {
             return
         }
@@ -303,12 +303,14 @@ final class OpenWithService {
         let bundlesToRestore = ([preferredBundle].compactMap { $0 } + recentBundles).filter { !knownBundles.contains($0) }
 
         for bundleID in bundlesToRestore {
-            guard let path = savedURLs[bundleID], fileManager.fileExists(atPath: path) else {
+            let savedURL = savedURLs[bundleID].map { URL(fileURLWithPath: $0) }
+            guard let appURL = resolvedApplicationURL(bundleIdentifier: bundleID, fallbackURL: savedURL) else {
                 logDebug("missing saved LRU app bundle='\(bundleID)'")
                 continue
             }
-
-            let appURL = URL(fileURLWithPath: path)
+            if savedURL?.standardizedFileURL != appURL.standardizedFileURL {
+                storeAppURLIfNeeded(appURL, for: bundleID)
+            }
             appendAppIfNeeded(
                 from: appURL,
                 defaultApp: defaultApp,

@@ -17,12 +17,31 @@ final class ExternalApplicationLauncher {
     // MARK: - Open Document
     func open(fileURL: URL, applicationURL: URL, bundleIdentifier: String?) {
         let bundleID = bundleIdentifier ?? Bundle(url: applicationURL)?.bundleIdentifier ?? "unknown"
-        let runningApp = workspace.runningApplications.first { $0.bundleIdentifier == bundleID }
-        log.info("[ExternalOpen] request file='\(fileURL.path)' app='\(applicationURL.path)' bundle='\(bundleID)' running=\(runningApp != nil)")
-        if runningApp != nil, vsCodeBundleIdentifiers.contains(bundleID), launchVSCodeCLI(fileURL: fileURL, applicationURL: applicationURL, bundleID: bundleID) {
+        guard let currentApplicationURL = resolvedApplicationURL(preferredURL: applicationURL, bundleID: bundleID) else {
+            log.error("[ExternalOpen] application unavailable bundle='\(bundleID)' savedPath='\(applicationURL.path)'")
+            InAppNoticeCenter.shared.showError(
+                title: "Application Not Found",
+                message: "The selected application is no longer installed at its registered location."
+            )
             return
         }
-        openWithWorkspace(fileURL: fileURL, applicationURL: applicationURL, bundleID: bundleID)
+        let runningApp = workspace.runningApplications.first { $0.bundleIdentifier == bundleID }
+        log.info("[ExternalOpen] request file='\(fileURL.path)' app='\(currentApplicationURL.path)' bundle='\(bundleID)' running=\(runningApp != nil)")
+        if runningApp != nil, vsCodeBundleIdentifiers.contains(bundleID), launchVSCodeCLI(fileURL: fileURL, applicationURL: currentApplicationURL, bundleID: bundleID) {
+            return
+        }
+        openWithWorkspace(fileURL: fileURL, applicationURL: currentApplicationURL, bundleID: bundleID)
+    }
+    // MARK: - Resolve Current Application
+    private func resolvedApplicationURL(preferredURL: URL, bundleID: String) -> URL? {
+        let registeredURL = workspace.urlForApplication(withBundleIdentifier: bundleID)
+        for candidate in [registeredURL, preferredURL].compactMap({ $0 }) {
+            let normalizedURL = candidate.standardizedFileURL
+            guard FileManager.default.fileExists(atPath: normalizedURL.path) else { continue }
+            guard Bundle(url: normalizedURL)?.bundleIdentifier == bundleID else { continue }
+            return normalizedURL
+        }
+        return nil
     }
     // MARK: - VS Code IPC
     private func launchVSCodeCLI(fileURL: URL, applicationURL: URL, bundleID: String) -> Bool {
