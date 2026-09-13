@@ -14,7 +14,7 @@ struct FindFilesAdvancedTab: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 FindFilesAdvancedCriteriaSection(viewModel: viewModel)
-                presetSection
+                FindFilesTemplateSection(viewModel: viewModel)
                 scopeSection
                 sizeSection
                 dateSection
@@ -28,40 +28,6 @@ struct FindFilesAdvancedTab: View {
                 viewModel.advancedSettings.useSizeFilter = false
             } else {
                 viewModel.advancedSettings.emptyFoldersOnly = false
-            }
-        }
-    }
-    private var presetSection: some View {
-        advancedCard(icon: "shippingbox.fill", title: "Templates", tint: .blue) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 8) {
-                    presetButton(
-                        "Large stale files",
-                        icon: "externaldrive.fill.badge.exclamationmark",
-                        preset: .largeStaleFiles,
-                        action: viewModel.applyLargeStaleFilesPreset
-                    )
-                    presetButton(
-                        "App leftovers",
-                        icon: "app.dashed",
-                        preset: .applicationLeftovers,
-                        action: viewModel.applyApplicationLeftoversPreset
-                    )
-                    presetButton(
-                        "Empty old folders",
-                        icon: "folder.badge.minus",
-                        preset: .emptyStaleFolders,
-                        action: viewModel.applyEmptyStaleFoldersPreset
-                    )
-                }
-                Text("Templates set safe scopes and editable age/size filters; every result is only a candidate for review.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                if viewModel.isPresetActive(.applicationLeftovers) {
-                    Text("Scans Application Support, Caches, Preferences, Logs, Saved Application State, and LaunchAgents; installed apps are excluded.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                }
             }
         }
     }

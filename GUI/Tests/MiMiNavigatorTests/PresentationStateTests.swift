@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import FindFilesKit
 import XCTest
 
 @testable import MiMiNavigator
@@ -169,5 +170,70 @@ private final class ReplacementTestDelegate: NSObject, NSWindowDelegate {
     var didClose = false
     func windowWillClose(_ notification: Notification) {
         didClose = true
+    }
+}
+
+// MARK: - Editable Search Template Tests
+@MainActor
+final class FindFilesTemplateTests: XCTestCase {
+    // MARK: - Independent Leftover Criterion
+    func testDisabledLeftoverCriterionSurvivesPersistence() throws {
+        let viewModel = FindFilesViewModel()
+        viewModel.applyApplicationLeftoversPreset()
+        viewModel.advancedSettings.usesApplicationLeftovers = false
+        let data = try JSONEncoder().encode(viewModel.advancedSettings)
+        let restored = try JSONDecoder().decode(FindFilesSearchSettings.self, from: data)
+        XCTAssertEqual(restored.activePreset, .applicationLeftovers)
+        XCTAssertFalse(restored.usesApplicationLeftovers)
+    }
+    // MARK: - Legacy Preferences
+    func testLegacyLeftoverPresetRetainsSpecializedSearch() throws {
+        var settings = FindFilesSearchSettings()
+        settings.activePreset = .applicationLeftovers
+        let data = try JSONEncoder().encode(settings)
+        let restored = try JSONDecoder().decode(FindFilesSearchSettings.self, from: data)
+        XCTAssertTrue(restored.usesApplicationLeftovers)
+    }
+    // MARK: - Editable Directory
+    func testDirectoryEditDisablesHiddenLibraryScopeAndPreservesTemplate() {
+        let viewModel = FindFilesViewModel()
+        viewModel.applyApplicationLeftoversPreset()
+        viewModel.advancedSettings.searchDirectory = "/tmp"
+        viewModel.markAdvancedCriteriaEdited()
+        XCTAssertFalse(viewModel.advancedSettings.usesApplicationLeftovers)
+        XCTAssertEqual(viewModel.advancedSettings.activePreset, .applicationLeftovers)
+    }
+    // MARK: - Disabled Age Criterion
+    func testDisabledAgeDoesNotValidateOrApplyStaleValues() {
+        let viewModel = FindFilesViewModel()
+        viewModel.activeModule = .advanced
+        viewModel.applyLargeStaleFilesPreset()
+        viewModel.advancedSettings.useStaleItemFilter = false
+        viewModel.advancedSettings.staleAgeAmount = "invalid"
+        viewModel.errorMessage = nil
+        XCTAssertNil(viewModel.staleAgeDaysIfNeeded())
+        XCTAssertNil(viewModel.errorMessage)
+        var criteria = FindFilesCriteria(searchDirectory: URL(fileURLWithPath: "/tmp"))
+        viewModel.applyStaleCriteria(to: &criteria, settings: viewModel.advancedSettings, staleAgeDays: 365)
+        XCTAssertNil(criteria.modificationOlderThanDays)
+        XCTAssertNil(criteria.accessOlderThanDays)
+    }
+    // MARK: - Template Transitions
+    func testNewTemplatesClearConflictingCriteria() {
+        let viewModel = FindFilesViewModel()
+        viewModel.applyApplicationLeftoversPreset()
+        viewModel.advancedSettings.invertFileNamePattern = true
+        viewModel.applyRecentlyModifiedPreset()
+        XCTAssertFalse(viewModel.advancedSettings.usesApplicationLeftovers)
+        XCTAssertFalse(viewModel.advancedSettings.invertFileNamePattern)
+        XCTAssertFalse(viewModel.advancedSettings.useStaleItemFilter)
+        XCTAssertFalse(viewModel.advancedSettings.useSizeFilter)
+        XCTAssertTrue(viewModel.advancedSettings.useDateFilter)
+        XCTAssertEqual(Calendar.current.dateComponents([.day], from: viewModel.advancedSettings.dateFrom, to: viewModel.advancedSettings.dateTo).day, 7)
+        viewModel.applyOldDownloadsPreset()
+        XCTAssertFalse(viewModel.advancedSettings.useDateFilter)
+        XCTAssertTrue(viewModel.advancedSettings.useStaleItemFilter)
+        XCTAssertEqual(viewModel.advancedSettings.staleAgeAmount, "6")
+        XCTAssertEqual(URL(fileURLWithPath: viewModel.advancedSettings.searchDirectory).lastPathComponent, "Downloads")
     }
 }

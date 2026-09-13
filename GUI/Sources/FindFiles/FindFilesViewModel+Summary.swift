@@ -26,6 +26,7 @@ extension FindFilesViewModel {
         if settings.excludeSystemLocations { values.append("System locations excluded") }
         if settings.deletableOnly { values.append("Deletable only") }
         if settings.emptyFoldersOnly { values.append("Empty folders") }
+        if settings.usesApplicationLeftovers { values.append("App leftovers only") }
         if settings.useSizeFilter { values.append(sizeSummary(settings)) }
         if settings.useDateFilter { values.append("Modified: \(Self.shortDate(settings.dateFrom))–\(Self.shortDate(settings.dateTo))") }
         if settings.useStaleItemFilter { values.append(staleSummary(settings)) }
@@ -50,13 +51,16 @@ extension FindFilesViewModel {
         advancedSettings.useDateFilter = false
         advancedSettings.useStaleItemFilter = false
         advancedSettings.activePreset = nil
+        advancedSettings.usesApplicationLeftovers = false
         log.info("[FindFiles] Advanced filters reset")
     }
 
     func markAdvancedCriteriaEdited() {
-        guard advancedSettings.activePreset != nil else { return }
-        advancedSettings.activePreset = nil
-        log.debug("[FindFiles] Preset deactivated after manual criteria edit")
+        let library = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library", isDirectory: true).standardizedFileURL.path
+        if URL(fileURLWithPath: advancedSettings.searchDirectory).standardizedFileURL.path != library {
+            advancedSettings.usesApplicationLeftovers = false
+        }
     }
 
     private var searchCriteriaSummary: [String] {
@@ -89,6 +93,7 @@ extension FindFilesViewModel {
         if settings.excludeSystemLocations { values.append("System locations excluded") }
         if settings.deletableOnly { values.append("Deletable only") }
         if settings.emptyFoldersOnly { values.append("Empty folders") }
+        if settings.usesApplicationLeftovers { values.append("App leftovers only") }
         if settings.useSizeFilter { values.append(sizeSummary(settings)) }
         if settings.useDateFilter {
             values.append("Modified: \(Self.shortDate(settings.dateFrom))–\(Self.shortDate(settings.dateTo))")

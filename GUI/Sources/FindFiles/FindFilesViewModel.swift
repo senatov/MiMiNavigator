@@ -130,7 +130,7 @@ final class FindFilesViewModel {
         MemoryDiagnostics.shared.checkpoint("search.before")
         normalizeContentSearchSettings()
         let settings = activeSearchSettings
-        let applicationLeftoversOnly = settings.activePreset == .applicationLeftovers
+        let applicationLeftoversOnly = settings.usesApplicationLeftovers
         let targetPath = applicationLeftoversOnly
             ? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library", isDirectory: true).path
             : settings.searchDirectory

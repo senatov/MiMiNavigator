@@ -203,6 +203,8 @@ xcodebuild -scheme MiMiNavigator -configuration Debug \
   -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
+Advanced Find Files includes Large stale files, App leftovers, Empty old folders, Old downloads (older than six months), and Recently modified (last seven days) templates. Criteria checkboxes under the templates enable or disable item type, recursion, system exclusions, deletability, size, age, modification date, and template-specific filters. Values remain editable below; selecting a template again restores its defaults. Results are candidates for review, not automatic deletion recommendations.
+
 ## Architecture
 
 MiMiNavigator is a native SwiftUI application using Swift 6.2 strict concurrency. The code is organized around a small set of product areas:

@@ -22,6 +22,11 @@ struct FindFilesSearchSettings: Codable {
     var deletableOnly: Bool = false
     var emptyFoldersOnly: Bool = false
     var activePreset: FindFilesPreset?
+    var applicationLeftoversOnly: Bool?
+    var usesApplicationLeftovers: Bool {
+        get { applicationLeftoversOnly ?? (activePreset == .applicationLeftovers) }
+        set { applicationLeftoversOnly = newValue }
+    }
     var useSizeFilter: Bool = false
     var fileSizeMin: String = ""
     var fileSizeMax: String = ""

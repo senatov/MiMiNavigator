@@ -53,8 +53,34 @@ extension FindFilesViewModel {
         advancedSettings.staleAgeUnit = .months
     }
 
+    // MARK: - Old Downloads
+    func applyOldDownloadsPreset() {
+        applyLargeStaleFilesPreset()
+        advancedSettings.activePreset = .oldDownloads
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Downloads", isDirectory: true).path
+        advancedSettings.useSizeFilter = false
+        advancedSettings.staleTimestampFilter = .modified
+        advancedSettings.staleAgeAmount = "6"
+    }
+
+    // MARK: - Recently Modified Files
+    func applyRecentlyModifiedPreset() {
+        applyLargeStaleFilesPreset()
+        advancedSettings.activePreset = .recentlyModified
+        advancedSettings.useSizeFilter = false
+        advancedSettings.useStaleItemFilter = false
+        advancedSettings.deletableOnly = false
+        advancedSettings.useDateFilter = true
+        advancedSettings.dateTo = Date()
+        advancedSettings.dateFrom = Calendar.current.date(byAdding: .day, value: -7, to: advancedSettings.dateTo) ?? Date()
+    }
+
+    // MARK: - Preset Defaults
     private func applyPresetDefaults(_ preset: FindFilesPreset) {
         advancedSettings.activePreset = preset
+        advancedSettings.usesApplicationLeftovers = preset == .applicationLeftovers
+        advancedSettings.invertFileNamePattern = false
         log.info("[FindFiles] Applied preset: \(preset.rawValue)")
         advancedSettings.fileNamePattern = "*"
         advancedSettings.searchText = ""
