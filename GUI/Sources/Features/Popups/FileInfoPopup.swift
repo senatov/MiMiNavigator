@@ -17,6 +17,9 @@ import SwiftUI
 struct FileInfoButton: View {
     let file: CustomFile
     let isSelected: Bool
+    var displayedText: String? = nil
+    var fullText: String? = nil
+    var textFont: NSFont = .systemFont(ofSize: 13, weight: .regular)
 
     @State private var isTruncated = false
     @State private var anchorFrame: CGRect = .zero
@@ -37,7 +40,8 @@ struct FileInfoButton: View {
         if isSelected && isTruncated {
             Button {
                 FileInfoPopupController.shared.show(
-                    content: FileInfoPopupController.shared.buildContent(for: file),
+                    content: fullText.map { NSAttributedString(string: $0, attributes: [.font: textFont, .foregroundColor: InfoPopupController.valueColor]) }
+                        ?? FileInfoPopupController.shared.buildContent(for: file),
                     anchorFrame: anchorFrame
                 )
             } label: {
@@ -126,6 +130,7 @@ struct FileInfoButton: View {
             .onAppear {
                 updateGeometry(geo)
             }
+            .onChange(of: displayedText ?? file.nameStr) { _, _ in updateGeometry(geo) }
             .onChange(of: geo.size.width) { _, _ in
                 updateGeometry(geo)
             }
@@ -140,8 +145,7 @@ struct FileInfoButton: View {
     }
 
     private func checkTruncation(width: CGFloat) {
-        let font = NSFont.systemFont(ofSize: 13, weight: .regular)
-        isTruncated = (file.nameStr as NSString).size(withAttributes: [.font: font]).width > width
+        isTruncated = ((displayedText ?? file.nameStr) as NSString).size(withAttributes: [.font: textFont]).width > width
     }
 }
 

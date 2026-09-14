@@ -23,7 +23,7 @@ struct FindFilesQuickThresholds: View {
                 }
                 .labelsHidden()
                 .frame(width: 130)
-                .help("Applies to the modified time, access time, or both selected in Dates. Choosing a value enables the age filter.")
+                .help("Applies to the modified time, access time, or both specified by the selected template. Choosing a value enables the age filter.")
             }
             HStack(spacing: 10) {
                 Toggle("Minimum size", isOn: $settings.useSizeFilter)

@@ -176,6 +176,41 @@ private final class ReplacementTestDelegate: NSObject, NSWindowDelegate {
 // MARK: - Editable Search Template Tests
 @MainActor
 final class FindFilesTemplateTests: XCTestCase {
+    // MARK: - Mutually Exclusive Editors
+    func testEditorSwitchRestoresIndependentCriteria() {
+        let viewModel = FindFilesViewModel()
+        viewModel.activeModule = .advanced
+        viewModel.advancedSettings = FindFilesSearchSettings()
+        viewModel.advancedSettings.fileNamePattern = "*.swift"
+        viewModel.advancedSettings.searchDirectory = "/tmp/manual"
+        viewModel.selectAdvancedEditor(templates: true)
+        XCTAssertTrue(viewModel.usesTemplateEditor)
+        XCTAssertEqual(viewModel.activeSearchSettings.activePreset, .largeStaleFiles)
+        viewModel.advancedSettings.staleAgeAmount = "3"
+        viewModel.selectAdvancedEditor(templates: false)
+        XCTAssertFalse(viewModel.usesTemplateEditor)
+        XCTAssertEqual(viewModel.activeSearchSettings.fileNamePattern, "*.swift")
+        XCTAssertEqual(viewModel.activeSearchSettings.searchDirectory, "/tmp/manual")
+        XCTAssertFalse(viewModel.activeSearchSettings.useStaleItemFilter)
+        viewModel.selectAdvancedEditor(templates: true)
+        XCTAssertEqual(viewModel.activeSearchSettings.staleAgeAmount, "3")
+    }
+    // MARK: - Content Fitting
+    func testResultAutofitKeepsSizeCompactAndUsesAvailableWidth() {
+        let table = NSTableView(frame: NSRect(x: 0, y: 0, width: 1000, height: 300))
+        for title in ["Name", "Location", "Size"] {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(title))
+            column.title = title
+            column.minWidth = 40
+            column.maxWidth = 1000
+            table.addTableColumn(column)
+        }
+        FindFilesResultsColumnFit.apply(to: table, widths: ["Name": 300, "Location": 400, "Size": 80])
+        XCTAssertEqual(table.tableColumns[2].width, 80, accuracy: 1)
+        XCTAssertGreaterThan(table.tableColumns[1].width, table.tableColumns[0].width)
+        XCTAssertLessThanOrEqual(table.tableColumns.reduce(0) { $0 + $1.width }, 1000)
+    }
+
     // MARK: - Independent Leftover Criterion
     func testDisabledLeftoverCriterionSurvivesPersistence() throws {
         let viewModel = FindFilesViewModel()

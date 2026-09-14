@@ -17,6 +17,8 @@ struct FindFilesResultsView: View {
     var appState: AppState?
     private let colorStore = ColorThemeStore.shared // @Observable singleton - no @State needed
 
+    @State private var fittedWidths: [String: CGFloat] = [:]
+    @State private var fitRevision = 0
     @State private var sortOrder = [KeyPathComparator(\FindFilesResult.fileName)]
     @State private var cachedSorted: [FindFilesResult] = []
     @State private var lastResultCount: Int = 0
@@ -109,6 +111,8 @@ struct FindFilesResultsView: View {
 
     private func rebuildSort() {
         cachedSorted = viewModel.results.sorted(using: sortOrder)
+        fittedWidths = FindFilesResultsSizing.measure(cachedSorted)
+        fitRevision += 1
     }
 
     private func scheduleSort() {
@@ -157,6 +161,8 @@ struct FindFilesResultsView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
             Spacer()
+            Button("Autofit") { fitRevision += 1 }
+                .buttonStyle(.borderless)
             Menu {
                 columnToggle("Number", id: "number")
                 columnToggle("Name", id: "name")
@@ -201,7 +207,7 @@ struct FindFilesResultsView: View {
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
             }
-            .width(min: 220, ideal: 420)
+            .width(min: 100, ideal: 300)
             .customizationID("name")
 
             TableColumn("Location", value: \.filePath) { result in
@@ -214,7 +220,9 @@ struct FindFilesResultsView: View {
                             : (result.isInsideArchive ? theme.archivePathColor : theme.columnDateColor)
                     )
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay { FindFilesResultOverflow(result: result, text: displayedLocation(for: result), selected: viewModel.selectedResultIDs.contains(result.id), isName: false) }
                     .help(
                         result.isPasswordProtected
                             ? "? Password protected archive"
@@ -224,7 +232,7 @@ struct FindFilesResultsView: View {
                     )
                 }
             }
-            .width(min: 160, ideal: 260, max: 320)
+            .width(min: 100, ideal: 260)
             .customizationID("path")
 
             TableColumn("Date Mod.", value: \.sortableDate) { result in
@@ -234,7 +242,7 @@ struct FindFilesResultsView: View {
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnDateColor)
                 }
             }
-            .width(min: 130, ideal: 150, max: 170)
+            .width(min: 100, ideal: 150)
             .customizationID("date")
 
             TableColumn("Size", value: \.fileSize) { result in
@@ -244,7 +252,7 @@ struct FindFilesResultsView: View {
                         .foregroundStyle(result.isPasswordProtected ? .red : theme.columnSizeColor)
                 }
             }
-            .width(min: 30, ideal: 75)
+            .width(min: 50, ideal: 75)
             .customizationID("size")
 
             TableColumn("Match") { result in
@@ -287,6 +295,8 @@ struct FindFilesResultsView: View {
         .fileTableColumnDividerStyle()
         .background(
             FindFilesResultsTableStyle(
+                fittedWidths: fittedWidths,
+                fitRevision: fitRevision,
                 selectionVersion: viewModel.selectedResultIDs.hashValue,
                 themeVersion: colorStore.themeVersion,
                 rowHeight: FilePanelStyle.rowHeight
@@ -328,52 +338,12 @@ struct FindFilesResultsView: View {
                             : (result.isInsideArchive ? theme.archivePathColor : theme.columnNameColor)
                     )
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
                     .help(result.fileName)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay { FindFilesResultOverflow(result: result, text: result.fileName, selected: viewModel.selectedResultIDs.contains(result.id), isName: true) }
             }
         }
-    }
-
-    // MARK: - Context Menu
-
-    @ViewBuilder
-    private func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
-        let selected = viewModel.results.filter { selection.contains($0.id) }
-        let actionable = selected.filter { !$0.isInsideArchive && !$0.isPasswordProtected }
-        if selected.count == 1, let result = selected.first {
-            Button("Go to File") {
-                if let state = appState { viewModel.goToFile(result: result, appState: state) }
-            }
-            .disabled(appState == nil)
-            Button("Reveal in Finder") { viewModel.revealInFinder(result: result) }
-        }
-        Button(selected.count == 1 ? "Open" : "Open \(selected.count) Items") {
-            viewModel.openResults(actionable)
-        }
-        .disabled(actionable.isEmpty)
-        Divider()
-        Button(selected.count == 1 ? "Copy to Folder…" : "Copy \(selected.count) Items to Folder…") {
-            viewModel.copyResults(actionable)
-        }
-        .disabled(actionable.isEmpty)
-        Button(selected.count == 1 ? "Move to Folder…" : "Move \(selected.count) Items to Folder…") {
-            viewModel.moveResults(actionable)
-        }
-        .disabled(actionable.isEmpty)
-        Button(selected.count == 1 ? "Move to Trash" : "Move \(selected.count) Items to Trash", role: .destructive) {
-            viewModel.trashResults(actionable)
-        }
-        .disabled(actionable.isEmpty)
-        Divider()
-        Button(selected.count == 1 ? "Copy Path" : "Copy \(selected.count) Paths") {
-            viewModel.copyPaths(for: selected)
-        }
-        Divider()
-        Button("Select All") { viewModel.selectAllResults() }
-        Button("Copy All Paths") { viewModel.copyResultPaths() }
-            .disabled(viewModel.results.isEmpty)
-        Button("Export Results…") { viewModel.exportResults() }
-            .disabled(viewModel.results.isEmpty)
     }
 
     // MARK: - Column Customization

@@ -23,7 +23,7 @@ struct FindFilesTemplateSection: View {
                 criteria
             }
             FindFilesQuickThresholds(settings: $viewModel.advancedSettings)
-            Text("Choose an age or minimum size here; edit custom values below. Selecting a template again restores its defaults.")
+            Text("Selecting a template again restores its defaults. The Manual tab keeps a separate set of custom criteria.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             if viewModel.advancedSettings.usesApplicationLeftovers {

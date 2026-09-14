@@ -26,6 +26,9 @@ final class FindFilesViewModel {
     var searchInSubdirectories: Bool = true
     var searchInArchives: Bool = false
     var advancedSettings = FindFilesSearchSettings()
+    var usesTemplateEditor = false
+    var manualSettingsSnapshot: FindFilesSearchSettings?
+    var templateSettingsSnapshot: FindFilesSearchSettings?
 
     // MARK: - Results & State
     var results: [FindFilesResult] = []

@@ -9,6 +9,21 @@ import Foundation
 
 // MARK: - Advanced Presets
 extension FindFilesViewModel {
+    // MARK: - Advanced Editor Mode
+    func selectAdvancedEditor(templates: Bool) {
+        guard usesTemplateEditor != templates else { return }
+        if templates {
+            manualSettingsSnapshot = advancedSettings
+            usesTemplateEditor = true
+            if let templateSettingsSnapshot { advancedSettings = templateSettingsSnapshot }
+            else { applyLargeStaleFilesPreset() }
+        } else {
+            templateSettingsSnapshot = advancedSettings
+            usesTemplateEditor = false
+            advancedSettings = manualSettingsSnapshot ?? FindFilesSearchSettings()
+        }
+    }
+
     func applyPotentialBallastPreset() {
         applyLargeStaleFilesPreset()
     }

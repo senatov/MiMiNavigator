@@ -11,16 +11,33 @@ import FindFilesKit
 struct FindFilesAdvancedTab: View {
     @Bindable var viewModel: FindFilesViewModel
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                FindFilesAdvancedCriteriaSection(viewModel: viewModel)
-                FindFilesTemplateSection(viewModel: viewModel)
-                scopeSection
-                sizeSection
-                dateSection
-                infoSection
+        VStack(alignment: .leading, spacing: 0) {
+            Picker("Advanced search editor", selection: Binding(
+                get: { viewModel.usesTemplateEditor },
+                set: { viewModel.selectAdvancedEditor(templates: $0) }
+            )) {
+                Text("Templates").tag(true)
+                Text("Manual").tag(false)
             }
-            .padding(14)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 230)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    if viewModel.usesTemplateEditor {
+                        FindFilesTemplateSection(viewModel: viewModel)
+                    } else {
+                        FindFilesAdvancedCriteriaSection(viewModel: viewModel)
+                        scopeSection
+                        sizeSection
+                        dateSection
+                        infoSection
+                    }
+                }
+                .padding(14)
+            }
         }
         .onChange(of: viewModel.advancedSettings.itemTypeFilter) {
             if viewModel.advancedSettings.itemTypeFilter == .foldersOnly {

@@ -9,6 +9,8 @@ import SwiftUI
 
 // MARK: - Find Files Results Table Style
 struct FindFilesResultsTableStyle: NSViewRepresentable {
+    let fittedWidths: [String: CGFloat]
+    let fitRevision: Int
     let selectionVersion: Int
     let themeVersion: Int
     let rowHeight: CGFloat
@@ -18,6 +20,8 @@ struct FindFilesResultsTableStyle: NSViewRepresentable {
     }
 
     func updateNSView(_ view: FindFilesResultsTableProbe, context _: Context) {
+        view.fittedWidths = fittedWidths
+        view.fitRevision = fitRevision
         let theme = ColorThemeStore.shared.activeTheme
         view.activeFill = NSColor(theme.selectionActive)
         view.inactiveFill = NSColor(theme.selectionInactive)
@@ -36,6 +40,11 @@ struct FindFilesResultsTableStyle: NSViewRepresentable {
 
 // MARK: - Results Table Probe
 final class FindFilesResultsTableProbe: NSView {
+    var fittedWidths: [String: CGFloat] = [:]
+    var fitRevision = 0
+    private var lastFitRevision = -1
+    private var lastFitWidth: CGFloat = 0
+    private var lastColumns: [String] = []
     var activeFill: NSColor = .clear
     var inactiveFill: NSColor = .clear
     var activeBorderColor: NSColor = .clear
@@ -70,6 +79,7 @@ final class FindFilesResultsTableProbe: NSView {
         if observedTable !== tableView {
             observe(tableView)
         }
+        fitColumnsIfNeeded(in: tableView)
         tableView.rowHeight = rowHeight
         tableView.usesAlternatingRowBackgroundColors = false
         tableView.backgroundColor = tableBackgroundColor
@@ -90,6 +100,10 @@ final class FindFilesResultsTableProbe: NSView {
         observedTable = tableView
         tableView.enclosingScrollView?.contentView.postsBoundsChangedNotifications = true
         let center = NotificationCenter.default
+        if let clipView = tableView.enclosingScrollView?.contentView {
+            clipView.postsFrameChangedNotifications = true
+            center.addObserver(self, selector: #selector(observedStateDidChange), name: NSView.frameDidChangeNotification, object: clipView)
+        }
         center.addObserver(
             self,
             selector: #selector(observedStateDidChange),
@@ -118,7 +132,20 @@ final class FindFilesResultsTableProbe: NSView {
 
     @objc private func observedStateDidChange(_: Notification) {
         guard let observedTable else { return }
+        fitColumnsIfNeeded(in: observedTable)
         updateVisibleRows(in: observedTable)
+    }
+
+    // MARK: - Fit Columns
+    private func fitColumnsIfNeeded(in table: NSTableView) {
+        let width = table.enclosingScrollView?.contentSize.width ?? table.bounds.width
+        let columns = table.tableColumns.filter { !$0.isHidden }.map { $0.identifier.rawValue }
+        guard width > 0, !fittedWidths.isEmpty,
+            lastFitRevision != fitRevision || abs(lastFitWidth - width) > 1 || lastColumns != columns else { return }
+        lastFitRevision = fitRevision
+        lastFitWidth = width
+        lastColumns = columns
+        FindFilesResultsColumnFit.apply(to: table, widths: fittedWidths)
     }
 
     private func updateVisibleRows(in tableView: NSTableView) {
