@@ -176,6 +176,31 @@ private final class ReplacementTestDelegate: NSObject, NSWindowDelegate {
 // MARK: - Editable Search Template Tests
 @MainActor
 final class FindFilesTemplateTests: XCTestCase {
+    // MARK: - Shared Directory Scope
+    func testSearchDirectoryIsSharedByBothModules() {
+        let viewModel = FindFilesViewModel()
+        viewModel.searchDirectory = "/tmp"
+        viewModel.activeModule = .general
+        XCTAssertEqual(viewModel.activeSearchSettings.searchDirectory, "/tmp")
+        viewModel.activeModule = .advanced
+        XCTAssertEqual(viewModel.activeSearchSettings.searchDirectory, "/tmp")
+        viewModel.selectAdvancedEditor(templates: true)
+        XCTAssertEqual(viewModel.searchDirectory, "/tmp")
+        viewModel.searchDirectory = "/Users"
+        viewModel.selectAdvancedEditor(templates: false)
+        XCTAssertEqual(viewModel.searchDirectory, "/Users")
+    }
+    // MARK: - Reject File Targets
+    func testSearchRejectsFileAsDirectory() {
+        let viewModel = FindFilesViewModel()
+        viewModel.activeModule = .general
+        viewModel.searchDirectory = #filePath
+        viewModel.startSearch()
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertNotEqual(viewModel.searchState, .searching)
+        viewModel.configure(searchPath: #filePath)
+        XCTAssertEqual(viewModel.searchDirectory, URL(fileURLWithPath: #filePath).deletingLastPathComponent().path)
+    }
     // MARK: - Mutually Exclusive Editors
     func testEditorSwitchRestoresIndependentCriteria() {
         let viewModel = FindFilesViewModel()

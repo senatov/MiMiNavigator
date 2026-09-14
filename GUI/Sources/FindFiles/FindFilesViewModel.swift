@@ -20,7 +20,13 @@ final class FindFilesViewModel {
     var fileNamePattern: String = "*.*"
     var invertFileNamePattern: Bool = false
     var searchText: String = ""
-    var searchDirectory: String = ""
+    var searchDirectory: String {
+        get { advancedSettings.searchDirectory }
+        set {
+            advancedSettings.searchDirectory = newValue
+            markAdvancedCriteriaEdited()
+        }
+    }
     var caseSensitive: Bool = false
     var useRegex: Bool = false
     var searchInSubdirectories: Bool = true
@@ -82,48 +88,13 @@ final class FindFilesViewModel {
         loadPreferences()
     }
 
-    /// Initialize with search directory from active panel.
-    /// If selectedFile is an archive, search will be limited to that archive only.
-    /// - Parameters:
-    ///   - searchPath: Current directory of the active panel
-    ///   - selectedFile: Currently selected file (optional)
-    func configure(searchPath: String, selectedFile: CustomFile? = nil) {
-        advancedSettings.searchDirectory = searchPath
-        // Check if selected file is an archive
-        if let file = selectedFile,
-            !file.isDirectory,
-            isArchiveFile(file)
-        {
-            // Selected file is an archive — search only inside this archive
-            searchDirectory = file.urlValue.path
-            searchInArchives = true
-            searchInSubdirectories = true
-            log.info("[FindFiles] Configured to search in archive: \(file.nameStr)")
-        } else if let file = selectedFile, !file.isDirectory {
-            // Selected file is a regular file — set it as search target (content search)
-            searchDirectory = file.urlValue.path
-            searchInArchives = false
-            log.info("[FindFiles] Configured to search in file: \(file.nameStr)")
-        } else {
-            // Normal case — use panel's current directory
-            searchDirectory = searchPath
-        }
-
-        // Previous results are NOT loaded automatically.
-        // User must press Search to get fresh results.
-        // (loadSavedResults is available via explicit "Load Last" action if needed)
-    }
-    /// Check if file is a recognized archive format
-    private func isArchiveFile(_ file: CustomFile) -> Bool {
-        let ext = file.urlValue.pathExtension.lowercased()
-        if ArchiveExtensions.isArchive(ext) {
-            return true
-        }
-        // Also check compound extensions like .tar.gz
-        if ArchiveExtensions.isCompoundArchive(file.nameStr) {
-            return true
-        }
-        return false
+    // MARK: - Configure Shared Search Directory
+    func configure(searchPath: String, selectedFile _: CustomFile? = nil) {
+        let path = (searchPath as NSString).expandingTildeInPath
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+        searchDirectory = exists && !isDirectory.boolValue
+            ? URL(fileURLWithPath: path).deletingLastPathComponent().path : path
     }
 
     // MARK: - Start Search
@@ -140,15 +111,11 @@ final class FindFilesViewModel {
         log.info("[FindFiles] Starting \(activeModule.rawValue) search: preset='\(settings.activePreset?.rawValue ?? "none")' name='\(settings.fileNamePattern)' text='\(settings.searchText)' dir='\(targetPath)'")
         errorMessage = nil
         // Validate target path
-        let targetURL = URL(fileURLWithPath: targetPath)
+        let targetURL = URL(fileURLWithPath: (targetPath as NSString).expandingTildeInPath)
         var isDir: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
-        // Check if it's a single archive file to search (not a directory)
-        let isArchiveTarget = exists && !isDir.boolValue && ArchiveExtensions.isArchive(targetURL.pathExtension.lowercased())
-        // Check if it's a single regular file (not archive, not directory)
-        let isSingleFileTarget = exists && !isDir.boolValue && !isArchiveTarget
-        guard exists && (isDir.boolValue || isArchiveTarget || isSingleFileTarget) else {
-            errorMessage = "Path not found: \(targetPath)"
+        guard exists && isDir.boolValue else {
+            errorMessage = "Choose an existing directory in Search in: \(targetPath)"
             return
         }
         let staleAgeDays = staleAgeDaysIfNeeded()
@@ -192,8 +159,8 @@ final class FindFilesViewModel {
             criteria.searchDirectories = FindFilesLeftoverSafety.searchDirectories
         }
         criteria.emptyFoldersOnly = activeModule == .advanced && settings.emptyFoldersOnly
-        criteria.isArchiveOnlySearch = isArchiveTarget
-        criteria.isSingleFileContentSearch = isSingleFileTarget
+        criteria.isArchiveOnlySearch = false
+        criteria.isSingleFileContentSearch = false
 
         if activeModule == .advanced && settings.useSizeFilter && settings.itemTypeFilter != .foldersOnly {
             let mult = settings.fileSizeUnit.multiplier

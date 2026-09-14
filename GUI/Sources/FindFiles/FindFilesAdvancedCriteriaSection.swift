@@ -24,17 +24,6 @@ struct FindFilesAdvancedCriteriaSection: View {
                     .textFieldStyle(.roundedBorder)
             }
             HStack(spacing: 8) {
-                Text("Directory")
-                    .frame(width: 72, alignment: .trailing)
-                    .foregroundStyle(.secondary)
-                TextField("Directory path", text: settingBinding(\.searchDirectory))
-                    .textFieldStyle(.roundedBorder)
-                Button(action: browseDirectory) {
-                    Image(systemName: "folder.badge.plus")
-                }
-                .buttonStyle(ThemedButtonStyle())
-            }
-            HStack(spacing: 8) {
                 Text("Find text")
                     .frame(width: 72, alignment: .trailing)
                     .foregroundStyle(.secondary)
@@ -55,22 +44,6 @@ struct FindFilesAdvancedCriteriaSection: View {
         .font(DesignTokens.Typography.body)
         .padding(DesignTokens.Spacing.group)
         .semanticSurface()
-    }
-
-    // MARK: - Browse Directory
-    private func browseDirectory() {
-        Task { @MainActor in
-            let path = viewModel.advancedSettings.searchDirectory
-            let initialURL = path.isEmpty ? nil : URL(fileURLWithPath: path)
-            guard let url = await FindFilesOperationPresenter.chooseLocation(
-                prompt: "Select",
-                message: "Choose a directory to search",
-                initialURL: initialURL,
-                canChooseFiles: false
-            ) else { return }
-            viewModel.advancedSettings.searchDirectory = url.path
-            viewModel.markAdvancedCriteriaEdited()
-        }
     }
 
     private func settingBinding<Value>(_ keyPath: WritableKeyPath<FindFilesSearchSettings, Value>) -> Binding<Value> {

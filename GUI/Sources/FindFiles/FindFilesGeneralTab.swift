@@ -48,23 +48,6 @@ struct FindFilesGeneralTab: View {
                         .help("Pattern syntax help")
                     }
                 }
-                compactField(label: "Search in:", icon: "folder.fill", iconColor: .blue) {
-                    HStack(spacing: 6) {
-                        SearchHistoryComboBox(
-                            text: $viewModel.searchDirectory,
-                            historyKey: .searchDirectory,
-                            placeholder: "Directory path",
-                            onSubmit: { viewModel.startSearch() }
-                        )
-                        .frame(height: 24)
-                        Button(action: browseDirectory) {
-                            Image(systemName: "folder.badge.plus")
-                        }
-                        .buttonStyle(ThemedButtonStyle())
-                        .controlSize(.regular)
-                        .help("Browse…")
-                    }
-                }
                 compactField(label: "Find text:", icon: "text.magnifyingglass", iconColor: .purple) {
                     SearchHistoryComboBox(
                         text: $viewModel.searchText,
@@ -215,20 +198,6 @@ struct FindFilesGeneralTab: View {
     private var sectionBorder: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(DialogColors.border.opacity(0.62), lineWidth: 0.75)
-    }
-
-    // MARK: - Browse
-    private func browseDirectory() {
-        Task { @MainActor in
-            let initialURL = viewModel.searchDirectory.isEmpty ? nil : URL(fileURLWithPath: viewModel.searchDirectory)
-            guard let url = await FindFilesOperationPresenter.chooseLocation(
-                prompt: "Select",
-                message: "Choose directory, file, or archive to search in",
-                initialURL: initialURL,
-                canChooseFiles: true
-            ) else { return }
-            viewModel.searchDirectory = url.path
-        }
     }
 
     // MARK: - Pattern Help

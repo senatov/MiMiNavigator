@@ -12,15 +12,23 @@ extension FindFilesViewModel {
     // MARK: - Advanced Editor Mode
     func selectAdvancedEditor(templates: Bool) {
         guard usesTemplateEditor != templates else { return }
+        let sharedDirectory = searchDirectory
         if templates {
             manualSettingsSnapshot = advancedSettings
             usesTemplateEditor = true
-            if let templateSettingsSnapshot { advancedSettings = templateSettingsSnapshot }
-            else { applyLargeStaleFilesPreset() }
+            if let templateSettingsSnapshot {
+                advancedSettings = templateSettingsSnapshot
+                searchDirectory = sharedDirectory
+            }
+            else {
+                applyLargeStaleFilesPreset()
+                searchDirectory = sharedDirectory
+            }
         } else {
             templateSettingsSnapshot = advancedSettings
             usesTemplateEditor = false
             advancedSettings = manualSettingsSnapshot ?? FindFilesSearchSettings()
+            searchDirectory = sharedDirectory
         }
     }
 

@@ -101,6 +101,9 @@ struct FindFilesWindowContent: View {
 
     private var criteriaPane: some View {
         VStack(spacing: 0) {
+            FindFilesSearchLocation(viewModel: viewModel)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
