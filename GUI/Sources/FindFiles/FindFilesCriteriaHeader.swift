@@ -130,7 +130,7 @@ struct FindFilesSplitDivider: View {
     }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
-        min(max(value, minimumHeight), max(minimumHeight, totalHeight - 190))
+        min(max(value, minimumHeight), max(minimumHeight, totalHeight - 160))
     }
 
     private func adjustHeight(by delta: CGFloat) {

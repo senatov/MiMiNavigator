@@ -12,7 +12,7 @@ struct FindFilesWindowContent: View {
     @Bindable var viewModel: FindFilesViewModel
     var appState: AppState?
     @State private var selectedTab: FindFilesTab = .general
-    @State private var criteriaHeight: CGFloat = 280
+    @State private var criteriaHeight: CGFloat = 10000
     @State private var didRestoreLayout = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -48,6 +48,9 @@ struct FindFilesWindowContent: View {
                 }
                 .font(DesignTokens.Typography.body)
                 .keyboardFocusSection()
+            }
+            .onChange(of: geometry.size.height) { oldHeight, newHeight in
+                criteriaHeight = clampedCriteriaHeight(totalHeight: oldHeight) + newHeight - oldHeight
             }
         }
         .onAppear {
@@ -195,6 +198,13 @@ struct FindFilesWindowContent: View {
             }
 
             Spacer()
+            Button {
+                FindFilesCoordinator.shared.showResultsWindow()
+            } label: {
+                Label("Results Window", systemImage: "arrow.up.forward.square")
+            }
+            .buttonStyle(ThemedButtonStyle())
+            .help("Open live search results in a separate resizable window")
 
             // Show in Panel — inject results into focused panel
             if let appState, !viewModel.results.isEmpty {
@@ -245,16 +255,16 @@ struct FindFilesWindowContent: View {
     }
 
     private func clampedCriteriaHeight(totalHeight: CGFloat) -> CGFloat {
-        min(max(criteriaHeight, minimumCriteriaHeight), max(minimumCriteriaHeight, totalHeight - 190))
+        min(max(criteriaHeight, minimumCriteriaHeight), max(minimumCriteriaHeight, totalHeight - 160))
     }
 
     private func criteriaHeightKey(for tab: FindFilesTab) -> String {
-        "findFiles.criteriaPaneHeight.\(tab.rawValue)"
+        "findFiles.criteriaPaneHeight.compact.\(tab.rawValue)"
     }
 
     private func restoredCriteriaHeight(for tab: FindFilesTab) -> CGFloat {
         let storedHeight = MiMiDefaults.shared.double(forKey: criteriaHeightKey(for: tab))
-        guard storedHeight > 0 else { return tab == .general ? 280 : 560 }
+        guard storedHeight > 0 else { return 10000 }
         return CGFloat(storedHeight)
     }
 

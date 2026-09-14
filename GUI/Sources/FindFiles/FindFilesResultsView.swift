@@ -70,7 +70,8 @@ struct FindFilesResultsView: View {
                 resultsList
             }
         }
-        .frame(minHeight: 150, idealHeight: 250)
+        .frame(minHeight: 120, idealHeight: 140)
+        .onAppear { rebuildSort() }
         .onChange(of: viewModel.results.count) {
             scheduleSort()
             lastResultCount = viewModel.results.count

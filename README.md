@@ -203,7 +203,7 @@ xcodebuild -scheme MiMiNavigator -configuration Debug \
   -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
-Advanced Find Files includes Large stale files, App leftovers, Empty old folders, Old downloads (older than six months), and Recently modified (last seven days) templates. Criteria checkboxes under the templates enable or disable item type, recursion, system exclusions, deletability, size, age, modification date, and template-specific filters. Values remain editable below; selecting a template again restores its defaults. Results are candidates for review, not automatic deletion recommendations.
+Advanced Find Files includes Large stale files, App leftovers, Empty old folders, Old downloads (older than six months), and Recently modified (last seven days) templates. Criteria checkboxes under the templates enable or disable item type, recursion, system exclusions, deletability, size, age, modification date, and template-specific filters. Quick switches offer ages of 1, 3, or 6 months and 1 or 2 years, and minimum sizes of 50, 100, 250, or 500 MB and 1 GB (inclusive). Choosing a size clears the upper limit; custom values remain editable below. Results start in a compact bottom pane with a draggable divider. Results Window opens the same live results and selection in an independent resizable window; closing the search window also closes this results window. selecting a template again restores its defaults. Results are candidates for review, not automatic deletion recommendations.
 
 ## Architecture
 

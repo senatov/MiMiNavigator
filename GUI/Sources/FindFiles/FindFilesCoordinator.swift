@@ -22,14 +22,18 @@ final class FindFilesCoordinator {
     // MARK: - State
     private(set) var isVisible = false
     private var findWindow: NSWindow?
-    var sheetWindow: NSWindow? { findWindow }
+    private var resultsWindow: NSPanel?
+    var sheetWindow: NSWindow? {
+        if let resultsWindow, resultsWindow.isKeyWindow { return resultsWindow }
+        return findWindow
+    }
     private var viewModel = FindFilesViewModel()
     /// Reference to AppState for "Show in Panel" feature
     var appState: AppState?
 
     private let frameAutosaveName = "MiMiNavigator.FindFilesWindow"
-    private let defaultWidth: CGFloat = 680
-    private let defaultHeight: CGFloat = 520
+    private let defaultWidth: CGFloat = 940
+    private let defaultHeight: CGFloat = 780
 
     private init() {}
 
@@ -45,13 +49,15 @@ final class FindFilesCoordinator {
     func open(searchPath: String, selectedFile: CustomFile? = nil) {
         viewModel.savePreferences()
         viewModel.cancelSearch()
+        WindowReplacement.close(resultsWindow)
+        resultsWindow = nil
         WindowReplacement.close(findWindow)
         findWindow = nil
         viewModel = FindFilesViewModel()
         viewModel.configure(searchPath: searchPath, selectedFile: selectedFile)
         log.debug(#function)
         let contentView = FindFilesWindowContent(viewModel: viewModel, appState: appState)
-            .frame(minWidth: 680, minHeight: 500)
+            .frame(minWidth: 680, minHeight: 580)
         let hostingView = NSHostingView(rootView: contentView)
         let window = FindFilesPanel(
             contentRect: .zero,
@@ -64,7 +70,7 @@ final class FindFilesCoordinator {
         }
         window.contentView = hostingView
         window.isReleasedWhenClosed = false
-        window.minSize = NSSize(width: 680, height: 500)
+        window.minSize = NSSize(width: 680, height: 580)
         window.titlebarAppearsTransparent = false
         PanelTitleHelper.applyIconTitle(to: window, systemImage: "magnifyingglass", title: "Find Files")
         window.toolbarStyle = .unified
@@ -88,6 +94,31 @@ final class FindFilesCoordinator {
         log.info("[FindFiles] Window opened")
     }
 
+    // MARK: - Independent Results Window
+    func showResultsWindow() {
+        if let resultsWindow {
+            WindowPresentationPolicy.presentStandalone(resultsWindow)
+            return
+        }
+        let window = FindFilesPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 1000, height: 500),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentView = NSHostingView(rootView: FindFilesResultsView(viewModel: viewModel, appState: appState))
+        window.onSelectAll = { [weak viewModel] in viewModel?.selectAllResults() }
+        window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 680, height: 260)
+        window.title = "Find Files — Results"
+        WindowPresentationPolicy.apply(.standalone, to: window)
+        if !window.setFrameUsingName("MiMiNavigator.FindFilesResultsWindow") { window.center() }
+        window.setFrameAutosaveName("MiMiNavigator.FindFilesResultsWindow")
+        window.delegate = FindFilesWindowDelegate.shared
+        resultsWindow = window
+        WindowPresentationPolicy.presentStandalone(window)
+    }
+
     // MARK: - Close
 
     func close() {
@@ -102,7 +133,15 @@ final class FindFilesCoordinator {
     // MARK: - Notify Closed (called by delegate)
 
     func windowDidClose(_ closedWindow: NSWindow) {
+        if resultsWindow === closedWindow {
+            closedWindow.contentView = nil
+            closedWindow.delegate = nil
+            resultsWindow = nil
+            return
+        }
         guard findWindow === closedWindow else { return }
+        WindowReplacement.close(resultsWindow)
+        resultsWindow = nil
         viewModel.savePreferences()
         closedWindow.contentView = nil
         closedWindow.delegate = nil

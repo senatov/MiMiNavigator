@@ -22,7 +22,8 @@ struct FindFilesTemplateSection: View {
             if viewModel.advancedSettings.activePreset != nil {
                 criteria
             }
-            Text("Turn criteria on or off; edit their values below. Selecting a template again restores its defaults.")
+            FindFilesQuickThresholds(settings: $viewModel.advancedSettings)
+            Text("Choose an age or minimum size here; edit custom values below. Selecting a template again restores its defaults.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             if viewModel.advancedSettings.usesApplicationLeftovers {
@@ -40,9 +41,6 @@ struct FindFilesTemplateSection: View {
             Toggle("Include subdirectories", isOn: $viewModel.advancedSettings.searchInSubdirectories)
             Toggle("Exclude system locations", isOn: $viewModel.advancedSettings.excludeSystemLocations)
             Toggle("Deletable only", isOn: $viewModel.advancedSettings.deletableOnly)
-            Toggle("File size", isOn: $viewModel.advancedSettings.useSizeFilter)
-                .disabled(viewModel.advancedSettings.itemTypeFilter == .foldersOnly)
-            Toggle("Unused item age", isOn: $viewModel.advancedSettings.useStaleItemFilter)
             Toggle("Modification date", isOn: $viewModel.advancedSettings.useDateFilter)
             if viewModel.advancedSettings.activePreset == .emptyStaleFolders {
                 Toggle("Empty folders only", isOn: $viewModel.advancedSettings.emptyFoldersOnly)
