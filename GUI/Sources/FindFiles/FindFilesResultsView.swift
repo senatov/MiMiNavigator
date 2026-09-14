@@ -162,7 +162,7 @@ struct FindFilesResultsView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Button("Autofit") { fitRevision += 1 }
-                .buttonStyle(.borderless)
+                .buttonStyle(ThemedButtonStyle())
             Menu {
                 columnToggle("Number", id: "number")
                 columnToggle("Name", id: "name")

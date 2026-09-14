@@ -81,7 +81,6 @@ struct FindFilesTemplateSection: View {
         return Button(action: action) {
             Label(title, systemImage: selected ? "checkmark.circle.fill" : icon)
         }
-        .buttonStyle(ThemedButtonStyle())
-        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(selected ? Color.accentColor : .clear, lineWidth: 1))
+        .buttonStyle(ThemedButtonStyle(isSelected: selected))
     }
 }

@@ -12,16 +12,14 @@ struct FindFilesAdvancedTab: View {
     @Bindable var viewModel: FindFilesViewModel
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Picker("Advanced search editor", selection: Binding(
-                get: { viewModel.usesTemplateEditor },
-                set: { viewModel.selectAdvancedEditor(templates: $0) }
-            )) {
-                Text("Templates").tag(true)
-                Text("Manual").tag(false)
+            HStack(spacing: 4) {
+                FindFilesTabButton(title: "Templates", icon: "shippingbox", isSelected: viewModel.usesTemplateEditor) {
+                    viewModel.selectAdvancedEditor(templates: true)
+                }
+                FindFilesTabButton(title: "Manual", icon: "slider.horizontal.3", isSelected: !viewModel.usesTemplateEditor) {
+                    viewModel.selectAdvancedEditor(templates: false)
+                }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 230)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             ScrollView {
@@ -232,16 +230,8 @@ struct FindFilesAdvancedTab: View {
                             viewModel.advancedSettings.staleAgeAmount = String(years)
                             viewModel.advancedSettings.staleAgeUnit = .years
                         }
-                        .buttonStyle(ThemedButtonStyle())
+                        .buttonStyle(ThemedButtonStyle(isSelected: isSelectedYear(years)))
                         .controlSize(.small)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(isSelectedYear(years) ? Color.accentColor.opacity(0.18) : Color.clear)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .strokeBorder(isSelectedYear(years) ? Color.accentColor : Color.clear, lineWidth: 1.5)
-                        )
                     }
                     Spacer()
                 }

@@ -121,13 +121,10 @@ struct FindFilesWindowContent: View {
                         .truncationMode(.middle)
                 }
                 Spacer(minLength: 16)
-                Picker("", selection: $selectedTab) {
-                    Text("Search").tag(FindFilesTab.general)
-                    Text("Advanced").tag(FindFilesTab.advanced)
+                HStack(spacing: 4) {
+                    FindFilesTabButton(title: "Search", icon: "magnifyingglass", isSelected: selectedTab == .general) { selectedTab = .general }
+                    FindFilesTabButton(title: "Advanced", icon: "slider.horizontal.3", isSelected: selectedTab == .advanced) { selectedTab = .advanced }
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 210)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
