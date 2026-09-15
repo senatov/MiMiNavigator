@@ -92,6 +92,26 @@ final class MiMiNavigatorTests: XCTestCase {
         )
     }
 
+    func testRegisteredParentTargetSurvivesReleaseHitTestMiss() {
+        let archiveParent = URL(fileURLWithPath: "/Users/senat/Downloads", isDirectory: true)
+        let archiveTempRoot = URL(fileURLWithPath: "/private/var/folders/archive-temp", isDirectory: true)
+        XCTAssertEqual(
+            DragDropTargetResolver.releaseTarget(
+                registeredParent: archiveParent,
+                liveTarget: archiveTempRoot
+            ),
+            archiveParent
+        )
+    }
+
+    func testLiveTargetIsUsedWithoutRegisteredParentContact() {
+        let directory = URL(fileURLWithPath: "/Users/senat/Documents", isDirectory: true)
+        XCTAssertEqual(
+            DragDropTargetResolver.releaseTarget(registeredParent: nil, liveTarget: directory),
+            directory
+        )
+    }
+
     func testLocalParentStripResolvesParentDirectory() {
         let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
         XCTAssertEqual(

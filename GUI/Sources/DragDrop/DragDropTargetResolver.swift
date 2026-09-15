@@ -19,4 +19,9 @@ enum DragDropTargetResolver {
     static func preferredExplicitTarget(parent: URL?, directory: URL?) -> URL? {
         parent ?? directory
     }
+
+    // MARK: - Release Target
+    static func releaseTarget(registeredParent: URL?, liveTarget: URL?) -> URL? {
+        registeredParent ?? liveTarget
+    }
 }

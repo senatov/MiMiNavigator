@@ -303,7 +303,10 @@ final class DragNSView: NSView, NSDraggingSource {
             dragDropManager: dragDropManager
         )
         let dropSide = dropContext.side
-        let targetURL = dropContext.target
+        let targetURL = DragDropTargetResolver.releaseTarget(
+            registeredParent: dragDropManager.dropDestinationOverride,
+            liveTarget: dropContext.target
+        )
 
         if shouldIgnoreInternalDrop(
             from: panelSide,
