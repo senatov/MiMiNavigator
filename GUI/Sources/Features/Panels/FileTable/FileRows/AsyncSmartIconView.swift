@@ -35,13 +35,14 @@ struct AsyncSmartIconView: View {
             }
         }
         .task(id: file.urlValue.path) {
-            // SmartIconService handles all icon logic: OS-hidden badge,
-            // symlink arrows, encrypted archive keys, UTType icons etc.
-            let capturedFile = file
-            let image = await MainActor.run {
-                SmartIconService.icon(for: capturedFile)
-            }
-            self.icon = image
+            icon = SmartIconService.icon(for: file)
+            let url = file.urlValue
+            let isDirectory = file.isDirectory
+            let content = await Task.detached(priority: .utility) {
+                IconContentInspection.inspect(url: url, isDirectory: isDirectory)
+            }.value
+            guard !Task.isCancelled else { return }
+            icon = SmartIconService.icon(for: file, content: content)
         }
     }
 

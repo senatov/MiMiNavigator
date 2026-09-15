@@ -19,7 +19,7 @@ enum EncryptedArchiveCheck {
     nonisolated(unsafe) private static let cache = NSCache<NSString, NSNumber>()
     // MARK: - Public API
     /// Returns true if archive is encrypted.
-    /// Pure file-header reads only — no shell calls, safe for main thread.
+    /// Blocking file reads: call only from background icon inspection.
     static func isEncrypted(url: URL) -> Bool {
         let key = url.path as NSString
         if let cached = cache.object(forKey: key) {

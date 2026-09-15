@@ -31,14 +31,14 @@ enum SmartIconService {
 
     // MARK: - Primary API: icon for CustomFile
     @MainActor
-    static func icon(for file: CustomFile) -> NSImage {
+    static func icon(for file: CustomFile, content: IconContentInspection = .init()) -> NSImage {
         let extKey =
             (
                 file.isDirectory
                     ? "dir:\(file.urlValue.standardizedFileURL.path)"
                     : file.urlValue.pathExtension.lowercased() + (file.isSymbolicLink ? "_sym" : "")
             ) as NSString
-        if let cached = iconCache.object(forKey: extKey) {
+        if content.kind == .unknown, let cached = iconCache.object(forKey: extKey) {
             return cached
         }
         let url = file.urlValue
@@ -63,14 +63,14 @@ enum SmartIconService {
             return icon
         }
         let pathExtension = url.pathExtension.lowercased()
-        if file.isArchiveFile && EncryptedArchiveCheck.isEncrypted(url: url) {
+        if file.isArchiveFile && content.isEncrypted {
             return encryptedArchiveIcon(size: iconSize)
         }
         if file.isArchiveFile {
             return archiveIcon(size: iconSize)
         }
         if pathExtension.isEmpty {
-            let detected = FileMagicDetector.detect(url: url)
+            let detected = content.kind
             if detected != .unknown {
                 return sfSymbolIcon(detected.sfSymbol, size: iconSize)
             }
@@ -128,12 +128,6 @@ enum SmartIconService {
             return icon
         }
         let ext = url.pathExtension.lowercased()
-        let archiveExts: Set<String> = [
-            "zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "tbz2", "xz", "txz", "dmg", "pkg", "jar", "apk",
-        ]
-        if archiveExts.contains(ext) && EncryptedArchiveCheck.isEncrypted(url: url) {
-            return encryptedArchiveIcon(size: size)
-        }
         if let special = specialTypeIcon(for: ext) {
             special.size = size
             return special

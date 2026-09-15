@@ -42,3 +42,31 @@ struct FileContentHashCacheTests {
         #expect(await cache.contentsEqual(firstURL, secondURL) == true)
     }
 }
+
+// MARK: - Icon Content Inspection Tests
+struct IconContentInspectionTests {
+    @Test func skipsCloudRootsWithoutRejectingSimilarLocalNames() {
+        #expect(!IconContentInspection.allowsContentRead(path: "/Users/test/Library/CloudStorage/OneDrive/a.zip"))
+        #expect(!IconContentInspection.allowsContentRead(path: "/Users/test/Library/Mobile Documents/a.zip"))
+        #expect(IconContentInspection.allowsContentRead(path: "/Users/test/Library/CloudStorage-backup/a.zip"))
+    }
+    @Test func detectsLocalZipButSkipsCloudZipAndItsAlias() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let cloud = root.appendingPathComponent("Library/CloudStorage/Test")
+        try FileManager.default.createDirectory(at: cloud, withIntermediateDirectories: true)
+        let localURL = root.appendingPathComponent("local.zip")
+        let cloudURL = cloud.appendingPathComponent("cloud.zip")
+        let aliasURL = root.appendingPathComponent("alias.zip")
+        let header = Data([0x50, 0x4b, 0x03, 0x04, 0, 0, 1, 0])
+        try header.write(to: localURL)
+        try header.write(to: cloudURL)
+        try FileManager.default.createSymbolicLink(at: aliasURL, withDestinationURL: cloudURL)
+        let results = await Task.detached {
+            [localURL, cloudURL, aliasURL].map {
+                IconContentInspection.inspect(url: $0, isDirectory: false).isEncrypted
+            }
+        }.value
+        #expect(results == [true, false, false])
+    }
+}
