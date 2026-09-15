@@ -64,7 +64,7 @@ More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, 
 
 Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local network, and use cloud drives mounted by macOS or their provider applications. Google Drive and Dropbox can also publish selected items and create shareable links.
 
-File icons appear before optional archive-header and file-type inspection runs in the background. Archives use the standard macOS document icon supplied by their associated application. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
+File icons appear before optional archive-header and file-type inspection runs in the background. Archive families use dedicated ZIP, clamp, system/package, and encrypted artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
 
 Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats.
 

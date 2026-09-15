@@ -112,6 +112,14 @@ final class MiMiNavigatorTests: XCTestCase {
         )
     }
 
+    func testArchiveIconFamiliesAndEncryptedOverride() {
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: false), "ArchiveZip")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "rar", isEncrypted: false), "ArchiveClamp")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "pkg", isEncrypted: false), "ArchiveSystem")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: true), "ArchiveEncrypted")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "rar", isEncrypted: true), "ArchiveEncrypted")
+    }
+
     func testLocalParentStripResolvesParentDirectory() {
         let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
         XCTAssertEqual(

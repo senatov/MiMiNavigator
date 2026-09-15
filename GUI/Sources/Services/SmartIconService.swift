@@ -38,7 +38,7 @@ enum SmartIconService {
                     ? "dir:\(file.urlValue.standardizedFileURL.path)"
                     : file.urlValue.pathExtension.lowercased() + (file.isSymbolicLink ? "_sym" : "")
             ) as NSString
-        if content.kind == .unknown, let cached = iconCache.object(forKey: extKey) {
+        if content.kind == .unknown, !content.isEncrypted, let cached = iconCache.object(forKey: extKey) {
             return cached
         }
         let url = file.urlValue
@@ -64,11 +64,10 @@ enum SmartIconService {
         }
         let pathExtension = url.pathExtension.lowercased()
         if file.isArchiveFile && content.isEncrypted {
-            return encryptedArchiveIcon(size: iconSize)
+            return archiveIcon(for: pathExtension, isEncrypted: true, size: iconSize, fallbackURL: url)
         }
         if file.isArchiveFile {
-            let icon = workspace.icon(forFile: url.path)
-            icon.size = iconSize
+            let icon = archiveIcon(for: pathExtension, isEncrypted: false, size: iconSize, fallbackURL: url)
             iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
             return icon
         }
@@ -131,6 +130,9 @@ enum SmartIconService {
             return icon
         }
         let ext = url.pathExtension.lowercased()
+        if ArchiveExtensions.isArchive(ext) {
+            return archiveIcon(for: ext, isEncrypted: false, size: size, fallbackURL: url)
+        }
         if let special = specialTypeIcon(for: ext) {
             special.size = size
             return special
@@ -192,19 +194,30 @@ enum SmartIconService {
         return nil
     }
 
-    // MARK: - Encrypted archive icon
-    static func encryptedArchiveIcon(size: NSSize) -> NSImage {
-        let symbolName = "key.2.on.ring"
-        let config = NSImage.SymbolConfiguration(pointSize: size.height * 0.7, weight: .medium)
-            .applying(.init(paletteColors: [.systemBrown, .systemOrange, .darkGray]))
-        if let img = NSImage(systemSymbolName: symbolName, accessibilityDescription: "Encrypted archive") {
-            let configured = img.withSymbolConfiguration(config) ?? img
-            configured.size = size
-            return configured
-        }
-        let fallback = NSImage(systemSymbolName: "key.fill", accessibilityDescription: "Encrypted") ?? NSImage()
-        fallback.size = size
-        return fallback
+    // MARK: - Archive Icon
+    static func archiveIconAssetName(for ext: String, isEncrypted: Bool) -> String {
+        if isEncrypted { return "ArchiveEncrypted" }
+        let normalized = ext.lowercased()
+        let clampFormats: Set<String> = ["7z", "rar", "cab", "arj", "lha", "lzh", "ace", "sit", "sitx"]
+        if clampFormats.contains(normalized) { return "ArchiveClamp" }
+        let systemFormats: Set<String> = [
+            "tar", "cpio", "rpm", "deb", "dmg", "pkg", "xar", "jar", "war", "ear", "aar", "apk",
+            "iso", "img", "vhd", "vmdk", "wim", "swm", "squashfs", "cramfs",
+        ]
+        if systemFormats.contains(normalized) { return "ArchiveSystem" }
+        return "ArchiveZip"
+    }
+    private static func archiveIcon(
+        for ext: String,
+        isEncrypted: Bool,
+        size: NSSize,
+        fallbackURL: URL
+    ) -> NSImage {
+        let assetName = archiveIconAssetName(for: ext, isEncrypted: isEncrypted)
+        let asset = NSImage(named: assetName)?.copy() as? NSImage
+        let icon = asset ?? NSWorkspace.shared.icon(forFile: fallbackURL.path)
+        icon.size = size
+        return icon
     }
 
     // MARK: - SF Symbol to NSImage
