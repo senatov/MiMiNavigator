@@ -192,15 +192,31 @@ final class DragDropManager {
         to destination: URL,
         from sourcePanelSide: FavPanelSide?
     ) {
-        log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destinationDisplayName(destination))")
+        let resolvedDestination = resolveArchiveRootDestination(files: files, destination: destination)
+        log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destinationDisplayName(resolvedDestination))")
         InfoPopupController.hideAll(reason: "drag-drop-prepare", immediate: true)
         ProgressPanel.shared.hide()
         pendingOperation = makePendingOperation(
             files: files,
-            destination: destination,
+            destination: resolvedDestination,
             sourcePanelSide: sourcePanelSide
         )
         showConfirmationDialog = true
+    }
+
+    // MARK: - Archive Root Destination
+    private func resolveArchiveRootDestination(files: [CustomFile], destination: URL) -> URL {
+        guard let appState = dragAppState else { return destination }
+        let states = [appState.archiveState(for: .left), appState.archiveState(for: .right)]
+        let resolved = ArchiveTransferDestinationResolver.resolve(
+            files: files,
+            destination: destination,
+            archiveStates: states
+        )
+        if resolved.standardizedFileURL.path != destination.standardizedFileURL.path {
+            log.info("[DnD] archive temp-root destination corrected: \(destination.path) → \(resolved.path)")
+        }
+        return resolved
     }
 
     private func makePendingOperation(
@@ -294,19 +310,13 @@ final class DragDropManager {
                 case .abort: return
             }
             if kind == .move && progress.errors.isEmpty && !progress.isCancelled {
-                if let sourceSide = operation.sourcePanelSide,
-                   let archiveURL = appState.archiveState(for: sourceSide).archiveURL {
-                    let marked = await ArchiveManager.shared.markDirty(archivePath: archiveURL.path)
-                    log.info("[DnD] archive dirty after move=\(marked): \(archiveURL.lastPathComponent)")
-                } else {
-                    var markedCount = 0
-                    for url in urls {
-                        if await ArchiveManager.shared.markDirtyByTempPath(url.path) {
-                            markedCount += 1
-                        }
+                var markedCount = 0
+                for url in urls {
+                    if await ArchiveManager.shared.markDirtyByTempPath(url.path) {
+                        markedCount += 1
                     }
-                    log.info("[DnD] archive dirty by source URL: \(markedCount)/\(urls.count)")
                 }
+                log.info("[DnD] archive dirty by moved source URL: \(markedCount)/\(urls.count)")
             }
             let outcome: FileOperationOutcomePresenter.Operation = kind == .move ? .move : .copy
             let transfers = progress.completedTransfers

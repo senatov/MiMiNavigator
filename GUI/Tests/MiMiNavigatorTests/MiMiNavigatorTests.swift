@@ -129,6 +129,35 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertEqual(wide.height, 29, accuracy: 1)
     }
 
+    func testArchiveRootTransferUsesDirectoryContainingArchive() {
+        let tempRoot = URL(fileURLWithPath: "/private/var/folders/T/MiMiNavigator_archives/session", isDirectory: true)
+        let archive = URL(fileURLWithPath: "/Users/senat/Downloads/book.zip")
+        var state = ArchiveNavigationState()
+        state.enterArchive(archiveURL: archive, tempDir: tempRoot)
+        let file = CustomFile(path: tempRoot.appendingPathComponent("book.fb2").path)
+        let resolved = ArchiveTransferDestinationResolver.resolve(
+            files: [file],
+            destination: tempRoot,
+            archiveStates: [state]
+        )
+        XCTAssertEqual(resolved.path, "/Users/senat/Downloads")
+    }
+
+    func testArchiveNestedTransferKeepsInternalParent() {
+        let tempRoot = URL(fileURLWithPath: "/private/var/folders/T/MiMiNavigator_archives/session", isDirectory: true)
+        let nested = tempRoot.appendingPathComponent("Books", isDirectory: true)
+        let archive = URL(fileURLWithPath: "/Users/senat/Downloads/book.zip")
+        var state = ArchiveNavigationState()
+        state.enterArchive(archiveURL: archive, tempDir: tempRoot)
+        let file = CustomFile(path: nested.appendingPathComponent("book.fb2").path)
+        let resolved = ArchiveTransferDestinationResolver.resolve(
+            files: [file],
+            destination: tempRoot,
+            archiveStates: [state]
+        )
+        XCTAssertEqual(resolved, tempRoot)
+    }
+
     func testLocalParentStripResolvesParentDirectory() {
         let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
         XCTAssertEqual(
