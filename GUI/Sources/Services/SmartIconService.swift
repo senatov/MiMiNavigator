@@ -45,7 +45,9 @@ enum SmartIconService {
         let workspace = NSWorkspace.shared
         let iconSize = NSSize(width: 32, height: 32)
         if !FileManager.default.fileExists(atPath: url.path) {
-            return remoteIcon(for: file, size: iconSize)
+            let icon = remoteIcon(for: file, size: iconSize)
+            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            return icon
         }
         if file.isSymbolicLink {
             return AliasIconComposer.compose(symlinkURL: url, size: iconSize)
@@ -78,31 +80,34 @@ enum SmartIconService {
             }
         }
         if let specialIcon = specialTypeIcon(for: pathExtension) {
-            specialIcon.size = iconSize
-            return specialIcon
+            let icon = SystemIconNormalizer.normalize(specialIcon)
+            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            return icon
         }
         if let appURL = workspace.urlForApplication(toOpen: url),
            !isGenericHandler(appURL: appURL, forExtension: pathExtension) {
             let appIcon = workspace.icon(forFile: appURL.path)
-            appIcon.size = iconSize
-            return appIcon
+            let icon = SystemIconNormalizer.normalize(appIcon)
+            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            return icon
         }
         if !pathExtension.isEmpty,
            let uttype = UTType(filenameExtension: pathExtension) {
             let uttypeIcon = workspace.icon(for: uttype)
-            uttypeIcon.size = iconSize
-            return uttypeIcon
+            let icon = SystemIconNormalizer.normalize(uttypeIcon)
+            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            return icon
         }
         log.debug("[SmartIcon] fallback for '\(url.lastPathComponent)' ext='\(url.pathExtension)'")
         let icon = workspace.icon(forFile: url.path)
-        icon.size = iconSize
-        iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
-        return icon
+        let normalized = SystemIconNormalizer.normalize(icon)
+        iconCache.setObject(normalized, forKey: extKey, cost: iconCost(for: iconSize))
+        return normalized
     }
 
     // MARK: - Icon Cost
     private static func iconCost(for size: NSSize) -> Int {
-        Int(size.width * size.height * 4)
+        Int(size.width * size.height * 16)
     }
 
     // MARK: - URL-based API (for FindFilesResultsView and other callers)
@@ -154,6 +159,7 @@ enum SmartIconService {
     }
 
     // MARK: - Remote file icon
+    @MainActor
     private static func remoteIcon(for file: CustomFile, size: NSSize) -> NSImage {
         if file.isDirectory || file.isSymbolicDirectory {
             let icon = NSWorkspace.shared.icon(for: .folder)
@@ -163,12 +169,10 @@ enum SmartIconService {
         let ext = file.fileExtension.lowercased()
         if !ext.isEmpty, let uttype = UTType(filenameExtension: ext) {
             let icon = NSWorkspace.shared.icon(for: uttype)
-            icon.size = size
-            return icon
+            return SystemIconNormalizer.normalize(icon)
         }
         let icon = NSWorkspace.shared.icon(for: .data)
-        icon.size = size
-        return icon
+        return SystemIconNormalizer.normalize(icon)
     }
 
     // MARK: - Special type icons (fonts, system files, databases)

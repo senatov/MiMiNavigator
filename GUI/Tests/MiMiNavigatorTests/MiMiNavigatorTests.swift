@@ -120,6 +120,15 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "rar", isEncrypted: true), "ArchiveEncrypted")
     }
 
+    func testSystemIconNormalizerFillsRetinaCanvasWithoutDistortion() {
+        let square = SystemIconNormalizer.fittedDestinationRect(for: CGRect(x: 20, y: 20, width: 16, height: 16))
+        XCTAssertEqual(square.width, 58, accuracy: 1)
+        XCTAssertEqual(square.height, 58, accuracy: 1)
+        let wide = SystemIconNormalizer.fittedDestinationRect(for: CGRect(x: 20, y: 20, width: 16, height: 8))
+        XCTAssertEqual(wide.width, 58, accuracy: 1)
+        XCTAssertEqual(wide.height, 29, accuracy: 1)
+    }
+
     func testLocalParentStripResolvesParentDirectory() {
         let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
         XCTAssertEqual(

@@ -66,6 +66,8 @@ Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local n
 
 File icons appear before optional archive-header and file-type inspection runs in the background. Archive families use dedicated ZIP, clamp, system/package, and encrypted artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
 
+System document and application icons are normalized once into a Retina row-sized bitmap, removing excessive transparent padding before the result enters the bounded in-memory icon cache. This keeps 16-point list icons visually consistent without recurring rendering or database I/O.
+
 Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats.
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
