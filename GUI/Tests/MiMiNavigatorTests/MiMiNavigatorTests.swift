@@ -158,6 +158,21 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertEqual(resolved, tempRoot)
     }
 
+    func testArchiveTempPathMatchesMacOSVarFirmlink() {
+        XCTAssertTrue(
+            ArchiveSessionStore.path(
+                "/private/var/folders/session/file.fb2",
+                isInside: "/var/folders/session"
+            )
+        )
+        XCTAssertFalse(
+            ArchiveSessionStore.path(
+                "/private/var/folders/session-sibling/file.fb2",
+                isInside: "/var/folders/session"
+            )
+        )
+    }
+
     func testLocalParentStripResolvesParentDirectory() {
         let current = URL(fileURLWithPath: "/Users/senat/Downloads/Umsaetze_08_2026", isDirectory: true)
         XCTAssertEqual(

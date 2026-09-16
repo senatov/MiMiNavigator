@@ -80,18 +80,29 @@ extension AppState {
         if isDirty {
             shouldRepack = await confirmRepack(archiveName: archiveURL.lastPathComponent)
         }
+        var didClose = false
         do {
             try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: shouldRepack)
+            didClose = true
         } catch {
             log.error("[AppState] Error closing archive: \(error.localizedDescription)")
         }
-        clearArchiveOpenState(for: panel)
+        if didClose && shouldRepack {
+            _ = await ArchiveManager.shared.markDirtyByTempPath(archiveURL.path)
+        }
+        restoreParentArchiveState(for: panel, currentState: state)
         await activateLocalDirectory(parentDirURL, for: panel)
     }
 
     // MARK: - Archive Open State
     @MainActor
     private func applyArchiveOpenState(tempDir: URL, archiveURL: URL, for panel: FavPanelSide) {
+        let currentState = archiveState(for: panel)
+        if currentState.isInsideArchive,
+           let currentTempDirectory = currentState.archiveTempDir,
+           ArchiveSessionStore.path(archiveURL.path, isInside: currentTempDirectory.path) {
+            self[panel: panel].archiveAncestors.append(currentState)
+        }
         var state = archiveState(for: panel)
         state.enterArchive(archiveURL: archiveURL, tempDir: tempDir)
         setArchiveState(state, for: panel)
@@ -100,7 +111,16 @@ extension AppState {
     }
 
     @MainActor
-    private func clearArchiveOpenState(for panel: FavPanelSide) {
+    private func restoreParentArchiveState(for panel: FavPanelSide, currentState: ArchiveNavigationState) {
+        if let parentState = self[panel: panel].archiveAncestors.popLast(),
+           let parentArchiveURL = parentState.archiveURL {
+            setArchiveState(parentState, for: panel)
+            let returnURL = currentState.archiveURL?.deletingLastPathComponent()
+                ?? parentState.archiveTempDir
+                ?? parentArchiveURL.deletingLastPathComponent()
+            tabManager(for: panel).updateActiveTabForArchive(extractedURL: returnURL, archiveURL: parentArchiveURL)
+            return
+        }
         var newState = archiveState(for: panel)
         newState.exitArchive()
         setArchiveState(newState, for: panel)

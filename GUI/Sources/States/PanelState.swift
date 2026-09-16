@@ -34,6 +34,7 @@ struct PanelState {
 
     // MARK: - Archive
     var archiveState = ArchiveNavigationState()
+    var archiveAncestors: [ArchiveNavigationState] = []
 
     // MARK: - Search Results
     var searchResultsPath: String?

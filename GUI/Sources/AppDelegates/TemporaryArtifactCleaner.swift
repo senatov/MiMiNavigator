@@ -25,11 +25,17 @@ enum TemporaryArtifactCleaner {
     static func cleanup(reason: String) async {
         await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
-            let temporaryRoot = fileManager.temporaryDirectory.standardizedFileURL
-            let removedTemporaryCount = cleanupTemporaryRoot(temporaryRoot, fileManager: fileManager)
+            let roots = [
+                fileManager.temporaryDirectory.standardizedFileURL,
+                URL(fileURLWithPath: "/tmp", isDirectory: true).standardizedFileURL,
+            ]
+            let uniqueRoots = Dictionary(grouping: roots, by: \.path).compactMap(\.value.first)
+            let removedTemporaryCount = uniqueRoots.reduce(0) {
+                $0 + cleanupTemporaryRoot($1, fileManager: fileManager)
+            }
             let removedAtomicCount = cleanupAtomicStorageFiles(fileManager: fileManager)
             log.info(
-                "[TempCleanup] reason=\(reason) removedTemporary=\(removedTemporaryCount) removedAtomic=\(removedAtomicCount) root='\(temporaryRoot.path)' logsPreserved=true updaterPreserved=true"
+                "[TempCleanup] reason=\(reason) removedTemporary=\(removedTemporaryCount) removedAtomic=\(removedAtomicCount) roots='\(uniqueRoots.map(\.path))' logsPreserved=true updaterPreserved=true"
             )
         }.value
     }
