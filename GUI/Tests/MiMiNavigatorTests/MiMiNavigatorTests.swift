@@ -113,7 +113,8 @@ final class MiMiNavigatorTests: XCTestCase {
     }
 
     func testArchiveIconFamiliesAndEncryptedOverride() {
-        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: false), "ArchiveZip")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: false), "ArchiveSystem")
+        XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "dmg", isEncrypted: false), "DiskImageInstaller")
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "rar", isEncrypted: false), "ArchiveClamp")
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "pkg", isEncrypted: false), "ArchiveSystem")
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: true), "ArchiveEncrypted")

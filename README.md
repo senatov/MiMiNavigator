@@ -64,7 +64,7 @@ More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, 
 
 Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local network, and use cloud drives mounted by macOS or their provider applications. Google Drive and Dropbox can also publish selected items and create shareable links.
 
-File icons appear before optional archive-header and file-type inspection runs in the background. Archive families use dedicated ZIP, clamp, system/package, and encrypted artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
+File icons appear before optional archive-header and file-type inspection runs in the background. ZIP uses the cabinet-style archive artwork, DMG uses a dedicated installable disk-image symbol, and clamp, package, and encrypted families retain their own artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
 
 System document and application icons are normalized once into a Retina row-sized bitmap, removing excessive transparent padding before the result enters the bounded in-memory icon cache. This keeps 16-point list icons visually consistent without recurring rendering or database I/O.
 
@@ -77,6 +77,8 @@ ArchiveKit owns archive sessions and extracts every archive, including nested ar
 Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats.
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
+
+The top toolbar includes a live, in-process resource monitor for MiMiNavigator's physical memory footprint and thread count. It samples Darwin process metrics every two seconds and plots short rolling histories with a compact SwiftUI sparkline adapted from the MIT-licensed [Hop](https://github.com/antonyshakirov/hop) system monitor.
 
 If GIF size reduction fails or is cancelled, the already converted GIF is restored. If a conflicting file prevents restoration, the recovery copy is retained and its exact path is recorded in the diagnostic log.
 

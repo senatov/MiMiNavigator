@@ -202,10 +202,12 @@ enum SmartIconService {
     static func archiveIconAssetName(for ext: String, isEncrypted: Bool) -> String {
         if isEncrypted { return "ArchiveEncrypted" }
         let normalized = ext.lowercased()
+        if normalized == "dmg" { return "DiskImageInstaller" }
+        if normalized == "zip" { return "ArchiveSystem" }
         let clampFormats: Set<String> = ["7z", "rar", "cab", "arj", "lha", "lzh", "ace", "sit", "sitx"]
         if clampFormats.contains(normalized) { return "ArchiveClamp" }
         let systemFormats: Set<String> = [
-            "tar", "cpio", "rpm", "deb", "dmg", "pkg", "xar", "jar", "war", "ear", "aar", "apk",
+            "tar", "cpio", "rpm", "deb", "pkg", "xar", "jar", "war", "ear", "aar", "apk",
             "iso", "img", "vhd", "vmdk", "wim", "swm", "squashfs", "cramfs",
         ]
         if systemFormats.contains(normalized) { return "ArchiveSystem" }
@@ -218,6 +220,9 @@ enum SmartIconService {
         fallbackURL: URL
     ) -> NSImage {
         let assetName = archiveIconAssetName(for: ext, isEncrypted: isEncrypted)
+        if assetName == "DiskImageInstaller" {
+            return sfSymbolIcon("externaldrive.fill.badge.plus", size: size)
+        }
         let asset = NSImage(named: assetName)?.copy() as? NSImage
         let icon = asset ?? NSWorkspace.shared.icon(forFile: fallbackURL.path)
         icon.size = size

@@ -25,6 +25,7 @@ enum AboutDependencyCatalog {
         AboutDependency(name: "SwiftNIO", description: "Asynchronous networking foundation", url: "https://github.com/apple/swift-nio", license: "Apache-2.0"),
         AboutDependency(name: "Swift Crypto & ASN.1", description: "Cryptographic and ASN.1 primitives", url: "https://github.com/apple/swift-crypto", license: "Apache-2.0"),
         AboutDependency(name: "BigInt", description: "Arbitrary-precision integers used by SSH", url: "https://github.com/attaswift/BigInt", license: "MIT"),
+        AboutDependency(name: "Hop Sparkline", description: "Adapted compact resource graph", url: "https://github.com/antonyshakirov/hop", license: "MIT"),
         AboutDependency(name: "Swift Collections, Atomics, Log & System", description: "Supporting Swift server and systems packages", url: "https://github.com/apple", license: "Apache-2.0")
     ]
 

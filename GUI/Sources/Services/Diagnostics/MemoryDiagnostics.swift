@@ -13,6 +13,7 @@ import Foundation
 struct MemorySnapshot: Sendable {
     let residentBytes: UInt64
     let footprintBytes: UInt64
+    let threadCount: Int
 }
 
 // MARK: - Memory Diagnostics
@@ -130,7 +131,11 @@ final class MemoryDiagnostics {
         }
         let resident = basicResult == KERN_SUCCESS ? UInt64(basicInfo.resident_size) : 0
         let footprint = vmResult == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : resident
-        return MemorySnapshot(residentBytes: resident, footprintBytes: footprint)
+        var processInfo = proc_taskinfo()
+        let processInfoSize = Int32(MemoryLayout<proc_taskinfo>.size)
+        let processInfoResult = proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &processInfo, processInfoSize)
+        let threadCount = processInfoResult == processInfoSize ? Int(processInfo.pti_threadnum) : 0
+        return MemorySnapshot(residentBytes: resident, footprintBytes: footprint, threadCount: threadCount)
     }
 
     nonisolated static func wholeMemoryLabel(bytes: UInt64) -> String {

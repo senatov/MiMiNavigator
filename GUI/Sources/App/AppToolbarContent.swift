@@ -41,6 +41,9 @@ struct AppToolbarContent: ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             ViewModeToolbarItem(appState: appState)
         }
+        ToolbarItem(placement: .primaryAction) {
+            ResourceMonitorToolbarItem()
+        }
     }
 
     @ViewBuilder
