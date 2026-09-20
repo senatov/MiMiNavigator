@@ -12,22 +12,41 @@ struct TextFilePreview: View {
     let url: URL
     let searchText: String
     let searchStep: Int
+    let searchEnabled: Bool
+    @Binding var matchCount: Int
+    @Binding var activeMatch: Int
     @State private var text = ""
     @State private var error: String?
+    @State private var searchIndex: SearchTextMatcher.Index?
 
     var body: some View {
         Group {
             if let error {
                 ContentUnavailableView("Cannot Read Text", systemImage: "doc.badge.exclamationmark", description: Text(error))
             } else {
-                ReadOnlyTextView(text: text, searchText: searchText, searchStep: searchStep)
+                ReadOnlyTextView(
+                    text: text,
+                    searchText: searchText,
+                    searchStep: searchStep,
+                    searchIndex: searchIndex,
+                    matchCount: $matchCount,
+                    activeMatch: $activeMatch
+                )
             }
         }
         .background(Color(nsColor: .textBackgroundColor))
         .task(id: url) { await load() }
+        .task(id: SearchIndexTaskID(url: url, textLength: text.utf16.count, enabled: searchEnabled)) {
+            guard searchEnabled, !text.isEmpty else { return }
+            let source = text
+            searchIndex = await Task.detached(priority: .userInitiated) {
+                SearchTextMatcher.Index(source)
+            }.value
+        }
     }
 
     private func load() async {
+        searchIndex = nil
         let result = await Task.detached(priority: .utility) { () -> Result<String, Error> in
             Result {
                 let data = try Data(contentsOf: url, options: .mappedIfSafe)
@@ -46,15 +65,27 @@ struct TextFilePreview: View {
     }
 }
 
+// MARK: - Search Index Task ID
+private struct SearchIndexTaskID: Hashable {
+    let url: URL
+    let textLength: Int
+    let enabled: Bool
+}
+
 // MARK: - Read-Only Text View
 private struct ReadOnlyTextView: NSViewRepresentable {
     let text: String
     let searchText: String
     let searchStep: Int
+    let searchIndex: SearchTextMatcher.Index?
+    @Binding var matchCount: Int
+    @Binding var activeMatch: Int
 
     final class Coordinator {
         var searchText = ""
         var searchStep = 0
+        var searchIndexID: UUID?
+        var activeMatch = 0
     }
 
     func makeCoordinator() -> Coordinator {
@@ -90,38 +121,50 @@ private struct ReadOnlyTextView: NSViewRepresentable {
         }
         let queryChanged = context.coordinator.searchText != searchText
         let stepChanged = context.coordinator.searchStep != searchStep
-        guard queryChanged || stepChanged else { return }
-        let backwards = !queryChanged && searchStep < context.coordinator.searchStep
+        let indexChanged = context.coordinator.searchIndexID != searchIndex?.id
+        guard queryChanged || stepChanged || indexChanged else { return }
+        let backwards = !queryChanged && !indexChanged && searchStep < context.coordinator.searchStep
         context.coordinator.searchText = searchText
         context.coordinator.searchStep = searchStep
-        selectMatch(in: textView, backwards: backwards, restart: queryChanged)
+        context.coordinator.searchIndexID = searchIndex?.id
+        highlightMatches(in: textView, coordinator: context.coordinator, backwards: backwards, restart: queryChanged || indexChanged)
     }
 
-    private func selectMatch(in textView: NSTextView, backwards: Bool, restart: Bool) {
-        guard !searchText.isEmpty else {
+    private func highlightMatches(in textView: NSTextView, coordinator: Coordinator, backwards: Bool, restart: Bool) {
+        let fullRange = NSRange(location: 0, length: (textView.string as NSString).length)
+        textView.textStorage?.removeAttribute(.backgroundColor, range: fullRange)
+        guard !searchText.isEmpty, let searchIndex else {
             textView.setSelectedRange(NSRange(location: 0, length: 0))
+            updateMatchState(count: 0, active: 0)
             return
         }
-        let selected = textView.selectedRange()
-        let sourceLength = (textView.string as NSString).length
-        let initialLocation = restart ? (backwards ? sourceLength : 0) : (backwards ? selected.location : NSMaxRange(selected))
-        var match = SearchTextMatcher.range(
-            in: textView.string,
-            query: searchText,
-            after: initialLocation,
-            backwards: backwards
-        )
-        if match == nil {
-            match = SearchTextMatcher.range(
-                in: textView.string,
-                query: searchText,
-                after: backwards ? sourceLength : 0,
-                backwards: backwards
-            )
+        let matches = searchIndex.ranges(for: searchText)
+        guard !matches.isEmpty else {
+            updateMatchState(count: 0, active: 0)
+            return
         }
-        guard let match else { return }
+        if restart {
+            coordinator.activeMatch = 0
+        } else if backwards {
+            coordinator.activeMatch = (coordinator.activeMatch - 1 + matches.count) % matches.count
+        } else {
+            coordinator.activeMatch = (coordinator.activeMatch + 1) % matches.count
+        }
+        for match in matches {
+            textView.textStorage?.addAttribute(.backgroundColor, value: NSColor.systemYellow.withAlphaComponent(0.32), range: match)
+        }
+        let match = matches[coordinator.activeMatch]
+        textView.textStorage?.addAttribute(.backgroundColor, value: NSColor.systemOrange.withAlphaComponent(0.62), range: match)
         textView.setSelectedRange(match)
         textView.scrollRangeToVisible(match)
+        updateMatchState(count: matches.count, active: coordinator.activeMatch)
+    }
+
+    private func updateMatchState(count: Int, active: Int) {
+        DispatchQueue.main.async {
+            if matchCount != count { matchCount = count }
+            if activeMatch != active { activeMatch = active }
+        }
     }
 }
 

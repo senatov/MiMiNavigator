@@ -8,6 +8,37 @@ import Foundation
 
 // MARK: - Search Text Matcher
 enum SearchTextMatcher {
+    // MARK: - Reusable Search Index
+    struct Index: Sendable {
+        let id = UUID()
+        fileprivate let text: String
+        fileprivate let sourceRanges: [NSRange]
+
+        init(_ source: String) {
+            let indexed = indexedCanonical(source)
+            text = indexed.text
+            sourceRanges = indexed.sourceRanges
+        }
+
+        func ranges(for query: String) -> [NSRange] {
+            let needle = canonical(query)
+            guard !needle.isEmpty, !text.isEmpty else { return [] }
+            let haystack = text as NSString
+            var results: [NSRange] = []
+            var location = 0
+            while location < haystack.length {
+                let searchRange = NSRange(location: location, length: haystack.length - location)
+                let normalizedRange = haystack.range(of: needle, range: searchRange)
+                guard normalizedRange.location != NSNotFound else { break }
+                let first = sourceRanges[normalizedRange.location]
+                let last = sourceRanges[NSMaxRange(normalizedRange) - 1]
+                results.append(NSRange(location: first.location, length: NSMaxRange(last) - first.location))
+                location = NSMaxRange(normalizedRange)
+            }
+            return results
+        }
+    }
+
     // MARK: - Settings Match
     static func matches(_ source: String, query: String) -> Bool {
         let compactQuery = canonical(query)
@@ -27,7 +58,7 @@ enum SearchTextMatcher {
     ) -> NSRange? {
         let needle = canonical(query)
         guard !needle.isEmpty else { return nil }
-        let indexed = indexedCanonical(source)
+        let indexed = Index(source)
         guard !indexed.text.isEmpty else { return nil }
         let haystack = indexed.text as NSString
         let searchRange: NSRange

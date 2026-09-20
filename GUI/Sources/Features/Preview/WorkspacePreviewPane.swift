@@ -18,6 +18,11 @@ struct WorkspacePreviewPane: View {
     @State private var modeStore = PreviewDisplayModeStore.shared
     @State private var textSearch = ""
     @State private var textSearchStep = 0
+    @State private var textMatchCount = 0
+    @State private var activeTextMatch = 0
+    @State private var didRestoreTextSearch = false
+    @FocusState private var isTextSearchFocused: Bool
+    private static let textSearchDefaultsKey = "workspace.preview.textSearch"
     let sourceSide: FavPanelSide
     let previewSide: FavPanelSide
     let close: () -> Void
@@ -46,11 +51,21 @@ struct WorkspacePreviewPane: View {
             }
         }
         .background(.regularMaterial)
-        .onAppear { refreshMetadata(for: previewURL) }
+        .onAppear {
+            if !didRestoreTextSearch {
+                textSearch = MiMiDefaults.shared.string(forKey: Self.textSearchDefaultsKey) ?? ""
+                didRestoreTextSearch = true
+            }
+            refreshMetadata(for: previewURL)
+        }
         .onChange(of: previewURL) { _, newURL in
-            textSearch = ""
             textSearchStep = 0
+            textMatchCount = 0
+            activeTextMatch = 0
             refreshMetadata(for: newURL)
+        }
+        .onChange(of: textSearch) { _, newValue in
+            MiMiDefaults.shared.set(newValue, forKey: Self.textSearchDefaultsKey)
         }
         .onDisappear {
             metadataTask?.cancel()
@@ -123,8 +138,15 @@ struct WorkspacePreviewPane: View {
             TextField("Search", text: $textSearch)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
+                .focused($isTextSearchFocused)
                 .onSubmit { textSearchStep += 1 }
             if !textSearch.isEmpty {
+                if textMatchCount > 0 {
+                    Text("\(activeTextMatch + 1) of \(textMatchCount)")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                }
                 Button { textSearchStep -= 1 } label: {
                     Image(systemName: "chevron.up")
                 }
@@ -145,7 +167,7 @@ struct WorkspacePreviewPane: View {
         }
         .buttonStyle(.borderless)
         .padding(.horizontal, 7)
-        .frame(width: 190, height: 24)
+        .frame(width: 250, height: 24)
         .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
         .overlay {
             RoundedRectangle(cornerRadius: 6)
@@ -170,7 +192,14 @@ struct WorkspacePreviewPane: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .controlBackgroundColor))
         case .text:
-            TextFilePreview(url: url, searchText: textSearch, searchStep: textSearchStep)
+            TextFilePreview(
+                url: url,
+                searchText: textSearch,
+                searchStep: textSearchStep,
+                searchEnabled: isTextSearchFocused || !textSearch.isEmpty,
+                matchCount: $textMatchCount,
+                activeMatch: $activeTextMatch
+            )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .binary:
             BinaryFilePreview(url: url)
