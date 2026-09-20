@@ -94,4 +94,46 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .hotkeys: return "Keyboard shortcuts, presets and conflict management"
         }
     }
+
+    // MARK: - Settings Search Index
+    var searchableText: String {
+        [label, summary, searchTerms].joined(separator: " ")
+    }
+
+    private var searchTerms: String {
+        switch self {
+        case .general:
+            return "appearance light dark language toolbar graphs memory threads intervals interface scale font icon size hidden files extensions auto-fit columns startup home last visited desktop downloads"
+        case .colorsPanels:
+            return "theme preset dark variant background file name directory symlink accent dialog selection active inactive border hidden marked parent archive path count column name size kind date permissions owner group divider line width"
+        case .colorsChrome:
+            return "command bars moire panel divider border focused unfocused width table background warm white zebra stripes active inactive filter highlight top menu bottom action bar"
+        case .colorsBreadcrumb:
+            return "path text active inactive environment variable hover hovered segment background border typography font size italic preview"
+        case .colorsButtons:
+            return "button border color width corner radius shadow color radius offset preview"
+        case .panels:
+            return "row height compact normal relaxed spacious hidden files extensions icons show file folder calculate sizes active highlight sorting ascending descending folders first date format short medium relative iso size display kilobytes open single double click"
+        case .preview:
+            return "automatic known text image pdf media document archive executable unknown extension file type quick look binary remembered rules"
+        case .tabs:
+            return "restore tabs launch new tab enter close last panel position top bottom close button maximum max open tabs"
+        case .archives:
+            return "archive tools format zip tar gzip bzip xz compression level extract subfolder progress password encrypted keychain open browse default app repack confirm auto 7zip rar install"
+        case .network:
+            return "timeout retry reconnect fing discovery local api port key password keychain sidebar connected servers"
+        case .cloudLink:
+            return "google client secret refresh token dropbox oauth tinyurl api token credentials save reload clear reveal keychain"
+        case .diffTool:
+            return "compare active tool auto kdiff3 beyond compare custom application binary arguments left right priority installed path scope"
+        case .progress:
+            return "background border text title status log font size panel width height auto-close operation saved frames positions reset defaults"
+        case .externalTools:
+            return "command line dependencies diagnostics install path status ffmpeg seven zip 7z tools"
+        case .permissions:
+            return "full disk access macos desktop documents icloud removable volumes protected data authorized folders bookmarks add remove"
+        case .hotkeys:
+            return "keyboard shortcuts keys preset conflict commands bindings reset"
+        }
+    }
 }

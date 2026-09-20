@@ -10,6 +10,8 @@ import SwiftUI
 // MARK: - Text File Preview
 struct TextFilePreview: View {
     let url: URL
+    let searchText: String
+    let searchStep: Int
     @State private var text = ""
     @State private var error: String?
 
@@ -18,7 +20,7 @@ struct TextFilePreview: View {
             if let error {
                 ContentUnavailableView("Cannot Read Text", systemImage: "doc.badge.exclamationmark", description: Text(error))
             } else {
-                ReadOnlyTextView(text: text)
+                ReadOnlyTextView(text: text, searchText: searchText, searchStep: searchStep)
             }
         }
         .background(Color(nsColor: .textBackgroundColor))
@@ -47,6 +49,17 @@ struct TextFilePreview: View {
 // MARK: - Read-Only Text View
 private struct ReadOnlyTextView: NSViewRepresentable {
     let text: String
+    let searchText: String
+    let searchStep: Int
+
+    final class Coordinator {
+        var searchText = ""
+        var searchStep = 0
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSTextView.scrollableTextView()
@@ -70,9 +83,47 @@ private struct ReadOnlyTextView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? NSTextView, textView.string != text else { return }
-        textView.string = text
-        textView.scrollToBeginningOfDocument(nil)
+        guard let textView = scrollView.documentView as? NSTextView else { return }
+        if textView.string != text {
+            textView.string = text
+            textView.scrollToBeginningOfDocument(nil)
+        }
+        let queryChanged = context.coordinator.searchText != searchText
+        let stepChanged = context.coordinator.searchStep != searchStep
+        guard queryChanged || stepChanged else { return }
+        let backwards = !queryChanged && searchStep < context.coordinator.searchStep
+        context.coordinator.searchText = searchText
+        context.coordinator.searchStep = searchStep
+        selectMatch(in: textView, backwards: backwards, restart: queryChanged)
+    }
+
+    private func selectMatch(in textView: NSTextView, backwards: Bool, restart: Bool) {
+        guard !searchText.isEmpty else {
+            textView.setSelectedRange(NSRange(location: 0, length: 0))
+            return
+        }
+        let source = textView.string as NSString
+        let selected = textView.selectedRange()
+        let options: NSString.CompareOptions = backwards ? [.caseInsensitive, .backwards] : [.caseInsensitive]
+        let start: Int
+        let length: Int
+        if restart {
+            start = backwards ? 0 : 0
+            length = source.length
+        } else if backwards {
+            start = 0
+            length = max(0, min(selected.location, source.length))
+        } else {
+            start = min(selected.location + selected.length, source.length)
+            length = source.length - start
+        }
+        var match = source.range(of: searchText, options: options, range: NSRange(location: start, length: length))
+        if match.location == NSNotFound {
+            match = source.range(of: searchText, options: options, range: NSRange(location: 0, length: source.length))
+        }
+        guard match.location != NSNotFound else { return }
+        textView.setSelectedRange(match)
+        textView.scrollRangeToVisible(match)
     }
 }
 

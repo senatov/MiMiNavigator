@@ -21,10 +21,9 @@ struct SettingsWindowView: View {
     private var filteredSections: [SettingsSection] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return SettingsSection.allCases }
+        let terms = query.split(whereSeparator: { $0.isWhitespace }).map(String.init)
         return SettingsSection.allCases.filter {
-            $0.label.localizedCaseInsensitiveContains(query)
-                || $0.summary.localizedCaseInsensitiveContains(query)
-                || $0.rawValue.localizedCaseInsensitiveContains(query)
+            terms.allSatisfy($0.searchableText.localizedCaseInsensitiveContains)
         }
     }
 

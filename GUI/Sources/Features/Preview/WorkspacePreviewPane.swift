@@ -16,6 +16,8 @@ struct WorkspacePreviewPane: View {
     @State private var metadata: PreviewFileMetadata?
     @State private var metadataTask: Task<Void, Never>?
     @State private var modeStore = PreviewDisplayModeStore.shared
+    @State private var textSearch = ""
+    @State private var textSearchStep = 0
     let sourceSide: FavPanelSide
     let previewSide: FavPanelSide
     let close: () -> Void
@@ -26,6 +28,10 @@ struct WorkspacePreviewPane: View {
     private var previewURL: URL? {
         guard let selectedFile, !selectedFile.isParentEntry else { return nil }
         return selectedFile.urlValue
+    }
+    private var isTextPreview: Bool {
+        guard let previewURL else { return false }
+        return modeStore.mode(for: previewURL) == .text
     }
 
     // MARK: - Body
@@ -41,7 +47,11 @@ struct WorkspacePreviewPane: View {
         }
         .background(.regularMaterial)
         .onAppear { refreshMetadata(for: previewURL) }
-        .onChange(of: previewURL) { _, newURL in refreshMetadata(for: newURL) }
+        .onChange(of: previewURL) { _, newURL in
+            textSearch = ""
+            textSearchStep = 0
+            refreshMetadata(for: newURL)
+        }
         .onDisappear {
             metadataTask?.cancel()
             metadataTask = nil
@@ -83,6 +93,9 @@ struct WorkspacePreviewPane: View {
                 .padding(.vertical, 2)
                 .background(.quaternary, in: Capsule())
             Spacer(minLength: 0)
+            if isTextPreview {
+                textSearchField
+            }
             Button(action: swapSide) {
                 Image(systemName: "rectangle.2.swap")
                     .frame(width: 20, height: 20)
@@ -99,6 +112,45 @@ struct WorkspacePreviewPane: View {
         }
         .padding(.horizontal, 10)
         .frame(height: 36)
+    }
+
+    // MARK: - Text Search
+    private var textSearchField: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            TextField("Search", text: $textSearch)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .onSubmit { textSearchStep += 1 }
+            if !textSearch.isEmpty {
+                Button { textSearchStep -= 1 } label: {
+                    Image(systemName: "chevron.up")
+                }
+                .help("Previous Match")
+                Button { textSearchStep += 1 } label: {
+                    Image(systemName: "chevron.down")
+                }
+                .help("Next Match")
+                Button {
+                    textSearch = ""
+                    textSearchStep = 0
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.tertiary)
+                }
+                .help("Clear Search")
+            }
+        }
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 7)
+        .frame(width: 190, height: 24)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.65)
+        }
     }
 
     // MARK: - Preview Content
@@ -118,7 +170,7 @@ struct WorkspacePreviewPane: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .controlBackgroundColor))
         case .text:
-            TextFilePreview(url: url)
+            TextFilePreview(url: url, searchText: textSearch, searchStep: textSearchStep)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .binary:
             BinaryFilePreview(url: url)

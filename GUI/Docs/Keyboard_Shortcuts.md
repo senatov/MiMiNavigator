@@ -16,4 +16,4 @@ Choose a profile from the preset menu at the bottom of **Settings → Hotkeys**.
 |----------|--------|
 | `⇧⌘P` | Show or hide Preview in the inactive file panel |
 
-The Preview command is also available from the application toolbar and the Show and View menus. Preview follows the active working panel, can be moved to the other side from its context menu, and remembers per-extension display choices configured in **Settings → Preview**.
+The Preview command is also available from the application toolbar and the Show and View menus. Preview follows the active working panel, can be moved to the other side from its context menu, and remembers per-extension display choices configured in **Settings → Preview**. Text previews expose a Search field in their header; Return and the arrow buttons move between matches.
