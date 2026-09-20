@@ -141,13 +141,13 @@ private struct DevBuildBadge: View {
             DevBuildCatMedallion()
             VStack(alignment: .leading, spacing: 1) {
                 Text("TEST BUILD")
-                    .font(.system(size: 10, weight: .semibold, design: .default))
-                    .tracking(0.48)
-                    .foregroundStyle(.primary.opacity(0.82))
+                    .font(.system(size: 10, weight: .medium, design: .default))
+                    .tracking(0.5)
+                    .foregroundStyle(Color.primary.opacity(0.90))
                 Text(version)
-                    .font(.system(size: 9.5, weight: .regular, design: .default))
+                    .font(.system(size: 9, weight: .regular, design: .default))
                     .monospacedDigit()
-                    .foregroundStyle(.primary.opacity(0.66))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
         }

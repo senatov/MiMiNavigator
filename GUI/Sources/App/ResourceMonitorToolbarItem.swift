@@ -135,10 +135,10 @@ struct ResourceMonitorToolbarItem: View {
         HStack(spacing: 4) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(.system(size: 10, weight: .medium, design: .default))
                     .foregroundStyle(.secondary)
                 Text(value)
-                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
                     .foregroundStyle(Color.blue)
                     .lineLimit(1)
                     .frame(minWidth: title == "RAM" ? 42 : 20, alignment: .leading)
@@ -177,7 +177,7 @@ private struct ResourceSparkline: View {
                 if index == 0 { path.move(to: CGPoint(x: x, y: y)) }
                 else { path.addLine(to: CGPoint(x: x, y: y)) }
             }
-            context.stroke(path, with: .color(color.opacity(0.92)), style: StrokeStyle(lineWidth: 1.35, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1, lineCap: .round, lineJoin: .round))
         }
     }
 }

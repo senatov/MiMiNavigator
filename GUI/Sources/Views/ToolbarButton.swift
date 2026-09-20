@@ -18,9 +18,9 @@ private struct ToolbarIcon: View {
 
     var body: some View {
         Image(systemName: name)
-            .symbolRenderingMode(.hierarchical)
-            .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(color ?? (active ? Color.accentColor : Color.primary))
+            .symbolRenderingMode(.monochrome)
+            .font(.system(size: 15, weight: .light))
+            .foregroundStyle(color ?? (active ? Color.accentColor : Color.primary.opacity(0.90)))
             .frame(width: 20, height: 20)
     }
 }
@@ -195,26 +195,10 @@ struct FeedbackToolbarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text("💬")
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .frame(width: 22, height: 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(#colorLiteral(red: 1.0, green: 0.5411764706, blue: 0.0, alpha: 1.0)).opacity(0.92),
-                                    Color(#colorLiteral(red: 0.937254902, green: 0.2196078431, blue: 0.4823529412, alpha: 1.0)).opacity(0.78)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.55), lineWidth: 0.7)
-                )
+            ToolbarIcon(
+                name: "bubble.left.and.text.bubble.right",
+                color: Color(#colorLiteral(red: 0.86, green: 0.30, blue: 0.18, alpha: 1.0))
+            )
         }
         .buttonStyle(.borderless)
         .toolbarHoverHighlight()
@@ -231,29 +215,35 @@ private struct ToolbarHoverHighlight: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(isHovered ? (colorScheme == .dark ? 0.20 : 0.66) : (colorScheme == .dark ? 0.035 : 0.09)),
-                                Color.primary.opacity(isHovered ? 0.10 : 0.012),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
+                if isHovered {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(colorScheme == .dark ? 0.20 : 0.66),
+                                    Color.primary.opacity(0.10),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
-                    .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0), radius: 1.5, y: 1)
+                        .shadow(color: Color.black.opacity(0.14), radius: 1.5, y: 1)
+                }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(isHovered ? 0.22 : 0.045), lineWidth: 0.65)
+                if isHovered {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.22), lineWidth: 0.65)
+                }
             }
             .overlay(alignment: .top) {
-                Capsule()
-                    .fill(Color.white.opacity(isHovered ? 0.58 : 0.10))
-                    .frame(height: 0.7)
-                    .padding(.horizontal, 4)
-                    .padding(.top, 0.75)
+                if isHovered {
+                    Capsule()
+                        .fill(Color.white.opacity(0.58))
+                        .frame(height: 1)
+                        .padding(.horizontal, 4)
+                        .padding(.top, 1)
+                }
             }
             .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             .onHover { hovering in
