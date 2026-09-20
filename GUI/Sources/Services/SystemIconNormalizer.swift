@@ -8,27 +8,28 @@ import AppKit
 
 // MARK: - System Icon Normalizer
 enum SystemIconNormalizer {
-    static let logicalSize = NSSize(width: 32, height: 32)
-    static let pixelDimension = 64
+    static let logicalSize = NSSize(width: 18, height: 18)
     private static let alphaThreshold: UInt8 = 20
     private static let occupancy: CGFloat = 0.90
     // MARK: - Normalize
     @MainActor
-    static func normalize(_ image: NSImage) -> NSImage {
+    static func normalize(_ image: NSImage, size: NSSize = logicalSize) -> NSImage {
+        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        let pixelDimension = max(1, Int((max(size.width, size.height) * scale).rounded()))
         guard let source = sourceImage(from: image),
-              let sourceContext = bitmapContext(),
+              let sourceContext = bitmapContext(pixelDimension: pixelDimension),
               let sourceData = sourceContext.data
-        else { return sizedCopy(of: image) }
-        drawAspectFit(source, in: sourceContext)
+        else { return sizedCopy(of: image, size: size) }
+        drawAspectFit(source, in: sourceContext, pixelDimension: pixelDimension)
         let bytes = sourceData.bindMemory(to: UInt8.self, capacity: pixelDimension * pixelDimension * 4)
-        guard let bounds = alphaBounds(bytes: bytes) else { return sizedCopy(of: image) }
+        guard let bounds = alphaBounds(bytes: bytes, pixelDimension: pixelDimension) else { return sizedCopy(of: image, size: size) }
         guard let cropped = sourceContext.makeImage()?.cropping(to: bounds),
-              let outputContext = bitmapContext()
-        else { return sizedCopy(of: image) }
+              let outputContext = bitmapContext(pixelDimension: pixelDimension)
+        else { return sizedCopy(of: image, size: size) }
         outputContext.interpolationQuality = .high
-        outputContext.draw(cropped, in: fittedDestinationRect(for: bounds))
-        guard let output = outputContext.makeImage() else { return sizedCopy(of: image) }
-        return NSImage(cgImage: output, size: logicalSize)
+        outputContext.draw(cropped, in: fittedDestinationRect(for: bounds, pixelDimension: pixelDimension))
+        guard let output = outputContext.makeImage() else { return sizedCopy(of: image, size: size) }
+        return NSImage(cgImage: output, size: size)
     }
     // MARK: - Source Image
     @MainActor
@@ -37,7 +38,7 @@ enum SystemIconNormalizer {
         return image.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil)
     }
     // MARK: - Bitmap Context
-    private static func bitmapContext() -> CGContext? {
+    private static func bitmapContext(pixelDimension: Int) -> CGContext? {
         CGContext(
             data: nil,
             width: pixelDimension,
@@ -49,7 +50,7 @@ enum SystemIconNormalizer {
         )
     }
     // MARK: - Initial Draw
-    private static func drawAspectFit(_ image: CGImage, in context: CGContext) {
+    private static func drawAspectFit(_ image: CGImage, in context: CGContext, pixelDimension: Int) {
         let scale = min(
             CGFloat(pixelDimension) / CGFloat(image.width),
             CGFloat(pixelDimension) / CGFloat(image.height)
@@ -66,7 +67,7 @@ enum SystemIconNormalizer {
         context.draw(image, in: rect)
     }
     // MARK: - Alpha Bounds
-    private static func alphaBounds(bytes: UnsafePointer<UInt8>) -> CGRect? {
+    private static func alphaBounds(bytes: UnsafePointer<UInt8>, pixelDimension: Int) -> CGRect? {
         var minX = pixelDimension
         var minY = pixelDimension
         var maxX = -1
@@ -83,7 +84,7 @@ enum SystemIconNormalizer {
         return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
     }
     // MARK: - Destination Geometry
-    static func fittedDestinationRect(for sourceBounds: CGRect) -> CGRect {
+    static func fittedDestinationRect(for sourceBounds: CGRect, pixelDimension: Int = 36) -> CGRect {
         let available = CGFloat(pixelDimension) * occupancy
         let scale = min(available / sourceBounds.width, available / sourceBounds.height)
         let width = sourceBounds.width * scale
@@ -97,9 +98,9 @@ enum SystemIconNormalizer {
     }
     // MARK: - Fallback
     @MainActor
-    private static func sizedCopy(of image: NSImage) -> NSImage {
+    private static func sizedCopy(of image: NSImage, size: NSSize) -> NSImage {
         let copy = image.copy() as? NSImage ?? image
-        copy.size = logicalSize
+        copy.size = size
         return copy
     }
 }

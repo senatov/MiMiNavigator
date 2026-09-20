@@ -21,8 +21,8 @@ enum FilePanelStyle {
     }
 
     // MARK: - Layout - Finder style (standard macOS sizes)
-    /// Base icon size - 16pt (Finder list view standard)
-    private static let baseIconSize: CGFloat = 16
+    /// Base icon size - 18pt for clear file-type details beside the row label
+    private static let baseIconSize: CGFloat = 18
 
     // MARK: - Row Density
     /// Supported row density presets

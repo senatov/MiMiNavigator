@@ -31,22 +31,27 @@ enum SmartIconService {
 
     // MARK: - Primary API: icon for CustomFile
     @MainActor
-    static func icon(for file: CustomFile, content: IconContentInspection = .init()) -> NSImage {
+    static func icon(
+        for file: CustomFile,
+        content: IconContentInspection = .init(),
+        size: CGFloat = SystemIconNormalizer.logicalSize.width
+    ) -> NSImage {
+        let iconSize = NSSize(width: size, height: size)
         let extKey =
             (
                 file.isDirectory
                     ? "dir:\(file.urlValue.standardizedFileURL.path)"
                     : file.urlValue.pathExtension.lowercased() + (file.isSymbolicLink ? "_sym" : "")
             ) as NSString
-        if content.kind == .unknown, !content.isEncrypted, let cached = iconCache.object(forKey: extKey) {
+        let sizedKey = "\(extKey):\(Int((size * 10).rounded()))" as NSString
+        if content.kind == .unknown, !content.isEncrypted, let cached = iconCache.object(forKey: sizedKey) {
             return cached
         }
         let url = file.urlValue
         let workspace = NSWorkspace.shared
-        let iconSize = NSSize(width: 32, height: 32)
         if !FileManager.default.fileExists(atPath: url.path) {
             let icon = remoteIcon(for: file, size: iconSize)
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         if file.isSymbolicLink {
@@ -56,12 +61,12 @@ enum SmartIconService {
             // OS-hidden dirs (~/Library etc.) — eye.slash badge
             if file.isOSHiddenOnly {
                 let icon = OSHiddenIconComposer.compose(url: url, size: iconSize)
-                iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+                iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
                 return icon
             }
             let icon = workspace.icon(forFile: url.path)
             icon.size = iconSize
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         let pathExtension = url.pathExtension.lowercased()
@@ -70,7 +75,7 @@ enum SmartIconService {
         }
         if file.isArchiveFile {
             let icon = archiveIcon(for: pathExtension, isEncrypted: false, size: iconSize, fallbackURL: url)
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         if pathExtension.isEmpty {
@@ -80,28 +85,28 @@ enum SmartIconService {
             }
         }
         if let specialIcon = specialTypeIcon(for: pathExtension) {
-            let icon = SystemIconNormalizer.normalize(specialIcon)
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            let icon = SystemIconNormalizer.normalize(specialIcon, size: iconSize)
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         if let appURL = workspace.urlForApplication(toOpen: url),
            !isGenericHandler(appURL: appURL, forExtension: pathExtension) {
             let appIcon = workspace.icon(forFile: appURL.path)
-            let icon = SystemIconNormalizer.normalize(appIcon)
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            let icon = SystemIconNormalizer.normalize(appIcon, size: iconSize)
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         if !pathExtension.isEmpty,
            let uttype = UTType(filenameExtension: pathExtension) {
             let uttypeIcon = workspace.icon(for: uttype)
-            let icon = SystemIconNormalizer.normalize(uttypeIcon)
-            iconCache.setObject(icon, forKey: extKey, cost: iconCost(for: iconSize))
+            let icon = SystemIconNormalizer.normalize(uttypeIcon, size: iconSize)
+            iconCache.setObject(icon, forKey: sizedKey, cost: iconCost(for: iconSize))
             return icon
         }
         log.debug("[SmartIcon] fallback for '\(url.lastPathComponent)' ext='\(url.pathExtension)'")
         let icon = workspace.icon(forFile: url.path)
-        let normalized = SystemIconNormalizer.normalize(icon)
-        iconCache.setObject(normalized, forKey: extKey, cost: iconCost(for: iconSize))
+        let normalized = SystemIconNormalizer.normalize(icon, size: iconSize)
+        iconCache.setObject(normalized, forKey: sizedKey, cost: iconCost(for: iconSize))
         return normalized
     }
 
@@ -169,10 +174,10 @@ enum SmartIconService {
         let ext = file.fileExtension.lowercased()
         if !ext.isEmpty, let uttype = UTType(filenameExtension: ext) {
             let icon = NSWorkspace.shared.icon(for: uttype)
-            return SystemIconNormalizer.normalize(icon)
+            return SystemIconNormalizer.normalize(icon, size: size)
         }
         let icon = NSWorkspace.shared.icon(for: .data)
-        return SystemIconNormalizer.normalize(icon)
+        return SystemIconNormalizer.normalize(icon, size: size)
     }
 
     // MARK: - Special type icons (fonts, system files, databases)
@@ -225,8 +230,8 @@ enum SmartIconService {
             return sfSymbolIcon("basketball.fill", size: size)
         }
         let asset = NSImage(named: assetName)?.copy() as? NSImage
-        if let asset, size == SystemIconNormalizer.logicalSize {
-            return SystemIconNormalizer.normalize(asset)
+        if let asset {
+            return SystemIconNormalizer.normalize(asset, size: size)
         }
         let icon = asset ?? NSWorkspace.shared.icon(forFile: fallbackURL.path)
         icon.size = size

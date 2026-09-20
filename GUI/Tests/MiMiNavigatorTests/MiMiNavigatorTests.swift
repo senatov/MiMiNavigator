@@ -122,12 +122,18 @@ final class MiMiNavigatorTests: XCTestCase {
     }
 
     func testSystemIconNormalizerFillsRetinaCanvasWithoutDistortion() {
-        let square = SystemIconNormalizer.fittedDestinationRect(for: CGRect(x: 20, y: 20, width: 16, height: 16))
-        XCTAssertEqual(square.width, 58, accuracy: 1)
-        XCTAssertEqual(square.height, 58, accuracy: 1)
-        let wide = SystemIconNormalizer.fittedDestinationRect(for: CGRect(x: 20, y: 20, width: 16, height: 8))
-        XCTAssertEqual(wide.width, 58, accuracy: 1)
-        XCTAssertEqual(wide.height, 29, accuracy: 1)
+        let square = SystemIconNormalizer.fittedDestinationRect(
+            for: CGRect(x: 10, y: 10, width: 16, height: 16),
+            pixelDimension: 36
+        )
+        XCTAssertEqual(square.width, 32, accuracy: 1)
+        XCTAssertEqual(square.height, 32, accuracy: 1)
+        let wide = SystemIconNormalizer.fittedDestinationRect(
+            for: CGRect(x: 10, y: 10, width: 16, height: 8),
+            pixelDimension: 36
+        )
+        XCTAssertEqual(wide.width, 32, accuracy: 1)
+        XCTAssertEqual(wide.height, 16, accuracy: 1)
     }
 
     func testArchiveRootTransferUsesDirectoryContainingArchive() {

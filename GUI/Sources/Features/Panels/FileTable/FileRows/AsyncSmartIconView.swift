@@ -20,10 +20,6 @@ struct AsyncSmartIconView: View {
             Group {
                 if let icon {
                     Image(nsImage: icon)
-                        .resizable()
-                        .interpolation(.high)
-                        .antialiased(true)
-                        .aspectRatio(contentMode: .fit)
                 } else {
                     Image(systemName: "doc")
                         .symbolRenderingMode(.hierarchical)
@@ -35,14 +31,15 @@ struct AsyncSmartIconView: View {
             }
         }
         .task(id: file.urlValue.path) {
-            icon = SmartIconService.icon(for: file)
+            let iconSize = DesignTokens.Row.iconSize
+            icon = SmartIconService.icon(for: file, size: iconSize)
             let url = file.urlValue
             let isDirectory = file.isDirectory
             let content = await Task.detached(priority: .utility) {
                 IconContentInspection.inspect(url: url, isDirectory: isDirectory)
             }.value
             guard !Task.isCancelled else { return }
-            icon = SmartIconService.icon(for: file, content: content)
+            icon = SmartIconService.icon(for: file, content: content, size: iconSize)
         }
     }
 
