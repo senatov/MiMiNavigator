@@ -30,7 +30,7 @@ struct DuoFilePanelView: View {
         static let finderSidebarWidth: CGFloat = 220
         static let finderSidebarHiddenOffset: CGFloat = -18
         static let finderSidebarAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.92, blendDuration: 0)
-        static let previewAnimation = Animation.easeInOut(duration: 0.18)
+        static let previewAnimation = Animation.easeInOut(duration: 0.16)
     }
     // MARK: - Body
     var body: some View {
@@ -82,14 +82,11 @@ struct DuoFilePanelView: View {
                         }
                         .frame(width: panelWidth, height: geometry.size.height)
                     }
-                    if previewStore.isVisible {
-                        PreviewPaneDivider(previewWidth: $previewStore.width, availableWidth: geometry.size.width)
-                        WorkspacePreviewPane(close: { previewStore.isVisible = false })
-                            .frame(width: previewStore.width, height: geometry.size.height)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                    }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
+                if previewStore.isVisible, leftPanelWidth > 0, panelWidth > 0 {
+                    previewOverlay(containerWidth: panelWidth, height: geometry.size.height)
+                }
                 Color.clear
                     .onAppear {
                         scheduleGeometryWidthUpdate(panelWidth)
@@ -123,8 +120,7 @@ struct DuoFilePanelView: View {
     // MARK: - Panels Width
     private func panelsContainerWidth(for totalWidth: CGFloat) -> CGFloat {
         let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
-        let previewWidth = previewStore.isVisible ? previewStore.width + 7 : 0
-        return max(totalWidth - sidebarWidth - previewWidth, 0)
+        return max(totalWidth - sidebarWidth, 0)
     }
 
     private func scheduleGeometryWidthUpdate(_ width: CGFloat) {
@@ -353,9 +349,39 @@ extension DuoFilePanelView {
             HotKeySettingsCoordinator.shared.showSettings()
         }
         handler.onRenameFile = { actions.performRename() }
-        handler.onTogglePreview = { PreviewPaneStore.shared.toggle() }
+        handler.onTogglePreview = { [appState] in
+            PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
+        }
         handler.register()
         keyboardHandler = handler
         log.debug("\(#function) keyboard handler registered")
+    }
+}
+
+// MARK: - Panel Preview Overlay
+extension DuoFilePanelView {
+    private func previewOverlay(containerWidth: CGFloat, height: CGFloat) -> some View {
+        let side = previewStore.previewSide
+        let width = side == .left
+            ? leftPanelWidth
+            : max(containerWidth - leftPanelWidth - PanelDividerMetrics.hitAreaWidth, 0)
+        return HStack(spacing: 0) {
+            if side == .right { Spacer().frame(width: leftPanelWidth + PanelDividerMetrics.hitAreaWidth) }
+            WorkspacePreviewPane(
+                sourceSide: side.opposite,
+                previewSide: side,
+                close: { previewStore.isVisible = false },
+                swapSide: {
+                    previewStore.swapSide()
+                    appState.focusedPanel = previewStore.previewSide.opposite
+                }
+            )
+            .frame(width: width, height: height)
+            .transition(.opacity)
+            if side == .left { Spacer().frame(width: containerWidth - width) }
+        }
+        .frame(width: containerWidth, height: height, alignment: .leading)
+        .offset(x: isFinderSidebarVisible ? Layout.finderSidebarWidth : 0)
+        .zIndex(20)
     }
 }

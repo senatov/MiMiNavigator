@@ -227,6 +227,7 @@ struct SettingsWindowView: View {
                             case .colorsBreadcrumb:   SettingsColorsBreadcrumbPane()
                             case .colorsButtons:      SettingsColorsButtonsPane()
                             case .panels:             SettingsPanelsPane()
+                            case .preview:            SettingsPreviewPane()
                             case .tabs:               SettingsTabsPane()
                             case .archives:           SettingsArchivesPane()
                             case .network:            SettingsNetworkPane()

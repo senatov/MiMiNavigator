@@ -128,7 +128,10 @@ import Foundation
             MenuItem(
                 title: "Show/Hide Preview",
                 icon: "rectangle.trailinghalf.inset.filled",
-                action: { PreviewPaneStore.shared.toggle() },
+                action: {
+                    guard let appState = AppStateProvider.shared else { return }
+                    PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
+                },
                 shortcut: "⇧⌘P"
             ),
         ])

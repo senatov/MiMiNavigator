@@ -14,6 +14,6 @@ Choose a profile from the preset menu at the bottom of **Settings → Hotkeys**.
 
 | Shortcut | Action |
 |----------|--------|
-| `⇧⌘P` | Show or hide the persistent Preview pane |
+| `⇧⌘P` | Show or hide Preview in the inactive file panel |
 
-The Preview command is also available from the application toolbar and the Show and View menus.
+The Preview command is also available from the application toolbar and the Show and View menus. Preview follows the active working panel, can be moved to the other side from its context menu, and remembers per-extension display choices configured in **Settings → Preview**.

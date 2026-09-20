@@ -33,7 +33,7 @@ struct AppCommands: Commands {
 
         CommandGroup(after: .sidebar) {
             Button("Show/Hide Preview") {
-                PreviewPaneStore.shared.toggle()
+                PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
             }
             .keyboardShortcut("p", modifiers: [.command, .shift])
         }

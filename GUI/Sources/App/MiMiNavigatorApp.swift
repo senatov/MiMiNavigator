@@ -310,7 +310,7 @@ struct MiMiNavigatorApp: App {
                     helpInactive: "Show Preview (⇧⌘P)",
                     isActive: Binding(get: { PreviewPaneStore.shared.isVisible }, set: { _ in })
                 ) {
-                    PreviewPaneStore.shared.toggle()
+                    PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
                 }
             default:
                 EmptyView()

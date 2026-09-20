@@ -15,9 +15,13 @@ struct WorkspacePreviewPane: View {
     @Environment(AppState.self) private var appState
     @State private var metadata: PreviewFileMetadata?
     @State private var metadataTask: Task<Void, Never>?
+    @State private var modeStore = PreviewDisplayModeStore.shared
+    let sourceSide: FavPanelSide
+    let previewSide: FavPanelSide
     let close: () -> Void
+    let swapSide: () -> Void
     private var selectedFile: CustomFile? {
-        appState[panel: appState.focusedPanel].selectedFile
+        appState[panel: sourceSide].selectedFile
     }
     private var previewURL: URL? {
         guard let selectedFile, !selectedFile.isParentEntry else { return nil }
@@ -44,6 +48,26 @@ struct WorkspacePreviewPane: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Preview pane")
+        .contextMenu {
+            Button(previewSide == .left ? "Move Preview to Right" : "Move Preview to Left", action: swapSide)
+            if let url = previewURL {
+                Menu("Display as") {
+                    ForEach(PreviewDisplayMode.allCases) { mode in
+                        Button {
+                            modeStore.set(mode, for: url)
+                        } label: {
+                            Label(mode.title, systemImage: mode.symbol)
+                        }
+                    }
+                    Divider()
+                    Button("Use Automatic Setting") {
+                        modeStore.removeRule(forExtension: modeStore.extensionKey(for: url))
+                    }
+                }
+            }
+            Divider()
+            Button("Hide Preview", action: close)
+        }
     }
 
     private var header: some View {
@@ -52,13 +76,19 @@ struct WorkspacePreviewPane: View {
                 .foregroundStyle(.secondary)
             Text("Preview")
                 .font(.system(size: 13, weight: .semibold))
-            Text(appState.focusedPanel == .left ? "Left" : "Right")
+            Text(sourceSide == .left ? "Left source" : "Right source")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(.quaternary, in: Capsule())
             Spacer(minLength: 0)
+            Button(action: swapSide) {
+                Image(systemName: "rectangle.2.swap")
+                    .frame(width: 20, height: 20)
+            }
+            .buttonStyle(.borderless)
+            .help(previewSide == .left ? "Move Preview to Right" : "Move Preview to Left")
             Button(action: close) {
                 Image(systemName: "xmark")
                     .frame(width: 20, height: 20)
@@ -74,12 +104,47 @@ struct WorkspacePreviewPane: View {
     // MARK: - Preview Content
     private func previewContent(url: URL) -> some View {
         VStack(spacing: 0) {
-            QuickLookPreviewView(url: url)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .controlBackgroundColor))
+            previewRenderer(url: url)
             Divider()
             metadataSection(url: url)
         }
+    }
+
+    @ViewBuilder
+    private func previewRenderer(url: URL) -> some View {
+        switch modeStore.mode(for: url) {
+        case .quickLook:
+            QuickLookPreviewView(url: url)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .controlBackgroundColor))
+        case .text:
+            TextFilePreview(url: url)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case .binary:
+            BinaryFilePreview(url: url)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case nil:
+            unknownTypeChooser(url: url)
+        }
+    }
+
+    private func unknownTypeChooser(url: URL) -> some View {
+        ContentUnavailableView {
+            Label("Choose Preview Mode", systemImage: "questionmark.square.dashed")
+        } description: {
+            Text("How should .\(modeStore.extensionKey(for: url)) files be shown?")
+        } actions: {
+            HStack(spacing: 10) {
+                ForEach(PreviewDisplayMode.allCases) { mode in
+                    Button {
+                        modeStore.set(mode, for: url)
+                    } label: {
+                        Label(mode.title, systemImage: mode.symbol)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyState: some View {

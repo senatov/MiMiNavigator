@@ -19,6 +19,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case colorsButtons  = "Buttons"
     // Other
     case panels         = "Panels"
+    case preview        = "Preview"
     case tabs           = "Tabs"
     case archives       = "Archives"
     case network        = "Network"
@@ -60,6 +61,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsBreadcrumb:  return "text.alignleft"
         case .colorsButtons:     return "button.programmable"
         case .panels:            return "rectangle.split.2x1"
+        case .preview:           return "rectangle.trailinghalf.inset.filled"
         case .tabs:              return "rectangle.on.rectangle"
         case .archives:          return "archivebox"
         case .network:           return "network"
@@ -80,6 +82,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsBreadcrumb: return "Path navigation, segments and interaction states"
         case .colorsButtons: return "Toolbar and command button appearance"
         case .panels: return "Panel layout, columns and file presentation"
+        case .preview: return "Embedded preview modes and remembered file-type rules"
         case .tabs: return "Tab behavior, sizing and navigation"
         case .archives: return "Archive formats, extraction and compression"
         case .network: return "Network discovery and remote connection behavior"
