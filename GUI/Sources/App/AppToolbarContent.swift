@@ -41,9 +41,6 @@ struct AppToolbarContent: ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
             ViewModeToolbarItem(appState: appState)
         }
-        ToolbarItem(placement: .primaryAction) {
-            ResourceMonitorToolbarItem()
-        }
     }
 
     @ViewBuilder
@@ -117,21 +114,43 @@ struct ToolbarButtonGroup<Content: View>: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(colorScheme == .dark ? 0.12 : 0.46), Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.045)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .fill(.ultraThinMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(Color.black.opacity(0.13), lineWidth: 0.6)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(colorScheme == .dark ? 0.13 : 0.58),
+                                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.055),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                 }
-        )
-        .shadow(color: Color.black.opacity(0.065), radius: 1, y: 1)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.72), Color.black.opacity(0.20)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.7
+                        )
+                }
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .fill(Color.white.opacity(colorScheme == .dark ? 0.22 : 0.62))
+                        .frame(height: 0.8)
+                        .padding(.horizontal, 8)
+                        .padding(.top, 1)
+                }
+        }
+        .compositingGroup()
+        .shadow(color: Color.black.opacity(0.12), radius: 1.5, y: 1.25)
     }
 }
 

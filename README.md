@@ -78,7 +78,7 @@ Media files can be previewed, inspected, and converted from the same workflow. O
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
 
-The top toolbar includes a live, in-process resource monitor for MiMiNavigator's physical memory footprint and thread count. It samples Darwin process metrics every two seconds and plots short rolling histories with a compact SwiftUI sparkline adapted from the MIT-licensed [Hop](https://github.com/antonyshakirov/hop) system monitor.
+The top toolbar places a live, in-process resource monitor immediately beside the central Test Build badge. It samples MiMiNavigator's physical memory footprint and thread count every two seconds and plots short rolling histories with a compact SwiftUI sparkline adapted from the MIT-licensed [Hop](https://github.com/antonyshakirov/hop) system monitor. Memory and thread graphs can be independently hidden under **Settings → General → Toolbar graphs**; both are enabled by default.
 
 If GIF size reduction fails or is cancelled, the already converted GIF is restored. If a conflicting file prevents restoration, the recovery copy is retained and its exact path is recorded in the diagnostic log.
 

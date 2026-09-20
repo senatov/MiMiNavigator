@@ -225,21 +225,35 @@ struct FeedbackToolbarButton: View {
 // MARK: - Toolbar Hover Highlight
 private struct ToolbarHoverHighlight: ViewModifier {
     @State private var isHovered = false
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: - Body
     func body(content: Content) -> some View {
         content
             .background {
-                if isHovered {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.primary.opacity(0.10))
-                }
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(isHovered ? (colorScheme == .dark ? 0.20 : 0.72) : (colorScheme == .dark ? 0.08 : 0.26)),
+                                Color.primary.opacity(isHovered ? 0.11 : 0.035),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: Color.black.opacity(isHovered ? 0.16 : 0.07), radius: isHovered ? 1.5 : 0.75, y: 1)
             }
             .overlay {
-                if isHovered {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.18), lineWidth: 0.65)
-                }
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(isHovered ? 0.24 : 0.12), lineWidth: 0.65)
+            }
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(Color.white.opacity(isHovered ? 0.64 : 0.38))
+                    .frame(height: 0.7)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 0.75)
             }
             .contentShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             .onHover { hovering in

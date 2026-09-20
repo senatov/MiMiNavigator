@@ -45,22 +45,38 @@ private final class ResourceMonitorModel {
 
 // MARK: - Resource Monitor Toolbar Item
 struct ResourceMonitorToolbarItem: View {
+    let showMemory: Bool
+    let showThreads: Bool
     @State private var model = ResourceMonitorModel.shared
 
     // MARK: - Body
     var body: some View {
         HStack(spacing: 7) {
-            metric(title: "RAM", value: model.memoryLabel, history: model.memoryHistory, color: #colorLiteral(red: 0.176, green: 0.686, blue: 0.435, alpha: 1))
-            Divider().frame(height: 26)
-            metric(title: "THR", value: model.threadLabel, history: model.threadHistory, color: #colorLiteral(red: 0.278, green: 0.518, blue: 0.941, alpha: 1))
+            if showMemory {
+                metric(title: "RAM", value: model.memoryLabel, history: model.memoryHistory, color: #colorLiteral(red: 0.176, green: 0.686, blue: 0.435, alpha: 1))
+            }
+            if showMemory && showThreads { Divider().frame(height: 26) }
+            if showThreads {
+                metric(title: "THR", value: model.threadLabel, history: model.threadHistory, color: #colorLiteral(red: 0.278, green: 0.518, blue: 0.941, alpha: 1))
+            }
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
         .background { monitorSurface }
         .fixedSize()
-        .help("MiMiNavigator physical memory and live thread count")
+        .help(helpText)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Memory \(model.memoryLabel), threads \(model.threadLabel)")
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var helpText: String {
+        if showMemory && showThreads { return "MiMiNavigator physical memory and live thread count" }
+        return showMemory ? "MiMiNavigator physical memory" : "MiMiNavigator live thread count"
+    }
+
+    private var accessibilityText: String {
+        if showMemory && showThreads { return "Memory \(model.memoryLabel), threads \(model.threadLabel)" }
+        return showMemory ? "Memory \(model.memoryLabel)" : "Threads \(model.threadLabel)"
     }
 
     // MARK: - Metric
@@ -83,17 +99,38 @@ struct ResourceMonitorToolbarItem: View {
 
     // MARK: - Surface
     private var monitorSurface: some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(.ultraThinMaterial)
-            .overlay {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(LinearGradient(colors: [Color.white.opacity(0.32), Color.clear], startPoint: .top, endPoint: .bottom))
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.13), lineWidth: 0.6)
-            }
-            .shadow(color: Color.black.opacity(0.07), radius: 1, y: 1)
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.blue.opacity(0.08))
+                .offset(y: 1.5)
+                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 2)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.78), Color.white.opacity(0.48), Color.blue.opacity(0.045)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color.white, Color.blue.opacity(0.20), Color.blue.opacity(0.42)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.75
+                        )
+                }
+                .overlay(alignment: .top) {
+                    Capsule().fill(Color.white.opacity(0.72)).frame(height: 0.8).padding(.horizontal, 8).padding(.top, 1.5)
+                }
+        }
     }
 }
 

@@ -71,6 +71,13 @@ struct SettingsGeneralPane: View {
         )
     }
 
+    private func optionalBoolBinding(_ keyPath: WritableKeyPath<PreferencesSnapshot, Bool?>) -> Binding<Bool> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] ?? true },
+            set: { prefs.snapshot[keyPath: keyPath] = $0 }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
 
@@ -86,6 +93,15 @@ struct SettingsGeneralPane: View {
                         .pickerStyle(.segmented)
                         .labelsHidden()
                         .frame(maxWidth: 260)
+                    }
+                    Divider()
+                    SettingsRow(label: "Toolbar graphs:", help: "Choose which live application resource graphs appear beside TEST BUILD") {
+                        HStack(spacing: 16) {
+                            Toggle("Memory", isOn: optionalBoolBinding(\.toolbarShowMemoryGraph))
+                                .toggleStyle(.checkbox)
+                            Toggle("Threads", isOn: optionalBoolBinding(\.toolbarShowThreadsGraph))
+                                .toggleStyle(.checkbox)
+                        }
                     }
                 }
             }

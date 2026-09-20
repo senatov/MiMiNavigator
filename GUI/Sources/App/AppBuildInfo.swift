@@ -15,11 +15,11 @@ import SwiftUI
 enum AppBuildInfo {
 
     // MARK: - toolBarItem
-    /// ToolbarItem with cat icon + TEST BUILD badge showing current version.
+    /// ToolbarItem with TEST BUILD badge and optional resource graphs.
     @MainActor
     static func toolBarItem() -> ToolbarItem<(), some View> {
         ToolbarItem(placement: .status) {
-            DevBuildBadge(version: versionString())
+            BuildInfoToolbarCluster(version: versionString())
         }
     }
 
@@ -46,6 +46,26 @@ enum AppBuildInfo {
         default:
             log.error("failed to load version")
             return "MiMi Navigator — cannot determine version"
+        }
+    }
+}
+
+// MARK: - Build Info Toolbar Cluster
+private struct BuildInfoToolbarCluster: View {
+    let version: String
+    @State private var prefs = UserPreferences.shared
+
+    private var showMemory: Bool { prefs.snapshot.toolbarShowMemoryGraph ?? true }
+    private var showThreads: Bool { prefs.snapshot.toolbarShowThreadsGraph ?? true }
+
+    // MARK: - Body
+    var body: some View {
+        HStack(alignment: .top, spacing: 7) {
+            DevBuildBadge(version: version)
+            if showMemory || showThreads {
+                ResourceMonitorToolbarItem(showMemory: showMemory, showThreads: showThreads)
+                    .offset(y: 4)
+            }
         }
     }
 }

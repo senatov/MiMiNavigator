@@ -22,6 +22,8 @@ struct PreferencesSnapshot: Codable, Sendable {
     var showHiddenFiles: Bool
     var showExtensions: Bool
     var autoFitColumnsOnNavigate: Bool
+    var toolbarShowMemoryGraph: Bool?
+    var toolbarShowThreadsGraph: Bool?
 
     // MARK: - Startup
     var startupPath: String         // "home", "last", "desktop", "downloads"
@@ -82,6 +84,8 @@ struct PreferencesSnapshot: Codable, Sendable {
         showHiddenFiles: false,
         showExtensions: true,
         autoFitColumnsOnNavigate: false,
+        toolbarShowMemoryGraph: true,
+        toolbarShowThreadsGraph: true,
         startupPath: "home",
         // Panels
         showIcons: true,
