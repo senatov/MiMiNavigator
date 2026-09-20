@@ -1,34 +1,37 @@
-# MiMiNavigator v0.9.9.8.1
+# MiMiNavigator v0.9.9.8.2
 
-This release makes the source checkout buildable without access to the private MiMiKits source repositories and improves media preview and auxiliary-window presentation.
+This release adds a compact live resource monitor to the top toolbar, improves toolbar consistency and readability, and gives DMG and ZIP files distinct, meaningful icons.
 
 ## Highlights
 
-- Public checkouts resolve prebuilt MiMiKits XCFrameworks from GitHub Release assets, while private library implementation sources remain outside the application repository.
-- Image previews use a thin blue border; video previews use a thin dark-green border.
-- Media & Convert and related standalone windows reliably open above the main MiMiNavigator window while remaining normal application windows.
+- View MiMiNavigator memory usage and thread count in independent live sparklines beside the Test Build badge.
+- Enable or disable the RAM and thread graphs separately and choose independent 3–60 second refresh intervals in General Settings.
+- Recognize DMG installers with a dedicated disk-image icon and ZIP archives with the cabinet-style archive icon.
+- Use a lighter, sharper top-toolbar style aligned with the bottom command bar.
 
 ## Changed
 
-- Require macOS 26 or later and Apple silicon across the application and all binary package manifests.
-- Move reusable file sorting, archive capability, network probing, and share-result mapping logic into the private kits.
-- Add scripts for building, verifying, and switching between binary and private source package configurations.
-- Add binary-distribution license terms and the AGPL additional permission required for public builds.
-- Update repeated release runs to replace the DMG asset and refresh the existing GitHub Release title and notes.
+- Run the RAM and thread samplers on separate low-overhead timers with timer tolerance to reduce unnecessary wakeups.
+- Query only the process metric required by each graph instead of collecting every metric on every refresh.
+- Place resource graphs directly beside the central build badge and preserve live updates when preferences change.
+- Use shared toolbar surfaces and restrained semantic colors while keeping SF Symbols monochrome and Retina-sharp.
+- Replace the bitmap feedback emoji with a native vector SF Symbol.
+- Add complete MIT attribution for the Hop-inspired compact sparkline implementation to About and third-party notices.
 
 ## Fixed
 
-- Reassert standalone-window ordering after the originating menu event completes, preventing auxiliary panels from occasionally appearing behind the main window.
-- Skip obsolete submodule validation when the public checkout has no `.gitmodules` file.
+- Eliminate blurred toolbar text and icons caused by hierarchical symbol rendering, fractional font sizes, translucent foregrounds, and persistent per-button decoration.
+- Align the build badge, resource graphs, and action groups to a consistent height and vertical baseline.
+- Keep RAM and thread labels left-aligned and readable without heavy black typography.
+- Preserve backward compatibility when existing preferences files do not contain the new graph visibility or interval settings.
 
 ## Validation
 
-- A fresh public-consumer build downloaded the binary XCFrameworks without GitHub credentials and completed successfully.
-- Targeted FileModelKit, ArchiveKit, and NetworkKit tests passed.
+- The focused Debug build completes successfully and the updated toolbar and General Settings have been checked in the running application.
 - The release pipeline verifies the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.7.10...v0.9.9.8.1
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.1...v0.9.9.8.2
