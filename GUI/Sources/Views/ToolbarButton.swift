@@ -235,22 +235,22 @@ private struct ToolbarHoverHighlight: ViewModifier {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(isHovered ? (colorScheme == .dark ? 0.20 : 0.72) : (colorScheme == .dark ? 0.08 : 0.26)),
-                                Color.primary.opacity(isHovered ? 0.11 : 0.035),
+                                Color.white.opacity(isHovered ? (colorScheme == .dark ? 0.20 : 0.66) : (colorScheme == .dark ? 0.035 : 0.09)),
+                                Color.primary.opacity(isHovered ? 0.10 : 0.012),
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .shadow(color: Color.black.opacity(isHovered ? 0.16 : 0.07), radius: isHovered ? 1.5 : 0.75, y: 1)
+                    .shadow(color: Color.black.opacity(isHovered ? 0.14 : 0), radius: 1.5, y: 1)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(isHovered ? 0.24 : 0.12), lineWidth: 0.65)
+                    .strokeBorder(Color.primary.opacity(isHovered ? 0.22 : 0.045), lineWidth: 0.65)
             }
             .overlay(alignment: .top) {
                 Capsule()
-                    .fill(Color.white.opacity(isHovered ? 0.64 : 0.38))
+                    .fill(Color.white.opacity(isHovered ? 0.58 : 0.10))
                     .frame(height: 0.7)
                     .padding(.horizontal, 4)
                     .padding(.top, 0.75)

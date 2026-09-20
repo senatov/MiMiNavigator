@@ -17,24 +17,67 @@ private final class ResourceMonitorModel {
     private(set) var threadHistory: [Double] = []
     private(set) var memoryLabel = "— MB"
     private(set) var threadLabel = "—"
-    private var timer: Timer?
+    private var memoryTimer: Timer?
+    private var threadTimer: Timer?
+    private var activeMemoryInterval: TimeInterval?
+    private var activeThreadInterval: TimeInterval?
 
-    private init() {
-        sample()
-        let timer = Timer(timeInterval: 2, target: self, selector: #selector(sample), userInfo: nil, repeats: true)
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
+    private init() {}
+
+    // MARK: - Configure Independent Samplers
+    func configure(memoryInterval: TimeInterval?, threadInterval: TimeInterval?) {
+        if memoryInterval != activeMemoryInterval {
+            memoryTimer?.invalidate()
+            memoryTimer = nil
+            activeMemoryInterval = memoryInterval
+            if let memoryInterval {
+                sampleMemory()
+                let timer = Timer(timeInterval: memoryInterval, target: self, selector: #selector(sampleMemory), userInfo: nil, repeats: true)
+                timer.tolerance = min(memoryInterval * 0.15, 1)
+                RunLoop.main.add(timer, forMode: .common)
+                memoryTimer = timer
+            }
+        }
+        if threadInterval != activeThreadInterval {
+            threadTimer?.invalidate()
+            threadTimer = nil
+            activeThreadInterval = threadInterval
+            if let threadInterval {
+                sampleThreads()
+                let timer = Timer(timeInterval: threadInterval, target: self, selector: #selector(sampleThreads), userInfo: nil, repeats: true)
+                timer.tolerance = min(threadInterval * 0.15, 1)
+                RunLoop.main.add(timer, forMode: .common)
+                threadTimer = timer
+            }
+        }
     }
 
-    // MARK: - Sample Process Metrics
-    @objc private func sample() {
-        let snapshot = MemoryDiagnostics.capture()
-        memoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: snapshot.footprintBytes)
-        threadLabel = snapshot.threadCount > 0 ? "\(snapshot.threadCount)" : "—"
+    // MARK: - Sample Memory
+    @objc private func sampleMemory() {
+        let memory = MemoryDiagnostics.captureMemory()
+        memoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: memory.footprintBytes)
         withAnimation(.easeInOut(duration: 0.35)) {
-            memoryHistory = Self.appending(Double(snapshot.footprintBytes) / 1_048_576, to: memoryHistory)
-            threadHistory = Self.appending(Double(snapshot.threadCount), to: threadHistory)
+            memoryHistory = Self.appending(Double(memory.footprintBytes) / 1_048_576, to: memoryHistory)
         }
+    }
+
+    // MARK: - Sample Threads
+    @objc private func sampleThreads() {
+        let threadCount = MemoryDiagnostics.captureThreadCount()
+        threadLabel = threadCount > 0 ? "\(threadCount)" : "—"
+        withAnimation(.easeInOut(duration: 0.35)) {
+            threadHistory = Self.appending(Double(threadCount), to: threadHistory)
+        }
+    }
+
+    // MARK: - Stop Samplers
+    func stop() {
+        memoryTimer?.invalidate()
+        threadTimer?.invalidate()
+        memoryTimer = nil
+        threadTimer = nil
+        activeMemoryInterval = nil
+        activeThreadInterval = nil
     }
 
     // MARK: - Rolling History
@@ -47,6 +90,8 @@ private final class ResourceMonitorModel {
 struct ResourceMonitorToolbarItem: View {
     let showMemory: Bool
     let showThreads: Bool
+    let memoryInterval: TimeInterval
+    let threadsInterval: TimeInterval
     @State private var model = ResourceMonitorModel.shared
 
     // MARK: - Body
@@ -62,11 +107,17 @@ struct ResourceMonitorToolbarItem: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
-        .background { monitorSurface }
+        .background { TopToolbarSurface() }
         .fixedSize()
         .help(helpText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
+        .onAppear { configureSamplers() }
+        .onChange(of: showMemory) { _, _ in configureSamplers() }
+        .onChange(of: showThreads) { _, _ in configureSamplers() }
+        .onChange(of: memoryInterval) { _, _ in configureSamplers() }
+        .onChange(of: threadsInterval) { _, _ in configureSamplers() }
+        .onDisappear { model.stop() }
     }
 
     private var helpText: String {
@@ -82,56 +133,29 @@ struct ResourceMonitorToolbarItem: View {
     // MARK: - Metric
     private func metric(title: String, value: String, history: [Double], color: NSColor) -> some View {
         HStack(spacing: 4) {
-            VStack(alignment: .trailing, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(.system(size: 8, weight: .semibold, design: .rounded))
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
                 Text(value)
-                    .font(.system(size: 9.5, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color.blue)
                     .lineLimit(1)
-                    .frame(minWidth: title == "RAM" ? 42 : 20, alignment: .trailing)
+                    .frame(minWidth: title == "RAM" ? 42 : 20, alignment: .leading)
             }
             ResourceSparkline(values: history, color: Color(nsColor: color))
                 .frame(width: 34, height: 24)
         }
     }
 
-    // MARK: - Surface
-    private var monitorSurface: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.blue.opacity(0.08))
-                .offset(y: 1.5)
-                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 2)
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.78), Color.white.opacity(0.48), Color.blue.opacity(0.045)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white, Color.blue.opacity(0.20), Color.blue.opacity(0.42)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.75
-                        )
-                }
-                .overlay(alignment: .top) {
-                    Capsule().fill(Color.white.opacity(0.72)).frame(height: 0.8).padding(.horizontal, 8).padding(.top, 1.5)
-                }
-        }
+    // MARK: - Configure Samplers
+    private func configureSamplers() {
+        model.configure(
+            memoryInterval: showMemory ? memoryInterval : nil,
+            threadInterval: showThreads ? threadsInterval : nil
+        )
     }
+
 }
 
 // MARK: - Resource Sparkline

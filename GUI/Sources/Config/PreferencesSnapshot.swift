@@ -24,6 +24,8 @@ struct PreferencesSnapshot: Codable, Sendable {
     var autoFitColumnsOnNavigate: Bool
     var toolbarShowMemoryGraph: Bool?
     var toolbarShowThreadsGraph: Bool?
+    var toolbarMemoryGraphInterval: Double?
+    var toolbarThreadsGraphInterval: Double?
 
     // MARK: - Startup
     var startupPath: String         // "home", "last", "desktop", "downloads"
@@ -86,6 +88,8 @@ struct PreferencesSnapshot: Codable, Sendable {
         autoFitColumnsOnNavigate: false,
         toolbarShowMemoryGraph: true,
         toolbarShowThreadsGraph: true,
+        toolbarMemoryGraphInterval: 5,
+        toolbarThreadsGraphInterval: 10,
         startupPath: "home",
         // Panels
         showIcons: true,

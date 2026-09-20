@@ -57,14 +57,21 @@ private struct BuildInfoToolbarCluster: View {
 
     private var showMemory: Bool { prefs.snapshot.toolbarShowMemoryGraph ?? true }
     private var showThreads: Bool { prefs.snapshot.toolbarShowThreadsGraph ?? true }
+    private var memoryInterval: TimeInterval { prefs.snapshot.toolbarMemoryGraphInterval ?? 5 }
+    private var threadsInterval: TimeInterval { prefs.snapshot.toolbarThreadsGraphInterval ?? 10 }
 
     // MARK: - Body
     var body: some View {
         HStack(alignment: .top, spacing: 7) {
             DevBuildBadge(version: version)
             if showMemory || showThreads {
-                ResourceMonitorToolbarItem(showMemory: showMemory, showThreads: showThreads)
-                    .offset(y: 4)
+                ResourceMonitorToolbarItem(
+                    showMemory: showMemory,
+                    showThreads: showThreads,
+                    memoryInterval: memoryInterval,
+                    threadsInterval: threadsInterval
+                )
+                    .offset(y: 6)
             }
         }
     }
@@ -147,7 +154,7 @@ private struct DevBuildBadge: View {
         .padding(.leading, 6)
         .padding(.trailing, 9)
         .padding(.vertical, 3)
-        .background { DevBuildBadgeSurface() }
+        .background { TopToolbarSurface() }
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .help("Current test build version")
     }
@@ -171,11 +178,11 @@ private struct DevBuildCatMedallion: View {
                     )
                 )
             Text("🐈")
-                .font(.system(size: 17))
+                .font(.system(size: 15))
                 .fixedSize()
                 .offset(y: -0.5)
         }
-        .frame(width: 27, height: 27)
+        .frame(width: 24, height: 24)
         .overlay {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .strokeBorder(
@@ -195,68 +202,5 @@ private struct DevBuildCatMedallion: View {
         }
         .compositingGroup()
         .shadow(color: Color.black.opacity(0.14), radius: 1.75, x: 0, y: 1.25)
-    }
-}
-
-// MARK: - DevBuildBadgeSurface
-
-private struct DevBuildBadgeSurface: View {
-    // MARK: - Body
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.blue.opacity(0.10))
-                .offset(y: 1.5)
-                .shadow(color: Color.black.opacity(0.12), radius: 3, x: 0, y: 2)
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.92), Color.white.opacity(0.62), Color.blue.opacity(0.055)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.white.opacity(0.52), Color.white.opacity(0.10), Color.clear],
-                                center: UnitPoint(x: 0.42, y: 0.12),
-                                startRadius: 1,
-                                endRadius: 125
-                            )
-                        )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white, Color.blue.opacity(0.25), Color.blue.opacity(0.56)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.75
-                        )
-                }
-                .overlay(alignment: .top) {
-                    Capsule()
-                        .fill(Color.white.opacity(0.78))
-                        .frame(height: 0.9)
-                        .padding(.horizontal, 10)
-                        .padding(.top, 1.5)
-                }
-                .overlay(alignment: .bottom) {
-                    Capsule()
-                        .fill(Color.blue.opacity(0.14))
-                        .frame(height: 1)
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 1)
-                }
-        }
     }
 }

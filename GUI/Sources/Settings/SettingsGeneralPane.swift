@@ -78,6 +78,13 @@ struct SettingsGeneralPane: View {
         )
     }
 
+    private func optionalDoubleBinding(_ keyPath: WritableKeyPath<PreferencesSnapshot, Double?>, default defaultValue: Double) -> Binding<Double> {
+        Binding(
+            get: { prefs.snapshot[keyPath: keyPath] ?? defaultValue },
+            set: { prefs.snapshot[keyPath: keyPath] = $0 }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
 
@@ -101,6 +108,13 @@ struct SettingsGeneralPane: View {
                                 .toggleStyle(.checkbox)
                             Toggle("Threads", isOn: optionalBoolBinding(\.toolbarShowThreadsGraph))
                                 .toggleStyle(.checkbox)
+                        }
+                    }
+                    Divider()
+                    SettingsRow(label: "Graph intervals:", help: "Set independent refresh intervals for memory and thread measurements") {
+                        HStack(spacing: 14) {
+                            intervalPicker("Memory", selection: optionalDoubleBinding(\.toolbarMemoryGraphInterval, default: 5))
+                            intervalPicker("Threads", selection: optionalDoubleBinding(\.toolbarThreadsGraphInterval, default: 10))
                         }
                     }
                 }
@@ -248,6 +262,21 @@ struct SettingsGeneralPane: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Resource Graph Interval Picker
+    private func intervalPicker(_ title: String, selection: Binding<Double>) -> some View {
+        HStack(spacing: 5) {
+            Text(title)
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
+            Picker("", selection: selection) {
+                ForEach([3.0, 5.0, 10.0, 15.0, 30.0, 60.0], id: \.self) { seconds in
+                    Text("\(Int(seconds)) s").tag(seconds)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 72)
         }
     }
 }

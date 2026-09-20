@@ -106,51 +106,56 @@ private struct AppWindowTitle: View {
 /// Wraps toolbar buttons in a rounded rect with separator border — matches Breadcrumb style.
 struct ToolbarButtonGroup<Content: View>: View {
     @ViewBuilder let content: () -> Content
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 5) {
             content()
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(colorScheme == .dark ? 0.13 : 0.58),
-                                    Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.055),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
+        .padding(.vertical, 5)
+        .background { TopToolbarSurface() }
+    }
+}
+
+// MARK: - Top Toolbar Surface
+struct TopToolbarSurface: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(colorScheme == .dark ? 0.14 : 0.64),
+                                Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.035),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.72), Color.black.opacity(0.20)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.7
-                        )
-                }
-                .overlay(alignment: .top) {
-                    Capsule()
-                        .fill(Color.white.opacity(colorScheme == .dark ? 0.22 : 0.62))
-                        .frame(height: 0.8)
-                        .padding(.horizontal, 8)
-                        .padding(.top, 1)
-                }
-        }
-        .compositingGroup()
-        .shadow(color: Color.black.opacity(0.12), radius: 1.5, y: 1.25)
+                    )
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.76), Color.primary.opacity(0.18)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.7
+                    )
+            }
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(Color.white.opacity(colorScheme == .dark ? 0.22 : 0.58))
+                    .frame(height: 0.7)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 1)
+            }
+            .shadow(color: Color.black.opacity(0.10), radius: 1.5, y: 1)
     }
 }
 

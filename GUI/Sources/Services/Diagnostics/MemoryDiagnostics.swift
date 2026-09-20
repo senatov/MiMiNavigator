@@ -115,6 +115,11 @@ final class MemoryDiagnostics {
 
     // MARK: - Metrics
     nonisolated static func capture() -> MemorySnapshot {
+        let memory = captureMemory()
+        return MemorySnapshot(residentBytes: memory.residentBytes, footprintBytes: memory.footprintBytes, threadCount: captureThreadCount())
+    }
+
+    nonisolated static func captureMemory() -> (residentBytes: UInt64, footprintBytes: UInt64) {
         var basicInfo = mach_task_basic_info()
         var basicCount = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
         let basicResult = withUnsafeMutablePointer(to: &basicInfo) { pointer in
@@ -131,11 +136,14 @@ final class MemoryDiagnostics {
         }
         let resident = basicResult == KERN_SUCCESS ? UInt64(basicInfo.resident_size) : 0
         let footprint = vmResult == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : resident
+        return (resident, footprint)
+    }
+
+    nonisolated static func captureThreadCount() -> Int {
         var processInfo = proc_taskinfo()
         let processInfoSize = Int32(MemoryLayout<proc_taskinfo>.size)
         let processInfoResult = proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &processInfo, processInfoSize)
-        let threadCount = processInfoResult == processInfoSize ? Int(processInfo.pti_threadnum) : 0
-        return MemorySnapshot(residentBytes: resident, footprintBytes: footprint, threadCount: threadCount)
+        return processInfoResult == processInfoSize ? Int(processInfo.pti_threadnum) : 0
     }
 
     nonisolated static func wholeMemoryLabel(bytes: UInt64) -> String {
