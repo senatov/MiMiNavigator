@@ -102,26 +102,24 @@ private struct ReadOnlyTextView: NSViewRepresentable {
             textView.setSelectedRange(NSRange(location: 0, length: 0))
             return
         }
-        let source = textView.string as NSString
         let selected = textView.selectedRange()
-        let options: NSString.CompareOptions = backwards ? [.caseInsensitive, .backwards] : [.caseInsensitive]
-        let start: Int
-        let length: Int
-        if restart {
-            start = backwards ? 0 : 0
-            length = source.length
-        } else if backwards {
-            start = 0
-            length = max(0, min(selected.location, source.length))
-        } else {
-            start = min(selected.location + selected.length, source.length)
-            length = source.length - start
+        let sourceLength = (textView.string as NSString).length
+        let initialLocation = restart ? (backwards ? sourceLength : 0) : (backwards ? selected.location : NSMaxRange(selected))
+        var match = SearchTextMatcher.range(
+            in: textView.string,
+            query: searchText,
+            after: initialLocation,
+            backwards: backwards
+        )
+        if match == nil {
+            match = SearchTextMatcher.range(
+                in: textView.string,
+                query: searchText,
+                after: backwards ? sourceLength : 0,
+                backwards: backwards
+            )
         }
-        var match = source.range(of: searchText, options: options, range: NSRange(location: start, length: length))
-        if match.location == NSNotFound {
-            match = source.range(of: searchText, options: options, range: NSRange(location: 0, length: source.length))
-        }
-        guard match.location != NSNotFound else { return }
+        guard let match else { return }
         textView.setSelectedRange(match)
         textView.scrollRangeToVisible(match)
     }

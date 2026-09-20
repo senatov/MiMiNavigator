@@ -136,6 +136,17 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertEqual(wide.height, 16, accuracy: 1)
     }
 
+    func testSearchMatcherIgnoresCaseAndWhitespace() {
+        XCTAssertTrue(SearchTextMatcher.matches("Calculate folder sizes", query: "FoL DeR"))
+        XCTAssertTrue(SearchTextMatcher.matches("Calculate folder sizes", query: "fold siz"))
+        let source = "Первый Михаил и второй Михаил"
+        let first = SearchTextMatcher.range(in: source, query: "МИ ХА", after: 0, backwards: false)
+        XCTAssertEqual(first.map { (source as NSString).substring(with: $0) }, "Миха")
+        let last = SearchTextMatcher.range(in: source, query: "миха", after: (source as NSString).length, backwards: true)
+        XCTAssertEqual(last.map { (source as NSString).substring(with: $0) }, "Миха")
+        XCTAssertNotEqual(first, last)
+    }
+
     func testArchiveRootTransferUsesDirectoryContainingArchive() {
         let tempRoot = URL(fileURLWithPath: "/private/var/folders/T/MiMiNavigator_archives/session", isDirectory: true)
         let archive = URL(fileURLWithPath: "/Users/senat/Downloads/book.zip")
