@@ -213,6 +213,7 @@ enum SmartIconService {
         if systemFormats.contains(normalized) { return "ArchiveSystem" }
         return "ArchiveZip"
     }
+    @MainActor
     private static func archiveIcon(
         for ext: String,
         isEncrypted: Bool,
@@ -221,9 +222,12 @@ enum SmartIconService {
     ) -> NSImage {
         let assetName = archiveIconAssetName(for: ext, isEncrypted: isEncrypted)
         if assetName == "DiskImageInstaller" {
-            return sfSymbolIcon("externaldrive.fill.badge.plus", size: size)
+            return sfSymbolIcon("basketball.fill", size: size)
         }
         let asset = NSImage(named: assetName)?.copy() as? NSImage
+        if let asset, size == SystemIconNormalizer.logicalSize {
+            return SystemIconNormalizer.normalize(asset)
+        }
         let icon = asset ?? NSWorkspace.shared.icon(forFile: fallbackURL.path)
         icon.size = size
         return icon

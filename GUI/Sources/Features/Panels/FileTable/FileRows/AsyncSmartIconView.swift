@@ -21,7 +21,7 @@ struct AsyncSmartIconView: View {
                 if let icon {
                     Image(nsImage: icon)
                         .resizable()
-                        .interpolation(.medium)
+                        .interpolation(.high)
                         .antialiased(true)
                         .aspectRatio(contentMode: .fit)
                 } else {
