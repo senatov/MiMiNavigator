@@ -82,8 +82,8 @@ struct FilePanelView: View {
     // MARK: - View
     var body: some View {
         VStack(spacing: 0) {
-            breadcrumbSection
-                .zIndex(1_000)
+            Color.clear
+                .frame(height: 34)
             contentSection
             SelectionStatusBar(panelSide: viewModel.panelSide)
         }
@@ -108,6 +108,11 @@ struct FilePanelView: View {
         }
         .panelFocus(panelSide: viewModel.panelSide) {
             appState.showFavTreePopup = false
+        }
+        .overlay(alignment: .top) {
+            breadcrumbSection
+                .padding(.horizontal, DesignTokens.grid / 2)
+                .padding(.top, DesignTokens.grid - 2)
         }
     }
 
