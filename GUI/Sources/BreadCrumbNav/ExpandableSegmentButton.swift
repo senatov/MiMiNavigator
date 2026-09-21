@@ -24,7 +24,6 @@ struct ExpandableSegmentButton: View {
     let onTap: () -> Void
     let helpText: String
     let copyAction: () -> Void
-    let isCurrent: Bool
     let directoryURL: URL?
     let openOtherPanel: () -> Void
     let openNewTab: () -> Void
@@ -49,7 +48,7 @@ struct ExpandableSegmentButton: View {
     private var displayFont: Font {
         let requestedSize = isHovered ? hoverFontSize : fontSize
         let resolvedSize = (requestedSize * 2).rounded() / 2
-        let base = Font.system(size: resolvedSize, weight: isHovered || isCurrent ? .medium : .regular, design: .default)
+        let base = Font.system(size: resolvedSize, weight: .light, design: .default)
         return segment.isEnvironmentVariable && variableItalic ? base.italic() : base
     }
 

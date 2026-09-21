@@ -79,9 +79,9 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("breadcrumb.hoverFontSize") var breadcrumbHoverFontSize: Double = 0
     @ObservationIgnored @AppStorage("breadcrumb.variableItalic") var breadcrumbVariableItalic: Bool = true
 
-    static let defaultBreadcrumbHoverText = Color(#colorLiteral(red: 0.06, green: 0.20, blue: 0.34, alpha: 1))
-    static let defaultBreadcrumbHoverBackground = Color(#colorLiteral(red: 0.67, green: 0.83, blue: 0.96, alpha: 1))
-    static let defaultBreadcrumbHoverBorder = Color(#colorLiteral(red: 0.34, green: 0.58, blue: 0.78, alpha: 1))
+    static let defaultBreadcrumbHoverText = Color(#colorLiteral(red: 0.000, green: 0.325, blue: 0.573, alpha: 1))
+    static let defaultBreadcrumbHoverBackground = Color(#colorLiteral(red: 0.918, green: 0.918, blue: 0.918, alpha: 1))
+    static let defaultBreadcrumbHoverBorder = Color(#colorLiteral(red: 0.835, green: 0.835, blue: 0.835, alpha: 1))
 
     var breadcrumbHoverTextColor: Color {
         Color(hex: ud("color.breadcrumbHoverText")) ?? Self.defaultBreadcrumbHoverText
@@ -107,7 +107,7 @@ final class ColorThemeStore {
     @ObservationIgnored @AppStorage("button.cornerRadius") var buttonCornerRadius: Double = 6.0
     @ObservationIgnored @AppStorage("button.shadowColor") var hexButtonShadow: String = ""
     @ObservationIgnored @AppStorage("button.shadowRadius") var buttonShadowRadius: Double = 1.0
-    @ObservationIgnored @AppStorage("button.shadowY") var buttonShadowY: Double = 0.5
+    @ObservationIgnored @AppStorage("button.shadowY") var buttonShadowY: Double = 1.5
 
     private(set) var activeTheme: ColorTheme = .defaultTheme
 

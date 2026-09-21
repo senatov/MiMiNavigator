@@ -83,6 +83,7 @@ struct FilePanelView: View {
     var body: some View {
         VStack(spacing: 0) {
             breadcrumbSection
+                .zIndex(1_000)
             contentSection
             SelectionStatusBar(panelSide: viewModel.panelSide)
         }

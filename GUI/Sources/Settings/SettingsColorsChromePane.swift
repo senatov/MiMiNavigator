@@ -68,8 +68,8 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                     colorRow("Unfocused panel", help: "Border — inactive panel",
                              preset: preset.panelBorderInactive, hex: $hexBorderInactive, store: store)
                     Divider()
-                    sliderRow("Width", help: "Panel border thickness (default 1.5)",
-                              value: $panelBorderWidth, range: 0.25...4.0, step: 0.25,
+                    sliderRow("Width", help: "Panel border thickness (default 0.5)",
+                              value: panelBorderWidthBinding, range: 0.25...4.0, step: 0.25,
                               displayFormat: "%.2f", unit: " pt") {
                         store.storedPanelBorderWidth = panelBorderWidth
                         store.reloadOverrides()
@@ -162,6 +162,13 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
             set: { newColor in
                 hexCommandBarBackground = newColor.toHex() ?? ""
             }
+        )
+    }
+
+    private var panelBorderWidthBinding: Binding<Double> {
+        Binding(
+            get: { panelBorderWidth > 0 ? panelBorderWidth : Double(preset.panelBorderWidth) },
+            set: { panelBorderWidth = $0 }
         )
     }
 }

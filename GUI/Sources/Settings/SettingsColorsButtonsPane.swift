@@ -72,7 +72,7 @@ struct SettingsColorsButtonsPane: View, ColorPaneHelpers {
                 store.buttonBorderWidth  = 0.5
                 store.buttonCornerRadius = 6.0
                 store.buttonShadowRadius = 1.0
-                store.buttonShadowY      = 0.5
+                store.buttonShadowY      = 1.5
             }
         }
     }

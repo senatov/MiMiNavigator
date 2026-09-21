@@ -69,8 +69,8 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
             paneGroupBox {
                 VStack(spacing: 0) {
                     sectionHeader("Typography")
-                    sliderRow("Font size", help: "Path text size in points (default 14 pt)",
-                              value: $storedFontSize, range: 9...16, step: 0.5,
+                    sliderRow("Font size", help: "Path text size in points (default 14.5 pt)",
+                              value: fontSizeBinding, range: 9...16, step: 0.5,
                               displayFormat: "%.1f", unit: " pt") {
                         store.breadcrumbFontSize = storedFontSize
                         store.reloadOverrides()
@@ -149,7 +149,6 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
                     onTap: {},
                     helpText: segment.fullName,
                     copyAction: {},
-                    isCurrent: index == previewSegments.count - 1,
                     directoryURL: nil,
                     openOtherPanel: {},
                     openNewTab: {},
@@ -180,6 +179,13 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
         Binding(
             get: { storedHoverFontSize > 0 ? storedHoverFontSize : Double(previewFontSize + 1) },
             set: { storedHoverFontSize = $0 }
+        )
+    }
+
+    private var fontSizeBinding: Binding<Double> {
+        Binding(
+            get: { storedFontSize > 0 ? storedFontSize : Double(preset.breadcrumbFontSize) },
+            set: { storedFontSize = $0 }
         )
     }
 

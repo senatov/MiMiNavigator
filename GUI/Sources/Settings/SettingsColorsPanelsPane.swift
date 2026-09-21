@@ -23,7 +23,7 @@ struct SettingsColorsPanelsPane: View, ColorPaneHelpers {
     @AppStorage("color.selectionActive") private var hexSelActive: String = ""
     @AppStorage("color.selectionInactive") private var hexSelInactive: String = ""
     @AppStorage("color.selectionBorder") private var hexSelBorder: String = ""
-    @AppStorage("selection.lineWidth") private var selLineWidth: Double = 2.0
+    @AppStorage("selection.lineWidth") private var selLineWidth: Double = 0.5
     @AppStorage("color.accent") private var hexAccent: String = ""
     @AppStorage("color.dialogBackground") private var hexDialogBg: String = ""
     @AppStorage("color.hiddenFile") private var hexHiddenFile: String = ""

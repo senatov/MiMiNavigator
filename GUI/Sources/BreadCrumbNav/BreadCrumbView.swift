@@ -247,7 +247,6 @@ struct BreadCrumbView: View {
             onTap: { handleTap(segment: segment) },
             helpText: tooltip(for: segment),
             copyAction: { copyPath(for: segment) },
-            isCurrent: segment.originalIndex == pathComponents.count - 1,
             directoryURL: localDirectoryURL(for: segment),
             openOtherPanel: { openSegment(segment, inNewTab: false) },
             openNewTab: { openSegment(segment, inNewTab: true) },
