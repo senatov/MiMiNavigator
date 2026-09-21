@@ -46,7 +46,7 @@ struct TopMenuBarView: View {
                 favoritesTargetSide = appState.focusedPanel
             }
         }
-        .onChange(of: appState.showFavTreePopup) { oldValue, newValue in
+        .onChange(of: appState.showFavTreePopup) { _, newValue in
             if newValue {
                 favoritesTargetSide = appState.focusedPanel
             }
@@ -59,7 +59,7 @@ struct TopMenuBarView: View {
             isFinderSidebarVisible.toggle()
         } label: {
             Image(systemName: "sidebar.left")
-                .font(.system(size: 14, weight: .light))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(.blue)
                 .frame(width: 22, height: 22)
         }
@@ -84,11 +84,11 @@ struct TopMenuBarView: View {
         } label: {
             Label {
                 Text(menu.title)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.callout)
             } icon: {
                 if let icon = menu.icon {
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .light))
+                        .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(menuTint(for: menu))
                 }
             }
@@ -155,13 +155,13 @@ private struct TopSubmenuLabel: View {
                 .fill(Color(nsColor: .separatorColor).opacity(0.72))
                 .frame(width: 1, height: 15)
             Text(title)
-                .font(.system(size: 13, weight: .light))
+                .font(.callout)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
             Spacer(minLength: 18)
             if let shortcut, !shortcut.isEmpty {
                 Text(shortcut)
-                    .font(.system(size: 12, weight: .light))
+                    .font(.caption)
                     .foregroundStyle(Color(nsColor: .systemBlue))
                     .fixedSize()
             }
@@ -174,7 +174,7 @@ private struct TopSubmenuLabel: View {
     private var submenuIcon: some View {
         if let systemImage {
             Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .light))
+                .font(.system(size: 14, weight: .regular))
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(tint)
                 .frame(width: 17, height: 17)

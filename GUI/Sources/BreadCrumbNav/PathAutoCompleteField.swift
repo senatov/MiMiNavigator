@@ -254,15 +254,6 @@ struct PathAutoCompleteField: View {
         return (directory == "." ? "" : directory, nsPath.lastPathComponent)
     }
 
-    private func splitPathAndPrefix(_ path: String) -> (URL, String) {
-        if path.hasSuffix("/") {
-            return (URL(fileURLWithPath: path), "")
-        } else {
-            let url = URL(fileURLWithPath: path)
-            return (url.deletingLastPathComponent(), url.lastPathComponent)
-        }
-    }
-
     private func currentPrefix() -> String { splitDisplayPathAndPrefix(text).prefix }
 }
 

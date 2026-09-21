@@ -21,11 +21,6 @@ struct HostNodeRow: View {
     @State private var isHovered = false
     @State private var showInfoPopup = false
 
-    private var isProbing: Bool {
-        host.probedWebURL == nil && host.staticWebUIURL == nil
-            && !host.isOffline && host.deviceClass != .iPhone && host.deviceClass != .iPad
-    }
-
     private var showsConfigButton: Bool {
         host.webUIURL == nil && host.deviceClass.isMobile
     }

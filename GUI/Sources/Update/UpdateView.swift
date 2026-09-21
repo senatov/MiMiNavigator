@@ -42,9 +42,9 @@ struct UpdateView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Software Update")
-                    .font(.system(size: 16, weight: .light))
+                    .font(.headline)
                 Text("Current version: \(checker.currentVersion)")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()

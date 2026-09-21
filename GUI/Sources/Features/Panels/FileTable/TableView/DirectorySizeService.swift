@@ -41,7 +41,7 @@ actor DirectorySizeService {
 
     let persistentCache = ApplicationPersistentCache.shared
     private let legacyCacheURL: URL
-    let cacheNamespace = "directory-size-v1"
+    let cacheNamespace = "directory-size-v2"
     private let cacheEntryLimit = 64
     private let cacheMaxIdleAge: TimeInterval = 30 * 60
     private let persistentLifetime: TimeInterval = 7 * 24 * 60 * 60
@@ -364,23 +364,28 @@ actor DirectorySizeService {
     // MARK: - Shallow Size (first level only, ~1ms)
     /// Sum file sizes of direct children only — no recursion.
     /// Returns approximate size instantly for UI display with "~" prefix.
-    func shallowSize(for url: URL) async -> Int64 {
+    func shallowSize(for url: URL, timeoutMilliseconds: UInt64) async -> Int64? {
         guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
         let resolvedURL = resolveURLForSizing(url)
         guard !AppState.isAppManagedNetworkMountPath(resolvedURL) else {
             return Self.unavailableSize
         }
-        //log.info("[DirectorySizeService] shallowSize start: \(resolvedURL.path)")
-        let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
+        let result = await withCheckedContinuation { (continuation: CheckedContinuation<Int64?, Never>) in
+            let gate = ShallowSizeResultGate(continuation: continuation)
             queue.async {
                 guard !Self.cancellation.isCancelled else {
-                    continuation.resume(returning: Self.unavailableSize)
+                    gate.resolve(Self.unavailableSize)
                     return
                 }
                 let size: Int64 = DirectorySizeSecurityScope.access(resolvedURL) {
                     DirectorySizeNativeCalculator.shallowSize(resolvedURL)
                 }
-                continuation.resume(returning: size)
+                gate.resolve(size)
+            }
+            DispatchQueue.global(qos: .utility).asyncAfter(
+                deadline: .now() + .milliseconds(Int(timeoutMilliseconds))
+            ) {
+                gate.resolve(nil)
             }
         }
         return result

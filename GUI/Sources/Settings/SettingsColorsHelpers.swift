@@ -31,7 +31,7 @@ extension ColorPaneHelpers {
     func sectionHeader(_ title: String) -> some View {
         HStack(spacing: 0) {
             Text(title)
-                .font(.system(size: 10, weight: .light))
+                .font(.caption2.weight(.medium))
                 .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .tracking(0.6)
                 .textCase(.uppercase)

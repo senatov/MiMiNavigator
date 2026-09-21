@@ -106,6 +106,99 @@ private extension HIGAutoFocusProbe {
     }
 }
 
+// MARK: - HIG Name Field
+struct HIGNameField: NSViewRepresentable {
+    @Binding var text: String
+    let placeholder: String
+    let onSubmit: () -> Void
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, onSubmit: onSubmit)
+    }
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = HIGAttachedTextField(string: text)
+        textField.placeholderString = placeholder
+        textField.isBordered = false
+        textField.isBezeled = false
+        textField.drawsBackground = false
+        textField.isEditable = true
+        textField.isSelectable = true
+        textField.focusRingType = .none
+        textField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        textField.lineBreakMode = .byTruncatingTail
+        textField.cell?.usesSingleLineMode = true
+        textField.delegate = context.coordinator
+        textField.onAttachedToWindow = { [weak coordinator = context.coordinator] in
+            coordinator?.focusAndSelectText()
+        }
+        context.coordinator.attach(textField)
+        return textField
+    }
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        if nsView.stringValue != text {
+            nsView.stringValue = text
+        }
+        context.coordinator.attach(nsView)
+    }
+}
+
+// MARK: - HIG Name Field Coordinator
+extension HIGNameField {
+    @MainActor
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        @Binding private var text: String
+        private let onSubmit: () -> Void
+        private weak var textField: NSTextField?
+        private var didSelectInitialText = false
+        private var canSubmitFromKeyboard = false
+        init(text: Binding<String>, onSubmit: @escaping () -> Void) {
+            self._text = text
+            self.onSubmit = onSubmit
+        }
+        func attach(_ textField: NSTextField) {
+            self.textField = textField
+            if textField.window != nil {
+                focusAndSelectText()
+            }
+        }
+        func controlTextDidChange(_ notification: Notification) {
+            guard let textField = notification.object as? NSTextField else { return }
+            text = textField.stringValue
+        }
+        func control(
+            _ control: NSControl,
+            textView: NSTextView,
+            doCommandBy commandSelector: Selector
+        ) -> Bool {
+            guard commandSelector == #selector(NSResponder.insertNewline(_:)) else { return false }
+            text = textField?.stringValue ?? text
+            guard canSubmitFromKeyboard else { return true }
+            onSubmit()
+            return true
+        }
+        fileprivate func focusAndSelectText() {
+            guard let textField, let window = textField.window else { return }
+            window.makeFirstResponder(textField)
+            guard !didSelectInitialText else { return }
+            textField.selectText(nil)
+            didSelectInitialText = true
+            DispatchQueue.main.async { [weak self] in
+                self?.canSubmitFromKeyboard = true
+            }
+            log.debug("[HIGNameField] focused and selected initial name")
+        }
+    }
+}
+
+// MARK: - HIG Attached Text Field
+private final class HIGAttachedTextField: NSTextField {
+    var onAttachedToWindow: (() -> Void)?
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else { return }
+        onAttachedToWindow?()
+    }
+}
+
 // MARK: - View Extension
 extension View {
     func higAutoFocusTextField() -> some View {

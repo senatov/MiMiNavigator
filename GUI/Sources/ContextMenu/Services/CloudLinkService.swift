@@ -118,19 +118,4 @@ enum CloudLinkService {
         NSWorkspace.shared.open(url)
     }
 
-
-
-    /// Extract relative path within cloud storage folder
-    private static func extractCloudRelativePath(from fullPath: String, storagePrefix: String, providerPrefix: String) -> String {
-        // Path pattern: ~/Library/CloudStorage/OneDrive-Personal/some/path
-        guard fullPath.contains(storagePrefix) else { return fullPath }
-        let afterStorage = fullPath.replacingOccurrences(of: storagePrefix, with: "")
-        // skip "OneDrive-Personal/" or "GoogleDrive-email@/" prefix
-        let components = afterStorage.split(separator: "/", maxSplits: 1)
-        guard components.count > 1,
-              components[0].hasPrefix(providerPrefix) else {
-            return afterStorage
-        }
-        return String(components[1])
-    }
 }

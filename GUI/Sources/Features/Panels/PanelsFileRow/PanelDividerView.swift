@@ -180,10 +180,6 @@ struct PanelDividerView: View {
     }
 
 
-    private var tooltipMaxWidth: CGFloat {
-        max(120, min(220, containerWidth - 32))
-    }
-
 
     @ViewBuilder
     private var tooltipLayer: some View {
@@ -206,10 +202,6 @@ struct PanelDividerView: View {
         return max(26, min(containerHeight - 26, preferredY))
     }
 
-
-    private var clampedTooltipY: CGFloat {
-        max(26, min(containerHeight - 26, divider.tooltipPosition.y))
-    }
 
 
     @ViewBuilder

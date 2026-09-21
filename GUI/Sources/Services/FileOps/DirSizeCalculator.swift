@@ -27,27 +27,29 @@ struct DirScanResult: Sendable {
 
 // MARK: - Directory Size Calculator
 enum DirSizeCalculator {
-
-    /// Scan a list of items (files and/or directories) and produce a flat manifest.
-    /// Runs on a background thread — safe to call from MainActor.
-    static func scan(_ items: [URL], fm: FileManager = .default) async -> DirScanResult {
-        let itemsCopy = items
-        return
-            await Task.detached(priority: .userInitiated) {
-                performScan(itemsCopy)
-            }
-            .value
-    }
-
-    /// Pure synchronous scan — no captured mutable state, safe for Sendable closure.
-    private static func performScan(_ items: [URL]) -> DirScanResult {
-        let fm = FileManager.default
+    private struct ScanAccumulator {
         var totalBytes: Int64 = 0
         var fileCount = 0
         var maxDepth = 0
         var maxFileSize: Int64 = 0
         var flatList: [DirScanResult.FileEntry] = []
+    }
 
+    /// Scan a list of items (files and/or directories) and produce a flat manifest.
+    /// Runs on a background thread — safe to call from MainActor.
+    static func scan(_ items: [URL], fm: FileManager = .default) async -> DirScanResult {
+        let itemsCopy = items
+        let fileManager = SendableFileManager(fm)
+        return
+            await Task.detached(priority: .userInitiated) {
+                performScan(itemsCopy, fm: fileManager.value)
+            }
+            .value
+    }
+
+    /// Pure synchronous scan — no captured mutable state, safe for Sendable closure.
+    private static func performScan(_ items: [URL], fm: FileManager) -> DirScanResult {
+        var result = ScanAccumulator()
         for item in items {
             guard !isServiceMetadataItem(item) else {
                 log.debug("[DirScanCalc] skip service metadata: \(item.path)")
@@ -60,10 +62,10 @@ enum DirSizeCalculator {
                 // .app / .framework / .bundle — treat as opaque file, don't recurse
                 if isPackage(at: item, fm: fm) {
                     let size = directoryTotalSize(at: item, fm: fm)
-                    totalBytes += size
-                    fileCount += 1
-                    maxFileSize = max(maxFileSize, size)
-                    flatList.append(
+                    result.totalBytes += size
+                    result.fileCount += 1
+                    result.maxFileSize = max(result.maxFileSize, size)
+                    result.flatList.append(
                         .init(
                             url: item,
                             relativePath: item.lastPathComponent,
@@ -72,7 +74,7 @@ enum DirSizeCalculator {
                         ))
                 } else {
                     // add root dir itself so createDirectoryStructure() can mkdir it
-                    flatList.append(
+                    result.flatList.append(
                         .init(
                             url: item,
                             relativePath: item.lastPathComponent,
@@ -84,19 +86,15 @@ enum DirSizeCalculator {
                         baseURL: item.deletingLastPathComponent(),
                         depth: 0,
                         fm: fm,
-                        totalBytes: &totalBytes,
-                        fileCount: &fileCount,
-                        maxDepth: &maxDepth,
-                        maxFileSize: &maxFileSize,
-                        flatList: &flatList
+                        result: &result
                     )
                 }
             } else {
                 let size = fileSize(at: item, fm: fm)
-                totalBytes += size
-                fileCount += 1
-                maxFileSize = max(maxFileSize, size)
-                flatList.append(
+                result.totalBytes += size
+                result.fileCount += 1
+                result.maxFileSize = max(result.maxFileSize, size)
+                result.flatList.append(
                     .init(
                         url: item,
                         relativePath: item.lastPathComponent,
@@ -106,13 +104,13 @@ enum DirSizeCalculator {
             }
         }
 
-        log.debug("[DirScanCalc] \(fileCount) files, \(totalBytes) bytes, depth=\(maxDepth), maxFile=\(maxFileSize)")
+        log.debug("[DirScanCalc] \(result.fileCount) files, \(result.totalBytes) bytes, depth=\(result.maxDepth), maxFile=\(result.maxFileSize)")
         return DirScanResult(
-            totalBytes: totalBytes,
-            fileCount: fileCount,
-            maxDepth: maxDepth,
-            maxFileSize: maxFileSize,
-            flatList: flatList
+            totalBytes: result.totalBytes,
+            fileCount: result.fileCount,
+            maxDepth: result.maxDepth,
+            maxFileSize: result.maxFileSize,
+            flatList: result.flatList
         )
     }
 
@@ -123,19 +121,14 @@ enum DirSizeCalculator {
         baseURL: URL,
         depth: Int,
         fm: FileManager,
-        totalBytes: inout Int64,
-        fileCount: inout Int,
-        maxDepth: inout Int,
-        maxFileSize: inout Int64,
-        flatList: inout [DirScanResult.FileEntry]
+        result: inout ScanAccumulator
     ) {
-        maxDepth = max(maxDepth, depth)
-
+        result.maxDepth = max(result.maxDepth, depth)
         guard
             let enumerator = fm.enumerator(
                 at: dirURL,
                 includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-                options: [.skipsHiddenFiles]
+                options: []
             )
         else {
             log.warning("[DirScanCalc] can't enumerate: \(dirURL.path)")
@@ -157,22 +150,21 @@ enum DirSizeCalculator {
                     // Package (.app, .framework, .bundle) — opaque, don't recurse
                     enumerator.skipDescendants()
                     let size = directoryTotalSize(at: fileURL, fm: fm)
-                    totalBytes += size
-                    fileCount += 1
-                    maxFileSize = max(maxFileSize, size)
+                    result.totalBytes += size
+                    result.fileCount += 1
+                    result.maxFileSize = max(result.maxFileSize, size)
                     let relPath = relativePath(of: fileURL, base: baseURL)
-                    flatList.append(.init(url: fileURL, relativePath: relPath, size: size, isDirectory: false))
+                    result.flatList.append(.init(url: fileURL, relativePath: relPath, size: size, isDirectory: false))
                 } else if isDir {
                     let relPath = relativePath(of: fileURL, base: baseURL)
-                    flatList.append(.init(url: fileURL, relativePath: relPath, size: 0, isDirectory: true))
+                    result.flatList.append(.init(url: fileURL, relativePath: relPath, size: 0, isDirectory: true))
                 } else {
                     let size = Int64(vals.fileSize ?? 0)
-                    totalBytes += size
-                    fileCount += 1
-                    maxFileSize = max(maxFileSize, size)
-
+                    result.totalBytes += size
+                    result.fileCount += 1
+                    result.maxFileSize = max(result.maxFileSize, size)
                     let relPath = relativePath(of: fileURL, base: baseURL)
-                    flatList.append(.init(url: fileURL, relativePath: relPath, size: size, isDirectory: false))
+                    result.flatList.append(.init(url: fileURL, relativePath: relPath, size: size, isDirectory: false))
                 }
             } catch {
                 log.warning("[DirScanCalc] skip: \(fileURL.path) — \(error.localizedDescription)")
@@ -200,19 +192,15 @@ enum DirSizeCalculator {
         ".DocumentRevisions-V100",
         ".apdisk"
     ]
-
-
     private static func isPackage(at url: URL, fm: FileManager) -> Bool {
         (try? url.resourceValues(forKeys: [.isPackageKey]).isPackage) ?? false
     }
-
-
     /// Total size of all files inside a package/directory (for progress estimation)
     private static func directoryTotalSize(at dirURL: URL, fm: FileManager) -> Int64 {
         guard let enumerator = fm.enumerator(
-            at: dirURL,
-            includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
-            options: [.skipsHiddenFiles]
+                at: dirURL,
+                includingPropertiesForKeys: [.fileSizeKey, .isDirectoryKey],
+                options: []
         ) else { return 0 }
         var total: Int64 = 0
         for case let fileURL as URL in enumerator {
@@ -230,5 +218,13 @@ enum DirSizeCalculator {
             return rel.hasPrefix("/") ? String(rel.dropFirst()) : rel
         }
         return url.lastPathComponent
+    }
+}
+
+// MARK: - Sendable File Manager
+private struct SendableFileManager: @unchecked Sendable {
+    let value: FileManager
+    init(_ value: FileManager) {
+        self.value = value
     }
 }

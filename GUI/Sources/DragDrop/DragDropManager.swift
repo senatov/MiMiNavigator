@@ -48,7 +48,6 @@ final class DragDropManager {
         AppState.isRemotePath(destination)
     }
 
-    // MARK: - Start Drag
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide, appState: AppState? = nil) {
         log.debug("[DnD] drag started: \(files.count) item(s) from \(panelSide)")
@@ -63,7 +62,6 @@ final class DragDropManager {
         startInternalReleaseWatchIfNeeded()
     }
 
-    // MARK: - End Drag
     func endDrag() {
         dragCleanupTask?.cancel()
         dragCleanupTask = nil
@@ -154,7 +152,6 @@ final class DragDropManager {
         return x < dividerX ? .left : .right
     }
 
-    // MARK: - Set Drop Target
     func setDropTarget(_ url: URL?) {
         dropTargetPath = url
     }

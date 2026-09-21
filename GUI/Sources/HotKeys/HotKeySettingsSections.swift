@@ -266,7 +266,7 @@ struct HotKeyBindingsList: View {
                 .font(.system(size: 10))
                 .foregroundStyle(categoryColor(category))
             Text(category.displayName)
-                .font(.system(size: 11, weight: .light))
+                .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
         }

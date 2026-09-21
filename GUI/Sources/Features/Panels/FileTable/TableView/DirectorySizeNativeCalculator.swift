@@ -12,6 +12,8 @@ import Foundation
 enum DirectorySizeNativeCalculator {
     private static let maximumEntryCount = 200_000
     private static let maximumDuration: TimeInterval = 8
+    private static let fallbackMaximumEntryCount = 500_000
+    private static let fallbackMaximumDuration: TimeInterval = 20
     private static let autoreleaseBatchSize = 512
 
     // MARK: - Shallow Size
@@ -41,11 +43,34 @@ enum DirectorySizeNativeCalculator {
             log.debug("[DirectorySizeService] skipping unreadable directory: \(url.path)")
             return DirectorySizeService.unavailableSize
         }
-        return fullRecursive(url, cancellation: cancellation)
+        return fullRecursive(
+            url,
+            cancellation: cancellation,
+            options: [],
+            maximumEntryCount: maximumEntryCount,
+            maximumDuration: maximumDuration
+        )
+    }
+
+    // MARK: - Fallback Directory Size
+    static func fallbackDirectorySize(_ url: URL, cancellation: DirectorySizeCancellationState) -> Int64 {
+        fullRecursive(
+            url,
+            cancellation: cancellation,
+            options: [],
+            maximumEntryCount: fallbackMaximumEntryCount,
+            maximumDuration: fallbackMaximumDuration
+        )
     }
 
     // MARK: - Full Recursive
-    private static func fullRecursive(_ url: URL, cancellation: DirectorySizeCancellationState) -> Int64 {
+    private static func fullRecursive(
+        _ url: URL,
+        cancellation: DirectorySizeCancellationState,
+        options: FileManager.DirectoryEnumerationOptions,
+        maximumEntryCount: Int,
+        maximumDuration: TimeInterval
+    ) -> Int64 {
         guard FileManager.default.isReadableFile(atPath: url.path) else {
             log.debug("[DirectorySizeService] fullRecursive skipped unreadable: \(url.path)")
             return DirectorySizeService.unavailableSize
@@ -56,14 +81,12 @@ enum DirectorySizeNativeCalculator {
             .isDirectoryKey,
             .isSymbolicLinkKey,
             .fileSizeKey,
-            .fileAllocatedSizeKey,
-            .totalFileAllocatedSizeKey,
         ]
         guard
             let enumerator = FileManager.default.enumerator(
                 at: url,
                 includingPropertiesForKeys: Array(keys),
-                options: [.skipsPackageDescendants],
+                options: options,
                 errorHandler: { fileURL, error in
                     if (error as NSError).code != NSFileReadNoPermissionError {
                         log.warning("[DirectorySizeService] enumerate error: \(fileURL.path) error=\(error.localizedDescription)")
@@ -95,7 +118,7 @@ enum DirectorySizeNativeCalculator {
                         accumulation.append(accumulatedSize(from: values, path: fileURL.path))
                     } else {
                         accumulation.resourceValueFailures += 1
-                        if let statSize = statAllocatedSize(path: fileURL.path) {
+                        if let statSize = statLogicalSize(path: fileURL.path) {
                             accumulation.statFallbacks += 1
                             accumulation.countedFiles += 1
                             accumulation.total += statSize
@@ -143,23 +166,17 @@ enum DirectorySizeNativeCalculator {
         guard values.isRegularFile == true else {
             return SizeAccumulation()
         }
-        if let allocated = values.totalFileAllocatedSize {
-            return SizeAccumulation(size: Int64(allocated), countedFile: true)
-        }
-        if let allocated = values.fileAllocatedSize {
-            return SizeAccumulation(size: Int64(allocated), countedFile: true)
-        }
         if let size = values.fileSize {
             return SizeAccumulation(size: Int64(size), countedFile: true)
         }
-        guard let statSize = statAllocatedSize(path: path) else {
+        guard let statSize = statLogicalSize(path: path) else {
             return SizeAccumulation(countedFile: true)
         }
         return SizeAccumulation(size: statSize, usedStatFallback: true, countedFile: true)
     }
 
     // MARK: - Stat Allocated Size
-    private static func statAllocatedSize(path: String) -> Int64? {
+    private static func statLogicalSize(path: String) -> Int64? {
         var statbuf = stat()
         if lstat(path, &statbuf) != 0 {
             return nil
@@ -168,7 +185,7 @@ enum DirectorySizeNativeCalculator {
         if type == S_IFDIR || type == S_IFLNK {
             return nil
         }
-        return Int64(statbuf.st_blocks) * 512
+        return Int64(statbuf.st_size)
     }
 
 }

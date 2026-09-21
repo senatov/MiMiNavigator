@@ -125,7 +125,7 @@ struct SettingsWindowView: View {
                                 .font(.system(size: 20, weight: .light))
                                 .foregroundStyle(.tertiary)
                             Text("No matching settings")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.caption.weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)

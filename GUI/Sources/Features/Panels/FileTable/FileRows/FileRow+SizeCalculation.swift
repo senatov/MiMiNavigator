@@ -151,6 +151,13 @@ extension FileRow {
             if shouldFallback {
                 log.debug("[FileRow] Phase 2 unavailable for '\(file.nameStr)' — running fallback scan")
                 let fallback = await fallbackDirectoryScanAsync(url: url)
+                if fallback == DirectorySizeService.unavailableSize {
+                    file.cachedDirectorySize = DirectorySizeService.unavailableSize
+                    file.sizeIsExact = false
+                    file.sizeCalculationStarted = false
+                    log.info("[FileRow] Phase 2 fallback reached its scan budget for '\(file.nameStr)'")
+                    return
+                }
                 file.cachedDirectorySize = fallback
                 file.sizeIsExact = fallback > 0
                 file.sizeCalculationStarted = false
@@ -168,7 +175,7 @@ extension FileRow {
                 return
             }
         }
-        let finalSize = await resolveZeroSizeIfNeeded(size, url: url)
+        let finalSize = size
         if finalSize == 0 {
             let shallow = file.cachedShallowSize ?? 0
             let looksVirtual = file.isSymbolicDirectory || isLikelyVirtualDirectory(url)
@@ -180,8 +187,12 @@ extension FileRow {
 
             if shouldFallback {
                 let fallback = await fallbackDirectoryScanAsync(url: url)
-
-                if fallback > 0 {
+                if fallback == DirectorySizeService.unavailableSize {
+                    file.cachedDirectorySize = DirectorySizeService.unavailableSize
+                    file.sizeIsExact = false
+                    file.securityState = .normal
+                    log.info("[FileRow] Phase 2 fallback reached its scan budget for '\(file.nameStr)'")
+                } else if fallback > 0 {
                     file.cachedDirectorySize = fallback
                     file.sizeIsExact = true
                     file.securityState = .normal
@@ -218,27 +229,10 @@ extension FileRow {
         log.info("[FileRow] Phase 2 complete: '\(file.nameStr)' size=\(finalSize)")
     }
 
-    // MARK: - Suspicious zero handler
-    private func resolveZeroSizeIfNeeded(_ size: Int64, url: URL) async -> Int64 {
-        if size == DirectorySizeService.unavailableSize { return size }
-        return size
-    }
-
     // MARK: - Shallow size with timeout
     private func shallowSizeWithTimeout(url: URL, timeoutMs: UInt64) async -> Int64? {
         let target = resolvedDirectorySizeTargetURL(from: url)
-        return await withTaskGroup(of: Int64?.self) { group in
-            group.addTask(priority: .utility) {
-                await DirectorySizeService.shared.shallowSize(for: target)
-            }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: timeoutMs * 1_000_000)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first
-        }
+        return await DirectorySizeService.shared.shallowSize(for: target, timeoutMilliseconds: timeoutMs)
     }
 
     // MARK: - Helpers

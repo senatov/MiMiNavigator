@@ -193,55 +193,41 @@ final class ColorThemeStore {
 
     private func applyOverrides(to base: ColorTheme) -> ColorTheme {
         var theme = base
-        if let c = Color(hex: ud("color.panelBackground")) { theme.panelBackground = c }
-        if let c = Color(hex: ud("color.panelText")) { theme.panelText = c }
-        if let c = Color(hex: ud("color.dirName")) { theme.dirNameColor = c }
-        if let c = Color(hex: ud("color.fileName")) { theme.fileNameColor = c }
-        if let c = Color(hex: ud("color.symlink")) { theme.symlinkColor = c }
-        if let c = Color(hex: ud("color.selectionActive")) { theme.selectionActive = c }
-        if let c = Color(hex: ud("color.selectionInactive")) { theme.selectionInactive = c }
-        if let c = Color(hex: ud("color.selectionBorder")) { theme.selectionBorder = c }
+        let colorOverrides: [(String, WritableKeyPath<ColorTheme, Color>)] = [
+            ("color.panelBackground", \.panelBackground), ("color.panelText", \.panelText),
+            ("color.dirName", \.dirNameColor), ("color.fileName", \.fileNameColor),
+            ("color.symlink", \.symlinkColor), ("color.selectionActive", \.selectionActive),
+            ("color.selectionInactive", \.selectionInactive), ("color.selectionBorder", \.selectionBorder),
+            ("color.separator", \.separatorColor), ("color.dialogBase", \.dialogBase),
+            ("color.dialogStripe", \.dialogStripe), ("color.accent", \.accentColor),
+            ("color.dialogBackground", \.dialogBackground), ("color.hiddenFile", \.hiddenFileColor),
+            ("color.markedFile", \.markedFileColor), ("color.parentEntry", \.parentEntryColor),
+            ("color.archivePath", \.archivePathColor), ("color.markedCount", \.markedCountColor),
+            ("color.columnName", \.columnNameColor), ("color.columnSize", \.columnSizeColor),
+            ("color.columnKind", \.columnKindColor), ("color.columnDate", \.columnDateColor),
+            ("color.columnPermissions", \.columnPermissionsColor), ("color.columnOwner", \.columnOwnerColor),
+            ("color.columnGroup", \.columnGroupColor), ("color.columnChildCount", \.columnChildCountColor),
+            ("color.columnDivider", \.columnDividerColor), ("color.dividerNormal", \.dividerNormalColor),
+            ("color.dividerActive", \.dividerActiveColor), ("color.panelBorderActive", \.panelBorderActive),
+            ("color.panelBorderInactive", \.panelBorderInactive), ("color.warmWhite", \.warmWhite),
+            ("color.zebraActiveEven", \.zebraActiveEven), ("color.zebraActiveOdd", \.zebraActiveOdd),
+            ("color.zebraInactiveEven", \.zebraInactiveEven), ("color.zebraInactiveOdd", \.zebraInactiveOdd),
+            ("color.filterActive", \.filterActiveColor), ("color.breadcrumbTextActive", \.breadcrumbTextActive),
+            ("color.breadcrumbTextInactive", \.breadcrumbTextInactive),
+            ("color.breadcrumbBgActive", \.breadcrumbBgActive),
+            ("color.breadcrumbBgInactive", \.breadcrumbBgInactive),
+            ("color.breadcrumbVariable", \.breadcrumbVariableColor),
+        ]
+        for (key, keyPath) in colorOverrides {
+            if let color = Color(hex: ud(key)) {
+                theme[keyPath: keyPath] = color
+            }
+        }
         theme.selectionLineWidth = CGFloat(
             udD("selection.lineWidth", fallback: Double(base.selectionLineWidth))
         )
-        if let c = Color(hex: ud("color.separator")) { theme.separatorColor = c }
-        if let c = Color(hex: ud("color.dialogBase")) { theme.dialogBase = c }
-        if let c = Color(hex: ud("color.dialogStripe")) { theme.dialogStripe = c }
-        if let c = Color(hex: ud("color.accent")) { theme.accentColor = c }
-        if let c = Color(hex: ud("color.dialogBackground")) { theme.dialogBackground = c }
-        // Extended tokens
-        if let c = Color(hex: ud("color.hiddenFile")) { theme.hiddenFileColor = c }
-        if let c = Color(hex: ud("color.markedFile")) { theme.markedFileColor = c }
-        if let c = Color(hex: ud("color.parentEntry")) { theme.parentEntryColor = c }
-        if let c = Color(hex: ud("color.archivePath")) { theme.archivePathColor = c }
-        if let c = Color(hex: ud("color.markedCount")) { theme.markedCountColor = c }
-        if let c = Color(hex: ud("color.columnName")) { theme.columnNameColor = c }
-        if let c = Color(hex: ud("color.columnSize")) { theme.columnSizeColor = c }
-        if let c = Color(hex: ud("color.columnKind")) { theme.columnKindColor = c }
-        if let c = Color(hex: ud("color.columnDate")) { theme.columnDateColor = c }
-        if let c = Color(hex: ud("color.columnPermissions")) { theme.columnPermissionsColor = c }
-        if let c = Color(hex: ud("color.columnOwner")) { theme.columnOwnerColor = c }
-        if let c = Color(hex: ud("color.columnGroup")) { theme.columnGroupColor = c }
-        if let c = Color(hex: ud("color.columnChildCount")) { theme.columnChildCountColor = c }
-        if let c = Color(hex: ud("color.columnDivider")) { theme.columnDividerColor = c }
-        if let c = Color(hex: ud("color.dividerNormal")) { theme.dividerNormalColor = c }
-        if let c = Color(hex: ud("color.dividerActive")) { theme.dividerActiveColor = c }
-        if let c = Color(hex: ud("color.panelBorderActive")) { theme.panelBorderActive = c }
-        if let c = Color(hex: ud("color.panelBorderInactive")) { theme.panelBorderInactive = c }
         let bw = udD("panel.borderWidth")
         if bw > 0 { theme.panelBorderWidth = CGFloat(bw) }
-        if let c = Color(hex: ud("color.warmWhite")) { theme.warmWhite = c }
-        if let c = Color(hex: ud("color.zebraActiveEven")) { theme.zebraActiveEven = c }
-        if let c = Color(hex: ud("color.zebraActiveOdd")) { theme.zebraActiveOdd = c }
-        if let c = Color(hex: ud("color.zebraInactiveEven")) { theme.zebraInactiveEven = c }
-        if let c = Color(hex: ud("color.zebraInactiveOdd")) { theme.zebraInactiveOdd = c }
-        if let c = Color(hex: ud("color.filterActive")) { theme.filterActiveColor = c }
-        // BreadCrumb
-        if let c = Color(hex: ud("color.breadcrumbTextActive")) { theme.breadcrumbTextActive = c }
-        if let c = Color(hex: ud("color.breadcrumbTextInactive")) { theme.breadcrumbTextInactive = c }
-        if let c = Color(hex: ud("color.breadcrumbBgActive")) { theme.breadcrumbBgActive = c }
-        if let c = Color(hex: ud("color.breadcrumbBgInactive")) { theme.breadcrumbBgInactive = c }
-        if let c = Color(hex: ud("color.breadcrumbVariable")) { theme.breadcrumbVariableColor = c }
         let fs = udD("breadcrumb.fontSize")
         if fs > 0 { theme.breadcrumbFontSize = CGFloat(fs) }
         return theme

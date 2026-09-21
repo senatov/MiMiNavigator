@@ -31,10 +31,10 @@ struct SystemConflictSheet: View {
                     .foregroundStyle(.orange)
 
                 Text("Shortcut Conflict")
-                    .font(.system(size: 16, weight: .light))
+                    .font(.headline)
 
                 Text(info.description)
-                    .font(.system(size: 14))
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)

@@ -181,7 +181,7 @@ private struct NoticeCard: View {
                 Spacer()
                 if historyNumber != nil, let notice {
                     Text(notice.createdAt, format: .dateTime.day().month().year().hour().minute().second())
-                        .font(.system(size: 10, weight: .light))
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
@@ -218,7 +218,7 @@ private struct NoticeCard: View {
                 }
             }
         }
-        .font(.system(size: 11, weight: .light))
+        .font(.caption)
         .fixedSize(horizontal: false, vertical: true)
     }
 }

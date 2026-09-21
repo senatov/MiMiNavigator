@@ -95,13 +95,13 @@ private struct CommanderActionButton: View {
                 elementDivider
                 if !shortcut.isEmpty {
                     Text(shortcut)
-                        .font(.system(size: 14, weight: .light))
+                        .font(.callout)
                         .foregroundStyle(shortcutColor)
                         .fixedSize()
                     elementDivider
                 }
                 Text(title)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.callout)
                     .foregroundStyle(.primary)
             }
             .lineLimit(1)

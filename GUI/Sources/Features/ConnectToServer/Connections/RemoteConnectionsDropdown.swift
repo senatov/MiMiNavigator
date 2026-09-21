@@ -22,7 +22,6 @@ struct RemoteConnectionsDropdown: View {
 
     @State private var store = RemoteServerStore.shared
     @State private var manager = RemoteConnectionManager.shared
-    @State private var isLabelHovered = false
     private var servers: [RemoteServer] { store.servers }
 
 
@@ -61,27 +60,11 @@ struct RemoteConnectionsDropdown: View {
         return HStack(spacing: 5) {
             ConnectionStatusIcon(kind: .antenna, isActive: activeCount > 0)
             Text(activeCount > 0 ? "Connections · \(activeCount)" : "Connections")
-                .font(.system(size: 14, weight: .light))
+                .font(.callout)
                 .foregroundStyle(Color.primary.opacity(0.92))
                 .lineLimit(1)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background {
-            if isLabelHovered {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color.primary.opacity(0.10))
-            }
-        }
-        .overlay {
-            if isLabelHovered {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.6)
-            }
-        }
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.12)) { isLabelHovered = hovering }
-        }
+        .topDropdownLabelSurface()
     }
 
 
@@ -319,18 +302,6 @@ struct RemoteConnectionsDropdown: View {
     private func restorePanel(_ side: FavPanelSide, to url: URL) async {
         await navigatePanel(to: url, for: side)
     }
-
-
-    // MARK: - Connection Error via ProgressPanel
-    private func showConnectionError(server: RemoteServer, message: String) {
-        ProgressPanel.shared.show(
-            icon: "exclamationmark.triangle",
-            title: server.displayName,
-            status: message
-        )
-        ProgressPanel.shared.finish(success: false, message: message)
-    }
-
 
 }
 

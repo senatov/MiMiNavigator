@@ -35,7 +35,7 @@ struct TopMenuButtonStyle: ButtonStyle {
         // MARK: - Body
         var body: some View {
             configuration.label
-                .font(.system(size: 14, weight: .light))
+                .font(.callout)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
                 .frame(minHeight: minHeight, alignment: .center)

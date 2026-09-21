@@ -49,7 +49,6 @@ extension AppState {
                 leftFiles: displayedLeftFiles,
                 rightFiles: displayedRightFiles
             )
-            AutoFitScheduler.shared.scheduleInitialFit(appState: self)
             startConfigurationAutosave()
             log.info("[AppState] initialize() async scan complete")
         }

@@ -16,7 +16,7 @@ extension ConvertMediaDialog {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Convert Media")
-                    .font(.system(size: 16, weight: .light))
+                    .font(.headline)
                     .foregroundStyle(.black)
                 Text("Select target format and output location.")
                     .font(.caption)
@@ -40,15 +40,15 @@ extension ConvertMediaDialog {
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Source")
-                    .font(.system(size: 14, weight: .light))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.blue)
                     .textCase(.uppercase)
                 Text(file.nameStr)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.body)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Text(file.urlValue.deletingLastPathComponent().path)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.callout)
                     .foregroundStyle(.brown)
                     .lineLimit(1)
                     .truncationMode(.head)
@@ -56,7 +56,7 @@ extension ConvertMediaDialog {
             Spacer()
             if let sourceFormat {
                 Text(sourceFormat.displayName)
-                    .font(.system(size: 14, weight: .light))
+                    .font(.callout)
                     .foregroundStyle(.brown)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
@@ -79,7 +79,7 @@ extension ConvertMediaDialog {
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Preset")
-                    .font(.system(size: 14, weight: .light))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.blue)
                     .textCase(.uppercase)
                 Picker("", selection: $targetPreset) {
@@ -94,7 +94,7 @@ extension ConvertMediaDialog {
                     targetFormat = newPreset.targetFormat
                 }
                 Text(targetPreset.subtitle)
-                    .font(.system(size: 11, weight: .light))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -117,7 +117,7 @@ extension ConvertMediaDialog {
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("OUTPUT")
-                        .font(.system(size: 14, weight: .light))
+                        .font(.caption.weight(.medium))
                         .foregroundStyle(.blue)
                     HStack(spacing: 4) {
                         TextField("Filename", text: $outputName)
@@ -138,7 +138,7 @@ extension ConvertMediaDialog {
             }
             HStack(spacing: 10) {
                 Image(systemName: "folder")
-                    .font(.system(size: 14, weight: .light))
+                    .font(.system(size: 14, weight: .regular))
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
                 Text(outputDir)
@@ -171,11 +171,11 @@ extension ConvertMediaDialog {
     var toolStatusBar: some View {
         HStack(spacing: 6) {
             Image(systemName: "wrench.and.screwdriver")
-                .font(.system(size: 14, weight: .light))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(.tertiary)
             Text(toolInfo)
-                .font(.system(size: 14, weight: .light))
-                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Spacer()
         }
         .padding(.horizontal, Layout.hPad + 4)

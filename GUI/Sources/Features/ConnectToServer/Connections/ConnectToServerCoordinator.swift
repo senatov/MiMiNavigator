@@ -104,18 +104,6 @@ final class ConnectToServerCoordinator {
         )
     }
 
-    // MARK: - Existing Panel Lookup
-    private func existingPanel() -> NSPanel? {
-        if let window, window.isVisible {
-            return window
-        }
-        return NSApp.windows
-            .compactMap { $0 as? NSPanel }
-            .first { panel in
-                panel.isVisible && panel.title == panelTitle
-            }
-    }
-
     // MARK: - Close
     func close() {
         guard let window else {

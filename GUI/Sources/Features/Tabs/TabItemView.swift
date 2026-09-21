@@ -70,7 +70,7 @@ struct TabItemView: View {
                 .frame(width: 12)
 
             Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.system(size: 12, weight: .light))
+                .font(.caption)
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
 

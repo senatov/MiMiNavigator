@@ -54,10 +54,6 @@ struct FilePanelView: View {
         makeFileContentKey(files: files, path: panelURL.path)
     }
 
-    private var firstNonParentFile: CustomFile? {
-        files.first(where: { !$0.isParentEntry })
-    }
-
     private var remoteConnectionManager: RemoteConnectionManager {
         RemoteConnectionManager.shared
     }
@@ -297,29 +293,6 @@ struct FilePanelView: View {
         setSelectedFile(firstNonParent)
     }
 
-    // MARK: - Enter directory
-
-    private func refreshLocalDirectory(_ url: URL) async {
-        let _ = log.debug(#function + ": \(url.path)")
-        await appState.navigateToDirectory(url.path, on: viewModel.panelSide)
-    }
-
-    private func enterDirectory(_ file: CustomFile) {
-        let _ = log.debug(#function)
-        let newURL = file.urlValue.resolvingSymlinksInPath()
-        let newPath = newURL.path
-
-        var isDir: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: newPath, isDirectory: &isDir), isDir.boolValue else {
-            showCannotOpenAlert(file)
-            return
-        }
-
-        Task { @MainActor in
-            await refreshLocalDirectory(newURL)
-        }
-    }
-
     // MARK: - Open file with default app
     private func openFile(_ file: CustomFile) {
         let _ = log.debug(#function + ": \(file.nameStr)")
@@ -329,24 +302,6 @@ struct FilePanelView: View {
                 log.error("Failed to open file: \(error.localizedDescription)")
             }
         }
-    }
-
-    // MARK: - Show alert for broken symlink
-    private func showCannotOpenAlert(_ file: CustomFile) {
-        InAppNoticeCenter.shared.showBanner(
-            title: "Cannot Open Directory",
-            message: "The directory “\(file.nameStr)” may be a broken symlink or you may not have permission."
-        )
-    }
-
-    // MARK: - Prepend ".." parent directory entry
-    private func prependParentEntry(to files: [CustomFile], currentPath: String?) -> [CustomFile] {
-        guard let path = currentPath, path != "/" else {
-            return files
-        }
-
-        let parentEntry = ParentDirectoryEntry.make(for: path)
-        return [parentEntry] + files
     }
 
     // MARK: - Generate content-aware key for file table refresh

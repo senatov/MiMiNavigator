@@ -30,10 +30,6 @@ final class ProgressInteractionView: NSView {
         super.mouseDown(with: event)
     }
 
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-    }
-
     override func mouseDragged(with event: NSEvent) {
         onInteraction?()
         super.mouseDragged(with: event)
@@ -42,10 +38,6 @@ final class ProgressInteractionView: NSView {
     override func rightMouseDown(with event: NSEvent) {
         onInteraction?()
         super.rightMouseDown(with: event)
-    }
-
-    override func rightMouseUp(with event: NSEvent) {
-        super.rightMouseUp(with: event)
     }
 
     override func rightMouseDragged(with event: NSEvent) {
@@ -58,17 +50,9 @@ final class ProgressInteractionView: NSView {
         super.otherMouseDown(with: event)
     }
 
-    override func otherMouseUp(with event: NSEvent) {
-        super.otherMouseUp(with: event)
-    }
-
     override func otherMouseDragged(with event: NSEvent) {
         onInteraction?()
         super.otherMouseDragged(with: event)
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        super.mouseMoved(with: event)
     }
 
     override func scrollWheel(with event: NSEvent) {
@@ -100,10 +84,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
         super.mouseDown(with: event)
     }
 
-    override func mouseUp(with event: NSEvent) {
-        super.mouseUp(with: event)
-    }
-
     override func mouseDragged(with event: NSEvent) {
         onInteraction?()
         super.mouseDragged(with: event)
@@ -112,10 +92,6 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
     override func rightMouseDown(with event: NSEvent) {
         onInteraction?()
         super.rightMouseDown(with: event)
-    }
-
-    override func rightMouseUp(with event: NSEvent) {
-        super.rightMouseUp(with: event)
     }
 
     override func rightMouseDragged(with event: NSEvent) {
@@ -128,17 +104,9 @@ final class ProgressInteractionEffectView: NSVisualEffectView {
         super.otherMouseDown(with: event)
     }
 
-    override func otherMouseUp(with event: NSEvent) {
-        super.otherMouseUp(with: event)
-    }
-
     override func otherMouseDragged(with event: NSEvent) {
         onInteraction?()
         super.otherMouseDragged(with: event)
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        super.mouseMoved(with: event)
     }
 
     override func scrollWheel(with event: NSEvent) {

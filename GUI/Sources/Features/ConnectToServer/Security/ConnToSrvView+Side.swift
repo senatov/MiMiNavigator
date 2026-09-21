@@ -115,7 +115,7 @@ extension ConnToSrvrView {
                 .foregroundStyle(DialogColors.accent)
 
             Text(draft.remoteProtocol.rawValue)
-                .font(.system(size: 17, weight: .light))
+                .font(.headline)
 
             ConnectionStatusLamp(server: draft, manager: connectionManager)
 
