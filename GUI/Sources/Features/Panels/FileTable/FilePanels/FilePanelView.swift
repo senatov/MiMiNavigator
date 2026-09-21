@@ -41,7 +41,7 @@ struct FilePanelView: View {
     }
 
     private var rawFiles: [CustomFile] {
-        viewModel.sortedFiles
+        appState.displayedFiles(for: viewModel.panelSide)
     }
 
     var files: [CustomFile] {

@@ -228,6 +228,17 @@ import LogKit
     @objc private func handleWindowDidDeminiaturize(_ notification: Notification) {
         guard !isTerminationCleanupRunning, appState?.isTerminating != true else { return }
         guard isMainApplicationWindow(notification.object) else { return }
+        let wasHidden = NSApp.isHidden
+        let previousPolicy = NSApp.activationPolicy()
+        if previousPolicy != .regular {
+            NSApp.setActivationPolicy(.regular)
+        }
+        if wasHidden {
+            NSApp.unhide(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.dockTile.display()
+        log.info("[WindowLifecycle] Dock state restored hidden=\(wasHidden) policy=\(previousPolicy.rawValue)")
         log.info("[WindowLifecycle] restored — rebuilding panel views and refreshing scanner")
         NotificationCenter.default.post(name: .mainWindowDidRestore, object: nil)
         appState?.forceRefreshBothPanels()
