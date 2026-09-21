@@ -62,11 +62,11 @@ struct AboutView: View {
             }
 
             Text(appName)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(.primary)
 
             Text(tagline)
-                .font(.system(size: 14, weight: .light))
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 20)
@@ -93,7 +93,7 @@ struct AboutView: View {
                 .textSelection(.enabled)
             Spacer()
         }
-        .font(.system(size: 12))
+        .font(.callout)
     }
 
     // MARK: - Links Section
@@ -136,20 +136,20 @@ struct AboutView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .light))
+                    .font(.body)
                     .foregroundStyle(.accent)
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.callout.weight(.medium))
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.system(size: 10, weight: .light))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 10))
+                    .font(.caption)
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 12)
@@ -163,7 +163,7 @@ struct AboutView: View {
     private var architectureSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Application Architecture")
-                .font(.system(size: 11, weight: .light))
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
@@ -233,11 +233,11 @@ struct AboutView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(name)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundStyle(.primary)
                 Text(description)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -251,7 +251,7 @@ struct AboutView: View {
     private var acknowledgmentsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Third-Party Libraries")
-                .font(.system(size: 11, weight: .light))
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
@@ -260,7 +260,7 @@ struct AboutView: View {
                     libraryRow(dependency)
                 }
                 Text("Optional External Tools")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
@@ -289,7 +289,7 @@ struct AboutView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
                         Text(dependency.name)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.caption.weight(.medium))
                             .foregroundStyle(.primary)
                         Text(dependency.license)
                             .font(.system(size: 9))
@@ -299,8 +299,8 @@ struct AboutView: View {
                             .background(Color.secondary.opacity(0.15), in: Capsule())
                     }
                     Text(dependency.description)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -320,8 +320,8 @@ struct AboutView: View {
     private var creditsSection: some View {
         VStack(spacing: 8) {
             Text("Built with")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
                 creditBadge("Swift 6", color: .orange)
@@ -330,13 +330,13 @@ struct AboutView: View {
             }
 
             Text(copyright)
-                .font(.system(size: 11))
+                .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.top, 6)
 
             Text("Released under GNU AGPL-3.0")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 14)
     }
