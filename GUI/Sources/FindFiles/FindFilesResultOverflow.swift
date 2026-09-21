@@ -14,7 +14,9 @@ struct FindFilesResultOverflow: View {
             isSelected: selected,
             displayedText: text,
             fullText: isName ? result.fileName + "\n" + result.filePath : text,
-            textFont: isName ? .systemFont(ofSize: 14, weight: .light) : .systemFont(ofSize: 12)
+            textFont: isName
+                ? .systemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+                : .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         )
     }
 }

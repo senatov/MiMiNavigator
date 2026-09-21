@@ -29,7 +29,7 @@ struct ArchivePasswordDialog: View {
 
                 VStack(spacing: 2) {
                     Text("The archive is password-protected:")
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
 
                     Text(archiveName)
@@ -64,13 +64,16 @@ struct ArchivePasswordDialog: View {
         .frame(width: 360)
         .keyboardFocusSection()
         .forcedDialogTabNavigation()
-        .background(DialogColors.base)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(DialogColors.base)
+                .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
         .onAppear { isPasswordFocused = true }
     }
 }

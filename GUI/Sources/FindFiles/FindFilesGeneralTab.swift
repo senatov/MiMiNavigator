@@ -175,7 +175,7 @@ struct FindFilesGeneralTab: View {
                 .foregroundStyle(iconColor)
                 .frame(width: 22, alignment: .center)
             Text(title)
-                .font(.system(size: 14))
+                .font(.body)
             Spacer()
             Toggle("", isOn: isOn)
                 .labelsHidden()

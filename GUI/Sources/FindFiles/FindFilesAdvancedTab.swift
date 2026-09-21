@@ -110,7 +110,7 @@ struct FindFilesAdvancedTab: View {
                         .frame(width: 180)
                         Spacer()
                     }
-                    .font(.system(size: 12))
+                    .font(.body)
                     .padding(.leading, 34)
                 }
             }
@@ -130,12 +130,12 @@ struct FindFilesAdvancedTab: View {
                 if viewModel.advancedSettings.useDateFilter {
                     HStack(spacing: 8) {
                         Text("From")
-                            .font(.system(size: 12))
+                            .font(.body)
                             .foregroundStyle(.secondary)
                         DatePicker("", selection: $viewModel.advancedSettings.dateFrom, displayedComponents: .date)
                             .labelsHidden()
                         Text("to")
-                            .font(.system(size: 12))
+                            .font(.body)
                             .foregroundStyle(.secondary)
                         DatePicker("", selection: $viewModel.advancedSettings.dateTo, displayedComponents: .date)
                             .labelsHidden()
@@ -166,7 +166,7 @@ struct FindFilesAdvancedTab: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text("Match")
-                    .font(.system(size: 12))
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 64, alignment: .trailing)
                 Picker("", selection: $viewModel.advancedSettings.staleTimestampFilter) {
@@ -182,7 +182,7 @@ struct FindFilesAdvancedTab: View {
 
             HStack(spacing: 8) {
                 Text("By")
-                    .font(.system(size: 12))
+                    .font(.body)
                     .foregroundStyle(.secondary)
                     .frame(width: 64, alignment: .trailing)
                 Picker("", selection: $viewModel.advancedSettings.staleCriterionMode) {
@@ -197,13 +197,13 @@ struct FindFilesAdvancedTab: View {
                 switch viewModel.advancedSettings.staleCriterionMode {
                 case .date:
                     Text("since")
-                        .font(.system(size: 12))
+                        .font(.body)
                         .foregroundStyle(.secondary)
                     DatePicker("", selection: $viewModel.advancedSettings.staleSinceDate, displayedComponents: .date)
                         .labelsHidden()
                 case .age:
                     Text("older than")
-                        .font(.system(size: 12))
+                        .font(.body)
                         .foregroundStyle(.secondary)
                     TextField("amount", text: $viewModel.advancedSettings.staleAgeAmount)
                         .textFieldStyle(.roundedBorder)
@@ -222,7 +222,7 @@ struct FindFilesAdvancedTab: View {
             if viewModel.advancedSettings.staleCriterionMode == .age {
                 HStack(spacing: 6) {
                     Text("Quick")
-                        .font(.system(size: 12))
+                        .font(.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 64, alignment: .trailing)
                     ForEach([1, 2, 3], id: \.self) { years in
@@ -245,7 +245,7 @@ struct FindFilesAdvancedTab: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.blue)
             Text("Content search scans text files only. Archive search supports ZIP, 7z, TAR, GZ, BZ2, XZ, RAR, JAR and 40+ other formats.")
-                .font(.system(size: 11))
+                .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
         }
@@ -267,7 +267,7 @@ struct FindFilesAdvancedTab: View {
                     .frame(width: 26, height: 26)
                     .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -299,10 +299,10 @@ struct FindFilesAdvancedTab: View {
                 .frame(width: 22)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 13))
+                    .font(.body)
                     .foregroundStyle(.primary)
                 Text(detail)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -328,10 +328,10 @@ struct FindFilesAdvancedTab: View {
                     .frame(width: 22)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Item type")
-                        .font(.system(size: 13))
+                        .font(.body)
                         .foregroundStyle(.primary)
                     Text("Choose which item types appear in the results")
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()

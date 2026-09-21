@@ -113,7 +113,7 @@ struct FindFilesWindowContent: View {
                     .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("File Search")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.headline)
                     Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
                         .font(DesignTokens.Typography.path)
                         .foregroundStyle(.secondary)
@@ -169,12 +169,12 @@ struct FindFilesWindowContent: View {
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(DialogColors.base.opacity(0.72))
+                .shadow(color: .black.opacity(0.045), radius: 4, y: 1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(DialogColors.border.opacity(0.72), lineWidth: 0.75)
         )
-        .shadow(color: .black.opacity(0.045), radius: 4, y: 1)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 

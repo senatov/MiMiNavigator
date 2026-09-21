@@ -38,15 +38,15 @@ enum DesignTokens {
 
     // MARK: - Semantic Typography
     enum Typography {
-        static let body = Font.system(size: 12, weight: .light)
-        static let label = Font.system(size: 13, weight: .light)
-        static let sectionTitle = Font.system(size: 13, weight: .regular)
-        static let caption = Font.system(size: 11, weight: .light)
-        static let micro = Font.system(size: 10, weight: .light)
-        static let path = Font.system(size: 11, weight: .light, design: .monospaced)
-        static let tableCell = Font.system(size: 12, weight: .light)
-        static let tableMono = Font.system(size: 12, weight: .light, design: .monospaced)
-        static let hotKey = Font.system(size: 12, weight: .light)
+        static let body = Font.body
+        static let label = Font.callout
+        static let sectionTitle = Font.headline
+        static let caption = Font.caption
+        static let micro = Font.caption2
+        static let path = Font.caption.monospaced()
+        static let tableCell = Font.body
+        static let tableMono = Font.body.monospacedDigit()
+        static let hotKey = Font.caption.monospaced()
     }
 
     // MARK: - Control Metrics

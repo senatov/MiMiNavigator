@@ -42,7 +42,7 @@ struct FindFilesQuickThresholds: View {
         .toggleStyle(.checkbox)
         .pickerStyle(.menu)
         .controlSize(.small)
-        .font(.system(size: 12))
+        .font(.body)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     // MARK: - Age Selection

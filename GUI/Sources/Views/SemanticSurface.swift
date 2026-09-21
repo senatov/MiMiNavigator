@@ -18,6 +18,11 @@ struct SemanticSurfaceStyle: ViewModifier {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(reduceTransparency ? DialogColors.light : DialogColors.light.opacity(0.82))
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                    .shadow(
+                        color: .black.opacity(contrast == .increased ? (isRaised ? 0.18 : 0.10) : (isRaised ? 0.12 : 0.06)),
+                        radius: isRaised ? 5 : 2,
+                        y: isRaised ? 2 : 1
+                    )
             }
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -26,11 +31,6 @@ struct SemanticSurfaceStyle: ViewModifier {
                         lineWidth: contrast == .increased ? DesignTokens.Control.raisedBorderWidth : DesignTokens.Control.borderWidth
                     )
             }
-            .shadow(
-                color: .black.opacity(contrast == .increased ? (isRaised ? 0.18 : 0.10) : (isRaised ? 0.12 : 0.06)),
-                radius: isRaised ? 5 : 2,
-                y: isRaised ? 2 : 1
-            )
     }
 }
 

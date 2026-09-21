@@ -24,11 +24,11 @@ struct FindFilesTemplateSection: View {
             }
             FindFilesQuickThresholds(settings: $viewModel.advancedSettings)
             Text("Selecting a template again restores its defaults. The Manual tab keeps a separate set of custom criteria.")
-                .font(.system(size: 11))
+                .font(.caption)
                 .foregroundStyle(.secondary)
             if viewModel.advancedSettings.usesApplicationLeftovers {
                 Text("Searches Library app data and excludes installed apps. Turn off App leftovers only to search the selected directory normally.")
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
@@ -51,7 +51,7 @@ struct FindFilesTemplateSection: View {
             }
         }
         .toggleStyle(.checkbox)
-        .font(.system(size: 12))
+        .font(.body)
     }
     private var itemTypeEnabled: Binding<Bool> {
         Binding(

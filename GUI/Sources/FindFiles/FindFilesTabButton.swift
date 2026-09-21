@@ -11,7 +11,7 @@ struct FindFilesTabButton: View {
     var body: some View {
         Button(action: action) {
             Label(title, systemImage: icon)
-                .font(.caption)
+                .font(.callout.weight(isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                 .padding(.horizontal, 12)
                 .frame(minWidth: 95, minHeight: 29)

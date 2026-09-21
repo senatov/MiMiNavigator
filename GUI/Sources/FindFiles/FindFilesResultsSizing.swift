@@ -22,7 +22,9 @@ enum FindFilesResultsSizing {
     }
     // MARK: - Measure Text
     private static func width(_ strings: [String], minimum: CGFloat, maximum: CGFloat, name: Bool = false) -> CGFloat {
-        let font = name ? NSFont.systemFont(ofSize: 14, weight: .light) : NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        let font = name
+            ? NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+            : NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         let widths = strings.map { ($0 as NSString).size(withAttributes: [.font: font]).width }.sorted()
         guard !widths.isEmpty else { return minimum }
         let measured = widths[min(widths.count - 1, Int(Double(widths.count) * 0.95))]

@@ -39,9 +39,9 @@ struct FindFilesResultsView: View {
 
     // MARK: - Fonts (static - same as FileRow)
 
-    private static let rowFont: Font = .system(size: 12)
-    private static let nameFont: Font = .system(size: 14, weight: .light)
-    private static let monoFont: Font = .system(size: 12).monospacedDigit()
+    private static let rowFont: Font = .body
+    private static let nameFont: Font = .body
+    private static let monoFont: Font = .body.monospacedDigit()
 
     // MARK: - Formatters (static - allocated once)
 
