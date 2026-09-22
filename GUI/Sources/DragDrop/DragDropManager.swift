@@ -29,7 +29,6 @@ final class DragDropManager {
     var dragSourcePanelSide: FavPanelSide?
 
     private var dragCleanupTask: Task<Void, Never>?
-    private var internalReleaseWatchTask: Task<Void, Never>?
     private weak var dragAppState: AppState?
     private var leftPanelWidth: CGFloat = 0
     private var panelsContainerWidth: CGFloat = 0
@@ -48,6 +47,13 @@ final class DragDropManager {
         AppState.isRemotePath(destination)
     }
 
+    nonisolated static func isNoOpTransfer(sourceURLs: [URL], destination: URL) -> Bool {
+        let destinationPath = destination.standardizedFileURL.path
+        return !sourceURLs.isEmpty && sourceURLs.allSatisfy {
+            $0.deletingLastPathComponent().standardizedFileURL.path == destinationPath
+        }
+    }
+
     /// Register files being dragged. Called from SwiftUI .onDrag (grid mode) and DragNSView (list mode).
     func startDrag(files: [CustomFile], from panelSide: FavPanelSide, appState: AppState? = nil) {
         log.debug("[DnD] drag started: \(files.count) item(s) from \(panelSide)")
@@ -59,14 +65,11 @@ final class DragDropManager {
         dragSourcePanelSide = panelSide
         dragAppState = appState
         scheduleStaleDragCleanup()
-        startInternalReleaseWatchIfNeeded()
     }
 
     func endDrag() {
         dragCleanupTask?.cancel()
         dragCleanupTask = nil
-        internalReleaseWatchTask?.cancel()
-        internalReleaseWatchTask = nil
         draggedFiles = []
         dragSourcePanelSide = nil
         dragAppState = nil
@@ -82,61 +85,6 @@ final class DragDropManager {
             log.debug("[DnD] stale drag cleanup: \(draggedFiles.count) item(s)")
             endDrag()
         }
-    }
-
-    // MARK: - Internal SwiftUI Drag Release Watch
-    private func startInternalReleaseWatchIfNeeded() {
-        guard dragAppState != nil else { return }
-        internalReleaseWatchTask?.cancel()
-        internalReleaseWatchTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(180))
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !draggedFiles.isEmpty else { return }
-                if NSEvent.pressedMouseButtons == 0 {
-                    completeInternalSwiftUIDragIfNeeded()
-                    return
-                }
-            }
-        }
-    }
-
-    private func completeInternalSwiftUIDragIfNeeded() {
-        guard !draggedFiles.isEmpty else { return }
-        guard pendingOperation == nil, !showConfirmationDialog else {
-            endDrag()
-            return
-        }
-        guard let appState = dragAppState,
-              let sourceSide = dragSourcePanelSide,
-              let dropContext = internalDropContext()
-        else {
-            log.debug("[DnD] SwiftUI drag release ignored: no window context")
-            endDrag()
-            return
-        }
-        guard dropContext.side != sourceSide else {
-            log.debug("[DnD] SwiftUI drag release ignored: same panel")
-            endDrag()
-            return
-        }
-        let files = draggedFiles
-        let destination = appState.url(for: dropContext.side)
-        log.info("[DnD] SwiftUI internal drop: \(files.count) file(s) → \(dropContext.side) (\(destination.lastPathComponent))")
-        prepareTransfer(files: files, to: destination, from: sourceSide)
-        endDrag()
-    }
-
-    private func internalDropContext() -> (side: FavPanelSide, windowPoint: NSPoint)? {
-        let mouseScreenPoint = NSEvent.mouseLocation
-        guard let window = NSApp.windows.first(where: { window in
-            !(window is NSPanel) && window.isVisible && window.frame.contains(mouseScreenPoint)
-        }) else { return nil }
-        guard DragDestinationWindowResolver.isWindowTopmost(window, at: mouseScreenPoint) else {
-            return nil
-        }
-        let windowPoint = window.convertPoint(fromScreen: mouseScreenPoint)
-        return (panelSide(atWindowX: windowPoint.x), windowPoint)
     }
 
     // MARK: - Panel Geometry
@@ -190,6 +138,10 @@ final class DragDropManager {
         from sourcePanelSide: FavPanelSide?
     ) {
         let resolvedDestination = resolveArchiveRootDestination(files: files, destination: destination)
+        guard !Self.isNoOpTransfer(sourceURLs: transferURLs(from: files), destination: resolvedDestination) else {
+            log.debug("[DnD] ignored no-op drop into source directory: \(resolvedDestination.standardizedFileURL.path)")
+            return
+        }
         log.debug("[DnD] prepareTransfer: \(files.count) file(s) → \(destinationDisplayName(resolvedDestination))")
         InfoPopupController.hideAll(reason: "drag-drop-prepare", immediate: true)
         ProgressPanel.shared.hide()

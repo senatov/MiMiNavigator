@@ -173,6 +173,7 @@ struct SettingsArchivesPane: View {
                             Button("Save") {
                                 ArchivePasswordStore.shared.savePassword(archivePassword)
                             }
+                            .buttonStyle(ThemedButtonStyle())
                             .controlSize(.small)
                             .disabled(archivePassword.isEmpty)
 
@@ -253,6 +254,7 @@ struct SettingsArchivesPane: View {
                         registry.refreshSingle(tool.id)
                     }
                 }
+                .buttonStyle(ThemedButtonStyle())
                 .controlSize(.small)
                 .disabled(doctor.isRepairing)
             }

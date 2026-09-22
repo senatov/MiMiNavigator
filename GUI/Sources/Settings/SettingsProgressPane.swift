@@ -140,7 +140,7 @@ struct SettingsProgressPane: View {
                             }
                         }
                     }
-                    Button("Reset Saved Positions") {
+                    DownToolbarButtonView(title: "Reset Saved Positions", systemImage: "arrow.counterclockwise") {
                         appearance.clearSavedFrames()
                     }
                     .disabled(appearance.framesByOperation.isEmpty)
@@ -150,15 +150,14 @@ struct SettingsProgressPane: View {
 
             // MARK: - Actions
             HStack {
-                Button("Reset to Defaults") {
+                DownToolbarButtonView(title: "Reset to Defaults", systemImage: "arrow.counterclockwise") {
                     appearance.resetToDefaults()
                 }
                 Spacer()
-                Button("Save") {
+                DownToolbarButtonView(title: "Save", systemImage: "checkmark") {
                     appearance.save()
                     ProgressPanel.shared.refreshAppearance()
                 }
-                .buttonStyle(.borderedProminent)
             }
 
             Spacer()

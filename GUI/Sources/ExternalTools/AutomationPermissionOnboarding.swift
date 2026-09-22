@@ -65,35 +65,26 @@ struct AutomationPermissionOnboarding: View {
 
             // Buttons
             HStack(spacing: 12) {
-                Button("Open System Settings") {
+                DownToolbarButtonView(title: "Open System Settings", systemImage: "gearshape") {
                     SystemSettingsHelper.openAutomation()
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
                 Spacer()
                 if allGranted {
-                    Button("Done") {
+                    DownToolbarButtonView(title: "Done", systemImage: "checkmark") {
                         markOnboardingComplete()
                         isPresented = false
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
                     .keyboardShortcut(.return)
                 } else {
-                    Button("Grant Access") {
+                    DownToolbarButtonView(title: "Grant Access", systemImage: "lock.open") {
                         grantAll()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .controlSize(.regular)
                     .keyboardShortcut(.return)
                 }
-                Button("Skip") {
+                DownToolbarButtonView(title: "Skip", systemImage: "forward") {
                     markOnboardingComplete()
                     isPresented = false
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.regular)
                 .keyboardShortcut(.escape)
             }
         }

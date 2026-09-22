@@ -112,6 +112,27 @@ final class MiMiNavigatorTests: XCTestCase {
         )
     }
 
+    func testDragDropRejectsTransferIntoSameDirectory() {
+        let source = URL(fileURLWithPath: "/Users/test/Pictures/photo.jpg")
+        let destination = URL(fileURLWithPath: "/Users/test/Pictures", isDirectory: true)
+        XCTAssertTrue(DragDropManager.isNoOpTransfer(sourceURLs: [source], destination: destination))
+    }
+
+    func testDragDropAllowsTransferIntoDifferentDirectory() {
+        let source = URL(fileURLWithPath: "/Users/test/Pictures/photo.jpg")
+        let destination = URL(fileURLWithPath: "/Users/test/Archive", isDirectory: true)
+        XCTAssertFalse(DragDropManager.isNoOpTransfer(sourceURLs: [source], destination: destination))
+    }
+
+    func testDragDropRequiresEverySourceToComeFromDestination() {
+        let sources = [
+            URL(fileURLWithPath: "/Users/test/Pictures/first.jpg"),
+            URL(fileURLWithPath: "/Users/test/Other/second.jpg")
+        ]
+        let destination = URL(fileURLWithPath: "/Users/test/Pictures", isDirectory: true)
+        XCTAssertFalse(DragDropManager.isNoOpTransfer(sourceURLs: sources, destination: destination))
+    }
+
     func testArchiveIconFamiliesAndEncryptedOverride() {
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: false), "ArchiveSystem")
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "dmg", isEncrypted: false), "DiskImageInstaller")

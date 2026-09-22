@@ -161,13 +161,13 @@ struct UpdateView: View {
     private var buttonSection: some View {
         HStack(spacing: 12) {
             if checker.updateAvailable {
-                Button("View on GitHub") {
+                DownToolbarButtonView(title: "View on GitHub", systemImage: "safari") {
                     checker.openReleasePage()
                 }
                 
                 Spacer()
                 
-                Button(checker.isInstalling ? "Installing..." : "Install Update") {
+                DownToolbarButtonView(title: checker.isInstalling ? "Installing..." : "Install Update", systemImage: "arrow.down.app") {
                     Task { await checker.installUpdate() }
                 }
                 .keyboardShortcut(.defaultAction)
@@ -175,12 +175,12 @@ struct UpdateView: View {
             } else {
                 Spacer()
                 
-                Button("Check Again") {
+                DownToolbarButtonView(title: "Check Again", systemImage: "arrow.clockwise") {
                     Task { await checker.checkForUpdates() }
                 }
                 .disabled(checker.isChecking)
                 
-                Button("Close") {
+                DownToolbarButtonView(title: "Close", systemImage: "xmark") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)

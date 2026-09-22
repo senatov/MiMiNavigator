@@ -182,10 +182,10 @@ struct BatchConfirmationDialog: View {
     private var dialogButtons: some View {
         if let onTransferAction {
             HStack(spacing: 10) {
-                dialogButton(L10n.Button.cancel, shortcut: .cancelAction) { onTransferAction(.abort) }
+                dialogButton(L10n.Button.cancel, systemImage: "xmark", shortcut: .cancelAction) { onTransferAction(.abort) }
                 Spacer()
-                dialogButton(L10n.Button.copy, shortcut: .defaultAction) { onTransferAction(.copy) }
-                dialogButton(L10n.Button.move) { onTransferAction(.move) }
+                dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", shortcut: .defaultAction) { onTransferAction(.copy) }
+                dialogButton(L10n.Button.move, systemImage: "folder.badge.arrow.forward") { onTransferAction(.move) }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
@@ -203,15 +203,12 @@ struct BatchConfirmationDialog: View {
 
     private func dialogButton(
         _ title: String,
+        systemImage: String,
         shortcut: KeyboardShortcut? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        Button(title, action: action)
+        DownToolbarButtonView(title: title, systemImage: systemImage, action: action)
             .optionalKeyboardShortcut(shortcut)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
-            .focusable(true)
-            .focusEffectDisabled()
     }
     
     private var operationIcon: Image {

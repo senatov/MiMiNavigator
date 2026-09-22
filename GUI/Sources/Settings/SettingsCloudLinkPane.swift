@@ -51,11 +51,12 @@ struct SettingsCloudLinkPane: View {
             }
             HStack(spacing: 10) {
                 Button("Save") { saveSettings() }
+                    .buttonStyle(ThemedButtonStyle())
                     .keyboardShortcut(.defaultAction)
-                Button("Reload") { loadSettings() }
-                Button("Clear tokens") { clearTokens() }
+                Button("Reload") { loadSettings() }.buttonStyle(ThemedButtonStyle())
+                Button("Clear tokens") { clearTokens() }.buttonStyle(ThemedButtonStyle())
                 Spacer()
-                Button("Reveal ~/.mimi") { revealMimiDirectory() }
+                Button("Reveal ~/.mimi") { revealMimiDirectory() }.buttonStyle(ThemedButtonStyle())
             }
             statusRow
         }

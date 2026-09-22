@@ -98,7 +98,7 @@ struct SystemConflictSheet: View {
             // Footer
             HStack {
                 Spacer()
-                Button("Cancel") { onCancel() }
+                DownToolbarButtonView(title: "Cancel", systemImage: "xmark", action: onCancel)
                     .keyboardShortcut(.escape, modifiers: [])
             }
             .padding(.horizontal, 16)

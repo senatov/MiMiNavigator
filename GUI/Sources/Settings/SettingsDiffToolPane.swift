@@ -78,7 +78,7 @@ struct SettingsDiffToolPane: View {
                         Button { showAddSheet = true } label: {
                             Image(systemName: "plus").frame(width: 26, height: 20)
                         }
-                        .buttonStyle(.bordered).controlSize(.small)
+                        .buttonStyle(ThemedButtonStyle()).controlSize(.small)
                         .help("Add custom diff tool")
 
                         Button {
@@ -86,7 +86,7 @@ struct SettingsDiffToolPane: View {
                         } label: {
                             Image(systemName: "minus").frame(width: 26, height: 20)
                         }
-                        .buttonStyle(.bordered).controlSize(.small)
+                        .buttonStyle(ThemedButtonStyle()).controlSize(.small)
                         .disabled(cannotRemove)
                         .help("Remove — only custom tools can be deleted")
 
@@ -111,7 +111,7 @@ struct SettingsDiffToolPane: View {
                         if let id = selectedID,
                            let tool = registry.tools.first(where: { $0.id == id }) {
                             Button("Edit…") { editingTool = tool }
-                                .controlSize(.small).buttonStyle(.bordered)
+                                .controlSize(.small).buttonStyle(ThemedButtonStyle())
                         }
                     }
                 }
@@ -352,8 +352,9 @@ struct DiffToolEditSheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel") { dismiss() }.keyboardShortcut(.escape)
-                Button(tool == nil ? "Add" : "Save") {
+                DownToolbarButtonView(title: "Cancel", systemImage: "xmark") { dismiss() }
+                    .keyboardShortcut(.escape)
+                DownToolbarButtonView(title: tool == nil ? "Add" : "Save", systemImage: tool == nil ? "plus" : "checkmark") {
                     onSave(DiffTool(
                         id:        tool?.id ?? UUID().uuidString,
                         name:      name,
@@ -366,7 +367,6 @@ struct DiffToolEditSheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
                 .disabled(!isValid)
             }
         }

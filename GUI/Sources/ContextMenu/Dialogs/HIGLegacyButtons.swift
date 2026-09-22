@@ -17,11 +17,7 @@ struct _LegacyHIGPrimaryButton: View {
     let action: () -> Void
     var isDestructive: Bool = false
     var body: some View {
-        Button(title, action: action)
-            .buttonStyle(ThemedButtonStyle())
-            .tint(isDestructive ? .red : .accentColor)
-            .controlSize(.large)
-            .keyboardFocusable()
+        DownToolbarButtonView(title: title, systemImage: isDestructive ? "trash" : "checkmark", action: action)
     }
 }
 
@@ -30,9 +26,6 @@ struct _LegacyHIGSecondaryButton: View {
     let title: String
     let action: () -> Void
     var body: some View {
-        Button(title, action: action)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
-            .keyboardFocusable()
+        DownToolbarButtonView(title: title, systemImage: "xmark", action: action)
     }
 }

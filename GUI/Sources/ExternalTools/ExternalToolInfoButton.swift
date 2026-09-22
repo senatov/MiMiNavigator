@@ -77,17 +77,12 @@ struct ExternalToolInfoButton: View {
             // Refresh button
             HStack {
                 Spacer()
-                Button {
+                DownToolbarButtonView(title: "Re-check", systemImage: "arrow.clockwise") {
                     registry.refreshSingle(tool.id)
                     if registry.isAvailable(tool.id) {
                         showPopover = false
                     }
-                } label: {
-                    Label("Re-check", systemImage: "arrow.clockwise")
-                        .font(.system(size: 11))
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
             }
         }
         .padding(14)

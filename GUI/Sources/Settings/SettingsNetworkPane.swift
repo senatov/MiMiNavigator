@@ -86,6 +86,7 @@ struct SettingsNetworkPane: View {
                     SettingsRow(label: "Connection:", help: "Save the settings and query the local Fing agent") {
                         HStack(spacing: 10) {
                             Button("Save & Test") { testFingConnection() }
+                                .buttonStyle(ThemedButtonStyle())
                                 .disabled(isTestingFing || fingAPIKey.isEmpty || Int(fingPort) == nil)
                             if isTestingFing {
                                 Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")

@@ -65,6 +65,11 @@ final class DropNSView: NSView {
             return false
         }
         if !dragDropManager.draggedFiles.isEmpty {
+            guard dragDropManager.dragSourcePanelSide != panelSide else {
+                log.debug("[AppKitDrop] ignored background drop on source panel=\(panelSide)")
+                dragDropManager.endDrag()
+                return false
+            }
             let destination = appState.url(for: panelSide)
             log.info("[AppKitDrop] internal panel drop: \(dragDropManager.draggedFiles.count) file(s) → \(destination.lastPathComponent)")
             dragDropManager.prepareTransfer(

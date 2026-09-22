@@ -117,7 +117,7 @@ struct FeedbackWindowContent: View {
             }
             HStack {
                 Spacer()
-                Button("Close", action: onClose)
+                DownToolbarButtonView(title: "Close", systemImage: "xmark", action: onClose)
                     .keyboardShortcut(.cancelAction)
             }
         }

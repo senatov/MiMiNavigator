@@ -13,6 +13,8 @@ struct HIGDialogButtons: View {
     let confirmTitle: String
     let isDestructive: Bool
     let isConfirmDisabled: Bool
+    let cancelSystemImage: String
+    let confirmSystemImage: String
     let onCancel: () -> Void
     let onConfirm: () -> Void
     init(
@@ -20,6 +22,8 @@ struct HIGDialogButtons: View {
         confirmTitle: String,
         isDestructive: Bool = false,
         isConfirmDisabled: Bool = false,
+        cancelSystemImage: String = "xmark",
+        confirmSystemImage: String = "checkmark",
         onCancel: @escaping () -> Void,
         onConfirm: @escaping () -> Void
     ) {
@@ -27,23 +31,17 @@ struct HIGDialogButtons: View {
         self.confirmTitle = confirmTitle
         self.isDestructive = isDestructive
         self.isConfirmDisabled = isConfirmDisabled
+        self.cancelSystemImage = cancelSystemImage
+        self.confirmSystemImage = confirmSystemImage
         self.onCancel = onCancel
         self.onConfirm = onConfirm
     }
     var body: some View {
         DialogFooter {
-            Button(cancelTitle, action: onCancel)
+            DownToolbarButtonView(title: cancelTitle, systemImage: cancelSystemImage, action: onCancel)
                 .keyboardShortcut(.cancelAction)
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.large)
-                .focusable(true)
-                .focusEffectDisabled()
-            Button(confirmTitle, action: onConfirm)
+            DownToolbarButtonView(title: confirmTitle, systemImage: confirmSystemImage, action: onConfirm)
                 .keyboardShortcut(.defaultAction)
-                .buttonStyle(ThemedButtonStyle(tint: isDestructive ? .red : .accentColor))
-                .controlSize(.large)
-                .focusable(true)
-                .focusEffectDisabled()
                 .disabled(isConfirmDisabled)
         }
     }
