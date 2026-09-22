@@ -16,7 +16,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
 
     case refresh        = "refresh"
     case hiddenFiles    = "hiddenFiles"
-    case openWith       = "openWith"
     case swapPanels     = "swapPanels"
     case compare        = "compare"
     case network        = "network"
@@ -40,7 +39,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
         case .refresh:        return "Refresh"
         case .hiddenFiles:    return "Hidden Files"
-        case .openWith:       return "Open With"
         case .swapPanels:     return "Swap Panels"
         case .compare:        return "Compare"
         case .network:        return "Network"
@@ -63,7 +61,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
         case .refresh:        return "arrow.triangle.2.circlepath"
         case .hiddenFiles:    return "eye.slash"
-        case .openWith:       return "arrow.up.forward.app"
         case .swapPanels:     return "arrow.left.arrow.right"
         case .compare:        return "doc.text.magnifyingglass"
         case .network:        return "rectangle.connected.to.line.below"
@@ -82,7 +79,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         switch self {
         case .refresh:        return "Refresh file lists (⌘R)"
         case .hiddenFiles:    return "Show / hide hidden files (⌘.)"
-        case .openWith:       return "Open selected file or Get Info (⇧⌘O)"
         case .swapPanels:     return "Swap left and right panel directories"
         case .compare:        return "Compare items via diff tool (⌘D)"
         case .network:        return "Network Neighborhood (⌘N)"
@@ -101,7 +97,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     static let defaultOrder: [ToolbarItemID] = [
         .refresh,
         .hiddenFiles,
-        .openWith,
         .swapPanels,
         .compare,
         .network,

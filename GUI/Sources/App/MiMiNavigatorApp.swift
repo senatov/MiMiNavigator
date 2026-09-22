@@ -331,11 +331,6 @@ struct MiMiNavigatorApp: App {
         appState.toggleShowHiddenFiles()
     }
 
-    func performOpenWith() {
-        log.debug("OpenWith button clicked")
-        appState.openSelectedItem()
-    }
-
     func performSwapPanels() {
         log.debug("Swap panels button clicked")
         appState.swapPanels()

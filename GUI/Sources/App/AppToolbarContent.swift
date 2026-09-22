@@ -50,8 +50,6 @@ struct AppToolbarContent: ToolbarContent {
             app.makeToolbarIcon(.refresh) { app.performRefresh() }
         case .hiddenFiles:
             app.makeToolbarToggle(.hiddenFiles)
-        case .openWith:
-            app.makeToolbarIcon(.openWith) { app.performOpenWith() }
         case .swapPanels:
             app.makeToolbarIcon(.swapPanels) { app.performSwapPanels() }
         case .compare:
