@@ -50,8 +50,7 @@ struct MediaInfoPanelView: View {
         }
         .frame(minWidth: Layout.minWidth, idealWidth: Layout.idealWidth, minHeight: Layout.minHeight)
         .padding(.top, 10)
-        .background(panelBackground)
-        .glassEffect(.regular)
+        .dialogWindowSurface(cornerRadius: Layout.outerCornerRadius)
         .overlay(panelBorder)
         .clipShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: Layout.outerCornerRadius, style: .continuous))
@@ -204,7 +203,7 @@ struct MediaInfoPanelView: View {
                                 } else {
                                     Text(row.label)
                                         .font(.system(size: 12, weight: .medium))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color(nsColor: .labelColor))
                                         .frame(width: Layout.infoLabelWidth, alignment: .leading)
                                     Text(row.value)
                                         .font(.system(size: 13))
@@ -334,7 +333,7 @@ struct MediaInfoPanelView: View {
         HStack(alignment: .center, spacing: 12) {
             Text(title)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(nsColor: .labelColor))
                 .frame(width: Layout.infoLabelWidth, alignment: .leading)
             content()
             Spacer(minLength: 0)

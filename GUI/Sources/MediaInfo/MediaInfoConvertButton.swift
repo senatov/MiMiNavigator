@@ -19,18 +19,18 @@ struct MediaInfoConvertButton: View {
     var body: some View {
         Button(action: action) {
             Label("Convert", systemImage: "arrow.triangle.2.circlepath")
-                .font(.system(size: 13, weight: .bold))
                 .lineLimit(1)
                 .frame(minWidth: 118)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 9)
-                .foregroundStyle(isEnabled ? Color.white : Color.secondary)
-                .background(buttonBackground)
-                .overlay(buttonBorder)
-                .shadow(color: shadowColor, radius: isHovered ? 10 : 6, y: isHovered ? 5 : 3)
-                .scaleEffect(isHovered && isEnabled ? 1.04 : 1.0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            DownToolbarGlassButtonStyle(
+                isHovered: isHovered,
+                tint: .accentColor,
+                horizontalPadding: 16,
+                verticalPadding: 7,
+                raised: true
+            )
+        )
         .disabled(!isEnabled)
         .keyboardFocusable()
         .help("Convert")
@@ -41,41 +41,4 @@ struct MediaInfoConvertButton: View {
         }
     }
 
-    // MARK: - Background
-
-    private var buttonBackground: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .fill(isEnabled ? enabledGradient : disabledGradient)
-    }
-
-    private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .strokeBorder(Color.white.opacity(isEnabled ? 0.45 : 0.25), lineWidth: 1)
-    }
-
-    private var enabledGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(nsColor: NSColor.systemBlue),
-                Color(nsColor: NSColor.systemTeal),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var disabledGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(nsColor: NSColor.windowBackgroundColor).opacity(0.65),
-                Color(nsColor: NSColor.controlBackgroundColor).opacity(0.85),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    private var shadowColor: Color {
-        isEnabled ? Color(nsColor: NSColor.systemBlue).opacity(0.32) : Color.black.opacity(0.08)
-    }
 }

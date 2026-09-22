@@ -13,11 +13,7 @@ struct FileOperationDiagnosticDialog: View {
         }
         .padding(16)
         .frame(width: 500)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.clear)
-        )
-        .glassEffect(.regular)
+        .dialogWindowSurface(cornerRadius: 14)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.quaternary, lineWidth: 0.8)

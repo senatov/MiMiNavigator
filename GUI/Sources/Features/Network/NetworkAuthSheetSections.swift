@@ -268,36 +268,16 @@ struct NetworkAuthButtonRow: View {
 
     var body: some View {
         HStack(spacing: NetworkAuthSheetLayout.buttonSpacing) {
-            Button("Cancel", role: .cancel) { onCancel() }
+            DownToolbarButtonView(title: "Cancel", systemImage: "xmark", action: onCancel)
                 .keyboardShortcut(.cancelAction)
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(NetworkAuthSheetGlassStyle.cancelButtonBackground)
-                .overlay {
-                    Capsule()
-                        .strokeBorder(.quaternary, lineWidth: 0.8)
-                }
-
             Spacer()
-
-            Button {
-                onConfirm()
-            } label: {
-                if isSaving {
-                    HStack(spacing: 6) {
-                        ProgressView().scaleEffect(0.7)
-                        Text("Saving…")
-                    }
-                } else {
-                    Label("Sign In", systemImage: "key.fill")
-                }
-            }
+            DownToolbarButtonView(
+                title: isSaving ? "Saving…" : "Sign In",
+                systemImage: isSaving ? "hourglass" : "key.fill",
+                action: onConfirm
+            )
             .keyboardShortcut(.defaultAction)
             .disabled(!canConfirm)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.regular)
         }
         .padding(.horizontal, NetworkAuthSheetLayout.sectionPaddingH)
         .padding(.vertical, 10)

@@ -28,6 +28,7 @@ import LogKit
     private var didReplyToTermination = false
     private var isUpdateReplacementTermination = false
     private var isDuplicateInstance = false
+    private var dockIconImage: NSImage?
     private let standardTerminationCleanupTimeout: TimeInterval = 4.0
     private let updateTerminationCleanupTimeout: TimeInterval = 1.5
 
@@ -61,6 +62,8 @@ import LogKit
 
         // Ensure app is a regular Dock citizen from the very start
         NSApp.setActivationPolicy(.regular)
+        dockIconImage = NSApp.applicationIconImage.copy() as? NSImage
+        restoreDockIcon(reason: "launch")
         menuBarController.install()
         MemoryDiagnostics.shared.start()
 
@@ -181,6 +184,7 @@ import LogKit
 
     // MARK: - Main Window Focus
     func applicationDidBecomeActive(_ notification: Notification) {
+        restoreDockIcon(reason: "application became active")
         menuBarController.verifyStatusItem()
         let mainWindow = NSApp.windows.first { isMainApplicationWindow($0) }
         scheduleStandaloneWindowOrdering(relativeTo: mainWindow)
@@ -237,12 +241,25 @@ import LogKit
             NSApp.unhide(nil)
         }
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.dockTile.display()
+        restoreDockIcon(reason: "main window restored")
         log.info("[WindowLifecycle] Dock state restored hidden=\(wasHidden) policy=\(previousPolicy.rawValue)")
         log.info("[WindowLifecycle] restored — rebuilding panel views and refreshing scanner")
         NotificationCenter.default.post(name: .mainWindowDidRestore, object: nil)
         appState?.forceRefreshBothPanels()
         MemoryDiagnostics.shared.checkpoint("window.restored")
+    }
+
+    // MARK: - Dock Icon
+    private func restoreDockIcon(reason: String) {
+        guard !isTerminationCleanupRunning, let dockIconImage else { return }
+        if NSApp.activationPolicy() != .regular {
+            NSApp.setActivationPolicy(.regular)
+        }
+        NSApp.applicationIconImage = dockIconImage.copy() as? NSImage ?? dockIconImage
+        NSApp.dockTile.display()
+        log.debug(
+            "[DockIcon] restored reason='\(reason)' size=\(NSStringFromSize(dockIconImage.size)) representations=\(dockIconImage.representations.count)"
+        )
     }
 
     private func isMainApplicationWindow(_ object: Any?) -> Bool {

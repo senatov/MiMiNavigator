@@ -112,7 +112,6 @@ struct ConnToSrvrView: View {
             idealHeight: Layout.windowIdealHeight
         )
         .background(dialogBgColor.ignoresSafeArea())
-        .glassEffect()
         .inAppNoticeHost(scope: .connectToServer)
         .onAppear(perform: handleAppear)
         .onDisappear(perform: handleDisappear)

@@ -184,18 +184,10 @@ extension ConvertMediaDialog {
     var buttonBar: some View {
         HStack(spacing: 10) {
             Spacer()
-            Button("Cancel") {
-                onCancel()
-            }
+            DownToolbarButtonView(title: "Cancel", systemImage: "xmark", action: onCancel)
             .keyboardShortcut(.cancelAction)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.large)
-            Button("Convert") {
-                performConvert()
-            }
+            DownToolbarButtonView(title: "Convert", systemImage: "arrow.triangle.2.circlepath", action: performConvert)
             .keyboardShortcut(.defaultAction)
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.regular)
             .disabled(!isValid)
         }
         .padding(.horizontal, Layout.compactHPad)
