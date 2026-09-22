@@ -1,37 +1,38 @@
-# MiMiNavigator v0.9.9.8.2
+# MiMiNavigator v0.9.9.8.3
 
-This release adds a compact live resource monitor to the top toolbar, improves toolbar consistency and readability, and gives DMG and ZIP files distinct, meaningful icons.
+This release restores readable and consistent auxiliary-window controls, prevents accidental file operations from Preview clicks, and returns window and Dock presentation to predictable macOS behavior.
 
 ## Highlights
 
-- View MiMiNavigator memory usage and thread count in independent live sparklines beside the Test Build badge.
-- Enable or disable the RAM and thread graphs separately and choose independent 3–60 second refresh intervals in General Settings.
-- Recognize DMG installers with a dedicated disk-image icon and ZIP archives with the cabinet-style archive icon.
-- Use a lighter, sharper top-toolbar style aligned with the bottom command bar.
+- Use the same readable Commander button design in dialogs, sheets, auxiliary windows, and the bottom command bar.
+- Open auxiliary windows at their full designed size in the center of the invoking main window when no saved frame exists.
+- Keep restored auxiliary windows inside the visible area after display-layout changes.
+- Select Preview thumbnails normally without immediately triggering a move or copy operation.
 
 ## Changed
 
-- Run the RAM and thread samplers on separate low-overhead timers with timer tolerance to reduce unnecessary wakeups.
-- Query only the process metric required by each graph instead of collecting every metric on every refresh.
-- Place resource graphs directly beside the central build badge and preserve live updates when preferences change.
-- Use shared toolbar surfaces and restrained semantic colors while keeping SF Symbols monochrome and Retina-sharp.
-- Replace the bitmap feedback emoji with a native vector SF Symbol.
-- Add complete MIT attribution for the Hop-inspired compact sparkline implementation to About and third-party notices.
+- Remove the redundant Open With toolbar action and customization-palette entry while retaining the complete Open With submenu in the file context menu.
+- Let macOS manage the Dock icon without runtime image replacement or forced Dock-tile redraws.
+- Replace oversized root and container glass effects in Connect to Server and other dialogs with stable readable surfaces.
+- Share one command-button implementation for typography, icon sizing, dividers, padding, borders, hover feedback, and disabled states.
 
 ## Fixed
 
-- Eliminate blurred toolbar text and icons caused by hierarchical symbol rendering, fractional font sizes, translucent foregrounds, and persistent per-button decoration.
-- Align the build badge, resource graphs, and action groups to a consistent height and vertical baseline.
-- Keep RAM and thread labels left-aligned and readable without heavy black typography.
-- Preserve backward compatibility when existing preferences files do not contain the new graph visibility or interval settings.
+- Prevent ordinary Preview clicks and selection attempts from being interpreted as drag-and-drop file operations.
+- Restore working Copy, Move, Cancel, Convert, Save, Connect, and other dialog actions after visual modifiers intercepted their input.
+- Keep metadata headings and field labels readable instead of rendering them with faint undersized typography.
+- Prevent additional windows from opening clipped, inheriting invalid coordinates, or disappearing beyond the current screen layout.
+- Remove application-side Dock-icon manipulation that could leave the icon translucent during a session.
+- Remove uncontrolled glass layers that expanded into large translucent ellipses across Connect to Server.
 
 ## Validation
 
-- The focused Debug build completes successfully and the updated toolbar and General Settings have been checked in the running application.
+- Debug builds complete successfully after the interaction, button, window-placement, and toolbar changes.
+- Copy and Connect to Server dialogs were checked in the running application, and test file operations were cancelled before execution.
 - The release pipeline verifies the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.1...v0.9.9.8.2
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.2...v0.9.9.8.3

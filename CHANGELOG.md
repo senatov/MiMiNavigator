@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.8.3] — 2026-09-22
+
+### Changed
+- Unified dialog and auxiliary-window buttons with the bottom Commander command-bar design.
+- Removed the redundant Open With toolbar item while retaining the complete context-menu workflow.
+- Returned Dock-icon presentation to macOS by removing runtime image replacement and forced tile redraws.
+
+### Fixed
+- Prevented ordinary Preview selection clicks from opening move or copy confirmation dialogs.
+- Restored readable metadata headings, labels, and action controls across auxiliary windows.
+- Opened first-use auxiliary windows at their designed size in the center of the invoking main window.
+- Constrained restored auxiliary-window frames to the visible screen after display-layout changes.
+- Removed oversized translucent glass layers from Connect to Server and related dialogs.
+
 ## [0.9.9.7.8] — 2026-09-02
 
 > **Release notes**
