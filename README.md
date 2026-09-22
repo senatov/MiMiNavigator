@@ -74,7 +74,7 @@ Archive dirty tracking canonicalizes macOS firmlink paths such as `/var` and `/p
 
 ArchiveKit owns archive sessions and extracts every archive, including nested archives, into a separate `/tmp/MiMiNavigator_archives/<UUID>` directory. Closing or repacking a level removes its UUID directory directly without using Trash; nested navigation restores the enclosing archive session.
 
-Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats.
+Media files can be previewed, inspected, and converted from the same workflow. Optional tools such as FFmpeg and gifski extend the available conversion formats. When FFmpeg is installed, the icon grid and Preview pane can show still frames for WebM, MKV, AVI, FLV, WMV, and TS videos that lack a system Quick Look thumbnail.
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
 

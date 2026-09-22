@@ -352,7 +352,10 @@ private struct ThumbnailCellView: View {
             guard !Task.isCancelled else { return }
             self.thumbnail = rep.nsImage
         } catch {
-            // Silently fall through to SF Symbol fallback
+            guard VideoFramePreview.supports(url) else { return }
+            let frame = await VideoFramePreview.image(for: url, edge: Int(edge * scale))
+            guard !Task.isCancelled else { return }
+            self.thumbnail = frame
         }
     }
 }

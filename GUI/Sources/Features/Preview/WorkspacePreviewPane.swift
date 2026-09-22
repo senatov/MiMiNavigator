@@ -188,9 +188,13 @@ struct WorkspacePreviewPane: View {
     private func previewRenderer(url: URL) -> some View {
         switch modeStore.mode(for: url) {
         case .quickLook:
-            QuickLookPreviewView(url: url)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .controlBackgroundColor))
+            if VideoFramePreview.supports(url), FileManager.default.isExecutableFile(atPath: ConversionTool.ffmpegPath) {
+                VideoFramePreviewView(url: url)
+            } else {
+                QuickLookPreviewView(url: url)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(nsColor: .controlBackgroundColor))
+            }
         case .text:
             TextFilePreview(
                 url: url,

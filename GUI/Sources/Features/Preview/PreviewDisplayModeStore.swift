@@ -117,7 +117,7 @@ final class PreviewDisplayModeStore {
     ]
     private static let quickLookExtensions: Set<String> = [
         "pdf", "png", "jpg", "jpeg", "gif", "heic", "heif", "webp", "tif", "tiff", "bmp", "svg",
-        "mov", "mp4", "m4v", "avi", "mkv", "mp3", "m4a", "aac", "wav", "flac", "doc", "docx",
+        "mov", "mp4", "m4v", "avi", "mkv", "webm", "flv", "wmv", "ts", "mp3", "m4a", "aac", "wav", "flac", "doc", "docx",
         "xls", "xlsx", "ppt", "pptx", "pages", "numbers", "key", "zip", "dmg", "pkg",
     ]
 }
