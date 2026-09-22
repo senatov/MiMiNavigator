@@ -15,7 +15,7 @@ extension ConnToSrvrView {
     var nameRow: some View {
         SettingsRow(
             label: "Name:",
-            help: "Bookmark name for this server. Paste a URL here to auto-fill all fields.",
+            help: "Bookmark name, or a server URL. Press Return to auto-fill the connection fields.",
             labelWidth: 120
         ) {
             TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
@@ -23,12 +23,12 @@ extension ConnToSrvrView {
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .name)
                 .onChange(of: draft.name) { _, newValue in
-                    if applyURLParserIfNeeded(newValue, clearName: false) {
-                        return
-                    }
                     if !newValue.isEmpty {
                         nameWasManuallyEdited = true
                     }
+                }
+                .onSubmit {
+                    applyURLParserIfNeeded(draft.name, clearName: false)
                 }
         }
     }
@@ -60,7 +60,9 @@ extension ConnToSrvrView {
                     handleHostChanged(newValue)
                 }
                 .onSubmit {
-                    draft.host = Self.sanitizeHost(draft.host)
+                    if !applyURLParserIfNeeded(draft.host, clearName: false) {
+                        draft.host = Self.sanitizeHost(draft.host)
+                    }
                 }
         }
     }

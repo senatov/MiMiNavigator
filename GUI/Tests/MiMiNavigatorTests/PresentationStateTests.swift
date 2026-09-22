@@ -5,6 +5,25 @@ import XCTest
 
 @testable import MiMiNavigator
 
+// MARK: - Remote Server URL Parser Tests
+final class RemoteServerURLParserTests: XCTestCase {
+    // MARK: - Incomplete Scheme Input
+    func testIncompleteSchemeInputDoesNotParseOrCrash() {
+        for input in ["sftp:", "sftp:/", "sftp://"] {
+            XCTAssertNil(RemoteServerURLParser.parse(input))
+        }
+    }
+
+    // MARK: - Complete SFTP URL
+    func testCompleteSFTPURLParsesAllTypedFields() {
+        let parsed = RemoteServerURLParser.parse("sftp://senatov@192.168.178.59")
+        XCTAssertEqual(parsed?.proto, .sftp)
+        XCTAssertEqual(parsed?.host, "192.168.178.59")
+        XCTAssertEqual(parsed?.user, "senatov")
+        XCTAssertNil(parsed?.port)
+    }
+}
+
 // MARK: - Presentation State Tests
 @MainActor
 final class PresentationStateTests: XCTestCase {

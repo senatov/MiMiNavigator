@@ -46,10 +46,6 @@ extension ConnToSrvrView {
     }
 
     func handleHostChanged(_ newValue: String) {
-        if applyURLParserIfNeeded(newValue, clearName: false) {
-            return
-        }
-
         if !nameWasManuallyEdited || draft.name.isEmpty {
             draft.name = newValue
         }

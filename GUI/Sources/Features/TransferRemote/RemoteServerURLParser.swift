@@ -31,7 +31,11 @@ enum RemoteServerURLParser {
     static func parse(_ raw: String) -> ParseResult? {
         let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !s.isEmpty else { return nil }
-        if let r = parseSchemeURL(s) { return r }
+        if s.contains("://") { return parseSchemeURL(s) }
+        if let colon = s.firstIndex(of: ":"),
+           RemoteProtocol.allCases.contains(where: { $0.urlScheme == String(s[..<colon]).lowercased() }) {
+            return nil
+        }
         if s.contains("@") || (s.contains(":") && !s.hasPrefix("/")) {
             return parseHostString(s)
         }
@@ -99,7 +103,8 @@ enum RemoteServerURLParser {
 
         // host:port
         let parts = remainder.split(separator: ":", maxSplits: 1).map(String.init)
-        r.host = parts[0].nilIfEmpty
+        guard let host = parts.first?.nilIfEmpty else { return nil }
+        r.host = host
         if parts.count == 2, let p = Int(parts[1]), (1...65535).contains(p) {
             r.port  = p
             r.proto = inferProtocol(fromPort: p)   // ← infer protocol from standard port
