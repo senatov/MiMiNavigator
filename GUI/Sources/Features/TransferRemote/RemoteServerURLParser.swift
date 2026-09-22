@@ -42,6 +42,12 @@ enum RemoteServerURLParser {
         return nil
     }
 
+    // MARK: - shouldAutoParseNameChange
+    static func shouldAutoParseNameChange(from oldValue: String, to newValue: String) -> Bool {
+        guard newValue.count - oldValue.count > 1 else { return false }
+        return parse(newValue)?.host?.isEmpty == false
+    }
+
     // MARK: - inferProtocol
     /// Maps well-known port numbers to protocols.
     /// Returns nil for non-standard ports — caller keeps proto unset.

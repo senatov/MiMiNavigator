@@ -91,6 +91,10 @@ final class UpdateChecker: ObservableObject {
     }
     // MARK: - Asset Comparison
     private func availabilityReason(for release: GitHubRelease) -> AvailabilityReason? {
+        if Self.isDevelopmentBundle(Bundle.main.bundleURL) {
+            log.info("[Update] release replacement disabled for development bundle='\(Bundle.main.bundleURL.path)'")
+            return nil
+        }
         if isNewer(release.normalizedVersion, than: currentVersion) { return .newerVersion }
         guard release.normalizedVersion == currentVersion, let asset = preferredAsset(in: release) else { return nil }
         let remoteFingerprint = UpdateAssetIdentityStore.assetFingerprint(asset)
@@ -104,6 +108,9 @@ final class UpdateChecker: ObservableObject {
         let delta = remoteDate.timeIntervalSince(localBuildDate)
         log.info("[Update] same-version fallback localBuild='\(localBuildDate)' remoteAsset='\(remoteDate)' delta=\(Int(delta))s")
         return delta > UpdateAssetIdentityStore.initialReleaseUploadTolerance ? .newerSameVersionBuild : nil
+    }
+    static func isDevelopmentBundle(_ bundleURL: URL) -> Bool {
+        bundleURL.standardizedFileURL.pathComponents.contains("DerivedData")
     }
     private func preferredAsset(in release: GitHubRelease) -> GitHubAsset? {
         release.assets.first { $0.name.lowercased().hasSuffix(".dmg") }

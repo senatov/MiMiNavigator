@@ -276,7 +276,6 @@ import LogKit
 
         isTerminationCleanupRunning = true
         appState?.beginTermination()
-        NSApp.hide(nil)
         let timeout = isUpdateReplacementTermination ? updateTerminationCleanupTimeout : standardTerminationCleanupTimeout
         log.info("[AppDelegate] applicationShouldTerminate — starting async cleanup timeout=\(timeout)s update=\(isUpdateReplacementTermination)")
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout) { [weak self] in

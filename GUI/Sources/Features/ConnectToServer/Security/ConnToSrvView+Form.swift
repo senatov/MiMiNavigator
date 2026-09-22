@@ -22,7 +22,12 @@ extension ConnToSrvrView {
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .name)
-                .onChange(of: draft.name) { _, newValue in
+                .onChange(of: draft.name) { oldValue, newValue in
+                    if RemoteServerURLParser.shouldAutoParseNameChange(from: oldValue, to: newValue) {
+                        nameWasManuallyEdited = true
+                        applyURLParserIfNeeded(newValue, clearName: false, moveFocus: false)
+                        return
+                    }
                     if !newValue.isEmpty {
                         nameWasManuallyEdited = true
                     }

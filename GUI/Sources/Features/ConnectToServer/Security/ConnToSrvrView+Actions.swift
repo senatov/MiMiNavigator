@@ -313,7 +313,7 @@ extension ConnToSrvrView {
     }
 
     @discardableResult
-    func applyURLParserIfNeeded(_ input: String, clearName: Bool) -> Bool {
+    func applyURLParserIfNeeded(_ input: String, clearName: Bool, moveFocus: Bool = true) -> Bool {
         guard let parsed = RemoteServerURLParser.parse(input) else { return false }
         guard let host = parsed.host, !host.isEmpty else { return false }
 
@@ -348,7 +348,9 @@ extension ConnToSrvrView {
             keepPassword = true
         }
 
-        focusedField = draft.user.isEmpty ? .user : .password
+        if moveFocus {
+            focusedField = draft.user.isEmpty ? .user : .password
+        }
         return true
     }
 

@@ -6,6 +6,7 @@ import XCTest
 @testable import MiMiNavigator
 
 // MARK: - Remote Server URL Parser Tests
+@MainActor
 final class RemoteServerURLParserTests: XCTestCase {
     // MARK: - Incomplete Scheme Input
     func testIncompleteSchemeInputDoesNotParseOrCrash() {
@@ -21,6 +22,33 @@ final class RemoteServerURLParserTests: XCTestCase {
         XCTAssertEqual(parsed?.host, "192.168.178.59")
         XCTAssertEqual(parsed?.user, "senatov")
         XCTAssertNil(parsed?.port)
+    }
+
+    // MARK: - Name Field Change Classification
+    func testFullURLPasteTriggersAutoParse() {
+        XCTAssertTrue(
+            RemoteServerURLParser.shouldAutoParseNameChange(
+                from: "",
+                to: "sftp://senatov@192.168.178.59"
+            )
+        )
+    }
+
+    func testCharacterByCharacterURLEntryDoesNotAutoParse() {
+        let value = "sftp://senatov@192.168.178.59"
+        var previous = ""
+        for character in value {
+            let next = previous + String(character)
+            XCTAssertFalse(RemoteServerURLParser.shouldAutoParseNameChange(from: previous, to: next))
+            previous = next
+        }
+    }
+
+    // MARK: - Development Update Protection
+    func testDerivedDataBundleIsProtectedFromReleaseReplacement() {
+        let url = URL(fileURLWithPath: "/Users/test/Library/Developer/Xcode/DerivedData/App/Build/Products/Debug/MiMiNavigator.app")
+        XCTAssertTrue(UpdateChecker.isDevelopmentBundle(url))
+        XCTAssertFalse(UpdateChecker.isDevelopmentBundle(URL(fileURLWithPath: "/Applications/MiMiNavigator.app")))
     }
 }
 
