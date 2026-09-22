@@ -52,6 +52,7 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         let fittingSize = hostingView.fittingSize
         panel.setContentSize(NSSize(width: 640, height: max(320, fittingSize.height)))
         center(panel)
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.makeKeyAndOrderFront(nil)
         self.panel = panel
     }

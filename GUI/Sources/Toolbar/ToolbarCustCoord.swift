@@ -119,6 +119,7 @@ final class ToolbarCustomizeCoordinator {
 
     private func position(_ panel: NSPanel, near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?) {
         panel.setFrame(frame(near: anchorScreenPoint, relativeTo: window, requestedSize: panel.frame.size), display: true)
+        AuxiliaryWindowFramePolicy.ensureVisible(panel, preferredScreen: window?.screen)
     }
 
     private func frame(near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?, requestedSize: NSSize) -> NSRect {

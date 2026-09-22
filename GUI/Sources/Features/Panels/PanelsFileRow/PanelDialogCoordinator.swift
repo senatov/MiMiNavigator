@@ -83,6 +83,7 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
         newPanel.setFrame(computeDefaultFrame(), display: true)
+        AuxiliaryWindowFramePolicy.ensureVisible(newPanel)
         presentAboveMain(newPanel)
         newPanel.recalculateKeyViewLoop()
         panel = newPanel

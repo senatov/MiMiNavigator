@@ -125,6 +125,7 @@ extension ConvertMediaCoord {
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.setFrameAutosaveName(frameAutosaveName)
     }
 }

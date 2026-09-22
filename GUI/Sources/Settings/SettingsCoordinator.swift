@@ -68,6 +68,7 @@ final class SettingsCoordinator {
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = SettingsWindowDelegate.shared
         log.debug(#function)

@@ -58,6 +58,7 @@ extension ConvertMediaDialog {
             height: max(Layout.minHeight, storedFrame.height)
         )
         window.setFrame(frame, display: true)
+        AuxiliaryWindowFramePolicy.ensureVisible(window)
     }
 
 

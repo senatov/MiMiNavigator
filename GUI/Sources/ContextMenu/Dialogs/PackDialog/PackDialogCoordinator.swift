@@ -65,6 +65,7 @@ final class PackDialogCoordinator {
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = PackWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panel)

@@ -76,6 +76,7 @@ final class UpdateCoordinator {
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(p)
         p.setFrameAutosaveName(frameAutosaveName)
         WindowPresentationPolicy.presentStandalone(p)
         self.panel = p

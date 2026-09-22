@@ -74,6 +74,7 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         if !p.setFrameUsingName(frameAutosaveName) {
             p.center()
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(p)
         p.setFrameAutosaveName(frameAutosaveName)
         return p
     }

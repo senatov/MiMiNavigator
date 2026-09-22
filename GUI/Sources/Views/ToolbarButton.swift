@@ -76,7 +76,8 @@ private final class TooltipWindow {
         )
 
         // Clamp to visible screen
-        if let screen = NSScreen.main?.visibleFrame {
+        let targetScreen = NSScreen.screens.first { $0.visibleFrame.contains(screenPoint) } ?? NSScreen.main
+        if let screen = targetScreen?.visibleFrame {
             if origin.x + size.width > screen.maxX {
                 origin.x = screen.maxX - size.width - 4
             }
@@ -89,6 +90,7 @@ private final class TooltipWindow {
         }
 
         p.setFrameOrigin(origin)
+        AuxiliaryWindowFramePolicy.ensureVisible(p, preferredScreen: targetScreen)
         p.orderFront(nil)
         self.panel = p
     }

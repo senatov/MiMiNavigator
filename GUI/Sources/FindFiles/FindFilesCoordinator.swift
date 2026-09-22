@@ -85,6 +85,7 @@ final class FindFilesCoordinator {
             let frame = computeDefaultFrame()
             window.setFrame(frame, display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(window)
         window.setFrameAutosaveName(frameAutosaveName)
         window.delegate = FindFilesWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(window)
@@ -113,6 +114,7 @@ final class FindFilesCoordinator {
         window.title = "Find Files — Results"
         WindowPresentationPolicy.apply(.standalone, to: window)
         if !window.setFrameUsingName("MiMiNavigator.FindFilesResultsWindow") { window.center() }
+        AuxiliaryWindowFramePolicy.ensureVisible(window)
         window.setFrameAutosaveName("MiMiNavigator.FindFilesResultsWindow")
         window.delegate = FindFilesWindowDelegate.shared
         resultsWindow = window

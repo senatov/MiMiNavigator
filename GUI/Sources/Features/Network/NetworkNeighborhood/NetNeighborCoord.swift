@@ -57,6 +57,7 @@ final class NetworkNeighborhoodCoordinator {
         if !panel.setFrameUsingName(frameAutosaveName) {
             panel.setFrame(computeDefaultFrame(), display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.setFrameAutosaveName(frameAutosaveName)
         panel.delegate = NetworkWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panel)

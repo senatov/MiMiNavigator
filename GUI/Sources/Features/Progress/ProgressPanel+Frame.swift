@@ -30,6 +30,7 @@ extension ProgressPanel {
         applySavedSizeIfNeeded(to: panel)
         clampPanelToMainWindow()
         centerInMainWindow()
+        AuxiliaryWindowFramePolicy.ensureVisible(panel, preferredScreen: presentationHostWindow?.screen)
     }
 
     // MARK: - Persist Frame

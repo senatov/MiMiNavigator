@@ -46,6 +46,7 @@ final class FileOperationDiagnosticPresenter: NSObject, NSWindowDelegate {
         } else {
             panel.center()
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
     }
 
     // MARK: - Close

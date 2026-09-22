@@ -167,6 +167,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         if !panel.setFrameUsingName(LayoutConstants.frameAutosaveName) {
             panel.setFrame(defaultFrame(), display: true)
         }
+        AuxiliaryWindowFramePolicy.ensureVisible(panel)
         panel.setFrameAutosaveName(LayoutConstants.frameAutosaveName)
     }
 
