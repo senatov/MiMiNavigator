@@ -20,7 +20,7 @@ extension MediaConversionService {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("mimi_gif_\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        defer { recycleConversionArtifactLater(tempDir) }
         let framePattern = tempDir.appendingPathComponent("f_%04d.png")
         var width = GifSizeGuard.initialMaxWidth
         var fps = GifSizeGuard.initialFPS
@@ -45,7 +45,7 @@ extension MediaConversionService {
                 panel.appendLine("Regenerating shorter and smaller GIF…")
         }
         fps = GifSizeGuard.fallbackFPS
-        try cleanFrames(in: tempDir)
+        try await cleanFrames(in: tempDir)
         try await extractFrames(
             source: source,
             framePattern: framePattern,
@@ -62,7 +62,7 @@ extension MediaConversionService {
         panel.appendLine("⚠️ Still too large, shrinking to \(GifSizeGuard.finalWidth)px and \(GifSizeGuard.finalDurationSeconds)s…")
         width = GifSizeGuard.finalWidth
         fps = GifSizeGuard.finalFPS
-        try cleanFrames(in: tempDir)
+        try await cleanFrames(in: tempDir)
         try await extractFrames(
             source: source,
             framePattern: framePattern,
@@ -106,7 +106,9 @@ extension MediaConversionService {
         fps: Int,
         panel: ProgressPanel
     ) async throws {
-        try? FileManager.default.removeItem(at: target)
+        if FileManager.default.fileExists(atPath: target.path) {
+            _ = try await FileRecycleService.recycle(target)
+        }
         let frameFiles = try enumerateSortedFrames(in: framesDir)
         guard !frameFiles.isEmpty else {
             throw ConversionError.readFailed("no PNG frames extracted")
@@ -121,11 +123,11 @@ extension MediaConversionService {
         try await runProcess(executablePath: ConversionTool.gifskiPath, arguments: args, panel: panel)
     }
 
-    func cleanFrames(in directory: URL) throws {
+    func cleanFrames(in directory: URL) async throws {
         let fm = FileManager.default
         let contents = try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         for file in contents where file.pathExtension == "png" {
-            try fm.removeItem(at: file)
+            _ = try await FileRecycleService.recycle(file)
         }
     }
 
@@ -212,17 +214,17 @@ extension MediaConversionService {
         var installed = false
         defer {
             if installed {
-                try? FileManager.default.removeItem(at: original)
+                recycleConversionArtifactLater(original)
             } else {
                 Self.restoreGIFBackup(original, target: target)
             }
-            try? FileManager.default.removeItem(at: reduced)
+            recycleConversionArtifactLater(reduced)
         }
         panel.appendLine("Reducing GIF: max width 400px, palette 256 colors, first \(GifSizeGuard.fallbackDurationSeconds)s…")
         try await runGIFReduction(source: original, target: reduced, duration: GifSizeGuard.fallbackDurationSeconds, fps: GifSizeGuard.fallbackFPS, panel: panel)
         if GifSizeGuard.exceedsLimit(reduced) {
             panel.appendLine("Still \(GifSizeGuard.fileSizeMB(reduced)); trimming to first \(GifSizeGuard.finalDurationSeconds)s…")
-            try? FileManager.default.removeItem(at: reduced)
+            _ = try await FileRecycleService.recycle(reduced)
             try await runGIFReduction(source: original, target: reduced, duration: GifSizeGuard.finalDurationSeconds, fps: GifSizeGuard.finalFPS, panel: panel)
         }
         if GifSizeGuard.exceedsLimit(reduced) {

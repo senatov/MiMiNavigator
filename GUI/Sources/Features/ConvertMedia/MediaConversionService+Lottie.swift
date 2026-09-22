@@ -20,7 +20,7 @@ extension MediaConversionService {
         panel: ProgressPanel
     ) async throws {
         let temporaryDirectory = try makeTemporaryLottieDirectory()
-        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+        defer { recycleConversionArtifactLater(temporaryDirectory) }
         let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
         try await prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
         panel.appendLine("Rendering Lottie frames…")

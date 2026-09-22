@@ -97,8 +97,8 @@ extension CntMenuCoord {
         )
 
         if deleteOriginal {
-            try FileManager.default.removeItem(at: file.urlValue)
-            log.info("[MediaConvert] deleted original '\(file.nameStr)'")
+            _ = try await FileRecycleService.recycle(file.urlValue)
+            log.info("[MediaConvert] moved original to Trash '\(file.nameStr)'")
         }
 
         refreshPanels(appState: appState)

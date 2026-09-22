@@ -23,37 +23,46 @@ enum TemporaryArtifactCleaner {
 
     // MARK: - Cleanup
     static func cleanup(reason: String) async {
-        await Task.detached(priority: .utility) {
+        let artifacts = await Task.detached(priority: .utility) {
             let fileManager = FileManager.default
             let roots = [
                 fileManager.temporaryDirectory.standardizedFileURL,
                 URL(fileURLWithPath: "/tmp", isDirectory: true).standardizedFileURL,
             ]
             let uniqueRoots = Dictionary(grouping: roots, by: \.path).compactMap(\.value.first)
-            let removedTemporaryCount = uniqueRoots.reduce(0) {
-                $0 + cleanupTemporaryRoot($1, fileManager: fileManager)
+            let temporaryURLs = uniqueRoots.flatMap {
+                ownedTemporaryArtifacts(in: $0, fileManager: fileManager)
             }
-            let removedAtomicCount = cleanupAtomicStorageFiles(fileManager: fileManager)
-            log.info(
-                "[TempCleanup] reason=\(reason) removedTemporary=\(removedTemporaryCount) removedAtomic=\(removedAtomicCount) roots='\(uniqueRoots.map(\.path))' logsPreserved=true updaterPreserved=true"
-            )
+            let atomicURLs = atomicStorageFiles(fileManager: fileManager)
+            return (temporaryURLs, atomicURLs, uniqueRoots.map(\.path))
         }.value
+        let removedTemporaryCount = await recycle(artifacts.0)
+        let removedAtomicCount = await recycle(artifacts.1)
+        log.info(
+            "[TempCleanup] reason=\(reason) recycledTemporary=\(removedTemporaryCount) recycledAtomic=\(removedAtomicCount) roots='\(artifacts.2)' logsPreserved=true updaterPreserved=true"
+        )
     }
 
     // MARK: - Temporary Root
-    private static func cleanupTemporaryRoot(_ rootURL: URL, fileManager: FileManager) -> Int {
-        guard let children = try? fileManager.contentsOfDirectory(at: rootURL, includingPropertiesForKeys: nil) else { return 0 }
-        var removedCount = 0
-        for childURL in children where isOwnedTemporaryArtifact(childURL.lastPathComponent) {
+    private static func ownedTemporaryArtifacts(in rootURL: URL, fileManager: FileManager) -> [URL] {
+        guard let children = try? fileManager.contentsOfDirectory(at: rootURL, includingPropertiesForKeys: nil) else { return [] }
+        return children.filter { isOwnedTemporaryArtifact($0.lastPathComponent) }
+    }
+
+    // MARK: - Recycle
+    @MainActor
+    private static func recycle(_ urls: [URL]) async -> Int {
+        var recycledCount = 0
+        for url in urls {
             do {
-                try fileManager.removeItem(at: childURL)
-                removedCount += 1
-                log.debug("[TempCleanup] removed '\(childURL.path)'")
+                _ = try await FileRecycleService.recycle(url)
+                recycledCount += 1
+                log.debug("[TempCleanup] recycled '\(url.path)'")
             } catch {
-                log.warning("[TempCleanup] failed path='\(childURL.path)' error='\(error.localizedDescription)'")
+                log.warning("[TempCleanup] recycle failed path='\(url.path)' error='\(error.localizedDescription)'")
             }
         }
-        return removedCount
+        return recycledCount
     }
 
     // MARK: - Owned Artifact
@@ -62,7 +71,7 @@ enum TemporaryArtifactCleaner {
     }
 
     // MARK: - Atomic Storage Files
-    private static func cleanupAtomicStorageFiles(fileManager: FileManager) -> Int {
+    private static func atomicStorageFiles(fileManager: FileManager) -> [URL] {
         guard let applicationSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent("MiMiNavigator", isDirectory: true),
             let enumerator = fileManager.enumerator(
@@ -70,8 +79,8 @@ enum TemporaryArtifactCleaner {
                 includingPropertiesForKeys: [.isRegularFileKey],
                 options: [.skipsPackageDescendants]
             )
-        else { return 0 }
-        var removedCount = 0
+        else { return [] }
+        var urls: [URL] = []
         for case let fileURL as URL in enumerator {
             let name = fileURL.lastPathComponent
             if name == "Mounts", fileURL.deletingLastPathComponent().standardizedFileURL == applicationSupportURL.standardizedFileURL {
@@ -79,14 +88,8 @@ enum TemporaryArtifactCleaner {
                 continue
             }
             guard name.hasPrefix("."), name.contains(".tmp-") else { continue }
-            do {
-                try fileManager.removeItem(at: fileURL)
-                removedCount += 1
-                log.debug("[TempCleanup] removed atomic remainder '\(fileURL.path)'")
-            } catch {
-                log.warning("[TempCleanup] failed atomic path='\(fileURL.path)' error='\(error.localizedDescription)'")
-            }
+            urls.append(fileURL)
         }
-        return removedCount
+        return urls
     }
 }
