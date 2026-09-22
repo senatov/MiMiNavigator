@@ -62,11 +62,11 @@ final class PackDialogCoordinator {
             defer: false
         )
         configurePanel(panel, contentView: contentView)
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight)
+        )
         panel.delegate = PackWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panel)
         window = panel

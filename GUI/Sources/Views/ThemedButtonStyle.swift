@@ -20,8 +20,9 @@ struct ThemedButtonStyle: ButtonStyle {
         DownToolbarGlassButtonStyle(
             isHovered: isHovered,
             tint: tint,
-            horizontalPadding: 12,
-            verticalPadding: 6,
+            horizontalPadding: 9,
+            verticalPadding: 7,
+            raised: true,
             isSelected: isSelected
         )
         .makeBody(configuration: configuration)

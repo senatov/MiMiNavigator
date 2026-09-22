@@ -202,7 +202,6 @@ extension ConnToSrvrView {
                         RoundedRectangle(cornerRadius: 3, style: .continuous)
                             .strokeBorder(Color.white.opacity(dividerBorderStrokeOpacity), lineWidth: 0.8)
                     }
-                    .glassEffect()
             }
             .contentShape(Rectangle())
             .onHover { hovering in

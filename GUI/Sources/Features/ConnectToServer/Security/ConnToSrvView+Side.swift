@@ -37,7 +37,6 @@ extension ConnToSrvrView {
             Divider()
                 .opacity(0.22)
         }
-        .glassEffect()
     }
 
     var contentPane: some View {
@@ -58,7 +57,6 @@ extension ConnToSrvrView {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .glassEffect()
     }
 
     var sidebarSearchHeader: some View {
@@ -74,7 +72,6 @@ extension ConnToSrvrView {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.35))
-        .glassEffect()
         .overlay(alignment: .bottom) {
             Divider()
         }
@@ -105,7 +102,6 @@ extension ConnToSrvrView {
         .overlay(alignment: .top) {
             Divider()
         }
-        .glassEffect()
     }
 
     var sectionTitleBar: some View {
@@ -130,7 +126,6 @@ extension ConnToSrvrView {
                     .controlSize(.small)
             }
         }
-        .glassEffect()
         .padding(.horizontal, 24)
         .padding(.top, 20)
         .padding(.bottom, 16)
@@ -144,7 +139,6 @@ extension ConnToSrvrView {
                 .lineLimit(1)
         }
         .buttonStyle(.plain)
-        .glassEffect()
         .help("Show connection diagnostics")
         .frame(height: 18)
     }
@@ -171,7 +165,6 @@ extension ConnToSrvrView {
                 remotePathRow
             }
         }
-        .glassEffect()
     }
 
     var authenticationGroup: some View {
@@ -192,57 +185,46 @@ extension ConnToSrvrView {
                 startupRow
             }
         }
-        .glassEffect()
     }
 
     var actionButtonsRow: some View {
         HStack(spacing: 12) {
             Spacer()
 
-            Button("Disconnect", action: disconnectAction)
+            DownToolbarButtonView(
+                title: "Disconnect",
+                systemImage: "network.slash",
+                iconTint: .red,
+                action: disconnectAction
+            )
                 .disabled(!canDisconnectCurrentDraft)
-                .buttonStyle(ThemedButtonStyle())
-                .tint(.red)
-                .controlSize(.large)
-                .focusable(true)
 
             saveButton
                 .disabled(draft.host.isEmpty)
 
             if isConnecting {
-                Button("Cancel", action: cancelConnectionTask)
-                    .buttonStyle(ThemedButtonStyle())
-                    .controlSize(.large)
-                    .focusable(true)
+                DownToolbarButtonView(title: "Cancel", systemImage: "xmark", action: cancelConnectionTask)
                     .keyboardShortcut(.cancelAction)
             } else {
-                Button("Connect", action: connectAction)
+                DownToolbarButtonView(
+                    title: "Connect",
+                    systemImage: "link",
+                    iconTint: .accentColor,
+                    action: connectAction
+                )
                     .disabled(draft.host.isEmpty)
-                    .buttonStyle(ThemedButtonStyle())
-                    .tint(.accentColor)
-                    .controlSize(.large)
-                    .focusable(true)
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .glassEffect()
     }
 
     var saveButton: some View {
-        Button(action: saveActionWithFeedback) {
-            ZStack {
-                Text("Save")
-                if showSaveFlash {
-                    Image(systemName: saveFlashIcon)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(saveFlashColor)
-                        .transition(.scale(scale: 0.5).combined(with: .opacity))
-                }
-            }
-        }
-        .buttonStyle(ThemedButtonStyle())
-        .controlSize(.large)
-        .focusable(true)
+        DownToolbarButtonView(
+            title: "Save",
+            systemImage: showSaveFlash ? saveFlashIcon : "square.and.arrow.down",
+            iconTint: showSaveFlash ? saveFlashColor : .blue,
+            action: saveActionWithFeedback
+        )
         .animation(.easeOut(duration: 0.2), value: showSaveFlash)
     }
 }

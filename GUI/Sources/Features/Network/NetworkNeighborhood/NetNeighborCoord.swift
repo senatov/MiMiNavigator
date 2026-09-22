@@ -54,11 +54,11 @@ final class NetworkNeighborhoodCoordinator {
         )
         configurePanel(panel, contentView: contentView)
         // Stay visible when app deactivates, but rise when the app activates again.
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight)
+        )
         panel.delegate = NetworkWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panel)
         window = panel

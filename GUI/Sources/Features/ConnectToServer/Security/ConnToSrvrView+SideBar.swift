@@ -67,7 +67,6 @@ extension ConnToSrvrView {
             }
         }
         .padding(.horizontal, 6)
-        .glassEffect()
     }
 
     func sidebarStatusColor(for server: RemoteServer, isSelected: Bool, connected: Bool) -> Color {

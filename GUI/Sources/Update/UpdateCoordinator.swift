@@ -73,11 +73,11 @@ final class UpdateCoordinator {
         p.isMovableByWindowBackground = false
         p.backgroundColor = .windowBackgroundColor
         WindowPresentationPolicy.apply(.standalone, to: p)
-        if !p.setFrameUsingName(frameAutosaveName) {
-            p.center()
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(p)
-        p.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            p,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: 480, height: 400)
+        )
         WindowPresentationPolicy.presentStandalone(p)
         self.panel = p
         if startCheck {

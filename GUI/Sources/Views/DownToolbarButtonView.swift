@@ -11,18 +11,30 @@ import SwiftUI
 /// Compact Commander-style action button for the persistent bottom command bar.
 struct DownToolbarButtonView: View {
     let title: String
+    let shortcut: String
     let systemImage: String
     let imageName: String?
+    let iconTint: Color
     let action: () -> Void
     @State private var isHovered: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     // MARK: -
 
-    init(title: String, systemImage: String, imageName: String? = nil, action: @escaping () -> Void) {
+    init(
+        title: String,
+        shortcut: String = "",
+        systemImage: String,
+        imageName: String? = nil,
+        iconTint: Color = .primary,
+        action: @escaping () -> Void
+    ) {
         self.title = title
+        self.shortcut = shortcut
         self.systemImage = systemImage
         self.imageName = imageName
+        self.iconTint = iconTint
         self.action = action
     }
     var body: some View {
@@ -35,26 +47,50 @@ struct DownToolbarButtonView: View {
                         .resizable()
                         .renderingMode(.original)
                         .scaledToFit()
-                        .frame(width: 14, height: 14)
+                        .frame(width: 18, height: 18)
                 } else {
                     Image(systemName: systemImage)
-                        .symbolRenderingMode(.hierarchical)
-                        .frame(width: 14)
+                        .font(.system(size: 17, weight: .light))
+                        .symbolRenderingMode(.monochrome)
+                        .foregroundStyle(iconTint)
+                        .frame(width: 18, height: 18)
+                }
+                elementDivider
+                if !shortcut.isEmpty {
+                    Text(shortcut)
+                        .font(.callout)
+                        .foregroundStyle(shortcutColor)
+                        .fixedSize()
+                    elementDivider
                 }
                 Text(title)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
             }
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(minWidth: 76)
+                .frame(minWidth: 84)
         }
-        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered))
+        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered, horizontalPadding: 9, verticalPadding: 7, raised: true))
         .onHover { hovering in
             if reduceMotion { isHovered = hovering }
             else { withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering } }
         }
         .keyboardFocusable()
         .accessibilityLabel(title)
-        .help(title)
+        .help(shortcut.isEmpty ? title : "\(title) (\(shortcut))")
+        .accessibilityHint(shortcut.isEmpty ? "" : "Keyboard shortcut \(shortcut)")
+    }
+
+    private var elementDivider: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1, height: 17)
+    }
+
+    private var shortcutColor: Color {
+        if colorScheme == .dark { return Color(nsColor: .systemBlue) }
+        return Color(#colorLiteral(red: 0.07450980392, green: 0.2666666667, blue: 0.5098039216, alpha: 1))
     }
 }
 
@@ -139,7 +175,7 @@ private struct DownToolbarGlassButtonBody: View {
 
     var body: some View {
         configuration.label
-            .font(DesignTokens.Typography.hotKey)
+            .font(.callout)
             .foregroundStyle(Color.primary.opacity(contrast == .increased ? 1 : (isPressed ? 0.96 : 0.90)))
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)

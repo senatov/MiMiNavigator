@@ -10,6 +10,24 @@ import AppKit
 @MainActor
 enum AuxiliaryWindowFramePolicy {
     private static let fallbackMinimumSize = NSSize(width: 240, height: 160)
+    static func restoreOrCenter(
+        _ window: NSWindow,
+        autosaveName: String,
+        designedSize: NSSize,
+        relativeTo hostWindow: NSWindow? = NSApp.mainWindow
+    ) {
+        let restored = window.setFrameUsingName(autosaveName)
+        if !restored {
+            let hostFrame = hostWindow?.frame ?? preferredScreen(for: hostWindow)?.visibleFrame
+            let origin = hostFrame.map {
+                NSPoint(x: $0.midX - designedSize.width / 2, y: $0.midY - designedSize.height / 2)
+            } ?? .zero
+            window.setFrame(NSRect(origin: origin, size: designedSize), display: true)
+        }
+        ensureVisible(window, preferredScreen: preferredScreen(for: hostWindow))
+        window.setFrameAutosaveName(autosaveName)
+    }
+
     static func ensureVisible(_ window: NSWindow, preferredScreen: NSScreen? = nil) {
         guard !NSScreen.screens.isEmpty else { return }
         let original = window.frame
@@ -46,6 +64,10 @@ enum AuxiliaryWindowFramePolicy {
             if let best, intersectionArea(frame, best.visibleFrame) > 0 { return best }
         }
         return preferredScreen ?? NSApp.mainWindow?.screen ?? NSScreen.main ?? NSScreen.screens[0]
+    }
+
+    private static func preferredScreen(for hostWindow: NSWindow?) -> NSScreen? {
+        hostWindow?.screen ?? NSApp.mainWindow?.screen ?? NSScreen.main
     }
 
     private static func intersectionArea(_ first: NSRect, _ second: NSRect) -> CGFloat {

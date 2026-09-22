@@ -71,11 +71,11 @@ final class AboutCoordinator: NSObject, NSWindowDelegate {
         p.becomesKeyOnlyIfNeeded = false
         WindowPresentationPolicy.apply(.standalone, to: p)
 
-        if !p.setFrameUsingName(frameAutosaveName) {
-            p.center()
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(p)
-        p.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            p,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: 460, height: 580)
+        )
         return p
     }
 }

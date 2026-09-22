@@ -65,11 +65,11 @@ final class SettingsCoordinator {
         WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.autorecalculatesKeyViewLoop = true
 
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight)
+        )
         panel.delegate = SettingsWindowDelegate.shared
         log.debug(#function)
         WindowPresentationPolicy.presentStandalone(panel)

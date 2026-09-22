@@ -122,10 +122,10 @@ extension ConvertMediaCoord {
     }
 
     func restoreOrApplyDefaultFrame(for panel: NSPanel) {
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight)
+        )
     }
 }

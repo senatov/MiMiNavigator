@@ -33,7 +33,7 @@ struct DuoPanelBottomToolbarSection: View {
         VStack(spacing: 0) {
             HStack(spacing: Layout.toolbarButtonSpacing) {
                 commanderButton(title: L10n.Toolbar.rename, action: .renameFile, icon: "character.cursor.ibeam", tint: .orange, handler: onRename)
-                CommanderActionButton(
+                DownToolbarButtonView(
                     title: L10n.Toolbar.tempBackup,
                     shortcut: store.shortcutString(for: .backupFiles),
                     systemImage: "zipper.page",
@@ -67,73 +67,12 @@ struct DuoPanelBottomToolbarSection: View {
     private func commanderButton(title: String, action: HotKeyAction, icon: String, tint: Color, handler: @escaping () -> Void)
         -> some View
     {
-        CommanderActionButton(
+        DownToolbarButtonView(
             title: title,
             shortcut: HotKeyStore.shared.shortcutString(for: action),
             systemImage: icon,
             iconTint: tint,
             action: handler
         )
-    }
-}
-
-// MARK: - Commander Action Button
-private struct CommanderActionButton: View {
-    let title: String
-    let shortcut: String
-    let systemImage: String
-    let iconTint: Color
-    let action: () -> Void
-    @State private var isHovered = false
-    @Environment(\.colorScheme) private var colorScheme
-
-    // MARK: - Body
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                icon
-                elementDivider
-                if !shortcut.isEmpty {
-                    Text(shortcut)
-                        .font(.callout)
-                        .foregroundStyle(shortcutColor)
-                        .fixedSize()
-                    elementDivider
-                }
-                Text(title)
-                    .font(.callout)
-                    .foregroundStyle(.primary)
-            }
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .frame(minWidth: 84)
-        }
-        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered, horizontalPadding: 9, verticalPadding: 7, raised: true))
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
-        }
-        .keyboardFocusable()
-        .help(shortcut.isEmpty ? title : "\(title) (\(shortcut))")
-        .accessibilityLabel(title)
-        .accessibilityHint(shortcut.isEmpty ? "" : "Keyboard shortcut \(shortcut)")
-    }
-
-    private var icon: some View {
-        Image(systemName: systemImage)
-            .font(.system(size: 17, weight: .light))
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(iconTint)
-            .frame(width: 18, height: 18)
-    }
-
-    private var elementDivider: some View {
-        Rectangle()
-            .fill(Color(nsColor: .separatorColor))
-            .frame(width: 1, height: 17)
-    }
-
-    private var shortcutColor: Color {
-        if colorScheme == .dark { return Color(nsColor: .systemBlue) }
-        return Color(#colorLiteral(red: 0.07450980392, green: 0.2666666667, blue: 0.5098039216, alpha: 1))
     }
 }

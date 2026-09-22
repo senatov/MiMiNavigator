@@ -41,9 +41,11 @@ final class MultiRenameCoordinator {
         panelWindow.animationBehavior = .utilityWindow
         WindowPresentationPolicy.apply(.standalone, to: panelWindow)
         panelWindow.autorecalculatesKeyViewLoop = true
-        if !panelWindow.setFrameUsingName(frameAutosaveName) { panelWindow.center() }
-        AuxiliaryWindowFramePolicy.ensureVisible(panelWindow)
-        panelWindow.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panelWindow,
+            autosaveName: frameAutosaveName,
+            designedSize: panelWindow.frame.size
+        )
         panelWindow.delegate = MultiRenameWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panelWindow)
         panelWindow.recalculateKeyViewLoop()

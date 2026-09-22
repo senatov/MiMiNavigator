@@ -78,11 +78,11 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
         p.backgroundColor = .windowBackgroundColor
         p.becomesKeyOnlyIfNeeded = false
         WindowPresentationPolicy.apply(.standalone, to: p)
-        if !p.setFrameUsingName(frameAutosaveName) {
-            p.center()
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(p)
-        p.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            p,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: 430, height: 260)
+        )
         return p
     }
 }

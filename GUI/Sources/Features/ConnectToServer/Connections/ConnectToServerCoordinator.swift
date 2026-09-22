@@ -20,8 +20,8 @@ final class ConnectToServerCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.ConnectToServerWindow"
-    private let defaultWidth: CGFloat  = 520
-    private let defaultHeight: CGFloat = 520
+    private let defaultWidth: CGFloat  = 960
+    private let defaultHeight: CGFloat = 660
     private let minWidth: CGFloat = 540
     private let minHeight: CGFloat = 440
     private let panelTitle = "Connect to Server"
@@ -55,6 +55,7 @@ final class ConnectToServerCoordinator {
     // MARK: - Open
     func open() {
         log.debug(#function)
+        let hostWindow = NSApp.mainWindow
         WindowReplacement.close(window)
         window = nil
 
@@ -81,11 +82,12 @@ final class ConnectToServerCoordinator {
         WindowPresentationPolicy.apply(.standalone, to: panel)
         panel.autorecalculatesKeyViewLoop = true
 
-        if !panel.setFrameUsingName(frameAutosaveName) {
-            panel.setFrame(computeDefaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight),
+            relativeTo: hostWindow
+        )
 
         panel.delegate = ConnectToServerWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(panel)
@@ -142,21 +144,6 @@ final class ConnectToServerCoordinator {
         onConnect?(url, password)
     }
 
-    // MARK: - Default frame: centered over main window
-    private func computeDefaultFrame() -> NSRect {
-        let size = NSSize(width: defaultWidth, height: defaultHeight)
-        if let main = NSApp.mainWindow {
-            let mf = main.frame
-            let x = mf.midX - size.width / 2
-            let y = mf.midY - size.height / 2
-            return NSRect(origin: NSPoint(x: x, y: y), size: size)
-        }
-        if let screen = NSScreen.main {
-            let sf = screen.visibleFrame
-            return NSRect(origin: NSPoint(x: sf.midX - size.width / 2, y: sf.midY - size.height / 2), size: size)
-        }
-        return NSRect(origin: .zero, size: size)
-    }
 }
 
 // MARK: - Window Delegate

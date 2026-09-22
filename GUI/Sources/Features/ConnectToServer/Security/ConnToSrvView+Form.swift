@@ -21,7 +21,6 @@ extension ConnToSrvrView {
             TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .name)
                 .onChange(of: draft.name) { _, newValue in
                     if applyURLParserIfNeeded(newValue, clearName: false) {
@@ -43,7 +42,6 @@ extension ConnToSrvrView {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .glassEffect()
             .onChange(of: draft.remoteProtocol) { _, newProto in
                 if shouldReplacePortForProtocolChange {
                     draft.port = newProto.defaultPort
@@ -57,7 +55,6 @@ extension ConnToSrvrView {
             TextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .host)
                 .onChange(of: draft.host) { _, newValue in
                     handleHostChanged(newValue)
@@ -73,7 +70,6 @@ extension ConnToSrvrView {
             TextField("", value: $draft.port, formatter: Self.portFormatter)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .port)
                 .frame(width: 80)
         }
@@ -84,7 +80,6 @@ extension ConnToSrvrView {
             TextField("", text: $draft.remotePath)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .remotePath)
         }
     }
@@ -94,7 +89,6 @@ extension ConnToSrvrView {
             TextField("", text: $draft.user)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .user)
         }
     }
@@ -116,14 +110,12 @@ extension ConnToSrvrView {
                 .id("plain-password-field")
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .password)
         } else {
             SecureField("", text: $password)
                 .id("secure-password-field")
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
-                .glassEffect()
                 .focused($focusedField, equals: .password)
         }
     }
@@ -143,7 +135,6 @@ extension ConnToSrvrView {
                 .frame(width: 20)
         }
         .buttonStyle(.plain)
-        .glassEffect()
         .help(showPassword ? "Hide password" : "Show password")
     }
 
@@ -162,7 +153,6 @@ extension ConnToSrvrView {
             .pickerStyle(.radioGroup)
             .horizontalRadioGroupLayout()
             .labelsHidden()
-            .glassEffect()
         }
     }
 
@@ -172,12 +162,10 @@ extension ConnToSrvrView {
                 TextField("", text: $draft.privateKeyPath)
                     .foregroundStyle(Color(nsColor: .textColor))
                     .textFieldStyle(.roundedBorder)
-                    .glassEffect()
                     .focused($focusedField, equals: .keyPath)
 
                 Button("Choose…", action: chooseKeyFile)
                     .controlSize(.small)
-                    .glassEffect()
             }
         }
     }

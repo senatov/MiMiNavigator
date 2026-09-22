@@ -79,14 +79,11 @@ final class FindFilesCoordinator {
         WindowPresentationPolicy.apply(.standalone, to: window)
         window.autorecalculatesKeyViewLoop = true
 
-        // Restore saved frame or compute default position
-        if !window.setFrameUsingName(frameAutosaveName) {
-            // No saved frame — position to the right of main window, not covering it
-            let frame = computeDefaultFrame()
-            window.setFrame(frame, display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(window)
-        window.setFrameAutosaveName(frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            window,
+            autosaveName: frameAutosaveName,
+            designedSize: NSSize(width: defaultWidth, height: defaultHeight)
+        )
         window.delegate = FindFilesWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(window)
         window.recalculateKeyViewLoop()
@@ -113,9 +110,11 @@ final class FindFilesCoordinator {
         window.minSize = NSSize(width: 680, height: 260)
         window.title = "Find Files — Results"
         WindowPresentationPolicy.apply(.standalone, to: window)
-        if !window.setFrameUsingName("MiMiNavigator.FindFilesResultsWindow") { window.center() }
-        AuxiliaryWindowFramePolicy.ensureVisible(window)
-        window.setFrameAutosaveName("MiMiNavigator.FindFilesResultsWindow")
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            window,
+            autosaveName: "MiMiNavigator.FindFilesResultsWindow",
+            designedSize: NSSize(width: 1000, height: 500)
+        )
         window.delegate = FindFilesWindowDelegate.shared
         resultsWindow = window
         WindowPresentationPolicy.presentStandalone(window)

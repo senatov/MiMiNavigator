@@ -164,11 +164,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         guard !panelCreated, let panel else { return }
         panelCreated = true
 
-        if !panel.setFrameUsingName(LayoutConstants.frameAutosaveName) {
-            panel.setFrame(defaultFrame(), display: true)
-        }
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
-        panel.setFrameAutosaveName(LayoutConstants.frameAutosaveName)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: LayoutConstants.frameAutosaveName,
+            designedSize: defaultFrame().size
+        )
     }
 
     func refreshText(title: String, text: String) {
