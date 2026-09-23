@@ -133,7 +133,16 @@ final class InAppNoticeCenter {
         actionTitle: String? = nil,
         action: (() -> Void)? = nil
     ) {
-        showBanner(title: title, message: message, scope: scope, systemImage: "xmark.circle.fill", tint: .red, actionTitle: actionTitle, action: action)
+        let reportAction = action ?? { FeedbackReporter.reviewError(title: title, message: message) }
+        showBanner(
+            title: title,
+            message: message,
+            scope: scope,
+            systemImage: "xmark.circle.fill",
+            tint: .red,
+            actionTitle: actionTitle ?? "Report",
+            action: reportAction
+        )
     }
 
     // MARK: - Current Notice

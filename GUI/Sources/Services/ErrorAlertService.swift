@@ -29,7 +29,9 @@ enum ErrorAlertService {
             title: title,
             message: message,
             systemImage: isCritical ? "xmark.octagon.fill" : "exclamationmark.triangle.fill",
-            tint: isCritical ? .red : .orange
+            tint: isCritical ? .red : .orange,
+            actionTitle: "Report",
+            action: { FeedbackReporter.reviewError(title: title, message: message) }
         )
     }
 

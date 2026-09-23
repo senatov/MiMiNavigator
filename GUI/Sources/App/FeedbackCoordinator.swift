@@ -55,7 +55,10 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
                 self?.close()
             },
             onSendDiagnostics: { [weak self] in
-                FeedbackReporter.sendDiagnosticsEmail()
+                FeedbackReporter.openReview(
+                    title: "Diagnostics",
+                    message: "Describe what happened before the error."
+                )
                 self?.close()
             },
             onClose: { [weak self] in
@@ -97,7 +100,7 @@ struct FeedbackWindowContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             header
-            Text("Open the public feedback post for short comments, or send a diagnostics package by email if logs are needed.")
+            Text("Open the public feedback post, or review a privacy-filtered log excerpt before copying it into a Blogger comment.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -109,9 +112,9 @@ struct FeedbackWindowContent: View {
                     action: onOpenComments
                 )
                 FeedbackActionButton(
-                    title: "Send Diagnostics by Email",
-                    subtitle: "Creates a ZIP with app version, macOS version, and MiMiNavigator logs.",
-                    systemImage: "envelope.badge",
+                    title: "Review Diagnostic Report",
+                    subtitle: "Shows the exact sanitized text before anything is copied or opened.",
+                    systemImage: "doc.text.magnifyingglass",
                     action: onSendDiagnostics
                 )
             }

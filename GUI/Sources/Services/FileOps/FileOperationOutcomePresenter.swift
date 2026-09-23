@@ -150,15 +150,18 @@ enum FileOperationOutcomePresenter {
     }
 
     static func failure(_ operation: Operation, message: String, retry: (() -> Void)? = nil, undo: UndoOperation? = nil) {
+        let fallbackReport = {
+            FeedbackReporter.reviewError(title: operation.failureTitle, message: message)
+        }
         InAppNoticeCenter.shared.showBanner(
             title: operation.failureTitle,
             message: message,
             systemImage: "xmark.octagon.fill",
             tint: .red,
             displayDuration: bannerDisplayDuration,
-            actionTitle: retry == nil ? (undo == nil ? nil : "Undo") : "Retry",
+            actionTitle: retry == nil ? (undo == nil ? "Report" : "Undo") : "Retry",
             isActionAvailable: retry == nil ? undo?.isAvailable : nil,
-            action: retry ?? undo?.action
+            action: retry ?? undo?.action ?? fallbackReport
         )
     }
 

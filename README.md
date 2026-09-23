@@ -42,6 +42,8 @@ Browse two locations side by side and copy, move, rename, organize, or inspect f
 
 File operations report concise animated messages in the active window. The Test Build rivet opens a scrollable, numbered history of the 32 most recent notices, including timestamps and available source and destination paths; this history survives application restarts and follows the colors selected in Settings.
 
+Error banners offer an explicit **Report** action. MiMiNavigator prepares a bounded log excerpt, removes common personal identifiers and secrets, and shows the complete editable text before copying it to the clipboard and opening the public Blogger feedback comments. Nothing is uploaded or published automatically; the user makes the final posting decision in Blogger.
+
 Breadcrumbs emphasize the current folder. Hovering expands a segment to its full name with a spring animation, extra spacing, and a raised glass button surface; neighboring segments move aside. Right-click a local or mounted-folder segment to copy its path, open it in the other panel or a new tab, or browse its subfolders in an on-demand chooser. These additional navigation actions are not offered inside virtual archives or protocol-based remote paths.
 
 Thumbnail mode fits each complete image proportionally within the selected size, including upscaling small images. Selection outlines follow the image with a small inset instead of filling wide empty cells. Long filenames are shortened in the middle and expand into complete multiline labels when selected.

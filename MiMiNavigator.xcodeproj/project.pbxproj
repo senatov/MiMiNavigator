@@ -56,6 +56,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Tests/MiMiNavigatorTests/DiagnosticReportBuilderTests.swift,
 				Tests/MiMiNavigatorTests/DirectorySizeCalculatorTests.swift,
 				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
@@ -69,6 +70,7 @@
 		97E4E5A02E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Tests/MiMiNavigatorTests/DiagnosticReportBuilderTests.swift,
 				Tests/MiMiNavigatorTests/DirectorySizeCalculatorTests.swift,
 				Tests/MiMiNavigatorTests/FileContentHashCacheTests.swift,
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
