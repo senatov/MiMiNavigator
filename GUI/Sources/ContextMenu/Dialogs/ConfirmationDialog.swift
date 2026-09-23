@@ -19,26 +19,31 @@ struct DeleteConfirmationDialog: View {
     private var hasDirectories: Bool {
         files.contains { $0.isDirectory }
     }
+    private var isRemote: Bool {
+        files.contains { AppState.isRemotePath($0.urlValue) }
+    }
     var body: some View {
         VStack(spacing: 16) {
             HIGDialogHeader(
-                "Do you want to move \(itemsDescription) to Trash?",
+                isRemote
+                    ? "Do you want to permanently delete \(itemsDescription)?"
+                    : "Do you want to move \(itemsDescription) to Trash?",
                 subtitle: files.count == 1 ? files[0].urlValue.deletingLastPathComponent().path : nil
             )
             if hasDirectories {
                 directoryWarning
             }
             HIGDialogButtons(
-                confirmTitle: "Move to Trash",
+                confirmTitle: isRemote ? "Delete" : "Move to Trash",
                 isDestructive: true,
-                isConfirmDisabled: hasDirectories && estimate == nil,
+                isConfirmDisabled: hasDirectories && !isRemote && estimate == nil,
                 onCancel: onCancel,
                 onConfirm: onConfirm
             )
         }
         .higDialogStyle()
         .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
-            guard hasDirectories else { return }
+            guard hasDirectories, !isRemote else { return }
             estimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
         }
     }
@@ -57,6 +62,9 @@ struct DeleteConfirmationDialog: View {
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
     private var directoryWarningText: String {
+        if isRemote {
+            return "The remote server has no Trash. The selected directory and all of its contents will be deleted permanently."
+        }
         guard let estimate else {
             return "Calculating selected directories..."
         }

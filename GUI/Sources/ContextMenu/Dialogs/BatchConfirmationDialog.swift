@@ -66,6 +66,10 @@ struct BatchConfirmationDialog: View {
     private var filesCount: Int {
         files.filter { !$0.isDirectory }.count
     }
+
+    private var isRemoteDelete: Bool {
+        operationType == .delete && files.contains { AppState.isRemotePath($0.urlValue) }
+    }
     
     var body: some View {
         let maximumSize = DialogWindowMetrics.maximumSize
@@ -165,7 +169,7 @@ struct BatchConfirmationDialog: View {
         )
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
         .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
-            if operationType == .delete && directoriesCount > 0 {
+            if operationType == .delete && directoriesCount > 0 && !isRemoteDelete {
                 deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
             }
             guard operationType != .delete, let destination else { return }
@@ -194,7 +198,7 @@ struct BatchConfirmationDialog: View {
                 cancelTitle: L10n.Button.cancel,
                 confirmTitle: confirmButtonTitle,
                 isDestructive: operationType == .delete,
-                isConfirmDisabled: operationType == .delete && directoriesCount > 0 && deleteEstimate == nil,
+                isConfirmDisabled: operationType == .delete && directoriesCount > 0 && !isRemoteDelete && deleteEstimate == nil,
                 onCancel: onCancel,
                 onConfirm: onConfirm
             )
@@ -227,7 +231,7 @@ struct BatchConfirmationDialog: View {
             FileOperationPreviewRow(label: "Items", value: itemSummary, systemImage: "doc.on.doc"),
             FileOperationPreviewRow(label: "Total size", value: totalSize, systemImage: "externaldrive")
         ]
-        let target = destination?.path ?? "Trash"
+        let target = destination?.path ?? (isRemoteDelete ? "Remote server (permanent)" : "Trash")
         rows.insert(FileOperationPreviewRow(label: "To", value: target, systemImage: operationType == .delete ? "trash" : "folder.badge.arrow.forward"), at: 1)
         if conflictCount > 0 {
             rows.append(FileOperationPreviewRow(label: "Conflicts", value: "\(conflictCount) will require a decision", systemImage: "exclamationmark.triangle"))
@@ -266,7 +270,9 @@ struct BatchConfirmationDialog: View {
         case .move:
             return L10n.BatchOperation.confirmMove(files.count, destination?.lastPathComponent ?? "")
         case .delete:
-            return L10n.BatchOperation.confirmDelete(files.count)
+            return isRemoteDelete
+                ? "Permanently delete \(files.count) selected item(s) from the remote server?"
+                : L10n.BatchOperation.confirmDelete(files.count)
         case .pack:
             return "Pack \(files.count) items into archive?"
         }
@@ -276,7 +282,7 @@ struct BatchConfirmationDialog: View {
         switch operationType {
         case .copy: return L10n.Button.copy
         case .move: return L10n.Button.move
-        case .delete: return "Move to Trash"
+        case .delete: return isRemoteDelete ? "Delete" : "Move to Trash"
         case .pack: return L10n.Button.create
         }
     }
@@ -290,6 +296,9 @@ struct BatchConfirmationDialog: View {
     }
 
     private var deleteEstimateText: String {
+        if isRemoteDelete {
+            return "The remote server has no Trash. Selected directories and all of their contents will be deleted permanently."
+        }
         guard let deleteEstimate else {
             return "Calculating selected directories..."
         }

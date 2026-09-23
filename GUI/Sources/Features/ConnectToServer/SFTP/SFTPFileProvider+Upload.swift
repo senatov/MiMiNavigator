@@ -103,7 +103,7 @@ extension SFTPFileProvider {
                 }
             }
 
-            try await sftp.remove(at: normalizedRemotePath)
+            try await sftp.rmdir(at: normalizedRemotePath)
             log.info("[SFTP] rmdir '\(normalizedRemotePath)'")
             return
         }

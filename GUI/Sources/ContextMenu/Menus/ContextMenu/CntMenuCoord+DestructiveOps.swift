@@ -9,6 +9,11 @@ import AppKit
 import FileModelKit
 import Foundation
 
+private struct RemoteDeleteFailure: Error {
+    let file: CustomFile
+    let underlyingError: Error
+}
+
 extension CntMenuCoord {
 
     // MARK: - Panel Helpers
@@ -24,7 +29,11 @@ extension CntMenuCoord {
     // MARK: - Delete
 
     /// Delete files to trash.
-    func performDelete(files: [CustomFile], appState: AppState) async {
+    func performDelete(
+        files: [CustomFile],
+        sourcePanel explicitPanel: FavPanelSide? = nil,
+        appState: AppState
+    ) async {
         log.debug("\(#function) files.count=\(files.count) files=\(files.map { $0.nameStr })")
 
         isProcessing = true
@@ -32,8 +41,12 @@ extension CntMenuCoord {
             isProcessing = false
             activeDialog = nil
         }
-
+        let panel = explicitPanel ?? panelContaining(files: files, appState: appState)
         do {
+            if appState.isRemotePanel(panel) {
+                try await deleteRemote(files: files, panel: panel, appState: appState)
+                return
+            }
             let urls = files.map { $0.urlValue }
             let trashedURLs = try await fileOps.deleteFiles(urls)
 
@@ -47,7 +60,7 @@ extension CntMenuCoord {
                 return
             }
 
-            let panel = panelForPath(firstFile.urlValue.deletingLastPathComponent().path, appState: appState)
+            let panel = panelContaining(files: [firstFile], appState: appState)
             await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
             refreshOppositePanel(of: panel, appState: appState)
             let undo = FileOperationOutcomePresenter.moveUndo(from: trashedURLs, to: urls) {
@@ -62,8 +75,61 @@ extension CntMenuCoord {
             log.error("\(#function) FAILED: \(error.localizedDescription)")
             await appState.refreshFiles(for: .left, force: true)
             await appState.refreshFiles(for: .right, force: true)
-            FileOperationOutcomePresenter.failure(.delete, error: error)
+            if let remoteFailure = error as? RemoteDeleteFailure {
+                showDeleteError(
+                    file: remoteFailure.file,
+                    panelURL: appState.url(for: panel),
+                    error: remoteFailure.underlyingError
+                )
+            } else if appState.isRemotePanel(panel), let file = files.first {
+                showDeleteError(file: file, panelURL: appState.url(for: panel), error: error)
+            } else {
+                FileOperationOutcomePresenter.failure(.delete, error: error)
+            }
         }
+    }
+
+    // MARK: - Remote Delete
+    private func deleteRemote(
+        files: [CustomFile],
+        panel: FavPanelSide,
+        appState: AppState
+    ) async throws {
+        let panelURL = appState.url(for: panel)
+        let connection = try remoteConnection(for: panelURL)
+        for file in files {
+            do {
+                try await connection.provider.deleteItem(at: file.pathStr, recursive: file.isDirectory)
+            } catch {
+                throw RemoteDeleteFailure(file: file, underlyingError: error)
+            }
+            log.info("[RemoteDelete] deleted path='\(file.pathStr)' directory=\(file.isDirectory)")
+        }
+        appState.clearMarksAfterOperation(on: panel)
+        await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
+        FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: files.map(\.urlValue))
+    }
+
+    private func panelContaining(files: [CustomFile], appState: AppState) -> FavPanelSide {
+        let ids = Set(files.map(\.id))
+        if appState.displayedFiles(for: .left).contains(where: { ids.contains($0.id) }) { return .left }
+        if appState.displayedFiles(for: .right).contains(where: { ids.contains($0.id) }) { return .right }
+        return appState.focusedPanel
+    }
+
+    private func showDeleteError(file: CustomFile, panelURL: URL, error: Error) {
+        let nsError = error as NSError
+        var components = URLComponents(url: panelURL, resolvingAgainstBaseURL: false)
+        components?.path = file.pathStr
+        let targetURL = components?.url ?? panelURL
+        let message = """
+        Operation: Delete \(file.isDirectory ? "directory" : "file")
+        Path: \(targetURL.absoluteString)
+        Reason: \(error.localizedDescription)
+        OS error: \(nsError.domain) (\(nsError.code))
+        """
+        log.error("[RemoteDelete] path='\(file.pathStr)' error='\(error.localizedDescription)' domain='\(nsError.domain)' code=\(nsError.code)")
+        InAppNoticeCenter.shared.showError(title: "Remote Delete Failed", message: message)
     }
 
     // MARK: - Rename

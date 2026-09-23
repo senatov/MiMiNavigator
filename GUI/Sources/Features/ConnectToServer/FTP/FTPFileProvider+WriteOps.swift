@@ -55,18 +55,14 @@ extension FTPFileProvider {
         let normalizedRemotePath = normalizeRemotePath(remotePath)
 
         if recursive {
-            do {
-                let children = try await listDirectory(normalizedRemotePath)
-                for child in children {
-                    try await deleteItem(at: child.path, recursive: true)
-                }
-
-                log.info("[FTP] rmdir '\(normalizedRemotePath)'")
-                try await curlFTPCommand(path: normalizedRemotePath, commands: ["RMD \(normalizedRemotePath)"])
-                return
-            } catch {
-                log.debug("[FTP] recursive delete fallback to file delete for '\(normalizedRemotePath)': \(error.localizedDescription)")
+            let children = try await listDirectory(normalizedRemotePath)
+            for child in children {
+                try await deleteItem(at: child.path, recursive: child.isDirectory)
             }
+
+            log.info("[FTP] rmdir '\(normalizedRemotePath)'")
+            try await curlFTPCommand(path: normalizedRemotePath, commands: ["RMD \(normalizedRemotePath)"])
+            return
         }
 
         log.info("[FTP] delete file '\(normalizedRemotePath)'")

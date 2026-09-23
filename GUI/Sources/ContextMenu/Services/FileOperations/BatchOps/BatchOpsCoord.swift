@@ -160,6 +160,14 @@ final class BatchOpsCoord {
         log.info("[BatchOperationCoordinator] executeDelete: \(files.count) files")
 
         Task { @MainActor in
+            if appState.isRemotePanel(sourcePanel) {
+                await CntMenuCoord.shared.performDelete(
+                    files: files,
+                    sourcePanel: sourcePanel,
+                    appState: appState
+                )
+                return
+            }
             await batchManager.deleteFiles(files, from: sourcePanel, appState: appState)
         }
     }
