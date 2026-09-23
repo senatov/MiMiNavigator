@@ -76,7 +76,7 @@ extension CntMenuCoord {
                 && ($0.server.user == user || user.isEmpty)
                 && (port == nil || $0.server.port == port)
         }) {
-            manager.setActive(id: connection.id)
+            manager.setActive(id: connection.id, activatesPanel: false)
             return connection
         }
         throw RemoteProviderError.notConnected

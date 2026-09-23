@@ -319,9 +319,13 @@ final class RemoteConnectionManager {
     }
 
     // MARK: - Active connection
-    func setActive(id: UUID) {
+    func setActive(id: UUID, activatesPanel: Bool = true) {
         guard connections.contains(where: { $0.id == id }) else { return }
         activeConnectionID = id
+        guard activatesPanel else {
+            log.debug("[RemoteConnectionManager] active connection changed silently id=\(id)")
+            return
+        }
         guard let connection = connections.first(where: { $0.id == id }) else { return }
         notifyConnectionActivated(connection)
     }
