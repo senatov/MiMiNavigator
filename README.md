@@ -62,7 +62,7 @@ More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, 
 
 ### Remote, cloud, and media
 
-Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local network, and use cloud drives mounted by macOS or their provider applications. Google Drive and Dropbox can also publish selected items and create shareable links.
+Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local network, and use cloud drives mounted by macOS or their provider applications. New files and folders can be created directly in writable local, SFTP, FTP, and SMB locations. Google Drive and Dropbox can also publish selected items and create shareable links.
 
 File icons appear before optional archive-header and file-type inspection runs in the background. ZIP uses the cabinet-style archive artwork, DMG uses a dedicated installable disk-image symbol, and clamp, package, and encrypted families retain their own artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
 

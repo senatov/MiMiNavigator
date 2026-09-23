@@ -123,7 +123,7 @@ struct HIGNameField: NSViewRepresentable {
         textField.isEditable = true
         textField.isSelectable = true
         textField.focusRingType = .none
-        textField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        textField.font = .systemFont(ofSize: 14)
         textField.lineBreakMode = .byTruncatingTail
         textField.cell?.usesSingleLineMode = true
         textField.delegate = context.coordinator
@@ -134,9 +134,6 @@ struct HIGNameField: NSViewRepresentable {
         return textField
     }
     func updateNSView(_ nsView: NSTextField, context: Context) {
-        if nsView.stringValue != text {
-            nsView.stringValue = text
-        }
         context.coordinator.attach(nsView)
     }
 }
@@ -160,7 +157,7 @@ extension HIGNameField {
                 focusAndSelectText()
             }
         }
-        func controlTextDidChange(_ notification: Notification) {
+        func controlTextDidEndEditing(_ notification: Notification) {
             guard let textField = notification.object as? NSTextField else { return }
             text = textField.stringValue
         }
@@ -176,9 +173,8 @@ extension HIGNameField {
             return true
         }
         fileprivate func focusAndSelectText() {
-            guard let textField, let window = textField.window else { return }
+            guard !didSelectInitialText, let textField, let window = textField.window else { return }
             window.makeFirstResponder(textField)
-            guard !didSelectInitialText else { return }
             textField.selectText(nil)
             didSelectInitialText = true
             DispatchQueue.main.async { [weak self] in

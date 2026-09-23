@@ -47,6 +47,24 @@ extension SFTPFileProvider {
     }
 
     @concurrent
+    func createFile(at remotePath: String) async throws {
+        let sftp = try requireSFTPClient()
+        let normalizedRemotePath = normalizeUploadRemotePath(remotePath)
+        try await ensureRemoteParentDirectoryExists(for: normalizedRemotePath)
+        let handle = try await sftp.openFile(
+            filePath: normalizedRemotePath,
+            flags: [.write, .create, .truncate]
+        )
+        do {
+            try await handle.close()
+            log.info("[SFTP] created empty file '\(normalizedRemotePath)'")
+        } catch {
+            try? await handle.close()
+            throw error
+        }
+    }
+
+    @concurrent
     func createDirectory(at remotePath: String) async throws {
         let sftp = try requireSFTPClient()
         let normalizedRemotePath = normalizeUploadRemotePath(remotePath)
@@ -56,8 +74,12 @@ extension SFTPFileProvider {
             log.info("[SFTP] mkdir '\(normalizedRemotePath)'")
         } catch {
             let message = error.localizedDescription.lowercased()
-            if message.contains("file exists") || message.contains("failure") {
+            if message.contains("file exists") {
                 log.debug("[SFTP] mkdir ignored for '\(normalizedRemotePath)': \(error.localizedDescription)")
+                return
+            }
+            if (try? await sftp.listDirectory(atPath: normalizedRemotePath)) != nil {
+                log.debug("[SFTP] mkdir target already exists '\(normalizedRemotePath)'")
                 return
             }
             throw error

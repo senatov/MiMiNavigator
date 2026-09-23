@@ -209,6 +209,14 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
     }
 
     @concurrent
+    func createFile(at remotePath: String) async throws {
+        let fileURL = try resolvedURL(for: remotePath)
+        try Self.createParentDirectoryIfNeeded(for: fileURL)
+        try Data().write(to: fileURL, options: .withoutOverwriting)
+        log.info("[SMB] created empty file '\(remotePath)'")
+    }
+
+    @concurrent
     func createDirectory(at remotePath: String) async throws {
         let directoryURL = try resolvedURL(for: remotePath)
         log.debug("[SMB] createDirectory path='\(directoryURL.path)'")

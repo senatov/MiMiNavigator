@@ -29,30 +29,73 @@ extension CntMenuCoord {
     /// Create new folder, then select it in the panel
     func performCreateFolder(name: String, at parentURL: URL, appState: AppState) async {
         log.debug("\(#function) name='\(name)' at='\(parentURL.path)'")
-        // guard: reject remote / mangled URLs — can't create local folder there
-        guard !AppState.isRemotePath(parentURL) && parentURL.isFileURL else {
-            log.error("\(#function) aborted — parentURL is remote or non-local: \(parentURL.absoluteString)")
-            activeDialog = nil
-            InAppNoticeCenter.shared.showError(
-                title: L10n.Error.failedToCreateFolder, message: "Can't create folder in remote path: \(parentURL.lastPathComponent)")
-            return
-        }
         isProcessing = true
         defer { isProcessing = false }
-        let folderURL = parentURL.appendingPathComponent(name)
+        let folderURL = childURL(name: name, parentURL: parentURL)
         do {
-            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
-            let panel = panelForPath(parentURL.path, appState: appState)
+            if AppState.isRemotePath(parentURL) {
+                let connection = try remoteConnection(for: parentURL)
+                try await connection.provider.createDirectory(at: folderURL.path)
+            } else {
+                guard parentURL.isFileURL else { throw CocoaError(.fileNoSuchFile) }
+                try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+            }
+            let panel = panelForURL(parentURL, appState: appState)
             await appState.refreshAndSelect(name: name, on: panel)
             let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
             activeDialog = nil
             log.info("\(#function) ok — '\(name)' created, selected on \(panel)")
         } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
+            logCreationError(operation: "Create folder", targetURL: folderURL, error: error)
             activeDialog = nil
-            InAppNoticeCenter.shared.showError(title: L10n.Error.failedToCreateFolder, message: error.localizedDescription)
+            showCreationError(title: L10n.Error.failedToCreateFolder, operation: "Create folder", targetURL: folderURL, error: error)
         }
+    }
+
+    // MARK: - Creation Helpers
+    func childURL(name: String, parentURL: URL) -> URL {
+        parentURL.appendingPathComponent(name)
+    }
+
+    func panelForURL(_ url: URL, appState: AppState) -> FavPanelSide {
+        if PathUtils.areEqual(appState.url(for: .left), url) { return .left }
+        if PathUtils.areEqual(appState.url(for: .right), url) { return .right }
+        return appState.focusedPanel
+    }
+
+    func remoteConnection(for url: URL) throws -> RemoteConnection {
+        let manager = RemoteConnectionManager.shared
+        let scheme = url.scheme?.lowercased()
+        let host = url.host?.lowercased()
+        let user = url.user ?? ""
+        let port = url.port
+        if let connection = manager.connections.first(where: {
+            $0.server.remoteProtocol.urlScheme == scheme
+                && $0.server.host.lowercased() == host
+                && ($0.server.user == user || user.isEmpty)
+                && (port == nil || $0.server.port == port)
+        }) {
+            manager.setActive(id: connection.id)
+            return connection
+        }
+        throw RemoteProviderError.notConnected
+    }
+
+    func showCreationError(title: String, operation: String, targetURL: URL, error: Error) {
+        let nsError = error as NSError
+        let message = """
+        Operation: \(operation)
+        Path: \(targetURL.absoluteString)
+        Reason: \(error.localizedDescription)
+        OS error: \(nsError.domain) (\(nsError.code))
+        """
+        InAppNoticeCenter.shared.showError(title: title, message: message)
+    }
+
+    func logCreationError(operation: String, targetURL: URL, error: Error) {
+        let nsError = error as NSError
+        log.error("[Create] operation='\(operation)' path='\(targetURL.absoluteString)' error='\(error.localizedDescription)' domain='\(nsError.domain)' code=\(nsError.code)")
     }
 
     // MARK: - Paste

@@ -123,33 +123,28 @@ extension CntMenuCoord {
     func performCreateFile(name: String, at directory: URL, appState: AppState) async {
         log.debug("\(#function) name='\(name)' at='\(directory.path)'")
 
-        // guard: reject remote / mangled paths
-        guard !AppState.isRemotePath(directory) && directory.isFileURL else {
-            log.error("\(#function) aborted — directory is remote: \(directory.absoluteString)")
-            activeDialog = nil
-            InAppNoticeCenter.shared.showError(
-                title: L10n.Error.failedToCreateFile, message: "Can't create file in remote path: \(directory.lastPathComponent)")
-            return
-        }
-
         isProcessing = true
         defer { isProcessing = false }
-        let newFileURL = directory.appendingPathComponent(name)
+        let newFileURL = childURL(name: name, parentURL: directory)
         do {
-            guard FileManager.default.createFile(atPath: newFileURL.path, contents: Data()) else {
-                throw CocoaError(.fileWriteFileExists)
+            if AppState.isRemotePath(directory) {
+                let connection = try remoteConnection(for: directory)
+                try await connection.provider.createFile(at: newFileURL.path)
+            } else {
+                guard directory.isFileURL else { throw CocoaError(.fileNoSuchFile) }
+                try Data().write(to: newFileURL, options: .withoutOverwriting)
             }
             let createdName = newFileURL.lastPathComponent
-            let panel = panelForPath(directory.path, appState: appState)
+            let panel = panelForURL(directory, appState: appState)
             await appState.refreshAndSelect(name: createdName, on: panel)
             let otherPanel: FavPanelSide = panel == .left ? .right : .left
             refreshPanel(otherPanel, appState: appState)
             activeDialog = nil
             log.info("\(#function) ok — '\(createdName)' created, selecting on \(panel)")
         } catch {
-            log.error("\(#function) FAILED: \(error.localizedDescription)")
+            logCreationError(operation: "Create file", targetURL: newFileURL, error: error)
             activeDialog = nil
-            InAppNoticeCenter.shared.showError(title: L10n.Error.failedToCreateFile, message: error.localizedDescription)
+            showCreationError(title: L10n.Error.failedToCreateFile, operation: "Create file", targetURL: newFileURL, error: error)
         }
     }
 

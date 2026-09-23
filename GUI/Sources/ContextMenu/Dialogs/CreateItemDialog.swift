@@ -59,20 +59,22 @@ struct CreateItemDialog: View {
             }
             actionButtons
         }
-        .padding(20)
-        .frame(width: 430)
+        .higDialogStyle()
+        .frame(minWidth: 380)
     }
     // MARK: - Name Field
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(configuration.enterNameLabel)
-                .font(.callout.weight(.medium))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
             HIGNameField(text: $itemName, placeholder: configuration.placeholder, onSubmit: performCreate)
                 .frame(height: 19)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-                .overlay { nameFieldBorder }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color(nsColor: .textBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(nameFieldBorder)
         }
     }
     private var nameFieldBorder: some View {
@@ -84,7 +86,7 @@ struct CreateItemDialog: View {
     }
     // MARK: - Action Buttons
     private var actionButtons: some View {
-        HStack {
+        HStack(spacing: 10) {
             Spacer()
             DownToolbarButtonView(title: L10n.Button.cancel, systemImage: "xmark", action: onCancel)
                 .keyboardShortcut(.cancelAction)
@@ -92,6 +94,7 @@ struct CreateItemDialog: View {
                 .disabled(!isValidName)
                 .opacity(isValidName ? 1 : 0.55)
         }
+        .padding(.top, 6)
     }
     // MARK: - Perform Create
     private func performCreate() {

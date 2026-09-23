@@ -37,6 +37,13 @@ extension FTPFileProvider {
     }
 
     @concurrent
+    func createFile(at remotePath: String) async throws {
+        let normalizedRemotePath = normalizeRemotePath(remotePath)
+        try await curlUploadFile(from: URL(fileURLWithPath: "/dev/null"), to: normalizedRemotePath)
+        log.info("[FTP] created empty file '\(normalizedRemotePath)'")
+    }
+
+    @concurrent
     func createDirectory(at remotePath: String) async throws {
         let normalizedRemotePath = normalizeRemotePath(remotePath)
         log.info("[FTP] mkdir '\(normalizedRemotePath)'")
