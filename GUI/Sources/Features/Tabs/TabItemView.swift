@@ -25,6 +25,10 @@ struct TabItemView: View {
     @State private var anchorFrame: CGRect = .zero
     @State private var tooltipTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("tabs.appearance.fontSize") private var tabFontSize = TabAppearance.fontSize
+    @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
+    @AppStorage("tabs.appearance.focusedText") private var focusedTextHex = TabAppearance.focusedText
+    @AppStorage("tabs.appearance.unfocusedText") private var unfocusedTextHex = TabAppearance.unfocusedText
 
     // MARK: - Layout constants
     private let tabHeight: CGFloat = 29
@@ -70,7 +74,7 @@ struct TabItemView: View {
                 .frame(width: 12)
 
             Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.caption)
+                .font(.system(size: CGFloat(tabFontSize), weight: .regular))
                 .lineLimit(1)
                 .foregroundStyle(isActive ? activeForeground : inactiveForeground)
 
@@ -107,12 +111,17 @@ struct TabItemView: View {
             .frame(width: 16, height: 16)
         }
         .buttonStyle(.plain)
-        .opacity((isActive || isHovered) && !isOnlyTab ? 1.0 : 0.0)
+        .opacity(closeButtonVisible ? 1.0 : 0.0)
+        .allowsHitTesting(closeButtonVisible)
         .frame(width: 16)  // always occupies space to avoid layout shift
     }
 
+    private var closeButtonVisible: Bool {
+        (isActive || isHovered) && !isOnlyTab && UserPreferences.shared.snapshot.tabsShowCloseButton
+    }
+
     private var activeForeground: Color {
-        isPanelFocused ? activeNavy : Color(nsColor: .darkGray)
+        isPanelFocused ? focusedText : unfocusedText
     }
 
     private var activeIconColor: Color {
@@ -122,13 +131,18 @@ struct TabItemView: View {
     }
 
     private var inactiveForeground: Color {
-        colorScheme == .dark
-            ? Color(nsColor: .tertiaryLabelColor)
-            : Color(nsColor: .darkGray)
+        isPanelFocused ? focusedText.opacity(0.78) : unfocusedText
     }
 
-    private var activeNavy: Color {
-        Color(#colorLiteral(red: 0.018, green: 0.071, blue: 0.204, alpha: 1))
+    private var focusedText: Color {
+        let hex = colorScheme == .dark && focusedTextHex == TabAppearance.focusedText
+            ? TabAppearance.darkFocusedText : focusedTextHex
+        return Color(hex: hex) ?? .primary
+    }
+    private var unfocusedText: Color {
+        let hex = colorScheme == .dark && unfocusedTextHex == TabAppearance.unfocusedText
+            ? TabAppearance.darkUnfocusedText : unfocusedTextHex
+        return Color(hex: hex) ?? .secondary
     }
 
     private var frameReader: some View {
@@ -144,7 +158,7 @@ struct TabItemView: View {
     }
 
     private var tabShape: BottomSheetTabShape {
-        BottomSheetTabShape()
+        BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius))
     }
 
     private func handleHover(_ hovering: Bool) {
@@ -170,12 +184,13 @@ struct TabItemView: View {
 
 // MARK: - Bottom Sheet Tab Shape
 struct BottomSheetTabShape: InsettableShape {
+    var bottomRadius: CGFloat = CGFloat(TabAppearance.bottomRadius)
     private var insetAmount: CGFloat = 0
 
     func path(in rect: CGRect) -> Path {
         let frame = rect.insetBy(dx: insetAmount, dy: insetAmount)
         let slope: CGFloat = 6
-        let radius: CGFloat = 6
+        let radius = min(bottomRadius, frame.height * 0.45)
         var path = Path()
         path.move(to: CGPoint(x: frame.minX + 1, y: frame.minY))
         path.addLine(to: CGPoint(x: frame.maxX - 1, y: frame.minY))

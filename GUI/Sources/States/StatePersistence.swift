@@ -271,6 +271,7 @@ private static func loadPersistentState() -> PersistentState? {
     // MARK: - Restore Tabs
 
     static func restoreTabs(into state: AppState) {
+        guard UserPreferences.shared.snapshot.tabsRestoreOnLaunch else { return }
         ensureStateFileExists()
         guard let decoded = loadPersistentState() else {
             return

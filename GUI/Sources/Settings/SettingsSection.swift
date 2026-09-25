@@ -83,7 +83,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsButtons: return "Toolbar and command button appearance"
         case .panels: return "Panel layout, columns and file presentation"
         case .preview: return "Embedded preview modes and remembered file-type rules"
-        case .tabs: return "Tab behavior, sizing and navigation"
+        case .tabs: return "Tab behavior, font, colors and corner shape"
         case .archives: return "Archive formats, extraction and compression"
         case .network: return "Network discovery and remote connection behavior"
         case .cloudLink: return "Cloud providers, sharing and shortened links"
@@ -117,7 +117,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .preview:
             return "automatic known text image pdf media document archive executable unknown extension file type quick look binary remembered rules"
         case .tabs:
-            return "restore tabs launch new tab enter close last panel position top bottom close button maximum max open tabs"
+            return "restore tabs launch close button maximum max open tabs font size text background color active inactive panel dim opacity corner radius preview"
         case .archives:
             return "archive tools format zip tar gzip bzip xz compression level extract subfolder progress password encrypted keychain open browse default app repack confirm auto 7zip rar install"
         case .network:

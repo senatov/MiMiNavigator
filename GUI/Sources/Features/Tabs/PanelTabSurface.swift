@@ -6,9 +6,14 @@ struct PanelTabSurface: View {
     var isPanelFocused = true
     var isHovered = false
     @Environment(\.colorScheme) private var colorScheme
-    private var tabShape: BottomSheetTabShape { BottomSheetTabShape() }
+    @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
+    @AppStorage("tabs.appearance.inactivePanelOpacity") private var inactivePanelOpacity = TabAppearance.inactivePanelOpacity
+    @AppStorage("tabs.appearance.focusedBackground") private var focusedBackgroundHex = TabAppearance.focusedBackground
+    @AppStorage("tabs.appearance.unfocusedBackground") private var unfocusedBackgroundHex = TabAppearance.unfocusedBackground
+    private var tabShape: BottomSheetTabShape { BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)) }
     var body: some View {
         tabFill
+            .opacity(isPanelFocused ? 1 : inactivePanelOpacity)
             .clipShape(tabShape)
             .shadow(color: tabShadowColor, radius: isActive ? 1.8 : 1.1, x: 0.7, y: 1)
             .overlay(tabInnerHighlight)
@@ -21,9 +26,9 @@ struct PanelTabSurface: View {
         if isActive {
             LinearGradient(
                 stops: [
-                    .init(color: activeFillTop.opacity(colorScheme == .dark ? 0.68 : 1), location: 0),
-                    .init(color: activeFillMid.opacity(colorScheme == .dark ? 0.52 : 0.98), location: 0.58),
-                    .init(color: activeFillFoot.opacity(colorScheme == .dark ? 0.38 : 0.94), location: 1),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.68 : 1), location: 0),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.52 : 0.92), location: 0.58),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.38 : 0.78), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -31,8 +36,8 @@ struct PanelTabSurface: View {
         } else if isHovered {
             LinearGradient(
                 stops: [
-                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.30 : 0.64), location: 0),
-                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.24 : 0.58), location: 1),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.30 : 0.64), location: 0),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.24 : 0.58), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -40,8 +45,8 @@ struct PanelTabSurface: View {
         } else {
             LinearGradient(
                 stops: [
-                    .init(color: inactiveFillTop.opacity(colorScheme == .dark ? 0.20 : 0.44), location: 0),
-                    .init(color: inactiveFillFoot.opacity(colorScheme == .dark ? 0.15 : 0.38), location: 1),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.20 : 0.44), location: 0),
+                    .init(color: selectedBackground.opacity(colorScheme == .dark ? 0.15 : 0.38), location: 1),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -83,24 +88,12 @@ struct PanelTabSurface: View {
         Color(#colorLiteral(red: 0.25, green: 0.58, blue: 0.93, alpha: 1))
     }
 
-    private var activeFillTop: Color {
-        Color(#colorLiteral(red: 0.965, green: 0.984, blue: 1.0, alpha: 1))
-    }
-
-    private var activeFillMid: Color {
-        Color(#colorLiteral(red: 0.918, green: 0.949, blue: 0.986, alpha: 1))
-    }
-
-    private var activeFillFoot: Color {
-        Color(#colorLiteral(red: 0.82, green: 0.875, blue: 0.95, alpha: 1))
-    }
-
-    private var inactiveFillTop: Color {
-        Color(#colorLiteral(red: 0.91, green: 0.925, blue: 0.946, alpha: 1))
-    }
-
-    private var inactiveFillFoot: Color {
-        Color(#colorLiteral(red: 0.79, green: 0.82, blue: 0.86, alpha: 1))
+    private var selectedBackground: Color {
+        let hex = isPanelFocused ? focusedBackgroundHex : unfocusedBackgroundHex
+        let defaultHex = isPanelFocused ? TabAppearance.focusedBackground : TabAppearance.unfocusedBackground
+        let darkHex = isPanelFocused ? TabAppearance.darkFocusedBackground : TabAppearance.darkUnfocusedBackground
+        return Color(hex: colorScheme == .dark && hex == defaultHex ? darkHex : hex)
+            ?? Color(nsColor: .controlBackgroundColor)
     }
 
     private var inactiveBorder: Color {

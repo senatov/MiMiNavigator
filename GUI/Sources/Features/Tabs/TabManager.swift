@@ -25,10 +25,6 @@
 
         // MARK: - Constants
 
-        private enum Limits {
-            static let maxTabs = 32
-        }
-
         // MARK: - Init
 
         init(panelSide: FavPanelSide, initialURL: URL) {
@@ -96,8 +92,9 @@
         /// Open a new tab for the given path, inserted after active tab
         @discardableResult
         func addTab(url: URL, archiveURL: URL? = nil) -> TabItem {
-            guard tabs.count < Limits.maxTabs else {
-                log.warning("[TabManager] addTab: maxTabs (\(Limits.maxTabs)) reached, ignoring")
+            let maxTabs = max(2, Int(UserPreferences.shared.snapshot.tabsMaxTabs))
+            guard tabs.count < maxTabs else {
+                log.warning("[TabManager] addTab: maxTabs (\(maxTabs)) reached, ignoring")
                 return activeTab
             }
 
@@ -202,8 +199,9 @@
                 return nil
             }
 
-            guard tabs.count < Limits.maxTabs else {
-                log.warning("[TabManager] duplicateTab: maxTabs (\(Limits.maxTabs)) reached")
+            let maxTabs = max(2, Int(UserPreferences.shared.snapshot.tabsMaxTabs))
+            guard tabs.count < maxTabs else {
+                log.warning("[TabManager] duplicateTab: maxTabs (\(maxTabs)) reached")
                 return nil
             }
 
