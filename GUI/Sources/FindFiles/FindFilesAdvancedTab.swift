@@ -23,18 +23,17 @@ struct FindFilesAdvancedTab: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     if viewModel.usesTemplateEditor {
                         FindFilesTemplateSection(viewModel: viewModel)
                     } else {
                         FindFilesAdvancedCriteriaSection(viewModel: viewModel)
                         scopeSection
-                        sizeSection
-                        dateSection
+                        filtersSection
                         infoSection
                     }
                 }
-                .padding(14)
+                .padding(10)
             }
         }
         .onChange(of: viewModel.advancedSettings.itemTypeFilter) {
@@ -49,24 +48,11 @@ struct FindFilesAdvancedTab: View {
         advancedCard(icon: "folder.badge.gearshape", title: "Scope", tint: .teal) {
             VStack(spacing: 0) {
                 itemTypeRow()
-                rowDivider()
-                optionRow(
-                    title: "Exclude protected system locations",
-                    detail: "Skip macOS, cloud, and sandbox-managed locations",
-                    icon: "macwindow.badge.plus",
-                    tint: .blue,
-                    isOn: $viewModel.advancedSettings.excludeSystemLocations
-                )
-                rowDivider()
-                optionRow(
-                    title: "Return deletable items only",
-                    detail: "Skip matches that the current user cannot remove",
-                    icon: "trash",
-                    tint: .orange,
-                    isOn: $viewModel.advancedSettings.deletableOnly
-                )
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { scopeOptions }
+                    VStack(spacing: 2) { scopeOptions }
+                }
                 if viewModel.advancedSettings.itemTypeFilter == .foldersOnly {
-                    rowDivider()
                     optionRow(
                         title: "Empty folders only",
                         detail: "Return folders that contain no items",
@@ -78,164 +64,14 @@ struct FindFilesAdvancedTab: View {
             }
         }
     }
-    private var sizeSection: some View {
-        advancedCard(icon: "ruler.fill", title: "File Size", tint: .orange) {
-            VStack(spacing: 8) {
-                optionRow(
-                    title: "Filter by size",
-                    detail: "Only match files within the size range",
-                    icon: "arrow.up.arrow.down",
-                    tint: .orange,
-                    isOn: $viewModel.advancedSettings.useSizeFilter
-                )
-                if viewModel.advancedSettings.useSizeFilter {
-                    HStack(spacing: 8) {
-                        Text("From")
-                            .foregroundStyle(.secondary)
-                        TextField("min", text: $viewModel.advancedSettings.fileSizeMin)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 80)
-                        Text("to")
-                            .foregroundStyle(.secondary)
-                        TextField("max", text: $viewModel.advancedSettings.fileSizeMax)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 80)
-                        Picker("", selection: $viewModel.advancedSettings.fileSizeUnit) {
-                            ForEach(FindFilesSizeUnit.allCases) { unit in
-                                Text(unit.label).tag(unit)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.segmented)
-                        .frame(width: 180)
-                        Spacer()
-                    }
-                    .font(.body)
-                    .padding(.leading, 34)
-                }
-            }
-        }
-    }
-    private var dateSection: some View {
-        advancedCard(icon: "calendar", title: "Dates", tint: .orange) {
-            VStack(spacing: 10) {
-                optionRow(
-                    title: "Filter by modification date",
-                    detail: "Only match files modified within the date range",
-                    icon: "calendar.badge.clock",
-                    tint: .blue,
-                    isOn: $viewModel.advancedSettings.useDateFilter
-                )
-
-                if viewModel.advancedSettings.useDateFilter {
-                    HStack(spacing: 8) {
-                        Text("From")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                        DatePicker("", selection: $viewModel.advancedSettings.dateFrom, displayedComponents: .date)
-                            .labelsHidden()
-                        Text("to")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
-                        DatePicker("", selection: $viewModel.advancedSettings.dateTo, displayedComponents: .date)
-                            .labelsHidden()
-                        Spacer()
-                    }
-                    .padding(.leading, 34)
-                }
-
-                rowDivider()
-
-                optionRow(
-                    title: "Unused item age",
-                    detail: "Choose date or age, then apply it to modified time, access time, or both",
-                    icon: "clock.badge.xmark",
-                    tint: .orange,
-                    isOn: $viewModel.advancedSettings.useStaleItemFilter
-                )
-
-                if viewModel.advancedSettings.useStaleItemFilter {
-                    staleCriteriaControls
-                    .padding(.leading, 34)
-                }
-            }
-        }
-    }
-
-    private var staleCriteriaControls: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("Match")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 64, alignment: .trailing)
-                Picker("", selection: $viewModel.advancedSettings.staleTimestampFilter) {
-                    ForEach(FindFilesTimestampFilter.allCases) { value in
-                        Text(value.label).tag(value)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 260)
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                Text("By")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 64, alignment: .trailing)
-                Picker("", selection: $viewModel.advancedSettings.staleCriterionMode) {
-                    ForEach(FindFilesStaleCriterionMode.allCases) { value in
-                        Text(value.label).tag(value)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-
-                switch viewModel.advancedSettings.staleCriterionMode {
-                case .date:
-                    Text("since")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                    DatePicker("", selection: $viewModel.advancedSettings.staleSinceDate, displayedComponents: .date)
-                        .labelsHidden()
-                case .age:
-                    Text("older than")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                    TextField("amount", text: $viewModel.advancedSettings.staleAgeAmount)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 82)
-                    Picker("", selection: $viewModel.advancedSettings.staleAgeUnit) {
-                        ForEach(FindFilesAgeUnit.allCases) { value in
-                            Text(value.label).tag(value)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .frame(width: 190)
-                }
-                Spacer()
-            }
-            if viewModel.advancedSettings.staleCriterionMode == .age {
-                HStack(spacing: 6) {
-                    Text("Quick")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 64, alignment: .trailing)
-                    ForEach([1, 2, 3], id: \.self) { years in
-                        Button("\(years) year\(years == 1 ? "" : "s")") {
-                            viewModel.advancedSettings.staleAgeAmount = String(years)
-                            viewModel.advancedSettings.staleAgeUnit = .years
-                        }
-                        .buttonStyle(ThemedButtonStyle(isSelected: isSelectedYear(years)))
-                        .controlSize(.small)
-                    }
-                    Spacer()
-                }
-            }
+    private var scopeOptions: some View {
+        Group {
+            optionRow(title: "Exclude system locations", detail: "Skip protected macOS and cloud paths", icon: "macwindow.badge.plus", tint: .blue,
+                      isOn: $viewModel.advancedSettings.excludeSystemLocations)
+                .frame(minWidth: 300)
+            optionRow(title: "Deletable items only", detail: "Only return items you can remove", icon: "trash", tint: .orange,
+                      isOn: $viewModel.advancedSettings.deletableOnly)
+                .frame(minWidth: 300)
         }
     }
 
@@ -253,28 +89,27 @@ struct FindFilesAdvancedTab: View {
         .padding(.vertical, 8)
     }
 
-    private func advancedCard<Content: View>(
+    func advancedCard<Content: View>(
         icon: String,
         title: String,
         tint: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 7) {
                 Image(systemName: icon)
                     .font(DesignTokens.Typography.label)
                     .foregroundStyle(tint)
-                    .frame(width: 26, height: 26)
+                    .frame(width: 22, height: 22)
                     .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
             }
-            .padding(.bottom, 2)
             content()
         }
-        .padding(14)
+        .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(DialogColors.light.opacity(0.94))
@@ -285,18 +120,18 @@ struct FindFilesAdvancedTab: View {
         )
     }
 
-    private func optionRow(
+    func optionRow(
         title: String,
         detail: String,
         icon: String,
         tint: Color,
         isOn: Binding<Bool>
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 7) {
             Image(systemName: icon)
                 .font(.system(size: 14))
                 .foregroundStyle(tint)
-                .frame(width: 22)
+                .frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.body)
@@ -311,8 +146,8 @@ struct FindFilesAdvancedTab: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
         }
-        .padding(.vertical, 2)
-        .padding(.horizontal, 6)
+        .padding(.vertical, 1)
+        .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(isOn.wrappedValue ? Color.accentColor.opacity(0.055) : Color.clear)
@@ -320,22 +155,9 @@ struct FindFilesAdvancedTab: View {
     }
 
     private func itemTypeRow() -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 10) {
-                Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.teal)
-                    .frame(width: 22)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Item type")
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    Text("Choose which item types appear in the results")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
+        HStack(spacing: 8) {
+            Image(systemName: "square.grid.2x2").foregroundStyle(.teal).frame(width: 18)
+            Text("Item type").font(.body)
             Picker("", selection: $viewModel.advancedSettings.itemTypeFilter) {
                 ForEach(FindFilesItemTypeFilter.allCases) { value in
                     Text(value.label).tag(value)
@@ -343,10 +165,9 @@ struct FindFilesAdvancedTab: View {
             }
             .labelsHidden()
             .pickerStyle(.segmented)
-            .frame(maxWidth: 430)
-            .padding(.leading, 32)
+            .frame(width: 370)
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 2)
     }
 
 }

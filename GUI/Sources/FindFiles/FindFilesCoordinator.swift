@@ -33,7 +33,7 @@ final class FindFilesCoordinator {
 
     private let frameAutosaveName = "MiMiNavigator.FindFilesWindow"
     private let defaultWidth: CGFloat = 1128
-    private let defaultHeight: CGFloat = 1230
+    private let defaultHeight: CGFloat = 900
 
     private init() {}
 
@@ -84,6 +84,7 @@ final class FindFilesCoordinator {
             autosaveName: frameAutosaveName,
             designedSize: NSSize(width: defaultWidth, height: defaultHeight)
         )
+        shrinkPreviousDefaultFrame(window)
         window.delegate = FindFilesWindowDelegate.shared
         WindowPresentationPolicy.presentStandalone(window)
         window.recalculateKeyViewLoop()
@@ -151,6 +152,15 @@ final class FindFilesCoordinator {
     }
 
     // MARK: - Default Frame Calculation
+
+    private func shrinkPreviousDefaultFrame(_ window: NSWindow) {
+        var frame = window.frame
+        guard abs(frame.width - 1128) < 10, abs(frame.height - 1230) < 10 else { return }
+        frame.origin.y += frame.height - defaultHeight
+        frame.size.height = defaultHeight
+        window.setFrame(frame, display: true)
+        AuxiliaryWindowFramePolicy.ensureVisible(window)
+    }
 
     /// Computes initial frame: centered over main window
     private func computeDefaultFrame() -> NSRect {

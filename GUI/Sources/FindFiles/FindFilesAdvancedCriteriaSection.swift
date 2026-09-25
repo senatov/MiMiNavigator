@@ -11,11 +11,10 @@ struct FindFilesAdvancedCriteriaSection: View {
     @Bindable var viewModel: FindFilesViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("Advanced Search Criteria", systemImage: "slider.horizontal.3")
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Text("Name")
-                    .frame(width: 72, alignment: .trailing)
+                Label("Name", systemImage: "text.magnifyingglass")
+                    .frame(width: 84, alignment: .trailing)
                     .foregroundStyle(.secondary)
                 Toggle("NOT", isOn: settingBinding(\.invertFileNamePattern))
                     .toggleStyle(.checkbox)
@@ -25,7 +24,7 @@ struct FindFilesAdvancedCriteriaSection: View {
             }
             HStack(spacing: 8) {
                 Text("Find text")
-                    .frame(width: 72, alignment: .trailing)
+                    .frame(width: 84, alignment: .trailing)
                     .foregroundStyle(.secondary)
                 TextField("Text to find inside files", text: settingBinding(\.searchText))
                     .onChange(of: viewModel.advancedSettings.searchText) {
@@ -33,7 +32,7 @@ struct FindFilesAdvancedCriteriaSection: View {
                     }
                     .textFieldStyle(.roundedBorder)
             }
-            HStack(spacing: 16) {
+            HStack(spacing: 13) {
                 Toggle("Case sensitive", isOn: settingBinding(\.caseSensitive))
                 Toggle("Regular expressions", isOn: settingBinding(\.useRegex))
                 Toggle("Include subdirectories", isOn: settingBinding(\.searchInSubdirectories))
@@ -42,7 +41,7 @@ struct FindFilesAdvancedCriteriaSection: View {
             .toggleStyle(.checkbox)
         }
         .font(DesignTokens.Typography.body)
-        .padding(DesignTokens.Spacing.group)
+        .padding(10)
         .semanticSurface()
     }
 

@@ -49,9 +49,6 @@ struct FindFilesWindowContent: View {
                 .font(DesignTokens.Typography.body)
                 .keyboardFocusSection()
             }
-            .onChange(of: geometry.size.height) { oldHeight, newHeight in
-                criteriaHeight = clampedCriteriaHeight(totalHeight: oldHeight) + newHeight - oldHeight
-            }
         }
         .onAppear {
             guard !didRestoreLayout else { return }
@@ -70,6 +67,10 @@ struct FindFilesWindowContent: View {
             criteriaHeight = restoredCriteriaHeight(for: newTab)
             viewModel.activeModule = newTab
             MiMiDefaults.shared.set(newTab.rawValue, forKey: "findFiles.selectedTab")
+        }
+        .onChange(of: viewModel.usesTemplateEditor) { oldValue, _ in
+            MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: .advanced, templates: oldValue))
+            criteriaHeight = restoredCriteriaHeight(for: .advanced)
         }
         .sheet(isPresented: Binding(
             get: { viewModel.showPasswordDialog },
@@ -258,13 +259,16 @@ struct FindFilesWindowContent: View {
         min(max(criteriaHeight, minimumCriteriaHeight), max(minimumCriteriaHeight, totalHeight - 160))
     }
 
-    private func criteriaHeightKey(for tab: FindFilesTab) -> String {
-        "findFiles.criteriaPaneHeight.compact.\(tab.rawValue)"
+    private func criteriaHeightKey(for tab: FindFilesTab, templates: Bool? = nil) -> String {
+        guard tab == .advanced else { return "findFiles.criteriaPaneHeight.compact.general" }
+        return (templates ?? viewModel.usesTemplateEditor)
+            ? "findFiles.criteriaPaneHeight.balanced.templates"
+            : "findFiles.criteriaPaneHeight.balanced.manual"
     }
 
     private func restoredCriteriaHeight(for tab: FindFilesTab) -> CGFloat {
         let storedHeight = MiMiDefaults.shared.double(forKey: criteriaHeightKey(for: tab))
-        guard storedHeight > 0 else { return 10000 }
+        guard storedHeight > 0 else { return tab == .general ? 320 : viewModel.usesTemplateEditor ? 500 : 700 }
         return CGFloat(storedHeight)
     }
 
