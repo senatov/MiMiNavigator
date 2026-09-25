@@ -191,7 +191,7 @@ struct NetworkAuthCredentialsSection: View {
         VStack(spacing: NetworkAuthSheetLayout.sectionSpacing) {
             fieldRow(label: "Username", systemImage: "person") {
                 NetworkAuthGlassField {
-                    TextField("guest", text: $username)
+                    DialogTextField("guest", text: $username)
                         .textFieldStyle(.plain)
                         .focused(focusedField, equals: .username)
                         .onSubmit { focusedField.wrappedValue = .password }
@@ -202,12 +202,12 @@ struct NetworkAuthCredentialsSection: View {
                 HStack(spacing: NetworkAuthSheetLayout.passwordFieldSpacing) {
                     NetworkAuthGlassField {
                         if isPasswordVisible {
-                            TextField(passwordPrompt, text: $password)
+                            DialogTextField(passwordPrompt, text: $password)
                                 .textFieldStyle(.plain)
                                 .focused(focusedField, equals: .password)
                                 .onSubmit { onConfirm() }
                         } else {
-                            SecureField(passwordPrompt, text: $password)
+                            DialogSecureField(passwordPrompt, text: $password)
                                 .textFieldStyle(.plain)
                                 .focused(focusedField, equals: .password)
                                 .onSubmit { onConfirm() }

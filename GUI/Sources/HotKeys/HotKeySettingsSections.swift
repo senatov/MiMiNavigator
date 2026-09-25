@@ -108,7 +108,7 @@ struct HotKeyFilterField: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
 
-            TextField("Filter", text: $text)
+            DialogTextField("Filter", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .frame(width: 120)

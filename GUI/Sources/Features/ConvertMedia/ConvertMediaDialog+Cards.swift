@@ -120,7 +120,7 @@ extension ConvertMediaDialog {
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.blue)
                     HStack(spacing: 4) {
-                        TextField("Filename", text: $outputName)
+                        DialogTextField("Filename", text: $outputName)
                             .foregroundStyle(Color(nsColor: .textColor))
                             .textFieldStyle(.roundedBorder)
                             .focused($isNameFieldFocused)

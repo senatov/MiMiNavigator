@@ -193,9 +193,9 @@ struct PackPasswordSection: View {
                 HStack(spacing: 8) {
                     Group {
                         if showPassword {
-                            TextField("Password", text: $password)
+                            DialogTextField("Password", text: $password)
                         } else {
-                            SecureField("Password", text: $password)
+                            DialogSecureField("Password", text: $password)
                         }
                     }
                     .textFieldStyle(.plain)

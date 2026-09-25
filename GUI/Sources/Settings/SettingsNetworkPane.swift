@@ -70,14 +70,14 @@ struct SettingsNetworkPane: View {
                     }
                     Divider()
                     SettingsRow(label: "Port:", help: "Local API port configured in Fing Desktop or Fing Agent") {
-                        TextField("49090", text: $fingPort)
+                        DialogTextField("49090", text: $fingPort)
                             .frame(width: 90)
                             .textFieldStyle(.roundedBorder)
                             .onSubmit { saveFingSettings() }
                     }
                     Divider()
                     SettingsRow(label: "API key:", help: "Stored securely in macOS Keychain") {
-                        SecureField("Fing Local API key", text: $fingAPIKey)
+                        DialogSecureField("Fing Local API key", text: $fingAPIKey)
                             .frame(width: 220)
                             .textFieldStyle(.roundedBorder)
                             .onSubmit { saveFingSettings() }

@@ -44,8 +44,7 @@ struct SettingsRow<Content: View>: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(SettingsVisualStyle.labelText)
+                .dialogFieldLabelStyle()
                 .frame(width: labelWidth, alignment: .trailing)
                 .help(help)
             Spacer().frame(width: 16)

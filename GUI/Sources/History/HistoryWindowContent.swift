@@ -71,7 +71,7 @@ struct HistoryWindowContent: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
-            TextField("Filter history…", text: $searchText)
+            DialogTextField("Filter history…", text: $searchText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 14))
                 .focused($isSearchFocused)

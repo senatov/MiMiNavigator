@@ -153,11 +153,11 @@ struct SettingsArchivesPane: View {
                     SettingsRow(label: "Archive password:", help: "Default password for encrypted archives (ZIP, 7z, RAR). Stored in macOS Keychain.") {
                         HStack(spacing: 8) {
                             if showPassword {
-                                TextField("Enter password…", text: $archivePassword)
+                                DialogTextField("Enter password…", text: $archivePassword)
                                     .textFieldStyle(.roundedBorder)
                                     .frame(width: 200)
                             } else {
-                                SecureField("Enter password…", text: $archivePassword)
+                                DialogSecureField("Enter password…", text: $archivePassword)
                                     .textFieldStyle(.roundedBorder)
                                     .frame(width: 200)
                             }

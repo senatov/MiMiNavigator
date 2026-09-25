@@ -313,7 +313,7 @@ struct DiffToolEditSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Application or binary:").font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
                 HStack(spacing: 8) {
-                    TextField("/Applications/MyTool.app", text: $appPath)
+                    DialogTextField("/Applications/MyTool.app", text: $appPath)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 12, design: .monospaced))
                     Button("Browse…") { browse() }.controlSize(.small)
@@ -333,7 +333,7 @@ struct DiffToolEditSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Arguments  (use %left and %right):")
                     .font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
-                TextField(#""%left" "%right""#, text: $arguments)
+                DialogTextField(#""%left" "%right""#, text: $arguments)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12, design: .monospaced))
                 Text(#"Example: --nosplash "%left" "%right""#)
@@ -377,7 +377,7 @@ struct DiffToolEditSheet: View {
     private func labeledField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(.system(size: 12)).foregroundStyle(SettingsVisualStyle.secondaryText)
-            TextField(placeholder, text: text).textFieldStyle(.roundedBorder)
+            DialogTextField(placeholder, text: text).textFieldStyle(.roundedBorder)
         }
     }
 

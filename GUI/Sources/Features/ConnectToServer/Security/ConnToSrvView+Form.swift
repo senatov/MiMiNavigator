@@ -18,7 +18,7 @@ extension ConnToSrvrView {
             help: "Bookmark name, or a server URL. Press Return to auto-fill the connection fields.",
             labelWidth: 120
         ) {
-            TextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
+            DialogTextField("or paste URL: sftp://user@host:port/path", text: $draft.name)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .name)
@@ -57,7 +57,7 @@ extension ConnToSrvrView {
 
     var hostRow: some View {
         SettingsRow(label: "Host:", help: "Hostname, IP, or paste full URL/connection string", labelWidth: 120) {
-            TextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
+            DialogTextField("host  or  user@host:port  or  ftp://host/path", text: $draft.host)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .host)
@@ -84,7 +84,7 @@ extension ConnToSrvrView {
 
     var remotePathRow: some View {
         SettingsRow(label: "Remote Path:", help: "Initial directory on server", labelWidth: 120) {
-            TextField("", text: $draft.remotePath)
+            DialogTextField("", text: $draft.remotePath)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .remotePath)
@@ -93,7 +93,7 @@ extension ConnToSrvrView {
 
     var userRow: some View {
         SettingsRow(label: "User:", help: "Login username", labelWidth: 120) {
-            TextField("", text: $draft.user)
+            DialogTextField("", text: $draft.user)
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .user)
@@ -113,13 +113,13 @@ extension ConnToSrvrView {
     @ViewBuilder
     var passwordField: some View {
         if showPassword {
-            TextField("", text: $password)
+            DialogTextField("", text: $password)
                 .id("plain-password-field")
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
                 .focused($focusedField, equals: .password)
         } else {
-            SecureField("", text: $password)
+            DialogSecureField("", text: $password)
                 .id("secure-password-field")
                 .foregroundStyle(Color(nsColor: .textColor))
                 .textFieldStyle(.roundedBorder)
@@ -166,7 +166,7 @@ extension ConnToSrvrView {
     var keyPathRow: some View {
         SettingsRow(label: "Key Path:", help: "Path to SSH private key", labelWidth: 120) {
             HStack(spacing: 6) {
-                TextField("", text: $draft.privateKeyPath)
+                DialogTextField("", text: $draft.privateKeyPath)
                     .foregroundStyle(Color(nsColor: .textColor))
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .keyPath)

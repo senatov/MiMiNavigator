@@ -88,7 +88,7 @@ struct SettingsWindowView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
-                TextField("Search settings", text: $searchText)
+                DialogTextField("Search settings", text: $searchText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
                 if !searchText.isEmpty {
@@ -224,6 +224,7 @@ struct SettingsWindowView: View {
                             case .colorsChrome:       SettingsColorsChromePane()
                             case .colorsBreadcrumb:   SettingsColorsBreadcrumbPane()
                             case .colorsButtons:      SettingsColorsButtonsPane()
+                            case .colorsInputFields:  SettingsColorsInputFieldsPane()
                             case .panels:             SettingsPanelsPane()
                             case .preview:            SettingsPreviewPane()
                             case .tabs:               SettingsTabsPane()

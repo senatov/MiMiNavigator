@@ -29,7 +29,7 @@ struct SettingsPreviewPane: View {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Add file type:", help: "Create a persistent preview rule for a filename extension") {
                         HStack(spacing: 8) {
-                            TextField("extension", text: $newExtension)
+                            DialogTextField("extension", text: $newExtension)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 120)
                             modePicker(selection: $newMode)

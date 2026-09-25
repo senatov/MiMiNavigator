@@ -19,14 +19,14 @@ struct FindFilesAdvancedCriteriaSection: View {
                 Toggle("NOT", isOn: settingBinding(\.invertFileNamePattern))
                     .toggleStyle(.checkbox)
                     .fixedSize()
-                TextField("File name pattern", text: settingBinding(\.fileNamePattern))
+                DialogTextField("File name pattern", text: settingBinding(\.fileNamePattern))
                     .textFieldStyle(.roundedBorder)
             }
             HStack(spacing: 8) {
                 Text("Find text")
                     .frame(width: 84, alignment: .trailing)
                     .foregroundStyle(.secondary)
-                TextField("Text to find inside files", text: settingBinding(\.searchText))
+                DialogTextField("Text to find inside files", text: settingBinding(\.searchText))
                     .onChange(of: viewModel.advancedSettings.searchText) {
                         viewModel.normalizeContentSearchSettings()
                     }

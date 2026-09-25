@@ -23,12 +23,12 @@ struct SettingsCloudLinkPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Google client secret:", help: "Desktop OAuth client secret stored in ~/.mimi/google_drive_oauth.json", labelWidth: 170) {
-                        SecureField("client_secret", text: $googleClientSecret)
+                        DialogSecureField("client_secret", text: $googleClientSecret)
                             .textFieldStyle(.roundedBorder)
                     }
                     Divider()
                     SettingsRow(label: "Google refresh token:", help: "Google Drive refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
-                        SecureField("refresh_token", text: $googleRefreshToken)
+                        DialogSecureField("refresh_token", text: $googleRefreshToken)
                             .textFieldStyle(.roundedBorder)
                     }
                 }
@@ -36,7 +36,7 @@ struct SettingsCloudLinkPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Dropbox refresh token:", help: "Dropbox OAuth refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
-                        SecureField("refresh_token", text: $dropboxRefreshToken)
+                        DialogSecureField("refresh_token", text: $dropboxRefreshToken)
                             .textFieldStyle(.roundedBorder)
                     }
                 }
@@ -44,7 +44,7 @@ struct SettingsCloudLinkPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "TinyURL API token:", help: "TinyURL API token stored in ~/.mimi/cloud_link_credentials.json. Leave empty to use bundled fallback.", labelWidth: 170) {
-                        SecureField("api-token", text: $tinyURLAPIToken)
+                        DialogSecureField("api-token", text: $tinyURLAPIToken)
                             .textFieldStyle(.roundedBorder)
                     }
                 }

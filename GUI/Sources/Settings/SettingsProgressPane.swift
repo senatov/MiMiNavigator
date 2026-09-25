@@ -41,7 +41,7 @@ struct SettingsProgressPane: View {
                     HStack {
                         Text("Font:")
                             .frame(width: 80, alignment: .trailing)
-                        TextField("Font name", text: $appearance.logFontName)
+                        DialogTextField("Font name", text: $appearance.logFontName)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 160)
                         Text("Size:")

@@ -38,10 +38,10 @@ extension FindFilesAdvancedTab {
             if viewModel.advancedSettings.useSizeFilter {
                 HStack(spacing: 5) {
                     Text("From").foregroundStyle(.secondary)
-                    TextField("min", text: $viewModel.advancedSettings.fileSizeMin)
+                    DialogTextField("min", text: $viewModel.advancedSettings.fileSizeMin)
                         .textFieldStyle(.roundedBorder).frame(width: 64)
                     Text("to").foregroundStyle(.secondary)
-                    TextField("max", text: $viewModel.advancedSettings.fileSizeMax)
+                    DialogTextField("max", text: $viewModel.advancedSettings.fileSizeMax)
                         .textFieldStyle(.roundedBorder).frame(width: 64)
                     Picker("Unit", selection: $viewModel.advancedSettings.fileSizeUnit) {
                         ForEach(FindFilesSizeUnit.allCases) { unit in Text(unit.label).tag(unit) }
@@ -91,7 +91,7 @@ extension FindFilesAdvancedTab {
                     DatePicker("", selection: $viewModel.advancedSettings.staleSinceDate, displayedComponents: .date).labelsHidden()
                 case .age:
                     Text("Older than").foregroundStyle(.secondary)
-                    TextField("amount", text: $viewModel.advancedSettings.staleAgeAmount)
+                    DialogTextField("amount", text: $viewModel.advancedSettings.staleAgeAmount)
                         .textFieldStyle(.roundedBorder).frame(width: 70)
                     Picker("", selection: $viewModel.advancedSettings.staleAgeUnit) {
                         ForEach(FindFilesAgeUnit.allCases) { value in Text(value.label).tag(value) }

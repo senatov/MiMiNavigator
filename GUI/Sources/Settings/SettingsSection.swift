@@ -17,6 +17,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case colorsChrome   = "Chrome & Borders"
     case colorsBreadcrumb = "BreadCrumb"
     case colorsButtons  = "Buttons"
+    case colorsInputFields = "Input Fields"
     // Other
     case panels         = "Panels"
     case preview        = "Preview"
@@ -48,7 +49,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     /// Indent level — color sub-sections are indented under "Colors" header
     var isSubItem: Bool {
         switch self {
-        case .colorsPanels, .colorsChrome, .colorsBreadcrumb, .colorsButtons: return true
+        case .colorsPanels, .colorsChrome, .colorsBreadcrumb, .colorsButtons, .colorsInputFields: return true
         default: return false
         }
     }
@@ -60,6 +61,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsChrome:      return "slider.horizontal.3"
         case .colorsBreadcrumb:  return "text.alignleft"
         case .colorsButtons:     return "button.programmable"
+        case .colorsInputFields: return "character.cursor.ibeam"
         case .panels:            return "rectangle.split.2x1"
         case .preview:           return "rectangle.trailinghalf.inset.filled"
         case .tabs:              return "rectangle.on.rectangle"
@@ -81,6 +83,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsChrome: return "Window chrome, separators and structural surfaces"
         case .colorsBreadcrumb: return "Path navigation, segments and interaction states"
         case .colorsButtons: return "Toolbar and command button appearance"
+        case .colorsInputFields: return "Dialog placeholders and field-label appearance"
         case .panels: return "Panel layout, columns and file presentation"
         case .preview: return "Embedded preview modes and remembered file-type rules"
         case .tabs: return "Tab behavior, font, colors and corner shape"
@@ -112,6 +115,8 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
             return "path text active inactive environment variable hover hovered segment background border typography font size italic preview"
         case .colorsButtons:
             return "button border color width corner radius shadow color radius offset preview"
+        case .colorsInputFields:
+            return "dialog input field placeholder hint intensity opacity label dark blue rounded text"
         case .panels:
             return "row height compact normal relaxed spacious hidden files extensions icons show file folder calculate sizes active highlight sorting ascending descending folders first date format short medium relative iso size display kilobytes open single double click"
         case .preview:

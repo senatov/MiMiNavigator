@@ -20,14 +20,13 @@ struct HIGTextField: View {
         VStack(alignment: .leading, spacing: 4) {
             if let label {
                 Text(label)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .dialogFieldLabelStyle(size: 12)
             }
             Group {
                 if isSecure {
-                    SecureField(placeholder, text: $text)
+                    DialogSecureField(placeholder, text: $text)
                 } else {
-                    TextField(placeholder, text: $text)
+                    DialogTextField(placeholder, text: $text)
                 }
             }
             .textFieldStyle(.plain)
