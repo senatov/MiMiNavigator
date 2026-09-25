@@ -5,7 +5,6 @@
 // Description: Creates branded short aliases for generated cloud share links.
 
 import Foundation
-import FileModelKit
 
 // MARK: - CloudLinkShortener
 
@@ -41,11 +40,7 @@ enum CloudLinkShortener {
         if let token = try? TinyURLTokenStore.loadAPIToken(), !token.isEmpty {
             return token
         }
-        let bundledToken = CloudShortLinkTokenProvider.tinyURLAPIToken
-        guard !bundledToken.isEmpty else {
-            throw CloudLinkShortenerError.missingAPIToken
-        }
-        return bundledToken
+        throw CloudLinkShortenerError.missingAPIToken
     }
 
     // MARK: - Request Short Link

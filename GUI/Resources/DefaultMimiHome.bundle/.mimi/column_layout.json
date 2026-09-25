@@ -3,32 +3,32 @@
     "columns": [
       { "id": "name", "isVisible": true, "width": 126 },
       { "id": "dateModified", "isVisible": true, "width": 123 },
-      { "id": "permissions", "isVisible": false, "width": 79 },
-      { "id": "size", "isVisible": true, "width": 60 },
-      { "id": "kind", "isVisible": true, "width": 45 },
-      { "id": "owner", "isVisible": true, "width": 46 },
-      { "id": "childCount", "isVisible": true, "width": 32 },
+      { "id": "size", "isVisible": true, "width": 64 },
+      { "id": "kind", "isVisible": true, "width": 64 },
+      { "id": "owner", "isVisible": true, "width": 54 },
+      { "id": "childCount", "isVisible": true, "width": 54 },
+      { "id": "permissions", "isVisible": false, "width": 83 },
       { "id": "dateCreated", "isVisible": false, "width": 130 },
       { "id": "dateLastOpened", "isVisible": false, "width": 130 },
       { "id": "dateAdded", "isVisible": false, "width": 130 },
-      { "id": "group", "isVisible": false, "width": 70 }
+      { "id": "group", "isVisible": false, "width": 54 }
     ],
-    "storedNameWidth": 549.25
+    "storedNameWidth": 352
   },
   "right": {
     "columns": [
       { "id": "name", "isVisible": true, "width": 126 },
       { "id": "dateModified", "isVisible": true, "width": 123 },
-      { "id": "size", "isVisible": true, "width": 64 },
+      { "id": "size", "isVisible": true, "width": 63 },
       { "id": "kind", "isVisible": true, "width": 64 },
-      { "id": "permissions", "isVisible": false, "width": 79 },
-      { "id": "owner", "isVisible": true, "width": 67 },
-      { "id": "childCount", "isVisible": true, "width": 33 },
-      { "id": "dateCreated", "isVisible": false, "width": 123 },
-      { "id": "dateLastOpened", "isVisible": false, "width": 123 },
-      { "id": "dateAdded", "isVisible": false, "width": 115 },
-      { "id": "group", "isVisible": false, "width": 44 }
+      { "id": "owner", "isVisible": true, "width": 54 },
+      { "id": "childCount", "isVisible": true, "width": 54 },
+      { "id": "permissions", "isVisible": false, "width": 83 },
+      { "id": "dateCreated", "isVisible": false, "width": 130 },
+      { "id": "dateLastOpened", "isVisible": false, "width": 130 },
+      { "id": "dateAdded", "isVisible": false, "width": 130 },
+      { "id": "group", "isVisible": false, "width": 54 }
     ],
-    "storedNameWidth": 319
+    "storedNameWidth": 349
   }
 }

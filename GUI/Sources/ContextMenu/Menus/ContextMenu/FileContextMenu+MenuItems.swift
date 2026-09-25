@@ -70,17 +70,27 @@ extension FileContextMenu {
 
     @ViewBuilder
     private func cloudProviderActions(_ provider: CloudProvider) -> some View {
+        if CloudLinkSetupCoordinator.shouldShowSetupAction(for: provider) {
+            Button {
+                CloudLinkSetupCoordinator.showSetupGuide(for: provider)
+            } label: {
+                Label("Set up \(provider.rawValue)…", systemImage: "questionmark.circle")
+            }
+            Divider()
+        }
         Button {
             CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .readOnly)
         } label: {
             Label("View only", systemImage: "eye")
         }
+        .disabled(!CloudLinkSetupCoordinator.isProviderActionEnabled(provider))
         if provider == .googleDrive {
             Button {
                 CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .allowEdit)
             } label: {
                 Label("Allow editing", systemImage: "pencil")
             }
+            .disabled(!CloudLinkSetupCoordinator.isProviderActionEnabled(provider))
         }
     }
 

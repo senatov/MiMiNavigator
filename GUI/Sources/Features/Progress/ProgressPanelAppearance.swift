@@ -26,18 +26,18 @@ final class ProgressPanelAppearance {
 
     // MARK: - Defaults (warm-yellow terminal style)
 
-    static let defaultBgHex          = "#FFF8DC"   // cornsilk — warm yellow
+    static let defaultBgHex          = "#FFF8E4"   // warm yellow
     static let defaultBorderHex      = "#C8B88A"   // warm tan border
-    static let defaultLogFontName    = "Menlo"
-    static let defaultLogFontSize    = 10.5
+    static let defaultLogFontName    = "System"
+    static let defaultLogFontSize    = 12.0
     static let defaultLogColorHex    = "#0A1A6B"   // dark navy blue
-    static let defaultTitleColorHex  = "#8B1A1A"   // dark reddish
-    static let defaultStatusColorHex = "#0A1A6B"   // dark navy
-    static let defaultWidth: CGFloat = 448
+    static let defaultTitleColorHex  = "#521B92"   // dark violet
+    static let defaultStatusColorHex = "#005392"   // dark blue
+    static let defaultWidth: CGFloat = 522
     static let defaultHeight: CGFloat = 519
     static let defaultMinWidth: CGFloat = 380
     static let defaultMinHeight: CGFloat = 168
-    static let defaultAutoCloseSeconds = 2.0
+    static let defaultAutoCloseSeconds = 0.5
     static let defaultAutoCloseEnabled = true
 
     // MARK: - Published properties

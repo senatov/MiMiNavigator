@@ -28,7 +28,7 @@ The feature is intentionally narrow. MiMiNavigator remains a filesystem-first ap
 
 ## Shortener
 
-`CloudLinkShortener` is shared by both providers and uses TinyURL:
+`CloudLinkShortener` is shared by both providers and uses TinyURL when the user has configured an API token:
 
 ```text
 https://api.tinyurl.com/create
@@ -82,9 +82,9 @@ Google Drive refresh tokens are stored in `~/.mimi/cloud_link_credentials.json` 
 
 Dropbox uses PKCE without an embedded app secret. Its refresh token is stored in `~/.mimi/cloud_link_credentials.json` first. `DropboxTokenStore` can still mirror to and migrate from Keychain service `Senatov.MiMiNavigator.Dropbox`, account `refresh-token`.
 
-TinyURL uses `tinyURLAPIToken` from `~/.mimi/cloud_link_credentials.json` first, then the Keychain mirror, then the bundled fallback token. The Keychain mirror service is `Senatov.MiMiNavigator.TinyURL`, account `api-token`.
+TinyURL uses `tinyURLAPIToken` from `~/.mimi/cloud_link_credentials.json` first, then the Keychain mirror. Without a token, Share+Link copies the original provider URL. The Keychain mirror service is `Senatov.MiMiNavigator.TinyURL`, account `api-token`.
 
-Settings → Cloud Share+Link lets users edit Google client secret, Google refresh token, Dropbox refresh token, and TinyURL API token. Leaving TinyURL empty uses the bundled fallback token.
+Settings → Cloud Share+Link lets users edit Google client secret, Google refresh token, Dropbox refresh token, and TinyURL API token. Provider actions are disabled while required credentials are missing; a separate setup action shows guidance once and opens the relevant Settings pane. TinyURL guidance is also shown once, but leaving TinyURL empty continues with the original long link.
 
 Never log access tokens, refresh tokens, authorization codes, PKCE verifiers, or OAuth client secrets.
 

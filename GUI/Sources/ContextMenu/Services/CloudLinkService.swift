@@ -31,6 +31,7 @@ enum CloudLinkService {
     @discardableResult
     static func generateLink(for url: URL, provider: CloudProvider, permission: CloudLinkPermission) -> Bool {
         log.info("[CloudLink] \(provider.rawValue) \(permission.rawValue) for \(url.lastPathComponent)")
+        guard CloudLinkSetupCoordinator.prepareShare(for: provider) else { return false }
         switch provider {
         case .dropbox:
             return dropboxLink(url: url, permission: permission)

@@ -43,7 +43,7 @@ struct SettingsCloudLinkPane: View {
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "TinyURL API token:", help: "TinyURL API token stored in ~/.mimi/cloud_link_credentials.json. Leave empty to use bundled fallback.", labelWidth: 170) {
+                    SettingsRow(label: "TinyURL API token:", help: "TinyURL API token stored in ~/.mimi/cloud_link_credentials.json. Leave empty to keep original provider links.", labelWidth: 170) {
                         DialogSecureField("api-token", text: $tinyURLAPIToken)
                             .textFieldStyle(.roundedBorder)
                     }
@@ -59,8 +59,32 @@ struct SettingsCloudLinkPane: View {
                 Button("Reveal ~/.mimi") { revealMimiDirectory() }.buttonStyle(ThemedButtonStyle())
             }
             statusRow
+            setupHelp
         }
         .onAppear { loadSettings() }
+    }
+
+    // MARK: - Setup Help
+
+    private var setupHelp: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Credential setup")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+            Text("Google Drive requires Desktop OAuth credentials, Drive API access, and a refresh token. Dropbox requires an API app with metadata and sharing permissions plus a refresh token. TinyURL is optional; without its API token MiMiNavigator copies the original provider link.")
+                .font(.system(size: 11))
+                .foregroundStyle(SettingsVisualStyle.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                Button("Google OAuth Setup") { openSetupPage(.googleDrive) }
+                    .buttonStyle(ThemedButtonStyle())
+                Button("Dropbox App Console") { openSetupPage(.dropbox) }
+                    .buttonStyle(ThemedButtonStyle())
+                Button("TinyURL API") { openTinyURLSetupPage() }
+                    .buttonStyle(ThemedButtonStyle())
+            }
+        }
+        .padding(12)
+        .background(SettingsVisualStyle.cardTint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - Status Row
@@ -130,5 +154,18 @@ struct SettingsCloudLinkPane: View {
         let directory = CloudLinkCredentialsStore.storeURL.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([directory])
+    }
+
+    // MARK: - Open Setup Page
+
+    private func openSetupPage(_ provider: CloudProvider) {
+        guard let url = CloudLinkSetupCoordinator.setupURL(for: provider) else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    // MARK: - Open TinyURL Setup Page
+
+    private func openTinyURLSetupPage() {
+        NSWorkspace.shared.open(CloudLinkSetupCoordinator.tinyURLSetupURL)
     }
 }

@@ -12,9 +12,9 @@ enum DialogTextInputAppearance {
     static let placeholderColorKey = "dialog.input.placeholderColor"
     static let placeholderOpacityKey = "dialog.input.placeholderOpacity"
     static let labelColorKey = "dialog.input.labelColor"
-    static let defaultPlaceholderHex = "315B83"
+    static let defaultPlaceholderHex = "424242"
     static let defaultLabelHex = "173F6B"
-    static let defaultPlaceholderOpacity = 0.42
+    static let defaultPlaceholderOpacity = 0.55
 }
 
 // MARK: - Dialog Text Field

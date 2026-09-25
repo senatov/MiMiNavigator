@@ -1,5 +1,6 @@
 {
   "autoCloseSeconds": 0.5,
+  "autoCloseEnabled": true,
   "framesByOperation": {},
   "hexBackground": "FFF8E4",
   "hexBorder": "#C8B88A",
@@ -9,5 +10,5 @@
   "logFontName": "System",
   "logFontSize": 12,
   "panelHeight": 519,
-  "panelWidth": 448
+  "panelWidth": 522
 }

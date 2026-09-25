@@ -108,7 +108,7 @@ struct PreferencesSnapshot: Codable, Sendable {
         tabsCloseLastKeepsPanel: true,
         tabsPosition: "top",
         tabsShowCloseButton: true,
-        tabsMaxTabs: 32,
+        tabsMaxTabs: 8,
         tabsSortByName: false,
         // Archives
         archiveDefaultFormat: "zip",
