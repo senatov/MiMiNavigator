@@ -54,6 +54,7 @@ private struct DialogTabNavigationBridge: NSViewRepresentable {
             window.recalculateKeyViewLoop()
             monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                 guard let self, event.window === self.window, event.keyCode == 48 else { return event }
+                guard self.shouldHandleTab(in: event.window) else { return event }
                 self.window?.recalculateKeyViewLoop()
                 if event.modifierFlags.contains(.shift) {
                     self.window?.selectPreviousKeyView(nil)
@@ -62,6 +63,10 @@ private struct DialogTabNavigationBridge: NSViewRepresentable {
                 }
                 return nil
             }
+        }
+
+        private func shouldHandleTab(in window: NSWindow?) -> Bool {
+            window is NSPanel || CntMenuCoord.shared.activeDialog != nil
         }
 
         func stop() {
@@ -81,6 +86,7 @@ extension View {
                 guard press.key == .tab else { return .ignored }
                 return KeyboardFocusNavigator.move(backward: press.modifiers.contains(.shift))
             }
+            .forcedDialogTabNavigation()
     }
 
     func keyboardFocusable() -> some View {

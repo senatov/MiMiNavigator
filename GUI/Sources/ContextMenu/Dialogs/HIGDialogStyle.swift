@@ -33,7 +33,6 @@ struct HIGDialogStyle: ViewModifier {
         let dialogWidth = min(DesignTokens.Dialog.standardWidth, maximumSize.width)
         content
             .keyboardFocusSection()
-            .forcedDialogTabNavigation()
             .padding(DesignTokens.Dialog.contentPadding)
             .frame(width: dialogWidth)
             .fixedSize(horizontal: false, vertical: true)

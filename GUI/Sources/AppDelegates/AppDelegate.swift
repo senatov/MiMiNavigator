@@ -134,6 +134,9 @@ import LogKit
             }
             guard let self, let appState = self.appState else { return event }
             if CntMenuCoord.shared.activeDialog != nil { return event }
+            guard let eventWindow = event.window ?? NSApp.keyWindow,
+                  self.isMainApplicationWindow(eventWindow)
+            else { return event }
             let flags = event.modifierFlags
             guard !flags.contains(.command), !flags.contains(.option), !flags.contains(.control) else {
                 return event
