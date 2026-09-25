@@ -157,7 +157,6 @@ struct BatchConfirmationDialog: View {
             dialogButtons
         }
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .padding(20)
         .frame(width: dialogWidth)
         .fixedSize(horizontal: false, vertical: true)

@@ -106,7 +106,6 @@ struct NetworkAuthSheet: View {
         }
         .frame(width: NetworkAuthSheetLayout.dialogWidth)
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .padding(.vertical, 2)
         .dialogWindowSurface(cornerRadius: NetworkAuthSheetLayout.cornerRadius)
         .overlay(NetworkAuthSheetGlassStyle.sheetBorder)

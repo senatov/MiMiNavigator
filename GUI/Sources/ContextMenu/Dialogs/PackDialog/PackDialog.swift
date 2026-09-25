@@ -264,7 +264,6 @@ struct PackDialog: View {
             )
         }
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .padding(24)
         .frame(minWidth: 420)
         .background(PackDialogStyle.panelBackground)

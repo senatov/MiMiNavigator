@@ -63,7 +63,6 @@ struct ArchivePasswordDialog: View {
         .padding(24)
         .frame(width: 360)
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(DialogColors.base)

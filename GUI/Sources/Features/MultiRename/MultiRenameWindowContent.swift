@@ -38,7 +38,6 @@ struct MultiRenameWindowContent: View {
         }
         .frame(minWidth: Layout.minWidth, minHeight: Layout.minHeight)
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .padding(.top, 10)
         .dialogWindowSurface(cornerRadius: Layout.outerCornerRadius)
         .overlay(panelBorder)

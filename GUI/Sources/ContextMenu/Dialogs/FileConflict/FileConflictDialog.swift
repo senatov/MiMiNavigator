@@ -27,7 +27,6 @@ struct FileConflictDialog: View {
             buttonSection
         }
         .keyboardFocusSection()
-        .forcedDialogTabNavigation()
         .frame(width: 640)
         .background(Color(nsColor: .windowBackgroundColor))
     }
