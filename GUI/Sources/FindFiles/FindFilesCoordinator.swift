@@ -32,8 +32,8 @@ final class FindFilesCoordinator {
     var appState: AppState?
 
     private let frameAutosaveName = "MiMiNavigator.FindFilesWindow"
-    private let defaultWidth: CGFloat = 940
-    private let defaultHeight: CGFloat = 780
+    private let defaultWidth: CGFloat = 1128
+    private let defaultHeight: CGFloat = 1230
 
     private init() {}
 

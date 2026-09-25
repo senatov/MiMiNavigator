@@ -7,7 +7,6 @@ import SwiftUI
 
 // MARK: - Tabs Settings
 struct SettingsTabsPane: View {
-    @Environment(\.colorScheme) private var colorScheme
     @State private var prefs = UserPreferences.shared
     @AppStorage("tabs.appearance.fontSize") private var fontSize = TabAppearance.fontSize
     @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
@@ -108,28 +107,18 @@ struct SettingsTabsPane: View {
 
     // MARK: - Preview
     private func previewTab(focused: Bool) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "folder.fill").font(.system(size: 11))
-            Text(focused ? "Active panel" : "Inactive panel")
-                .font(.system(size: CGFloat(fontSize), weight: .regular))
-        }
-        .foregroundStyle(Color(hex: previewHex(focused ? focusedText : unfocusedText,
-                                               dark: focused ? TabAppearance.darkFocusedText : TabAppearance.darkUnfocusedText,
-                                               standard: focused ? TabAppearance.focusedText : TabAppearance.unfocusedText)) ?? .primary)
+        TabAppearanceLabel(
+            title: focused ? "Active panel" : "Inactive panel",
+            systemIcon: "folder.fill",
+            isSelected: true,
+            isFocused: focused
+        )
         .padding(.horizontal, 12)
-        .frame(height: 29)
+        .frame(height: TabAppearance.height)
         .background {
-            (Color(hex: previewHex(focused ? focusedBackground : unfocusedBackground,
-                                   dark: focused ? TabAppearance.darkFocusedBackground : TabAppearance.darkUnfocusedBackground,
-                                   standard: focused ? TabAppearance.focusedBackground : TabAppearance.unfocusedBackground)) ?? .gray)
-                .opacity(focused ? 1 : inactivePanelOpacity)
-                .clipShape(BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)))
+            PanelTabSurface(isActive: true, isPanelFocused: focused)
         }
-        .overlay(BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)).stroke(Color.accentColor.opacity(0.5), lineWidth: 0.7))
-    }
-
-    private func previewHex(_ hex: String, dark: String, standard: String) -> String {
-        colorScheme == .dark && hex == standard ? dark : hex
+        .clipShape(BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)))
     }
 
     // MARK: - Reset

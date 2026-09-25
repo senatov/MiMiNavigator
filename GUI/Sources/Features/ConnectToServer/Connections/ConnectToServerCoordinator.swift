@@ -20,8 +20,8 @@ final class ConnectToServerCoordinator {
     private var window: NSPanel?
 
     private let frameAutosaveName = "MiMiNavigator.ConnectToServerWindow"
-    private let defaultWidth: CGFloat  = 960
-    private let defaultHeight: CGFloat = 660
+    private let defaultWidth: CGFloat  = 820
+    private let defaultHeight: CGFloat = 590
     private let minWidth: CGFloat = 540
     private let minHeight: CGFloat = 440
     private let panelTitle = "Connect to Server"

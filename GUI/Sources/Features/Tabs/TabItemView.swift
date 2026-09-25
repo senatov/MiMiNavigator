@@ -4,6 +4,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Single bottom tab with glass-friendly compact styling.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Tab Item View
@@ -24,14 +25,9 @@ struct TabItemView: View {
     @State private var isHovered = false
     @State private var anchorFrame: CGRect = .zero
     @State private var tooltipTask: Task<Void, Never>?
-    @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("tabs.appearance.fontSize") private var tabFontSize = TabAppearance.fontSize
     @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
-    @AppStorage("tabs.appearance.focusedText") private var focusedTextHex = TabAppearance.focusedText
-    @AppStorage("tabs.appearance.unfocusedText") private var unfocusedTextHex = TabAppearance.unfocusedText
 
     // MARK: - Layout constants
-    private let tabHeight: CGFloat = 29
     private let minTabWidth: CGFloat = 112
     private let maxTabWidth: CGFloat = 236
 
@@ -39,7 +35,7 @@ struct TabItemView: View {
 
     var body: some View {
         tabContent
-            .frame(height: tabHeight)
+            .frame(height: TabAppearance.height)
             .background {
                 PanelTabSurface(isActive: isActive, isPanelFocused: isPanelFocused, isHovered: isHovered)
             }
@@ -67,16 +63,13 @@ struct TabItemView: View {
 
     private var tabContent: some View {
         HStack(spacing: 5) {
-            // Favicon-style folder icon
-            Image(systemName: tab.isArchive ? "doc.zipper" : "folder.fill")
-                .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(isActive ? activeIconColor : inactiveForeground.opacity(0.72))
-                .frame(width: 12)
-
-            Text(tab.truncatedDisplayName(maxLength: 22))
-                .font(.system(size: CGFloat(tabFontSize), weight: .regular))
-                .lineLimit(1)
-                .foregroundStyle(isActive ? activeForeground : inactiveForeground)
+            TabAppearanceLabel(
+                title: tab.truncatedDisplayName(maxLength: 22),
+                systemIcon: tab.isArchive ? "doc.zipper" : "folder.fill",
+                fileIcon: nativeIcon,
+                isSelected: isActive,
+                isFocused: isPanelFocused
+            )
 
             Spacer(minLength: 0)
 
@@ -120,29 +113,10 @@ struct TabItemView: View {
         (isActive || isHovered) && !isOnlyTab && UserPreferences.shared.snapshot.tabsShowCloseButton
     }
 
-    private var activeForeground: Color {
-        isPanelFocused ? focusedText : unfocusedText
-    }
-
-    private var activeIconColor: Color {
-        tab.isArchive
-            ? Color(#colorLiteral(red: 0.902, green: 0.314, blue: 0.184, alpha: 1))
-            : Color(#colorLiteral(red: 0.098, green: 0.431, blue: 0.922, alpha: 1))
-    }
-
-    private var inactiveForeground: Color {
-        isPanelFocused ? focusedText.opacity(0.78) : unfocusedText
-    }
-
-    private var focusedText: Color {
-        let hex = colorScheme == .dark && focusedTextHex == TabAppearance.focusedText
-            ? TabAppearance.darkFocusedText : focusedTextHex
-        return Color(hex: hex) ?? .primary
-    }
-    private var unfocusedText: Color {
-        let hex = colorScheme == .dark && unfocusedTextHex == TabAppearance.unfocusedText
-            ? TabAppearance.darkUnfocusedText : unfocusedTextHex
-        return Color(hex: hex) ?? .secondary
+    private var nativeIcon: NSImage? {
+        let iconURL = tab.archiveURL ?? tab.url
+        guard iconURL.isFileURL else { return nil }
+        return NSWorkspace.shared.icon(forFile: iconURL.path)
     }
 
     private var frameReader: some View {
