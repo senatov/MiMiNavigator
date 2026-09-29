@@ -67,7 +67,7 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
         )
         let hostingView = NSHostingView(rootView: view)
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 430, height: 260),
+            contentRect: NSRect(x: 0, y: 0, width: 470, height: 360),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -84,7 +84,7 @@ final class FeedbackCoordinator: NSObject, NSWindowDelegate {
         AuxiliaryWindowFramePolicy.restoreOrCenter(
             p,
             autosaveName: frameAutosaveName,
-            designedSize: NSSize(width: 430, height: 260)
+            designedSize: NSSize(width: 470, height: 360)
         )
         return p
     }
@@ -98,7 +98,7 @@ struct FeedbackWindowContent: View {
 
     // MARK: - Body
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
             header
             Text("Review a short, privacy-filtered comment before MiMiNavigator fills the Blogger form.")
                 .font(.system(size: 13))
@@ -113,8 +113,9 @@ struct FeedbackWindowContent: View {
                 )
                 FeedbackActionButton(
                     title: "Report an Error",
-                    subtitle: "Review the concise error text before opening Blogger.",
-                    systemImage: "doc.text.magnifyingglass",
+                    subtitle: "Review error details, then open Blogger.",
+                    systemImage: "ladybug.fill",
+                    isProminent: true,
                     action: onSendDiagnostics
                 )
             }
@@ -124,8 +125,8 @@ struct FeedbackWindowContent: View {
                     .keyboardShortcut(.cancelAction)
             }
         }
-        .padding(24)
-        .frame(width: 430)
+        .padding(22)
+        .frame(width: 470)
     }
 
     // MARK: - Header
@@ -149,39 +150,34 @@ private struct FeedbackActionButton: View {
     let title: String
     let subtitle: String
     let systemImage: String
+    var isProminent = false
     let action: () -> Void
 
     // MARK: - Body
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: isProminent ? 16 : 12) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: isProminent ? 28 : 20, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 28)
+                    .foregroundStyle(isProminent ? Color(#colorLiteral(red: 0.86, green: 0.30, blue: 0.18, alpha: 1.0)) : Color.accentColor)
+                    .frame(width: isProminent ? 36 : 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: isProminent ? 17 : 14, weight: .semibold))
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.system(size: 11))
+                        .font(.system(size: isProminent ? 12 : 11))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.9), lineWidth: 1)
-            )
+            .padding(.horizontal, isProminent ? 10 : 6)
+            .padding(.vertical, isProminent ? 10 : 5)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ThemedButtonStyle(tint: isProminent ? Color(#colorLiteral(red: 0.86, green: 0.30, blue: 0.18, alpha: 1.0)) : nil))
+        .keyboardFocusable()
     }
 }
