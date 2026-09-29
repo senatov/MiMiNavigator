@@ -11,6 +11,9 @@ enum ConnectionErrorFormatter {
     // MARK: - Summary
     static func summary(result: ConnectionResult, detail: String, server: RemoteServer) -> String {
         let lower = detail.lowercased()
+        if lower.contains("keyexchangenegotiationfailure") {
+            return "SSH negotiation failed. The server and app share no compatible encryption algorithms."
+        }
         if lower.contains("no route to host") {
             return "No route to host. Check VPN, network, firewall, and port \(server.port)."
         }

@@ -10,7 +10,6 @@ import Citadel
 import Crypto
 import FileModelKit
 import Foundation
-import NIO
 import NIOSSH
 
 final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
@@ -104,7 +103,8 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
                 port: port,
                 authenticationMethod: authenticationMethod,
                 hostKeyValidator: .acceptAnything(),
-                reconnect: .never
+                reconnect: .never,
+                algorithms: .all
             )
 
             let sftp = try await ssh.openSFTP()
