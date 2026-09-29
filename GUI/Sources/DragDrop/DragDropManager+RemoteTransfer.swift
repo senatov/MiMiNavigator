@@ -84,6 +84,7 @@ extension DragDropManager {
         )
         var succeeded = 0
         var failed = 0
+        var firstFailure: String?
         for (index, file) in files.enumerated() {
             guard !panel.isCancelled else {
                 panel.appendLog("⛔ Cancelled")
@@ -111,10 +112,16 @@ extension DragDropManager {
                 try? FileManager.default.removeItem(at: stagingURL)
                 log.error("[DnD] download '\(file.nameStr)' failed: \(error.localizedDescription)")
                 panel.appendLog("❌ \(file.nameStr): \(error.localizedDescription)")
+                if firstFailure == nil {
+                    firstFailure = "\(file.nameStr): \(error.localizedDescription)"
+                }
                 failed += 1
             }
         }
         finishRemoteProgress(panel, succeeded: succeeded, failed: failed, total: files.count, verb: "downloaded")
+        if let firstFailure {
+            FileOperationOutcomePresenter.failure(.copy, message: firstFailure)
+        }
         await refreshAffectedPanels(appState: appState, operation: operation)
     }
 

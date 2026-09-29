@@ -113,12 +113,13 @@ extension BatchOpsCoord {
             }
 
             let remotePath = file.pathStr
+            let localURL = destination.appendingPathComponent(file.nameStr, isDirectory: file.isDirectory)
             panel.updateStatus("[\(index + 1)/\(totalItems)] \(file.nameStr)")
 
             do {
                 try await conn.provider.downloadToLocal(
                     remotePath: remotePath,
-                    localPath: destination.path,
+                    localPath: localURL.path,
                     recursive: file.isDirectory
                 )
                 log.info("[BatchOps] downloaded '\(file.nameStr)' → '\(destination.lastPathComponent)'")

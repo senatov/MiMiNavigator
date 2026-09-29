@@ -56,6 +56,7 @@ extension OpenWithService {
             logInfo("remote download success local='\(localURL.path)'")
         } catch {
             logError("remote download failed: \(error.localizedDescription)")
+            InAppNoticeCenter.shared.showError(title: "Download Failed", message: "\(fileURL.lastPathComponent): \(error.localizedDescription)")
         }
     }
     // MARK: - Default Application

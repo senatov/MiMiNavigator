@@ -102,6 +102,15 @@ final class ExternalFileDropNSView: NSView {
             log.error("[ExternalDrop] missing dependencies")
             return false
         }
+        if !dragDropManager.draggedFiles.isEmpty {
+            let side = panelSide(for: sender.draggingLocation)
+            guard dragDropManager.dragSourcePanelSide != side else { return false }
+            let destination = appState.url(for: side)
+            let files = dragDropManager.draggedFiles
+            log.info("[ExternalDrop] internal drop \(files.count) file(s) → \(side) \(destination.path)")
+            dragDropManager.prepareTransfer(files: files, to: destination, from: dragDropManager.dragSourcePanelSide)
+            return true
+        }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         guard !urls.isEmpty else {
             log.warning("[ExternalDrop] perform rejected: no file URLs types=\(pasteboardTypes(sender))")

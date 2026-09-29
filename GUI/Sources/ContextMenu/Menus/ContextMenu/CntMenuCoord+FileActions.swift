@@ -102,6 +102,10 @@ extension CntMenuCoord {
     /// regular files open with default application via NSWorkspace.
     private func openFileOrArchive(_ file: CustomFile, panel: FavPanelSide, appState: AppState) {
         log.debug(#function + "(\(file.nameStr))")
+        if AppState.isRemotePath(appState.url(for: panel)) {
+            appState.activateItem(file, on: panel)
+            return
+        }
         // Browsable archive files — open as virtual directory (Total Commander behavior)
         // Opaque archives (dmg, pkg, iso, jar…) fall through to NSWorkspace.open
         if file.isBrowsableArchive {

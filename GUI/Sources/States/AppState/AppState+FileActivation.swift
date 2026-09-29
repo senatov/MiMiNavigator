@@ -140,7 +140,7 @@ extension AppState {
             Task { await navigateToParent(on: panel) }
             return
         }
-        if file.isBrowsableArchive {
+        if file.isBrowsableArchive && !AppState.isRemotePath(url(for: panel)) {
             Task { await enterArchive(at: file.urlValue, on: panel) }
             return
         }
@@ -163,11 +163,18 @@ extension AppState {
             Task {
                 do {
                     let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
-                    _ = await MainActor.run {
-                        NSWorkspace.shared.open(localURL)
+                    let configuration = NSWorkspace.OpenConfiguration()
+                    NSWorkspace.shared.open(localURL, configuration: configuration) { _, error in
+                        if let error {
+                            log.error("[AppState] remote file open failed '\(remotePath)': \(error.localizedDescription)")
+                            Task { @MainActor in
+                                InAppNoticeCenter.shared.showError(title: "Open Failed", message: "\(file.nameStr): \(error.localizedDescription)")
+                            }
+                        }
                     }
                 } catch {
                     log.error("[AppState] remote download failed '\(remotePath)': \(error.localizedDescription)")
+                    InAppNoticeCenter.shared.showError(title: "Download Failed", message: "\(file.nameStr): \(error.localizedDescription)")
                 }
             }
             return

@@ -20,6 +20,7 @@ final class ClipboardManager {
 
     // MARK: - State
     private(set) var files: [URL] = []
+    private var copiedFiles: [CustomFile] = []
     private(set) var operation: ClipboardOperation?
     private(set) var sourcePanel: FavPanelSide?
     private var internalPasteboardChangeCount: Int = -1
@@ -27,12 +28,19 @@ final class ClipboardManager {
     var hasContent: Bool { internalClipboardIsCurrent || hasExternalFileURLs }
     var isCut: Bool { operation == .cut }
     var isCopy: Bool { operation == .copy }
+    var remoteCopiedFiles: [CustomFile]? {
+        guard internalClipboardIsCurrent, operation == .copy,
+              !copiedFiles.isEmpty,
+              copiedFiles.allSatisfy({ AppState.isRemotePath($0.urlValue) }) else { return nil }
+        return copiedFiles
+    }
 
     private init() {}
 
     // MARK: - Copy files to clipboard
     func copy(files: [CustomFile], from panel: FavPanelSide) {
         self.files = files.map { $0.urlValue }
+        copiedFiles = files
         self.operation = .copy
         self.sourcePanel = panel
         writeToPasteboard(self.files)
@@ -43,6 +51,7 @@ final class ClipboardManager {
     // MARK: - Cut files to clipboard
     func cut(files: [CustomFile], from panel: FavPanelSide) {
         self.files = files.map { $0.urlValue }
+        copiedFiles = files
         self.operation = .cut
         self.sourcePanel = panel
         writeToPasteboard(self.files)
@@ -100,6 +109,7 @@ final class ClipboardManager {
     // MARK: - Clear clipboard
     func clear() {
         files = []
+        copiedFiles = []
         operation = nil
         sourcePanel = nil
         internalPasteboardChangeCount = -1
