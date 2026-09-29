@@ -103,7 +103,6 @@ extension AppState {
         }
         guard beginRemoteRefresh(for: panel) else { return }
         defer { endRemoteRefresh(for: panel) }
-        resetRemotePanelState(panel)
         do {
             // Use panel URL path — NOT conn.currentPath which may lag behind navigation.
             let remotePath = normalizedRemotePath(for: panelURL)
