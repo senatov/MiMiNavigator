@@ -8,8 +8,11 @@
 
 import Citadel
 import Crypto
+import Darwin
 import FileModelKit
 import Foundation
+import NIOCore
+import NIOPosix
 import NIOSSH
 
 final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
@@ -98,14 +101,7 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
 
         do {
             let authenticationMethod = try makeAuthenticationMethod(user: user, password: password)
-            let ssh = try await SSHClient.connect(
-                host: host,
-                port: port,
-                authenticationMethod: authenticationMethod,
-                hostKeyValidator: .acceptAnything(),
-                reconnect: .never,
-                algorithms: .all
-            )
+            let ssh = try await connectSSH(host: host, port: port, authenticationMethod: authenticationMethod)
 
             let sftp = try await ssh.openSFTP()
 
@@ -128,6 +124,38 @@ final class SFTPFileProvider: RemoteFileProvider, @unchecked Sendable {
             resetSession()
             log.error("[SFTP] connect failed: \(Self.errorDescription(error))")
             throw error
+        }
+    }
+
+    // MARK: - SSH Connection
+    private func connectSSH(host: String, port: Int, authenticationMethod: SSHAuthenticationMethod) async throws -> SSHClient {
+        for attempt in 1...2 {
+            try Task.checkCancellation()
+            do {
+                return try await SSHClient.connect(
+                    host: host,
+                    port: port,
+                    authenticationMethod: authenticationMethod,
+                    hostKeyValidator: .acceptAnything(),
+                    reconnect: .never,
+                    algorithms: .all
+                )
+            } catch {
+                guard attempt == 1, Self.isRouteUnavailable(error) else { throw error }
+                log.warning("[SFTP] no route to \(host):\(port); retrying connection in 1 second")
+                try await Task.sleep(for: .seconds(1))
+            }
+        }
+        throw RemoteProviderError.notConnected
+    }
+
+    // MARK: - Route Failure Classification
+    static func isRouteUnavailable(_ error: Error) -> Bool {
+        guard let connectionError = error as? NIOConnectionError,
+              !connectionError.connectionErrors.isEmpty else { return false }
+        return connectionError.connectionErrors.allSatisfy { failure in
+            guard let ioError = failure.error as? IOError else { return false }
+            return ioError.errnoCode == EHOSTUNREACH || ioError.errnoCode == ENETUNREACH
         }
     }
 
