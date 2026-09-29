@@ -51,8 +51,7 @@
         
         private var titleText: some View {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.primary)
+                .dialogFieldLabelStyle(size: 13)
         }
         
         private var nameText: some View {

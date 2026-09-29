@@ -10,6 +10,11 @@ import Citadel
 import Foundation
 import NIOCore
 
+// MARK: - Concurrent SFTP Handle
+private struct ConcurrentSFTPHandle: @unchecked Sendable {
+    let file: SFTPFile
+}
+
 extension SFTPFileProvider {
 
     private func childNameForRecursiveDelete(from entry: SFTPMessage.Name) -> String? {
@@ -129,33 +134,49 @@ extension SFTPFileProvider {
         let sftp = try requireSFTPClient()
         let normalizedRemotePath = normalizeUploadRemotePath(remotePath)
 
-        try await ensureRemoteParentDirectoryExists(for: normalizedRemotePath)
-
         let data = try localFileData(at: localURL)
-        let allocator = ByteBufferAllocator()
-        let handle = try await sftp.openFile(
-            filePath: normalizedRemotePath,
-            flags: [.write, .create, .truncate]
-        )
+        let handle: SFTPFile
+        do {
+            handle = try await sftp.openFile(filePath: normalizedRemotePath, flags: [.write, .create, .truncate])
+        } catch let status as SFTPMessage.Status where status.errorCode == .noSuchFile {
+            try await ensureRemoteParentDirectoryExists(for: normalizedRemotePath)
+            handle = try await sftp.openFile(filePath: normalizedRemotePath, flags: [.write, .create, .truncate])
+        }
 
         do {
-            var offset: UInt64 = 0
-            let chunkSize = 256 * 1024
-
-            while offset < UInt64(data.count) {
-                let remaining = data.count - Int(offset)
-                let length = min(chunkSize, remaining)
-                let chunk = data.subdata(in: Int(offset)..<Int(offset) + length)
-                var buffer = allocator.buffer(capacity: chunk.count)
-                buffer.writeBytes(chunk)
-                try await handle.write(buffer, at: offset)
-                offset += UInt64(length)
-            }
-
+            let writeStartedAt = Date()
+            try await writeFileData(data, to: ConcurrentSFTPHandle(file: handle))
             try await handle.close()
+            log.info("[SFTP] wrote \(data.count) bytes to '\(normalizedRemotePath)' in \(String(format: "%.2f", Date().timeIntervalSince(writeStartedAt))) s")
         } catch {
             try? await handle.close()
             throw error
+        }
+    }
+
+    // MARK: - Pipelined File Write
+    private func writeFileData(_ data: Data, to handle: ConcurrentSFTPHandle) async throws {
+        let chunkSize = 32_000
+        let maximumPendingWrites = 32
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            var offset = 0
+            var pendingWrites = 0
+            while offset < data.count {
+                if pendingWrites == maximumPendingWrites {
+                    try await group.next()
+                    pendingWrites -= 1
+                }
+                let start = offset
+                let end = min(start + chunkSize, data.count)
+                group.addTask {
+                    var buffer = ByteBufferAllocator().buffer(capacity: end - start)
+                    buffer.writeBytes(data[start..<end])
+                    try await handle.file.write(buffer, at: UInt64(start))
+                }
+                offset = end
+                pendingWrites += 1
+            }
+            try await group.waitForAll()
         }
     }
 

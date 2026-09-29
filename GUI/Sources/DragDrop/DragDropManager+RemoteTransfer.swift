@@ -26,10 +26,11 @@ extension DragDropManager {
         let panel = ProgressPanel.shared
         panel.showFileOp(
             icon: "arrow.up.doc.fill",
-            title: operationTitle(prefix: "⬆ Uploading", files: files),
+            title: operationTitle(prefix: kind == .move ? "⬆ Moving" : "⬆ Uploading", files: files),
             itemCount: files.count,
             destination: normalizedRemoteDestinationPath(destination)
         )
+        panel.updateProgress(nil)
         var succeeded = 0
         var failed = 0
         for (index, file) in files.enumerated() {
@@ -47,16 +48,20 @@ extension DragDropManager {
                     recursive: isDirectory
                 )
                 if kind == .move {
+                    let recycleStartedAt = Date()
                     try await moveLocalItemToTrash(file.urlValue)
+                    log.info("[DnD] recycled '\(file.nameStr)' after upload in \(String(format: "%.2f", Date().timeIntervalSince(recycleStartedAt))) s")
                 }
                 panel.appendLog(isDirectory ? "📁 \(file.nameStr)/" : "📄 \(file.nameStr)")
                 log.info("[DnD] uploaded '\(file.nameStr)' → '\(destinationDisplayName(destination))'")
                 succeeded += 1
+                panel.updateProgress(Double(succeeded + failed) / Double(files.count))
             } catch {
                 let message = humanReadableRemoteUploadError(error, targetPath: remotePath)
                 log.error("[DnD] upload '\(file.nameStr)' failed: \(error.localizedDescription)")
                 panel.appendLog("❌ \(file.nameStr): \(message)")
                 failed += 1
+                panel.updateProgress(Double(succeeded + failed) / Double(files.count))
             }
         }
         finishRemoteProgress(panel, succeeded: succeeded, failed: failed, total: files.count, verb: "uploaded")
@@ -65,6 +70,7 @@ extension DragDropManager {
 
     // MARK: - Remote Download
     func performRemoteDownload(
+        _ kind: FileTransferAction,
         operation: FileTransferOperation,
         appState: AppState
     ) async {
@@ -78,10 +84,11 @@ extension DragDropManager {
         let files = operation.sourceFiles
         panel.showFileOp(
             icon: "arrow.down.doc.fill",
-            title: operationTitle(prefix: "⬇ Downloading", files: files),
+            title: operationTitle(prefix: kind == .move ? "⬇ Moving" : "⬇ Downloading", files: files),
             itemCount: files.count,
             destination: destination.path
         )
+        panel.updateProgress(nil)
         var succeeded = 0
         var failed = 0
         var firstFailure: String?
@@ -105,9 +112,13 @@ extension DragDropManager {
                     try FileManager.default.moveItem(at: temporaryURL, to: stagingURL)
                 }
                 try installStagedDownload(at: stagingURL, to: finalURL)
+                if kind == .move {
+                    try await provider.deleteItem(at: file.urlValue.path, recursive: file.isDirectory)
+                }
                 panel.appendLog(downloadLogLine(for: file, at: finalURL))
                 log.info("[DnD] downloaded '\(file.nameStr)' → '\(destination.lastPathComponent)'")
                 succeeded += 1
+                panel.updateProgress(Double(succeeded + failed) / Double(files.count))
             } catch {
                 try? FileManager.default.removeItem(at: stagingURL)
                 log.error("[DnD] download '\(file.nameStr)' failed: \(error.localizedDescription)")
@@ -116,13 +127,14 @@ extension DragDropManager {
                     firstFailure = "\(file.nameStr): \(error.localizedDescription)"
                 }
                 failed += 1
+                panel.updateProgress(Double(succeeded + failed) / Double(files.count))
             }
         }
         finishRemoteProgress(panel, succeeded: succeeded, failed: failed, total: files.count, verb: "downloaded")
         if let firstFailure {
-            FileOperationOutcomePresenter.failure(.copy, message: firstFailure)
+            FileOperationOutcomePresenter.failure(kind == .move ? .move : .copy, message: firstFailure)
         }
-        await refreshAffectedPanels(appState: appState, operation: operation, refreshSource: false)
+        await refreshAffectedPanels(appState: appState, operation: operation, refreshSource: kind == .move)
     }
 
     private func operationTitle(prefix: String, files: [CustomFile]) -> String {

@@ -88,9 +88,9 @@ struct CreateItemDialog: View {
     private var actionButtons: some View {
         HStack(spacing: 10) {
             Spacer()
-            DownToolbarButtonView(title: L10n.Button.cancel, systemImage: "xmark", action: onCancel)
+            DownToolbarButtonView(title: L10n.Button.cancel, systemImage: "xmark", iconTint: .red, action: onCancel)
                 .keyboardShortcut(.cancelAction)
-            DownToolbarButtonView(title: L10n.Button.create, systemImage: configuration.systemImage, action: performCreate)
+            DownToolbarButtonView(title: L10n.Button.create, systemImage: configuration.systemImage, iconTint: .blue, action: performCreate)
                 .disabled(!isValidName)
                 .opacity(isValidName ? 1 : 0.55)
         }

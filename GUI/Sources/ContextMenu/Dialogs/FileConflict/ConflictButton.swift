@@ -11,12 +11,21 @@ import SwiftUI
 /// Standard application 3D button for conflict resolution actions.
 struct ConflictButton: View {
     let title: String
+    let systemImage: String
+    let iconTint: Color
     var isPrimary: Bool = false
     let action: () -> Void
     
     // MARK: - Body
     var body: some View {
-        Button(title, action: action)
+        Button(action: action) {
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: systemImage)
+                    .foregroundStyle(iconTint)
+            }
+        }
         .buttonStyle(ThemedButtonStyle(tint: isPrimary ? .accentColor : nil))
         .controlSize(.regular)
         .keyboardFocusable()
@@ -25,11 +34,11 @@ struct ConflictButton: View {
 
 // MARK: - Preview
 #Preview("Primary Button") {
-    ConflictButton(title: "Save as Copy", isPrimary: true, action: {})
+    ConflictButton(title: "Save as Copy", systemImage: "doc.on.doc", iconTint: .blue, isPrimary: true, action: {})
         .padding()
 }
 
 #Preview("Secondary Button") {
-    ConflictButton(title: "Skip", action: {})
+    ConflictButton(title: "Skip", systemImage: "arrow.right", iconTint: .orange, action: {})
         .padding()
 }

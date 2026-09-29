@@ -38,9 +38,9 @@ struct HIGDialogButtons: View {
     }
     var body: some View {
         DialogFooter {
-            DownToolbarButtonView(title: cancelTitle, systemImage: cancelSystemImage, action: onCancel)
+            DownToolbarButtonView(title: cancelTitle, systemImage: cancelSystemImage, iconTint: .red, action: onCancel)
                 .keyboardShortcut(.cancelAction)
-            DownToolbarButtonView(title: confirmTitle, systemImage: confirmSystemImage, action: onConfirm)
+            DownToolbarButtonView(title: confirmTitle, systemImage: confirmSystemImage, iconTint: isDestructive ? .red : .blue, action: onConfirm)
                 .keyboardShortcut(.defaultAction)
                 .disabled(isConfirmDisabled)
         }

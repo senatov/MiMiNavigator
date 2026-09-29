@@ -73,7 +73,8 @@ extension BatchOpsCoord {
         files: [CustomFile],
         sourcePanel: FavPanelSide,
         destination: URL,
-        appState: AppState
+        appState: AppState,
+        moveSource: Bool = false
     ) async {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else {
@@ -95,11 +96,12 @@ extension BatchOpsCoord {
         let panel = ProgressPanel.shared
         panel.showFileOp(
             icon: "arrow.down.doc.fill",
-            title: "⬇ Downloading \(totalItems) item(s) — \(sizeText)",
+            title: "⬇ \(moveSource ? "Moving" : "Downloading") \(totalItems) item(s) — \(sizeText)",
             itemCount: totalItems,
             destination: destination.lastPathComponent,
             cancelHandler: { [weak self] in self?.cancelledDownload = true }
         )
+        panel.updateProgress(nil)
 
         var ok = 0
         var fail = 0
@@ -114,18 +116,25 @@ extension BatchOpsCoord {
 
             let remotePath = file.pathStr
             let localURL = destination.appendingPathComponent(file.nameStr, isDirectory: file.isDirectory)
+            let stagedURL = destination.appendingPathComponent(".mimi-download-\(UUID().uuidString)")
             panel.updateStatus("[\(index + 1)/\(totalItems)] \(file.nameStr)")
 
             do {
                 try await conn.provider.downloadToLocal(
                     remotePath: remotePath,
-                    localPath: localURL.path,
+                    localPath: moveSource ? stagedURL.path : localURL.path,
                     recursive: file.isDirectory
                 )
+                if moveSource {
+                    try installRemoteMoveDownload(at: stagedURL, to: localURL)
+                    try await conn.provider.deleteItem(at: remotePath, recursive: file.isDirectory)
+                }
                 log.info("[BatchOps] downloaded '\(file.nameStr)' → '\(destination.lastPathComponent)'")
                 panel.appendLog("⬇ \(file.nameStr)")
                 ok += 1
+                panel.updateProgress(Double(ok + fail) / Double(totalItems))
             } catch {
+                if moveSource { try? FileManager.default.removeItem(at: stagedURL) }
                 let errorMessage = error.localizedDescription
                 log.error("[BatchOps] download '\(file.nameStr)' failed: \(errorMessage)")
                 panel.appendLog("❌ \(file.nameStr): \(errorMessage)")
@@ -138,27 +147,31 @@ extension BatchOpsCoord {
                     )
                 }
                 fail += 1
+                panel.updateProgress(Double(ok + fail) / Double(totalItems))
             }
         }
 
         if cancelledDownload {
             panel.finish(success: false, message: "⏹ Cancelled — \(ok) downloaded, \(fail) failed")
-            FileOperationOutcomePresenter.cancelled(.copy)
+            FileOperationOutcomePresenter.cancelled(moveSource ? .move : .copy)
         } else if fail > 0 {
             panel.finish(success: false, message: "⚠️ \(ok) downloaded, \(fail) failed")
         } else {
             panel.finish(success: true, message: "✅ \(ok) item(s) downloaded")
-            FileOperationOutcomePresenter.success(.copy, itemCount: ok, resultURL: destination)
+            FileOperationOutcomePresenter.success(moveSource ? .move : .copy, itemCount: ok, resultURL: destination)
         }
 
         if fail > 0,
            let firstErrorTitle,
            let firstErrorMessage {
             log.warning("[BatchOps] \(firstErrorTitle): \(firstErrorMessage)")
-            FileOperationOutcomePresenter.failure(.copy, message: firstErrorMessage)
+            FileOperationOutcomePresenter.failure(moveSource ? .move : .copy, message: firstErrorMessage)
         }
 
         await appState.refreshFiles(for: sourcePanel == .left ? .right : .left, force: true)
+        if moveSource {
+            await appState.refreshRemoteFiles(for: sourcePanel)
+        }
     }
 
     // MARK: - Remote upload
@@ -167,7 +180,8 @@ extension BatchOpsCoord {
         files: [CustomFile],
         sourcePanel: FavPanelSide,
         destinationPanel: FavPanelSide,
-        appState: AppState
+        appState: AppState,
+        moveSource: Bool = false
     ) async {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.activeConnection else {
@@ -191,11 +205,12 @@ extension BatchOpsCoord {
         let panel = ProgressPanel.shared
         panel.showFileOp(
             icon: "arrow.up.doc.fill",
-            title: "⬆ Uploading \(totalItems) item(s) — \(sizeText)",
+            title: "⬆ \(moveSource ? "Moving" : "Uploading") \(totalItems) item(s) — \(sizeText)",
             itemCount: totalItems,
             destination: destinationPath,
             cancelHandler: { [weak self] in self?.cancelledUpload = true }
         )
+        panel.updateProgress(nil)
 
         var ok = 0
         var fail = 0
@@ -221,9 +236,13 @@ extension BatchOpsCoord {
                     remotePath: targetPath,
                     recursive: file.isDirectory
                 )
+                if moveSource {
+                    _ = try await FileRecycleService.recycle(sourceURL)
+                }
                 panel.appendLog("⬆ \(file.nameStr)")
                 log.info("[BatchOps] uploaded '\(file.nameStr)' → '\(targetPath)'")
                 ok += 1
+                panel.updateProgress(Double(ok + fail) / Double(totalItems))
             } catch {
                 let errorMessage = error.localizedDescription
                 panel.appendLog("❌ \(file.nameStr): \(errorMessage)")
@@ -237,6 +256,7 @@ extension BatchOpsCoord {
                     )
                 }
                 fail += 1
+                panel.updateProgress(Double(ok + fail) / Double(totalItems))
             }
         }
 
@@ -244,22 +264,41 @@ extension BatchOpsCoord {
 
         if cancelledUpload {
             panel.finish(success: false, message: "⏹ Cancelled — \(ok) uploaded, \(fail) failed")
-            FileOperationOutcomePresenter.cancelled(.copy)
+            FileOperationOutcomePresenter.cancelled(moveSource ? .move : .copy)
         } else if fail > 0 {
             panel.finish(success: false, message: "⚠️ \(ok) uploaded, \(fail) failed")
         } else {
             panel.finish(success: true, message: "✅ \(ok) item(s) uploaded")
-            FileOperationOutcomePresenter.success(.copy, itemCount: ok)
+            FileOperationOutcomePresenter.success(moveSource ? .move : .copy, itemCount: ok)
         }
 
         if fail > 0,
            let firstErrorTitle,
            let firstErrorMessage {
             log.warning("[BatchOps] \(firstErrorTitle): \(firstErrorMessage)")
-            FileOperationOutcomePresenter.failure(.copy, message: firstErrorMessage)
+            FileOperationOutcomePresenter.failure(moveSource ? .move : .copy, message: firstErrorMessage)
         }
 
         await appState.refreshRemoteFiles(for: destinationPanel)
         await appState.refreshFiles(for: sourcePanel, force: true)
+    }
+
+    // MARK: - Install Staged Move Download
+    private func installRemoteMoveDownload(at stagedURL: URL, to finalURL: URL) throws {
+        let manager = FileManager.default
+        guard manager.fileExists(atPath: finalURL.path) else {
+            try manager.moveItem(at: stagedURL, to: finalURL)
+            return
+        }
+        let backupURL = finalURL.deletingLastPathComponent().appendingPathComponent(".mimi-backup-\(UUID().uuidString)")
+        try manager.moveItem(at: finalURL, to: backupURL)
+        do {
+            try manager.moveItem(at: stagedURL, to: finalURL)
+            try manager.removeItem(at: backupURL)
+        } catch {
+            if manager.fileExists(atPath: finalURL.path) { try? manager.removeItem(at: finalURL) }
+            try? manager.moveItem(at: backupURL, to: finalURL)
+            throw error
+        }
     }
 }

@@ -17,7 +17,7 @@ struct _LegacyHIGPrimaryButton: View {
     let action: () -> Void
     var isDestructive: Bool = false
     var body: some View {
-        DownToolbarButtonView(title: title, systemImage: isDestructive ? "trash" : "checkmark", action: action)
+        DownToolbarButtonView(title: title, systemImage: isDestructive ? "trash" : "checkmark", iconTint: isDestructive ? .red : .blue, action: action)
     }
 }
 
@@ -26,6 +26,6 @@ struct _LegacyHIGSecondaryButton: View {
     let title: String
     let action: () -> Void
     var body: some View {
-        DownToolbarButtonView(title: title, systemImage: "xmark", action: action)
+        DownToolbarButtonView(title: title, systemImage: "xmark", iconTint: .red, action: action)
     }
 }

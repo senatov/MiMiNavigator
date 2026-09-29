@@ -185,10 +185,10 @@ struct BatchConfirmationDialog: View {
     private var dialogButtons: some View {
         if let onTransferAction {
             HStack(spacing: 10) {
-                dialogButton(L10n.Button.cancel, systemImage: "xmark", shortcut: .cancelAction) { onTransferAction(.abort) }
+                dialogButton(L10n.Button.cancel, systemImage: "xmark", iconTint: .red, shortcut: .cancelAction) { onTransferAction(.abort) }
                 Spacer()
-                dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", shortcut: .defaultAction) { onTransferAction(.copy) }
-                dialogButton(L10n.Button.move, systemImage: "folder.badge.arrow.forward") { onTransferAction(.move) }
+                dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", iconTint: .blue, shortcut: .defaultAction) { onTransferAction(.copy) }
+                dialogButton(L10n.Button.move, systemImage: "arrow.right", iconTint: .orange) { onTransferAction(.move) }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
@@ -207,10 +207,11 @@ struct BatchConfirmationDialog: View {
     private func dialogButton(
         _ title: String,
         systemImage: String,
+        iconTint: Color,
         shortcut: KeyboardShortcut? = nil,
         action: @escaping () -> Void
     ) -> some View {
-        DownToolbarButtonView(title: title, systemImage: systemImage, action: action)
+        DownToolbarButtonView(title: title, systemImage: systemImage, iconTint: iconTint, action: action)
             .optionalKeyboardShortcut(shortcut)
     }
     
@@ -231,7 +232,7 @@ struct BatchConfirmationDialog: View {
             FileOperationPreviewRow(label: "Total size", value: totalSize, systemImage: "externaldrive")
         ]
         let target = destination?.path ?? (isRemoteDelete ? "Remote server (permanent)" : "Trash")
-        rows.insert(FileOperationPreviewRow(label: "To", value: target, systemImage: operationType == .delete ? "trash" : "folder.badge.arrow.forward"), at: 1)
+        rows.insert(FileOperationPreviewRow(label: "To", value: target, systemImage: operationType == .delete ? "trash" : "folder"), at: 1)
         if conflictCount > 0 {
             rows.append(FileOperationPreviewRow(label: "Conflicts", value: "\(conflictCount) will require a decision", systemImage: "exclamationmark.triangle"))
         }

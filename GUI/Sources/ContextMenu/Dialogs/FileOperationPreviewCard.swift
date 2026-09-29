@@ -22,14 +22,12 @@ struct FileOperationPreviewCard: View {
             ForEach(rows) { row in
                 HStack(alignment: .firstTextBaseline, spacing: DesignTokens.Spacing.related) {
                     Image(systemName: row.systemImage)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 16)
+                        .dialogFieldLabelStyle(size: 13)
+                        .frame(width: 18)
                         .accessibilityHidden(true)
                     Text(row.label)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 78, alignment: .leading)
+                        .dialogFieldLabelStyle(size: 13)
+                        .frame(width: 86, alignment: .leading)
                     Text(row.value)
                         .font(.system(size: 12, weight: .regular))
                         .foregroundStyle(.primary)

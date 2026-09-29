@@ -127,7 +127,7 @@ private extension FileConflictDialog {
 
     var buttonSection: some View {
         HStack(spacing: 8) {
-            ConflictButton(title: "Cancel", action: { resolve(.stop) })
+            ConflictButton(title: "Cancel", systemImage: "xmark", iconTint: .red, action: { resolve(.stop) })
             Spacer()
             Toggle(isOn: $applyToAll) {
                 Text("Apply to remaining")
@@ -143,9 +143,9 @@ private extension FileConflictDialog {
             }
             .toggleStyle(.checkbox)
             .help("Use the selected action for the remaining conflicts without showing this dialog again.")
-            ConflictButton(title: "Skip Incoming", action: { resolve(.skip) })
-            ConflictButton(title: "Save as Copy", action: { resolve(.keepBoth) })
-            ConflictButton(title: "Replace Existing", isPrimary: true, action: { resolve(.replace) })
+            ConflictButton(title: "Skip Incoming", systemImage: "arrow.right", iconTint: .orange, action: { resolve(.skip) })
+            ConflictButton(title: "Save as Copy", systemImage: "doc.on.doc", iconTint: .blue, action: { resolve(.keepBoth) })
+            ConflictButton(title: "Replace Existing", systemImage: "arrow.clockwise", iconTint: .red, isPrimary: true, action: { resolve(.replace) })
         }
         .padding(12)
         .background(.clear)

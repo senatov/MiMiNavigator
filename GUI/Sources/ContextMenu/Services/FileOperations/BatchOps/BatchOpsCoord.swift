@@ -97,16 +97,6 @@ final class BatchOpsCoord {
     func initiateMove(appState: AppState) {
         hideTransientPopups("move")
         let sourcePanel = appState.focusedPanel
-        // Remote → local not supported
-        if AppState.isRemotePath(appState.url(for: sourcePanel)) {
-            ErrorAlertService.show(
-                title: "Move from Remote Not Supported",
-                message:
-                    "Moving files from a remote SFTP/FTP panel is not yet supported.\nDownload the files first, then move them locally.",
-                style: .informational
-            )
-            return
-        }
         let files = appState.filesForOperation(on: sourcePanel)
         guard !files.isEmpty else {
             log.warning("[BatchOperationCoordinator] move: no files selected")
@@ -129,6 +119,15 @@ final class BatchOpsCoord {
         log.info("[BatchOperationCoordinator] executeMove: \(files.count) files")
 
         Task { @MainActor in
+            let destinationPanel: FavPanelSide = sourcePanel == .left ? .right : .left
+            if AppState.isRemotePath(appState.url(for: sourcePanel)), !AppState.isRemotePath(destination) {
+                await performRemoteDownload(files: files, sourcePanel: sourcePanel, destination: destination, appState: appState, moveSource: true)
+                return
+            }
+            if AppState.isRemotePath(destination), !AppState.isRemotePath(appState.url(for: sourcePanel)) {
+                await performRemoteUpload(files: files, sourcePanel: sourcePanel, destinationPanel: destinationPanel, appState: appState, moveSource: true)
+                return
+            }
             await batchManager.moveFiles(files, to: destination, from: sourcePanel, appState: appState)
         }
     }

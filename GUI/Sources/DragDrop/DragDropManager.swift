@@ -190,6 +190,10 @@ final class DragDropManager {
         showConfirmationDialog = false
         endDrag()
         await Task.yield()
+        if operation.sourceFiles.contains(where: { AppState.isRemotePath($0.urlValue) })
+            || AppState.isRemotePath(operation.destinationPath) {
+            try? await Task.sleep(for: .milliseconds(250))
+        }
         switch action {
             case .abort:
                 log.debug("[DnD] transfer aborted")
@@ -231,7 +235,7 @@ final class DragDropManager {
         }
 
         if sourceIsRemote && !destIsRemote {
-            await performRemoteDownload(operation: operation, appState: appState)
+            await performRemoteDownload(kind, operation: operation, appState: appState)
             return
         }
 

@@ -46,7 +46,7 @@ struct PackDestinationSelector: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(L10n.Dialog.Pack.saveToLabel)
-                .font(.system(size: 12, weight: .medium))
+                .dialogFieldLabelStyle(size: 13)
 
             HStack(spacing: 8) {
                 destinationButton(mode: .currentPanel, label: "Current", icon: "folder", shortcut: "1")
@@ -121,7 +121,7 @@ struct PackFormatPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L10n.Dialog.Pack.formatLabel)
-                .font(.system(size: 12, weight: .medium))
+                .dialogFieldLabelStyle(size: 13)
 
             Picker("", selection: $selectedFormat) {
                 ForEach(selectableFormats) { format in
@@ -149,7 +149,7 @@ struct PackCompressionPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Compression Level")
-                .font(.system(size: 12, weight: .medium))
+                .dialogFieldLabelStyle(size: 13)
 
             Picker("", selection: $compressionLevel) {
                 ForEach(CompressionLevel.allCases) { level in

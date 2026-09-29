@@ -10,6 +10,11 @@
 import Citadel
 import Foundation
 
+// MARK: - Concurrent SFTP Read Handle
+private struct ConcurrentSFTPReadHandle: @unchecked Sendable {
+    let file: SFTPFile
+}
+
 extension SFTPFileProvider {
 
     // MARK: - Download
@@ -104,29 +109,81 @@ extension SFTPFileProvider {
         let handle = try await sftp.openFile(filePath: remotePath, flags: .read)
 
         do {
-            var offset: UInt64 = 0
-            var collected = Data()
-            let chunkSize = 256 * 1024
-
-            while true {
-                var chunk = try await handle.read(from: offset, length: UInt32(chunkSize))
-                let readableBytes = chunk.readableBytes
-                if readableBytes == 0 {
-                    break
-                }
-
-                if let bytes = chunk.readBytes(length: readableBytes) {
-                    collected.append(contentsOf: bytes)
-                }
-                offset += UInt64(readableBytes)
+            let size = try await handle.readAttributes().size
+            let collected: Data
+            if let size, size <= UInt64(Int.max) {
+                collected = try await readKnownSize(size, from: ConcurrentSFTPReadHandle(file: handle))
+            } else {
+                collected = try await readUntilEOF(from: handle)
             }
-
             try await handle.close()
             return collected
         } catch {
             try? await handle.close()
             throw error
         }
+    }
+
+    // MARK: - Pipelined File Read
+    private func readKnownSize(_ size: UInt64, from handle: ConcurrentSFTPReadHandle) async throws -> Data {
+        let chunkSize = 256 * 1024
+        let count = Int((size + UInt64(chunkSize) - 1) / UInt64(chunkSize))
+        var collected = Data(capacity: Int(size))
+        var readyChunks: [Int: Data] = [:]
+        var nextAppendIndex = 0
+        try await withThrowingTaskGroup(of: (Int, Data).self) { group in
+            var nextIndex = 0
+            var pendingReads = 0
+            while nextIndex < count {
+                if pendingReads == 8 {
+                    if let (index, data) = try await group.next() {
+                        readyChunks[index] = data
+                        while let ready = readyChunks.removeValue(forKey: nextAppendIndex) {
+                            collected.append(ready)
+                            nextAppendIndex += 1
+                        }
+                    }
+                    pendingReads -= 1
+                }
+                let index = nextIndex
+                let start = UInt64(index) * UInt64(chunkSize)
+                let length = Int(min(UInt64(chunkSize), size - start))
+                group.addTask {
+                    var data = Data()
+                    while data.count < length {
+                        var buffer = try await handle.file.read(
+                            from: start + UInt64(data.count),
+                            length: UInt32(length - data.count)
+                        )
+                        guard let bytes = buffer.readBytes(length: buffer.readableBytes), !bytes.isEmpty else {
+                            throw RemoteProviderError.downloadFailed("Unexpected end of remote file")
+                        }
+                        data.append(contentsOf: bytes)
+                    }
+                    return (index, data)
+                }
+                nextIndex += 1
+                pendingReads += 1
+            }
+            while let (index, data) = try await group.next() {
+                readyChunks[index] = data
+                while let ready = readyChunks.removeValue(forKey: nextAppendIndex) {
+                    collected.append(ready)
+                    nextAppendIndex += 1
+                }
+            }
+        }
+        return collected
+    }
+
+    private func readUntilEOF(from handle: SFTPFile) async throws -> Data {
+        var collected = Data()
+        while true {
+            var buffer = try await handle.read(from: UInt64(collected.count), length: 256 * 1024)
+            guard let bytes = buffer.readBytes(length: buffer.readableBytes), !bytes.isEmpty else { break }
+            collected.append(contentsOf: bytes)
+        }
+        return collected
     }
 
     private func appendDownloadRemoteComponent(_ name: String, to remotePath: String) -> String {
