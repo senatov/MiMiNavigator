@@ -2,7 +2,7 @@
 // MiMiNavigator
 //
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Shows the complete sanitized report before the user may copy it to Blogger.
+// Description: Lets the user review a short report before Blogger prefill.
 
 import AppKit
 import SwiftUI
@@ -27,7 +27,7 @@ final class DiagnosticReportPresenter: NSObject, NSWindowDelegate {
             FeedbackReporter.copyAndOpenBlog(reviewedText)
             self?.close()
         }))
-        panel.title = "Review Diagnostic Report"
+        panel.title = "Review Blogger Comment"
         panel.minSize = NSSize(width: 560, height: 420)
         panel.isReleasedWhenClosed = false
         panel.delegate = self
@@ -63,9 +63,9 @@ private struct DiagnosticReportReviewView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Review before publishing")
+            Text("Review the comment")
                 .font(.title3.weight(.semibold))
-            Text("Nothing is sent automatically. Personal identifiers and common secrets were removed, but check the complete text and edit or delete anything you do not want to publish.")
+            Text("The comment is shortened and common identifiers are removed. Check it before opening Blogger; only you can publish it.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -75,16 +75,16 @@ private struct DiagnosticReportReviewView: View {
                 .padding(8)
                 .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
                 .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(.quaternary) }
-            Text("The next button only copies this text and opens Blogger. You decide whether to publish the comment and which Blogger identity to use.")
+            Text("\(report.count)/\(DiagnosticReportBuilder.maximumCommentCharacters) characters. The next button copies and fills Blogger; it never publishes.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
                 Spacer()
                 DownToolbarButtonView(title: "Cancel", systemImage: "xmark", action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                DownToolbarButtonView(title: "Copy & Open Blog", systemImage: "doc.on.clipboard", action: { onSubmit(report) })
+                DownToolbarButtonView(title: "Fill Blogger Comment", systemImage: "doc.on.clipboard", action: { onSubmit(report) })
                     .keyboardShortcut(.defaultAction)
-                    .disabled(report.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(report.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || report.count > DiagnosticReportBuilder.maximumCommentCharacters)
             }
         }
         .padding(20)

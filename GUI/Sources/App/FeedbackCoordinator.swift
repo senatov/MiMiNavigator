@@ -100,20 +100,20 @@ struct FeedbackWindowContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             header
-            Text("Open the public feedback post, or review a privacy-filtered log excerpt before copying it into a Blogger comment.")
+            Text("Review a short, privacy-filtered comment before MiMiNavigator fills the Blogger form.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(spacing: 10) {
                 FeedbackActionButton(
                     title: "Open Blog Comments",
-                    subtitle: "Copies a short template and opens Blogger comments.",
+                    subtitle: "Review a short template, then fill Blogger.",
                     systemImage: "bubble.left.and.text.bubble.right",
                     action: onOpenComments
                 )
                 FeedbackActionButton(
-                    title: "Review Diagnostic Report",
-                    subtitle: "Shows the exact sanitized text before anything is copied or opened.",
+                    title: "Report an Error",
+                    subtitle: "Review the concise error text before opening Blogger.",
                     systemImage: "doc.text.magnifyingglass",
                     action: onSendDiagnostics
                 )

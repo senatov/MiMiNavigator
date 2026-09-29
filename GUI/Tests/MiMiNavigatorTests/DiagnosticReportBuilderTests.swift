@@ -27,4 +27,20 @@ final class DiagnosticReportBuilderTests: XCTestCase {
         XCTAssertFalse(result.contains("Bearer-secret"))
         XCTAssertEqual(result.components(separatedBy: "[REDACTED]").count - 1, 4)
     }
+
+    // MARK: - Comment Length
+    func testReportKeepsErrorWithinCommentLimitWithoutLogs() {
+        let report = DiagnosticReportBuilder.make(title: "Connection Failed", message: "SFTP timed out after 30 seconds " + String(repeating: "x", count: 1_000))
+        XCTAssertLessThanOrEqual(report.count, DiagnosticReportBuilder.maximumCommentCharacters)
+        XCTAssertTrue(report.contains("Connection Failed"))
+        XCTAssertTrue(report.contains("SFTP timed out after 30 seconds"))
+        XCTAssertFalse(report.contains("Relevant log excerpt"))
+    }
+
+    // MARK: - Version Sanitization
+    func testSanitizePreservesVersionButRedactsIPAddress() {
+        let result = DiagnosticReportBuilder.sanitize("version 0.9.9.6.3 host 192.168.1.42")
+        XCTAssertTrue(result.contains("0.9.9.6.3"))
+        XCTAssertTrue(result.contains("[IP]"))
+    }
 }

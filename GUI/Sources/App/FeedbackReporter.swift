@@ -34,20 +34,25 @@ enum FeedbackReporter {
     // MARK: - Copy and Open Blogger
     @MainActor
     static func copyAndOpenBlog(_ report: String) {
+        guard !report.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              report.count <= DiagnosticReportBuilder.maximumCommentCharacters else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
-        guard let url = URL(string: feedbackURL) else {
-            log.error("[Feedback] invalid feedback URL")
-            return
+        Task {
+            let filled = await Task.detached(priority: .userInitiated) {
+                BloggerCommentPrefiller.fill(report)
+            }.value
+            if !filled, let url = URL(string: BloggerCommentPrefiller.commentURL) {
+                NSWorkspace.shared.open(url)
+            }
+            InAppNoticeCenter.shared.showToast(
+                filled ? "Comment Ready" : "Comment Copied",
+                message: filled ? "Review the Blogger comment and click Publish when ready." : "Blogger could not be filled automatically. Paste the copied text, then publish it yourself.",
+                systemImage: "doc.on.clipboard.fill",
+                tint: .blue,
+                displayDuration: .seconds(8)
+            )
+            log.info("[Feedback] Blogger comment \(filled ? "filled" : "opened without autofill"); publication left to user")
         }
-        NSWorkspace.shared.open(url)
-        InAppNoticeCenter.shared.showToast(
-            "Report Copied",
-            message: "Paste it into the Blogger comment and publish only if you still agree.",
-            systemImage: "doc.on.clipboard.fill",
-            tint: .blue,
-            displayDuration: .seconds(8)
-        )
-        log.info("[Feedback] opened Blogger after explicit diagnostic review")
     }
 }
