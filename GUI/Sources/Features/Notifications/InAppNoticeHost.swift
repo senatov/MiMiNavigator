@@ -120,6 +120,17 @@ private struct NoticeCard: View {
                     .onHover { isActionHovered = $0 }
                     .help("Undo")
                     .accessibilityLabel("Undo \(notice.title)")
+                } else if historyNumber != nil && actionTitle == "Report" {
+                    Button("Report") { center.performHistoryAction(for: notice) }
+                        .buttonStyle(
+                            DownToolbarGlassButtonStyle(
+                                isHovered: isActionHovered,
+                                horizontalPadding: 8,
+                                verticalPadding: 4,
+                                raised: true
+                            )
+                        )
+                        .onHover { isActionHovered = $0 }
                 } else if historyNumber == nil {
                     Button(actionTitle) { center.performAction(for: notice) }
                         .buttonStyle(

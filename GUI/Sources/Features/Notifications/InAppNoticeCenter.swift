@@ -76,6 +76,7 @@ final class InAppNoticeCenter {
         let title: String
         let message: String?
         let systemImage: String
+        let actionTitle: String?
     }
 
     static let shared = InAppNoticeCenter()
@@ -172,7 +173,7 @@ final class InAppNoticeCenter {
     // MARK: - Perform Action
     func performAction(for notice: InAppNotice) {
         guard isActionAvailable(for: notice) else { return }
-        performedActionIDs.insert(notice.id)
+        if notice.actionTitle != "Report" { performedActionIDs.insert(notice.id) }
         dismiss(scope: notice.scope)
         notice.action?()
     }
@@ -180,12 +181,13 @@ final class InAppNoticeCenter {
     // MARK: - Perform History Action
     func performHistoryAction(for notice: InAppNotice) {
         guard isActionAvailable(for: notice) else { return }
-        performedActionIDs.insert(notice.id)
+        if notice.actionTitle != "Report" { performedActionIDs.insert(notice.id) }
         notice.action?()
     }
 
     func isActionAvailable(for notice: InAppNotice) -> Bool {
-        !performedActionIDs.contains(notice.id) && (notice.isActionAvailable?() ?? (notice.action != nil))
+        (notice.actionTitle == "Report" || !performedActionIDs.contains(notice.id))
+            && (notice.isActionAvailable?() ?? (notice.action != nil))
     }
 
     // MARK: - History
@@ -249,7 +251,8 @@ final class InAppNoticeCenter {
                 isBanner: $0.kind == .banner,
                 title: $0.title,
                 message: $0.message,
-                systemImage: $0.systemImage
+                systemImage: $0.systemImage,
+                actionTitle: $0.actionTitle == "Report" ? "Report" : nil
             )
         }
         guard let data = try? JSONEncoder().encode(persisted) else { return }
@@ -260,19 +263,22 @@ final class InAppNoticeCenter {
         guard let data = UserDefaults.standard.data(forKey: historyDefaultsKey),
               let persisted = try? JSONDecoder().decode([PersistedNotice].self, from: data)
         else { return }
-        history = persisted.prefix(historyLimit).map {
-            InAppNotice(
-                id: $0.id,
-                createdAt: $0.createdAt,
-                kind: $0.isBanner ? .banner : .toast,
+        history = persisted.prefix(historyLimit).map { notice in
+            let reportAction: (() -> Void)? = notice.actionTitle == "Report"
+                ? { FeedbackReporter.reviewError(title: notice.title, message: notice.message ?? "") }
+                : nil
+            return InAppNotice(
+                id: notice.id,
+                createdAt: notice.createdAt,
+                kind: notice.isBanner ? .banner : .toast,
                 scope: .main,
-                title: $0.title,
-                message: $0.message,
-                systemImage: $0.systemImage,
-                tint: restoredTint(for: $0.systemImage),
-                actionTitle: nil,
+                title: notice.title,
+                message: notice.message,
+                systemImage: notice.systemImage,
+                tint: restoredTint(for: notice.systemImage),
+                actionTitle: notice.actionTitle,
                 isActionAvailable: nil,
-                action: nil
+                action: reportAction
             )
         }
         log.info("[NoticeHistory] restored \(history.count) message(s)")

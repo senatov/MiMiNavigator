@@ -101,12 +101,10 @@ extension ConnToSrvrView {
     // MARK: - Connection Error Banner
     func showConnectionErrorBanner() {
         let server = draft
-        InAppNoticeCenter.shared.showBanner(
+        InAppNoticeCenter.shared.showError(
             title: connectionError.isEmpty ? "Connection Failed" : connectionError,
             message: connectionErrorMessage(for: server),
-            scope: .connectToServer,
-            actionTitle: "Retry",
-            action: { connectAction() }
+            scope: .connectToServer
         )
     }
 

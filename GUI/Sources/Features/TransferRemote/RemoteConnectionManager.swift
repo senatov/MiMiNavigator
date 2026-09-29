@@ -69,10 +69,6 @@ final class RemoteConnectionManager {
         return password
     }
 
-    private func hasSavedPassword(for server: RemoteServer) -> Bool {
-        !loadSavedPassword(for: server).isEmpty
-    }
-
     // MARK: - Connection Lookup
     func indexOfConnection(id: UUID) -> Int? {
         connections.firstIndex { $0.id == id }
@@ -128,12 +124,20 @@ final class RemoteConnectionManager {
         }
 
         let password = loadSavedPassword(for: server)
-        guard !password.isEmpty else {
+        let requiresPassword = server.remoteProtocol != .sftp || server.authType == .password
+        guard !requiresPassword || !password.isEmpty else {
             log.info("[RemoteConnectionManager] auto-connect deferred for \(server.displayName): no saved password loaded at startup")
             return
         }
 
         await connect(to: server, password: password, activatesPanel: false)
+        guard !hasConnection(for: server) else { return }
+        let refreshed = RemoteServerStore.shared.servers.first(where: { $0.id == server.id }) ?? server
+        let detail = refreshed.lastErrorDetail ?? refreshed.lastResult.rawValue
+        InAppNoticeCenter.shared.showError(
+            title: "Connection Failed",
+            message: "\(server.remoteProtocol.rawValue) · \(server.host):\(server.port)\n\(detail)"
+        )
     }
 
     private func supportsAutoConnectOnStart(for proto: RemoteProtocol) -> Bool {

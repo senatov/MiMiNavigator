@@ -121,7 +121,8 @@ struct RemoteConnectionsDropdown: View {
     // MARK: - Connect
     private func connectServer(_ server: RemoteServer) {
         let password = RemoteServerKeychain.loadPassword(for: server)
-        guard !password.isEmpty else {
+        let requiresPassword = server.remoteProtocol != .sftp || server.authType == .password
+        guard !requiresPassword || !password.isEmpty else {
             ConnectToServerCoordinator.shared.openWithFocus(serverID: server.id, field: "password")
             return
         }
@@ -167,6 +168,10 @@ struct RemoteConnectionsDropdown: View {
             pp.appendLog("Hint: \(server.remoteProtocol.rawValue) service not running on \(server.host):\(server.port)")
         }
         pp.finish(success: false, message: "Failed — \(summary)")
+        InAppNoticeCenter.shared.showError(
+            title: "Connection Failed",
+            message: "\(server.remoteProtocol.rawValue) · \(server.host):\(server.port)\n\(detail)"
+        )
         log.warning("[DropdownConnect] failed \(server.displayName): \(detail)")
 
         if result == .authFailed {
