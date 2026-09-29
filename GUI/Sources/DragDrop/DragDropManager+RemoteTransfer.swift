@@ -122,7 +122,7 @@ extension DragDropManager {
         if let firstFailure {
             FileOperationOutcomePresenter.failure(.copy, message: firstFailure)
         }
-        await refreshAffectedPanels(appState: appState, operation: operation)
+        await refreshAffectedPanels(appState: appState, operation: operation, refreshSource: false)
     }
 
     private func operationTitle(prefix: String, files: [CustomFile]) -> String {

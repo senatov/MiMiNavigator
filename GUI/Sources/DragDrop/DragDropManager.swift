@@ -305,7 +305,7 @@ final class DragDropManager {
     /// Refresh only the panels whose directories overlap with source or destination.
     /// Uses Set to avoid double-refreshing the same panel.
     /// Remote panels are refreshed via refreshRemoteFiles, not local scanner.
-    func refreshAffectedPanels(appState: AppState, operation: FileTransferOperation) async {
+    func refreshAffectedPanels(appState: AppState, operation: FileTransferOperation, refreshSource: Bool = true) async {
         if let sourceSide = operation.sourcePanelSide {
             appState.unmarkAll(on: sourceSide)
         }
@@ -314,7 +314,8 @@ final class DragDropManager {
         for side in [FavPanelSide.left, .right] {
             let panelURL = panelPath(side, in: appState)
             if AppState.isRemotePath(panelURL) {
-                if panelURL.path == operation.destinationPath.path {
+                if AppState.isRemotePath(operation.destinationPath),
+                   panelURL.path == operation.destinationPath.path {
                     refreshed.insert(side)
                 }
                 continue
@@ -325,7 +326,7 @@ final class DragDropManager {
                 refreshed.insert(side)
             }
         }
-        if let sourceSide = operation.sourcePanelSide {
+        if refreshSource, let sourceSide = operation.sourcePanelSide {
             refreshed.insert(sourceSide)
         }
         for side in refreshed {
