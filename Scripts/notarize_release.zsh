@@ -19,6 +19,7 @@ APPLE_ID="senatov@icloud.com"
 TEAM_ID="G2V9T9AD95"
 SIGN_IDENTITY="Developer ID Application: Iakov Senatov (${TEAM_ID})"
 KEYCHAIN_PROFILE="MiMiNotary"
+KEYCHAIN_PATH="${HOME}/Library/Keychains/login.keychain-db"
 
 # read app-specific password from secure file
 PASS_FILE="${HOME}/.ssh/mimi_notary_password"
@@ -260,11 +261,11 @@ BUILD_DIR="$(mktemp -d /tmp/mimi_notarize_build.XXXXXX)"
 echo "   Build directory: ${BUILD_DIR}"
 
 # ── Step 2.5: Unlock keychain for codesign ────────────────────────────────────
-if security show-keychain-info ~/Library/Keychains/login.keychain-db 2>/dev/null; then
+if security show-keychain-info "${KEYCHAIN_PATH}" 2>/dev/null; then
     echo "[2.5/10] Keychain already unlocked — skipping"
 else
     echo "[2.5/10] Unlocking login keychain (enter your Mac login password)..."
-    security unlock-keychain ~/Library/Keychains/login.keychain-db
+    security unlock-keychain "${KEYCHAIN_PATH}"
 fi
 
 # ── Steps 3–4: Preserve shared build state ────────────────────────────────────
@@ -437,12 +438,14 @@ echo "[9/10] Ensuring keychain credentials..."
 xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" \
     --apple-id "${APPLE_ID}" \
     --team-id "${TEAM_ID}" \
-    --password "${APP_PASSWORD}" 2>&1 | tail -3
+    --password "${APP_PASSWORD}" \
+    --keychain "${KEYCHAIN_PATH}" 2>&1 | tail -3
 
 echo "   Submitting to Apple notary service (this may take 5-15 min)..."
 zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "/tmp/mimi_notarize_result.log"
 xcrun notarytool submit "${DMG}" \
     --keychain-profile "${KEYCHAIN_PROFILE}" \
+    --keychain "${KEYCHAIN_PATH}" \
     --wait 2>&1 | tee /tmp/mimi_notarize_result.log
 
 NOTARY_EXIT=$?
