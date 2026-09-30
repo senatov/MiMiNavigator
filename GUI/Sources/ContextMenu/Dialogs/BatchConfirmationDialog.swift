@@ -188,7 +188,7 @@ struct BatchConfirmationDialog: View {
                 dialogButton(L10n.Button.cancel, systemImage: "xmark", iconTint: .red, shortcut: .cancelAction) { onTransferAction(.abort) }
                 Spacer()
                 dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", iconTint: .blue, shortcut: .defaultAction) { onTransferAction(.copy) }
-                dialogButton(L10n.Button.move, systemImage: "arrow.right", iconTint: .orange) { onTransferAction(.move) }
+                dialogButton(L10n.Button.move, systemImage: "arrow.right", iconTint: Color(nsColor: #colorLiteral(red: 0.09309739884, green: 0.6279325638, blue: 1, alpha: 1))) { onTransferAction(.move) }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
