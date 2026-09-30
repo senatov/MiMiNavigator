@@ -27,17 +27,11 @@ struct HotKeyTopToolbar: View {
         HStack(spacing: 12) {
             Menu {
                 ForEach(HotKeyPreset.allCases.filter { $0 != .custom }) { preset in
-                    Button {
-                        store.applyPreset(preset)
-                    } label: {
-                        HStack {
-                            Image(systemName: preset.icon)
-                            Text(preset.displayName)
-                            if store.currentPreset == preset {
-                                Spacer()
-                                Image(systemName: "checkmark")
-                            }
-                        }
+                    Toggle(isOn: Binding(
+                        get: { store.currentPreset == preset },
+                        set: { if $0 { store.applyPreset(preset) } }
+                    )) {
+                        Label(preset.displayName, systemImage: preset.icon)
                     }
                 }
             } label: {

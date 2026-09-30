@@ -147,6 +147,7 @@ extension FileTableView {
             canGoForward: appState.selectionsHistory.canGoForward,
             hasMarkedDirectories: hasMarkedDirs,
             isOptionHeld: optionHeld,
+            sortKey: appState.sortKey,
             onAction: handlePanelBackgroundAction
         )
     }

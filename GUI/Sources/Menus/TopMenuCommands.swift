@@ -123,7 +123,8 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.toggleShowHiddenFiles()
                 },
-                hotKey: .toggleHiddenFiles
+                hotKey: .toggleHiddenFiles,
+                isSelected: { AppStateProvider.shared?.showHiddenFiles ?? false }
             ),
             MenuItem(
                 title: "Show/Hide Preview",
@@ -132,6 +133,7 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
                 },
-                shortcut: "⇧⌘P"
+                shortcut: "⇧⌘P",
+                isSelected: { PreviewPaneStore.shared.isVisible }
             ),
         ])

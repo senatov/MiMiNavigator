@@ -10,23 +10,24 @@ import SwiftUI
 extension TableHeaderView {
     @ViewBuilder
     var columnToggleMenu: some View {
-        Menu("Column Preset") {
+        Picker("Column Preset", selection: Binding<ColumnLayoutPreset?>(
+            get: { ColumnLayoutPreset.allCases.first { layout.visibleColumns.map(\.id) == $0.columns } },
+            set: { if let preset = $0 { applyColumnPreset(preset) } }
+        )) {
             ForEach(ColumnLayoutPreset.allCases) { preset in
-                Button {
-                    applyColumnPreset(preset)
-                } label: {
-                    Label(preset.rawValue, systemImage: preset.systemImage)
-                }
+                Label(preset.rawValue, systemImage: preset.systemImage).tag(Optional(preset))
             }
         }
         Divider()
         ForEach(layout.columns) { spec in
             if !spec.id.isRequired {
-                Button {
-                    layout.toggle(spec.id)
-                } label: {
-                    Label(spec.id.title, systemImage: spec.isVisible ? "checkmark" : "")
-                }
+                Toggle(spec.id.title, isOn: Binding(
+                    get: { layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false },
+                    set: { newValue in
+                        let current = layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false
+                        if newValue != current { layout.toggle(spec.id) }
+                    }
+                ))
             }
         }
         Divider()
@@ -35,19 +36,17 @@ extension TableHeaderView {
         } label: {
             Label("Auto Fit All Columns", systemImage: "arrow.left.and.right.text.vertical")
         }
-        let autoFitOn = UserPreferences.shared.snapshot.autoFitColumnsOnNavigate
-        Button {
-            let newValue = !autoFitOn
-            UserPreferences.shared.snapshot.autoFitColumnsOnNavigate = newValue
-            UserPreferences.shared.save()
-            if newValue {
+        Toggle("Auto Fit After Navigation", isOn: Binding(
+            get: { UserPreferences.shared.snapshot.autoFitColumnsOnNavigate },
+            set: { newValue in
+                UserPreferences.shared.snapshot.autoFitColumnsOnNavigate = newValue
+                UserPreferences.shared.save()
+                guard newValue else { return }
                 guard !layout.isColumnReorderActive else { return }
                 let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
             }
-        } label: {
-            Label("Auto Fit After Navigation", systemImage: autoFitOn ? "checkmark" : "")
-        }
+        ))
         Divider()
         Button("Reset Column Layout") { layout.restoreDefaults() }
     }

@@ -72,13 +72,14 @@ struct TopMenuBarView: View {
     private func menuView(for menu: MenuCategory) -> some View {
         return Menu {
             ForEach(menu.items) { item in
-                Button(action: item.action) {
-                    TopSubmenuLabel(
-                        title: item.title,
-                        shortcut: item.shortcut,
-                        systemImage: item.icon,
-                        tint: submenuTint(for: item)
-                    )
+                if let isSelected = item.isSelected {
+                    Toggle(isOn: Binding(get: isSelected, set: { _ in item.action() })) {
+                        TopSubmenuLabel(title: item.title, shortcut: item.shortcut, systemImage: item.icon, tint: submenuTint(for: item))
+                    }
+                } else {
+                    Button(action: item.action) {
+                        TopSubmenuLabel(title: item.title, shortcut: item.shortcut, systemImage: item.icon, tint: submenuTint(for: item))
+                    }
                 }
             }
         } label: {

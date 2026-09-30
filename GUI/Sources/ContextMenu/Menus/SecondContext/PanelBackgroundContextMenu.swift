@@ -17,14 +17,16 @@ struct PanelBackgroundContextMenu: View {
     var canGoForward: Bool = false
     var hasMarkedDirectories: Bool = false
     var isOptionHeld: Bool = false
+    var sortKey: SortKeysEnum = .name
     
-    init(panelSide: FavPanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, isOptionHeld: Bool = false, onAction: @escaping (PanelBackgroundAction) -> Void) {
+    init(panelSide: FavPanelSide, currentPath: URL, canGoBack: Bool = false, canGoForward: Bool = false, hasMarkedDirectories: Bool = false, isOptionHeld: Bool = false, sortKey: SortKeysEnum = .name, onAction: @escaping (PanelBackgroundAction) -> Void) {
         self.panelSide = panelSide
         self.currentPath = currentPath
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
         self.hasMarkedDirectories = hasMarkedDirectories
         self.isOptionHeld = isOptionHeld
+        self.sortKey = sortKey
         self.onAction = onAction
     }
     
@@ -58,13 +60,22 @@ struct PanelBackgroundContextMenu: View {
             // ═══════════════════════════════════════════
             // SECTION 3: Sort submenu
             // ═══════════════════════════════════════════
-            Menu {
-                menuButton(.sortByName)
-                menuButton(.sortByDate)
-                menuButton(.sortBySize)
-                menuButton(.sortByType)
-            } label: {
-                Label("Sort By", systemImage: "arrow.up.arrow.down")
+            Picker("Sort By", selection: Binding(
+                get: { sortKey },
+                set: { key in
+                    switch key {
+                    case .name: onAction(.sortByName)
+                    case .date: onAction(.sortByDate)
+                    case .size: onAction(.sortBySize)
+                    case .type: onAction(.sortByType)
+                    default: break
+                    }
+                }
+            )) {
+                Text("Name").tag(SortKeysEnum.name)
+                Text("Date").tag(SortKeysEnum.date)
+                Text("Size").tag(SortKeysEnum.size)
+                Text("Type").tag(SortKeysEnum.type)
             }
             
             Divider()

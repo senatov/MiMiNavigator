@@ -76,17 +76,19 @@ struct WorkspacePreviewPane: View {
         .contextMenu {
             Button(previewSide == .left ? "Move Preview to Right" : "Move Preview to Left", action: swapSide)
             if let url = previewURL {
-                Menu("Display as") {
-                    ForEach(PreviewDisplayMode.allCases) { mode in
-                        Button {
-                            modeStore.set(mode, for: url)
-                        } label: {
-                            Label(mode.title, systemImage: mode.symbol)
+                Picker("Display as", selection: Binding<PreviewDisplayMode?>(
+                    get: { modeStore.rules[modeStore.extensionKey(for: url)] },
+                    set: { selected in
+                        if let selected {
+                            modeStore.set(selected, for: url)
+                        } else {
+                            modeStore.removeRule(forExtension: modeStore.extensionKey(for: url))
                         }
                     }
-                    Divider()
-                    Button("Use Automatic Setting") {
-                        modeStore.removeRule(forExtension: modeStore.extensionKey(for: url))
+                )) {
+                    Text("Automatic").tag(Optional<PreviewDisplayMode>.none)
+                    ForEach(PreviewDisplayMode.allCases) { mode in
+                        Label(mode.title, systemImage: mode.symbol).tag(Optional(mode))
                     }
                 }
             }

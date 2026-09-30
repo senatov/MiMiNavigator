@@ -35,8 +35,14 @@ extension CntMenuCoord {
                     guard let self = self else { return }
                     await self.performPaste(to: panel, appState: appState)
                 }
-            case .sortByName, .sortByDate, .sortBySize, .sortByType:
-                log.info("\(#function) sort action '\(action.rawValue)' not yet implemented")
+            case .sortByName:
+                sortPanelBackground(by: .name, panel: panel, appState: appState)
+            case .sortByDate:
+                sortPanelBackground(by: .date, panel: panel, appState: appState)
+            case .sortBySize:
+                sortPanelBackground(by: .size, panel: panel, appState: appState)
+            case .sortByType:
+                sortPanelBackground(by: .type, panel: panel, appState: appState)
             case .openInFinder:
                 RevealInFinderService.shared.revealInFinder(currentPath)
             case .openInTerminal, .console:
@@ -47,6 +53,19 @@ extension CntMenuCoord {
                 openFirstMarkedDirectoryOnOtherPanel(panel, appState: appState)
             case .copyAsPathname:
                 copyCurrentPathToPasteboard(currentPath)
+        }
+    }
+
+    // MARK: - Sort Panel Background
+    private func sortPanelBackground(by key: SortKeysEnum, panel: FavPanelSide, appState: AppState) {
+        appState.focusedPanel = panel
+        appState.updateSorting(key: key, ascending: true)
+        if key == .size {
+            Task { @MainActor in
+                _ = await DirectorySizeService.shared.hydrateCachedSizes(for: appState.displayedLeftFiles)
+                _ = await DirectorySizeService.shared.hydrateCachedSizes(for: appState.displayedRightFiles)
+                appState.updateSorting()
+            }
         }
     }
 

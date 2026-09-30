@@ -83,6 +83,7 @@ private struct DevBuildBadge: View {
     let version: String
     @State private var center = InAppNoticeCenter.shared
     @State private var isRivetPulsing = false
+    @State private var isRivetHovered = false
 
     // MARK: - Body
 
@@ -93,13 +94,15 @@ private struct DevBuildBadge: View {
                 center.toggleHistory()
                 log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
             } label: {
-                GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing)
+                GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing, isHovered: isRivetHovered)
                     .frame(width: 20, height: 20)
-                    .scaleEffect(isRivetPulsing ? 1.16 : 1)
+                    .scaleEffect(isRivetPulsing ? 1.16 : isRivetHovered ? 1.10 : 1)
                     .frame(width: 21, height: 21)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .onHover { isRivetHovered = $0 }
+            .animation(.easeOut(duration: 0.16), value: isRivetHovered)
             .zIndex(10)
             .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
@@ -143,6 +146,7 @@ private struct DevBuildBadge: View {
 private struct GlossyNoticeRivet: View {
     let color: Color
     let isPulsing: Bool
+    let isHovered: Bool
 
     // MARK: - Body
     var body: some View {
@@ -185,6 +189,7 @@ private struct GlossyNoticeRivet: View {
                     )
                 )
                 .padding(2.45)
+                .brightness(isHovered ? 0.12 : 0)
             Circle()
                 .strokeBorder(.black.opacity(0.44), lineWidth: 0.65)
                 .padding(2.45)
