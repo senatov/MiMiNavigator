@@ -268,7 +268,7 @@ struct NetworkNeighborhoodView: View {
     // MARK: - Host tree
     private var hostTree: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
+            VStack(spacing: 0) {
                 ForEach(groupedHosts, id: \.section) { group in
                     sectionHeader(group.section.title)
 

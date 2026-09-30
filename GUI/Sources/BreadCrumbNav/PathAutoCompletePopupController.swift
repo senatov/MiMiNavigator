@@ -1,7 +1,6 @@
 // PathAutoCompletePopupController.swift
 // MiMiNavigator
 //
-// Created by Codex on 17.04.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 
 import AppKit
@@ -26,11 +25,37 @@ struct AutoCompleteItem: Identifiable, Equatable {
     var isRecent: Bool { section == .recent }
 }
 
+// MARK: - Auto Complete Popup Entry
+fileprivate enum AutoCompletePopupEntry: Identifiable {
+    case header(section: AutoCompleteItem.Section, isFirst: Bool)
+    case item(AutoCompleteItem, index: Int)
+
+    var id: String {
+        switch self {
+        case .header(let section, _): "header:\(section.rawValue)"
+        case .item(let item, _): "item:\(item.id)"
+        }
+    }
+
+    static func make(from items: [AutoCompleteItem]) -> [Self] {
+        var entries: [Self] = []
+        entries.reserveCapacity(items.count + 2)
+        for (index, item) in items.enumerated() {
+            if index == 0 || items[index - 1].section != item.section {
+                entries.append(.header(section: item.section, isFirst: index == 0))
+            }
+            entries.append(.item(item, index: index))
+        }
+        return entries
+    }
+}
+
 // MARK: - Auto Complete Popup Model
 @MainActor
 @Observable
 final class AutoCompletePopupModel {
     var items: [AutoCompleteItem] = []
+    fileprivate var entries: [AutoCompletePopupEntry] { AutoCompletePopupEntry.make(from: items) }
     var selectedIndex = 0
     var onHighlight: ((Int) -> Void)?
     var onSelect: ((AutoCompleteItem) -> Void)?
@@ -283,17 +308,19 @@ private struct AutoCompletePopupView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(Array(model.items.enumerated()), id: \.element.id) { index, item in
-                        if index == 0 || model.items[index - 1].section != item.section {
-                            sectionHeader(for: item.section, isFirst: index == 0)
+                    ForEach(model.entries) { entry in
+                        switch entry {
+                        case .header(let section, let isFirst):
+                            sectionHeader(for: section, isFirst: isFirst)
+                        case .item(let item, let index):
+                            AutoCompletePopupRow(
+                                item: item,
+                                isSelected: index == model.selectedIndex,
+                                selectionNamespace: selectionNamespace,
+                                onAccept: { model.acceptItem(id: item.id) }
+                            )
+                            .id(item.id)
                         }
-                        AutoCompletePopupRow(
-                            item: item,
-                            isSelected: index == model.selectedIndex,
-                            selectionNamespace: selectionNamespace,
-                            onAccept: { model.acceptItem(id: item.id) }
-                        )
-                        .id(item.id)
                     }
                 }
                 .padding(.vertical, 4)
