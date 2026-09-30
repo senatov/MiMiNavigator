@@ -30,11 +30,8 @@ enum ScrollBarConfig {
     /// Whether inactive (unfocused) panels hide their scroll indicators entirely.
     static let hideScrollersOnInactivePanel: Bool = true
 
-    /// Legacy scrollers remain discoverable; overlay scrollers follow native autohide behavior.
-    static let autohidesScrollers: Bool = false
-
-    /// NSScrollView: show vertical scroller.
-    static let hasVerticalScroller: Bool = true
+    /// Hide the track when all rows fit, regardless of the system scroller style.
+    static let autohidesScrollers: Bool = true
 
     /// NSScrollView: show horizontal scroller.
     static let hasHorizontalScroller: Bool = false

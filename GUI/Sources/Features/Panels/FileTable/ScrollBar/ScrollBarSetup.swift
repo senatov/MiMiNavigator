@@ -16,12 +16,12 @@ import SwiftUI
 enum ScrollBarSetup {
 
     /// Configure an NSScrollView with values from ScrollBarConfig.
-    static func apply(to scrollView: NSScrollView) {
+    static func apply(to scrollView: NSScrollView, hasScrollableContent: Bool) {
         applySystemStyle(to: scrollView)
         if scrollView.scrollerStyle == .legacy, !(scrollView.verticalScroller is PanelVerticalScroller) {
             scrollView.verticalScroller = PanelVerticalScroller()
         }
-        scrollView.hasVerticalScroller = ScrollBarConfig.hasVerticalScroller
+        scrollView.hasVerticalScroller = hasScrollableContent
         scrollView.hasHorizontalScroller = ScrollBarConfig.hasHorizontalScroller
         scrollView.scrollerInsets = scrollView.scrollerStyle == .legacy
             ? NSEdgeInsets(top: ScrollBarConfig.jumpButtonTrackInset, left: 0, bottom: ScrollBarConfig.jumpButtonTrackInset, right: 0)
@@ -34,7 +34,7 @@ enum ScrollBarSetup {
     static func applySystemStyle(to scrollView: NSScrollView) {
         let preferredStyle = NSScroller.preferredScrollerStyle
         scrollView.scrollerStyle = preferredStyle
-        scrollView.autohidesScrollers = preferredStyle == .overlay || ScrollBarConfig.autohidesScrollers
+        scrollView.autohidesScrollers = ScrollBarConfig.autohidesScrollers
         if preferredStyle == .overlay, scrollView.verticalScroller is PanelVerticalScroller {
             scrollView.verticalScroller = NSScroller()
         }

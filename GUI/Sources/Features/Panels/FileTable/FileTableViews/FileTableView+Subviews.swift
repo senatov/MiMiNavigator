@@ -10,6 +10,8 @@ import SwiftUI
 
 // MARK: - Subviews
 extension FileTableView {
+    private var bottomScrollInset: CGFloat { 4 }
+
     private var onePixel: CGFloat {
         1.0 / (NSScreen.main?.backingScaleFactor ?? 2.0)
     }
@@ -21,7 +23,7 @@ extension FileTableView {
                     FileTableScrollViewCapture { scrollView in
                         nativeScrollView = scrollView
                         if let scrollView {
-                            ScrollBarSetup.apply(to: scrollView)
+                            ScrollBarSetup.apply(to: scrollView, hasScrollableContent: hasScrollableRows)
                         }
                     }
                     .frame(width: 0, height: 0)
@@ -59,13 +61,14 @@ extension FileTableView {
                 }
             }
             .background(scrollBackgroundLayer)
+            .scrollDisabled(!hasScrollableRows)
             .scrollClipDisabled()
             // Jump-to-edge buttons (aligned with scrollbar)
             .overlay(alignment: .trailing) {
                 jumpButtonsOverlay
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: 4)
+                Color.clear.frame(height: bottomScrollInset)
             }
             .contextMenu { panelBackgroundMenu }
             .onChange(of: scrollAnchorID) { _, newID in
@@ -79,7 +82,12 @@ extension FileTableView {
 
     private var emptyAreaHeight: CGFloat {
         let rowsHeight = CGFloat(sortedRows.count) * FilePanelStyle.rowHeight
-        return max(viewHeight - ParentEntryStripView.rowHeight - TableHeaderStyle.height - rowsHeight - onePixel, 0)
+        return max(viewHeight - ParentEntryStripView.rowHeight - TableHeaderStyle.height - rowsHeight - onePixel - bottomScrollInset, 0)
+    }
+
+    private var hasScrollableRows: Bool {
+        let availableHeight = viewHeight - ParentEntryStripView.rowHeight - TableHeaderStyle.height - bottomScrollInset - onePixel
+        return CGFloat(sortedRows.count) * FilePanelStyle.rowHeight > max(availableHeight, 0)
     }
 
     private func clearSelectionFromEmptyArea() {
