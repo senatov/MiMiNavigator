@@ -29,6 +29,12 @@ MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and S
 - If SwiftFairy is connected and available, consult its relevant guidance for meaningful Swift/SwiftUI changes and audit the affected code afterward. Check each finding against the surrounding code before applying it. Do not block work or install/activate SwiftFairy just to satisfy this review step.
 - For changed UI interactions, verify the running Debug app, including visible hit areas and accessibility actions where relevant. A static review and a successful build do not establish interaction correctness.
 
+### Programmatic Scrolling
+- Identify whether the target is a SwiftUI `ScrollView`, `List`, or an AppKit `NSScrollView` before choosing an API. Use `ScrollViewReader` for `List`; consider `ScrollPosition` for new `ScrollView` interactions that need a bound item, edge, or offset. Do not replace an existing reader without preserving its scrolling behavior.
+- Use `defaultScrollAnchor` for initial placement, not for later jumps. For ID-based `ScrollPosition` scrolling, give targets stable explicit IDs and configure the intended anchor. To read the visible ID during user scrolling, establish the ID type and use `viewID`; `edge`, `point`, `x`, and `y` do not track manual movement.
+- Use `onScrollGeometryChange` when continuous user-driven offset or geometry is actually needed. Project only the small `Equatable` value the feature uses, so scrolling does not trigger unnecessary view updates.
+- Preserve the file panel's Finder-style minimum scrolling, pinned header, and native scroll-view setup when changing its navigation. Verify trackpad scrolling, keyboard selection and jumps, resize, and jump buttons in the running app.
+
 ### Build & Run
 - **Builds only on user's Mac** using zsh, never on remote
 - `⌘R` in Xcode or `Scripts/build_debug.zsh`
