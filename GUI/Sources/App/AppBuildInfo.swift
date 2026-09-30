@@ -90,32 +90,37 @@ private struct DevBuildBadge: View {
     var body: some View {
         VStack(spacing: -9) {
             badgeLabel
-            Button {
-                center.toggleHistory()
-                log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
-            } label: {
-                GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing, isHovered: isRivetHovered)
-                    .frame(width: 20, height: 20)
-                    .scaleEffect(isRivetPulsing ? 1.16 : isRivetHovered ? 1.10 : 1)
-                    .frame(width: 21, height: 21)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .onHover { isRivetHovered = $0 }
-            .animation(.easeOut(duration: 0.16), value: isRivetHovered)
-            .zIndex(10)
-            .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
-            .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
-            .task(id: center.historyRivetPulse) {
-                guard center.historyRivetPulse > 0 else { return }
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.58)) { isRivetPulsing = true }
-                try? await Task.sleep(for: .milliseconds(700))
-                guard !Task.isCancelled else { return }
-                withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
-            }
+            GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing, isHovered: isRivetHovered)
+                .frame(width: 20, height: 20)
+                .scaleEffect(isRivetPulsing ? 1.16 : isRivetHovered ? 1.10 : 1)
+                .frame(width: 21, height: 21)
+                .background {
+                    RivetPointerMonitor(onHover: { isRivetHovered = $0 }, onClick: toggleHistory)
+                }
+                .animation(.easeOut(duration: 0.16), value: isRivetHovered)
+                .zIndex(10)
+                .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+                .accessibilityElement()
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+                .accessibilityAction { toggleHistory() }
+                .task(id: center.historyRivetPulse) {
+                    guard center.historyRivetPulse > 0 else { return }
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.58)) { isRivetPulsing = true }
+                    try? await Task.sleep(for: .milliseconds(700))
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
+                }
         }
         .frame(height: 46, alignment: .center)
         .offset(y: 8)
+    }
+
+    // MARK: - Toggle History
+
+    private func toggleHistory() {
+        center.toggleHistory()
+        log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
     }
 
     private var badgeLabel: some View {
@@ -139,6 +144,81 @@ private struct DevBuildBadge: View {
         .background { TopToolbarSurface() }
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .help("Current test build version")
+    }
+}
+
+// MARK: - Rivet Pointer Monitor
+private struct RivetPointerMonitor: NSViewRepresentable {
+    let onHover: (Bool) -> Void
+    let onClick: () -> Void
+
+    func makeNSView(context: Context) -> RivetPointerView {
+        let view = RivetPointerView()
+        view.onHover = onHover
+        view.onClick = onClick
+        return view
+    }
+
+    func updateNSView(_ view: RivetPointerView, context: Context) {
+        view.onHover = onHover
+        view.onClick = onClick
+    }
+
+    static func dismantleNSView(_ view: RivetPointerView, coordinator: ()) {
+        view.stopMonitoring()
+    }
+}
+
+// MARK: - Rivet Pointer View
+private final class RivetPointerView: NSView {
+    var onHover: ((Bool) -> Void)?
+    var onClick: (() -> Void)?
+    private var eventMonitor: Any?
+    private var isHovered = false
+    private var isPressed = false
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        stopMonitoring()
+        guard window != nil else { return }
+        window?.acceptsMouseMovedEvents = true
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .mouseEntered, .mouseExited, .leftMouseDown, .leftMouseUp, .leftMouseDragged]) { [weak self] event in
+            self?.handle(event) ?? event
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    func stopMonitoring() {
+        if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }
+        eventMonitor = nil
+        if isHovered { onHover?(false) }
+        isHovered = false
+        isPressed = false
+    }
+
+    // MARK: - Handle Pointer Event
+    private func handle(_ event: NSEvent) -> NSEvent? {
+        guard event.window === window else { return event }
+        let point = convert(event.locationInWindow, from: nil)
+        let inside = bounds.contains(point)
+        switch event.type {
+        case .leftMouseDown where inside:
+            isPressed = true
+            return nil
+        case .leftMouseUp where isPressed:
+            isPressed = false
+            if inside { onClick?() }
+            return nil
+        default:
+            if inside != isHovered {
+                isHovered = inside
+                onHover?(inside)
+            }
+            return event
+        }
     }
 }
 
