@@ -47,7 +47,7 @@ final class FileOpProgress {
     var statusText: String {
         if isCancelled { return "Cancelled" }
         if isCompleted { return completionSummary }
-        return "\(operationType.title) \(processedFiles + 1) / \(totalFiles)"
+        return "\(operationType.title) \(min(processedFiles + 1, totalFiles)) / \(totalFiles)"
     }
 
     /// Detailed summary for completed operations
@@ -104,7 +104,7 @@ final class FileOpProgress {
 
     func setCurrentFile(_ name: String) {
         currentFileName = name
-        guard usesProgressPanel else { return }
+        guard usesProgressPanel, !isCancelled else { return }
         ProgressPanel.shared.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
         updateProgressDisplay()
     }
@@ -119,17 +119,27 @@ final class FileOpProgress {
         processedFiles += 1
         if !success, let err = error {
             errors.append(FileOpErrorInfo(fileName: name, error: err))
-            guard usesProgressPanel else { return }
+            guard usesProgressPanel, !isCancelled else { return }
             ProgressPanel.shared.appendLog("Failed: \(name) - \(err)")
         } else {
-            guard usesProgressPanel else { return }
+            guard usesProgressPanel, !isCancelled else { return }
             ProgressPanel.shared.appendLog("\(operationType.pastTense.capitalized): \(name)")
         }
         ProgressPanel.shared.updateStatus(statusText)
         updateProgressDisplay()
     }
 
+    // MARK: - Batch Completion
+    func batchCompleted(count: Int) {
+        processedFiles += count
+        guard usesProgressPanel, !isCancelled else { return }
+        ProgressPanel.shared.appendLog("Moved \(count) items to Trash")
+        ProgressPanel.shared.updateStatus(statusText)
+        updateProgressDisplay()
+    }
+
     func recordCompletedTransfer(from source: URL, to destination: URL) {
+        guard operationType != .delete || totalFiles < FileOpsEngine.bulkDeleteThreshold else { return }
         completedTransfers.append(FileOpTransfer(source: source, destination: destination))
     }
 

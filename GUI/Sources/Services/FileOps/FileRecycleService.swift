@@ -22,6 +22,11 @@ enum FileRecycleService {
         }
     }
 
+    // MARK: - Recycle Batch
+    static func recycle(_ urls: [URL]) async throws -> [URL: URL] {
+        try await NSWorkspace.shared.recycle(urls)
+    }
+
     // MARK: - Recycle Once
     private static func recycleOnce(_ url: URL) async throws -> URL? {
         let recycledURLs = try await NSWorkspace.shared.recycle([url])

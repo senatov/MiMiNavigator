@@ -34,7 +34,7 @@ extension CntMenuCoord {
         sourcePanel explicitPanel: FavPanelSide? = nil,
         appState: AppState
     ) async {
-        log.debug("\(#function) files.count=\(files.count) files=\(files.map { $0.nameStr })")
+        log.debug("\(#function) files.count=\(files.count)")
 
         isProcessing = true
         defer {
@@ -45,6 +45,10 @@ extension CntMenuCoord {
         do {
             if appState.isRemotePanel(panel) {
                 try await deleteRemote(files: files, panel: panel, appState: appState)
+                return
+            }
+            if files.count >= FileOpsEngine.bulkDeleteThreshold && !files.contains(where: \.isFromArchiveSearch) {
+                await BatchOperationManager.shared.deleteFiles(files, from: panel, appState: appState)
                 return
             }
             let urls = files.map { $0.urlValue }

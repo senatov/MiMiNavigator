@@ -95,16 +95,27 @@ struct BatchConfirmationDialog: View {
                         Text("Recursive delete")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(primaryTextColor)
-                        Text(deleteEstimateText)
-                            .font(.system(size: 11))
-                            .foregroundStyle(secondaryTextColor)
-                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 6) {
+                            if deleteEstimate == nil && !isRemoteDelete {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text(deleteEstimateText)
+                                .font(.system(size: 11))
+                                .foregroundStyle(secondaryTextColor)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .padding(.top, 4)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 8)
+            if operationType == .delete && !isRemoteDelete && files.count >= FileOpsEngine.bulkDeleteThreshold {
+                Text("Large deletion moves items to Trash in batches. History keeps a summary; restore individual items from Trash.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(secondaryTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             
             // Expandable file list
             DisclosureGroup(
@@ -167,7 +178,7 @@ struct BatchConfirmationDialog: View {
                 .strokeBorder(Color(nsColor: .separatorColor).opacity(0.85), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.22), radius: 20, x: 0, y: 8)
-        .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
+        .task {
             if operationType == .delete && directoriesCount > 0 && !isRemoteDelete {
                 deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
             }
@@ -240,8 +251,11 @@ struct BatchConfirmationDialog: View {
     }
 
     private var sourceDescription: String {
-        let parents = Set(files.map { $0.urlValue.deletingLastPathComponent().path })
-        return parents.count == 1 ? parents.first ?? "" : "Multiple locations"
+        guard let first = files.first else { return "" }
+        let parent = first.urlValue.deletingLastPathComponent().path
+        return files.dropFirst().allSatisfy { $0.urlValue.deletingLastPathComponent().path == parent }
+            ? parent
+            : "Multiple locations"
     }
 
     private var itemSummary: String {

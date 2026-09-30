@@ -69,12 +69,13 @@ enum FileOperationOutcomePresenter {
         resultURL: URL? = nil,
         displayName: String? = nil,
         sourceURLs: [URL] = [],
+        detailMessage: String? = nil,
         undo: UndoOperation? = nil
     ) {
         let object = displayName ?? countDescription(itemCount)
         InAppNoticeCenter.shared.showToast(
             "\(operation.completedVerb) \(object)",
-            message: operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL),
+            message: detailMessage ?? operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL),
             systemImage: operation.icon,
             tint: .green,
             displayDuration: toastDisplayDuration,
@@ -166,9 +167,10 @@ enum FileOperationOutcomePresenter {
     }
 
     // MARK: - Cancelled
-    static func cancelled(_ operation: Operation) {
+    static func cancelled(_ operation: Operation, message: String? = nil) {
         InAppNoticeCenter.shared.showToast(
             "\(operation.actionTitle) cancelled",
+            message: message,
             systemImage: "stop.circle.fill",
             tint: .secondary,
             displayDuration: toastDisplayDuration

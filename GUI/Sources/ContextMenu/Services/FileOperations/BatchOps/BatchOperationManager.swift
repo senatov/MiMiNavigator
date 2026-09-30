@@ -100,17 +100,30 @@ final class BatchOperationManager {
         defer { MemoryDiagnostics.shared.checkpoint("delete.after") }
         log.info("[BatchOpMgr] delete \(files.count)")
         let urls = files.map(\.urlValue)
+        let isBulkDelete = urls.count >= FileOpsEngine.bulkDeleteThreshold
         await appState.scanner.beginBatchMutation()
         do {
             let progress = try await engine.delete(items: urls)
-            let undo = deleteUndo(for: progress, appState: appState)
-            if progress.errors.isEmpty && !progress.isCancelled {
+            let undo = isBulkDelete ? nil : deleteUndo(for: progress, appState: appState)
+            if progress.errors.isEmpty && !progress.isCancelled && progress.processedFiles == urls.count {
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls, undo: undo)
+                FileOperationOutcomePresenter.success(
+                    .delete,
+                    itemCount: progress.processedFiles,
+                    sourceURLs: isBulkDelete ? [] : urls,
+                    detailMessage: isBulkDelete ? bulkDeleteLocation(urls) : nil,
+                    undo: undo
+                )
             } else if progress.isCancelled {
-                FileOperationOutcomePresenter.cancelled(.delete)
+                let message = isBulkDelete && progress.processedFiles > 0
+                    ? "Moved \(progress.processedFiles) of \(urls.count) items to Trash. \(bulkDeleteLocation(urls))"
+                    : nil
+                FileOperationOutcomePresenter.cancelled(.delete, message: message)
             } else {
-                FileOperationOutcomePresenter.failure(.delete, message: progress.failureSummary, undo: undo)
+                let message = isBulkDelete
+                    ? "Moved \(progress.processedFiles - progress.errors.count) of \(urls.count) items to Trash.\n\(progress.failureSummary)\n\(bulkDeleteLocation(urls))"
+                    : progress.failureSummary
+                FileOperationOutcomePresenter.failure(.delete, message: message, undo: undo)
             }
         } catch {
             log.error("[BatchOpMgr] delete failed: \(error.localizedDescription)")
@@ -138,6 +151,14 @@ final class BatchOperationManager {
 
     private func deleteUndo(for progress: FileOpProgress, appState: AppState) -> FileOperationOutcomePresenter.UndoOperation? {
         transferUndo(for: progress, appState: appState)
+    }
+
+    private func bulkDeleteLocation(_ urls: [URL]) -> String {
+        guard let first = urls.first else { return "" }
+        let parent = first.deletingLastPathComponent()
+        return urls.allSatisfy { $0.deletingLastPathComponent() == parent }
+            ? "From: \(parent.path)"
+            : "From multiple locations"
     }
 
     private func transferUndo(for progress: FileOpProgress, appState: AppState) -> FileOperationOutcomePresenter.UndoOperation? {

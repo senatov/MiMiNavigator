@@ -118,7 +118,7 @@
                 .filter { !ParentDirectoryEntry.isParentEntry($0) }
                 .map { $0.urlValue }
             
-            log.debug("[DELETE] after filtering parent entries: \(urls.count) URLs to delete: \(urls.map(\.lastPathComponent))")
+            log.debug("[DELETE] after filtering parent entries: \(urls.count) URLs to delete")
 
             guard !urls.isEmpty else {
                 log.warning("[DELETE] all files were parent entries, nothing to delete")
@@ -156,7 +156,7 @@
             } else if appState.isRemotePanel(panel) {
                 performRemoteDelete(files: files, panel: panel)
             } else {
-                if files.contains(where: { $0.isDirectory }) {
+                if files.contains(where: { $0.isDirectory }) || urls.count >= FileOpsEngine.bulkDeleteThreshold {
                     CntMenuCoord.shared.activeDialog = .batchDeleteConfirmation(
                         files: files.filter { !ParentDirectoryEntry.isParentEntry($0) },
                         sourcePanel: panel
@@ -164,7 +164,7 @@
                     return
                 }
                 // Normal filesystem: route through FileOpsEngine so diagnostics, logging and progress stay unified.
-                log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s): \(urls.map(\.lastPathComponent))")
+                log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s)")
                 Task { @MainActor in
                     let startTime = CFAbsoluteTimeGetCurrent()
                     do {

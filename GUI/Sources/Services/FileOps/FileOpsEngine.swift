@@ -75,12 +75,13 @@ extension FileOpsEngine {
     @discardableResult
     func delete(items: [URL]) async throws -> FileOpProgress {
         log.info("[FileOpsEngine] delete \(items.count) items")
+        let affectedDirectories = Array(Set(items.map { $0.deletingLastPathComponent() }))
         do {
             let progress = try await performDelete(items: items)
-            await DirectorySizeService.shared.invalidateCache(affectedBy: items)
+            await DirectorySizeService.shared.invalidateCache(affectedBy: affectedDirectories)
             return progress
         } catch {
-            await DirectorySizeService.shared.invalidateCache(affectedBy: items)
+            await DirectorySizeService.shared.invalidateCache(affectedBy: affectedDirectories)
             throw error
         }
     }

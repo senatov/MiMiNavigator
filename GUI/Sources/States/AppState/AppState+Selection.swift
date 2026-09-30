@@ -119,7 +119,7 @@ extension AppState {
     }
 
     func refreshAndSelectAfterRemoval(removedFiles: [CustomFile], on panel: FavPanelSide) async {
-        log.debug("[REFRESH] ⏱ START refreshAndSelectAfterRemoval panel=\(panel), removedFiles=\(removedFiles.map(\.nameStr))")
+        log.debug("[REFRESH] ⏱ START refreshAndSelectAfterRemoval panel=\(panel), removedCount=\(removedFiles.count)")
         
         let oldFiles = displayedFiles(for: panel)
         log.debug("[REFRESH] oldFiles.count=\(oldFiles.count)")

@@ -33,6 +33,11 @@ struct DeleteConfirmationDialog: View {
             if hasDirectories {
                 directoryWarning
             }
+            if !isRemote && files.count >= FileOpsEngine.bulkDeleteThreshold {
+                Text("Large deletion moves items to Trash in batches. History keeps a summary; restore individual items from Trash.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
             HIGDialogButtons(
                 confirmTitle: isRemote ? "Delete" : "Move to Trash",
                 isDestructive: true,
@@ -42,7 +47,7 @@ struct DeleteConfirmationDialog: View {
             )
         }
         .higDialogStyle()
-        .task(id: files.map(\.pathStr).joined(separator: "\u{1F}")) {
+        .task {
             guard hasDirectories, !isRemote else { return }
             estimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
         }
@@ -51,10 +56,15 @@ struct DeleteConfirmationDialog: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Recursive delete")
                 .font(.system(size: 12, weight: .semibold))
-            Text(directoryWarningText)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                if estimate == nil && !isRemote {
+                    ProgressView().controlSize(.small)
+                }
+                Text(directoryWarningText)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
