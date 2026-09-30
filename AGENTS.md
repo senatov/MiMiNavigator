@@ -4,7 +4,7 @@
 MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and SwiftUI. Inspired by Total Commander and Norton Commander.
 
 ## ⚠️ CRITICAL RULES — NEVER VIOLATE
-1. **NEVER commit/push without explicit user request** — Wait for user to explicitly ask
+1. **Commit completed repository changes unless the user explicitly says not to; never push without an explicit request**
 2. **NEVER add AI signatures in code** — No AI attribution comments or markers
 3. **Always run `Scripts/git_cleanup.zsh`** before any git commit
 4. **Use zsh only** — Never bash or default shell for MiMiNavigator work
@@ -22,11 +22,17 @@ MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and S
 - **No blank lines inside method bodies**
 - **`nonisolated(unsafe)`** for Swift 6 NSCache statics; for popup event monitors use `PopupEventMonitors` class (three `Any?` fields only)
 
+### Swift and SwiftUI Review
+- Before changing SwiftUI code, trace the affected state owner, data dependencies, view identity, and event path. Review the surrounding declarations, not only the edited lines.
+- For new or substantially changed view sections with their own data dependencies, prefer a dedicated `View` type receiving only the values it needs over a computed `some View` property or helper method. Do not rewrite unrelated existing helpers merely to satisfy this preference.
+- In `List` and lazy stacks, keep `ForEach` identity stable and produce a predictable number of rows per element. When membership is conditional, prepare the filtered collection before `ForEach`; avoid repeatedly filtering a large collection in `body`.
+- If SwiftFairy is connected and available, consult its relevant guidance for meaningful Swift/SwiftUI changes and audit the affected code afterward. Check each finding against the surrounding code before applying it. Do not block work or install/activate SwiftFairy just to satisfy this review step.
+- For changed UI interactions, verify the running Debug app, including visible hit areas and accessibility actions where relevant. A static review and a successful build do not establish interaction correctness.
+
 ### Build & Run
-- **Builds only on user's Mac** via osascript (Control your Mac), never on remote
-- Reading, writing, analysis on remote is OK
+- **Builds only on user's Mac** using zsh, never on remote
 - `⌘R` in Xcode or `Scripts/build_debug.zsh`
-- **Before build**: run `zsh Scripts/stamp_version.zsh` to sync version from git tag
+- **Before a manual Xcode build**: run `zsh Scripts/stamp_version.zsh` to sync version from git tag; `Scripts/build_debug.zsh` already performs this step
 
 ### Version Management
 - `Scripts/refreshVersionFile.zsh` — main script: writes `curr_version.asc` + updates `MARKETING_VERSION` in pbxproj from git tag
@@ -50,7 +56,7 @@ MiMiNavigator is a dual-panel file manager for macOS, built with Swift 6.2 and S
 - Put reusable domain and service fixes in the owning package under `Packages/`; do not duplicate them in the application as a binary-package workaround.
 - After changing private package sources, run `zsh Scripts/rebuild_private_kits.zsh`. It rebuilds the XCFramework artifacts and compiles a source-free verification copy of MiMiNavigator against those exact binaries.
 - Treat a normal app build against the checked-in remote wrappers as insufficient evidence for uncommitted MiMiKits changes.
-- Keep `Packages/` and the main repository changes separate for review and commit them separately only after explicit user authorization.
+- Keep `Packages/` and the main repository changes separate for review and commit them separately under the Git rule above.
 
 ### Firmlink Handling
 macOS firmlinks (`/tmp` ↔ `/private/tmp`, `/var` ↔ `/private/var`, `/etc` ↔ `/private/etc`) cause:
@@ -132,8 +138,8 @@ Packages/               # git submodule → github.com/senatov/MiMiKits
 ## 🔧 Common Tasks
 
 ### Add new file to project
-1. Create file in appropriate directory
-2. Edit `project.pbxproj` to add file reference and build phase
+1. Create the file in the appropriate directory; Xcode's filesystem-based structure includes it automatically.
+2. Edit `project.pbxproj` only when adding or removing a package or target.
 
 ### Run before commit
 ```zsh
