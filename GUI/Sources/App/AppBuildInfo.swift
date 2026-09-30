@@ -95,7 +95,7 @@ private struct DevBuildBadge: View {
             } label: {
                 GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing)
                     .frame(width: 20, height: 20)
-                    .scaleEffect(isRivetPulsing ? 1.14 : 1)
+                    .scaleEffect(isRivetPulsing ? 1.16 : 1)
                     .frame(width: 21, height: 21)
                     .contentShape(Circle())
             }
@@ -105,10 +105,10 @@ private struct DevBuildBadge: View {
             .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .task(id: center.historyRivetPulse) {
                 guard center.historyRivetPulse > 0 else { return }
-                withAnimation(.easeOut(duration: 0.12)) { isRivetPulsing = true }
-                try? await Task.sleep(for: .seconds(1))
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.58)) { isRivetPulsing = true }
+                try? await Task.sleep(for: .milliseconds(700))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.28)) { isRivetPulsing = false }
+                withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
             }
         }
         .frame(height: 46, alignment: .center)
@@ -150,38 +150,50 @@ private struct GlossyNoticeRivet: View {
             Circle()
                 .fill(
                     AngularGradient(
-                        colors: [Color.white, Color.gray, Color.white, Color.black, Color.white],
+                        colors: [
+                            Color(#colorLiteral(red: 0.96, green: 0.97, blue: 0.98, alpha: 1)),
+                            Color(#colorLiteral(red: 0.70, green: 0.73, blue: 0.76, alpha: 1)),
+                            Color(#colorLiteral(red: 0.98, green: 0.98, blue: 0.99, alpha: 1)),
+                            Color(#colorLiteral(red: 0.53, green: 0.57, blue: 0.61, alpha: 1)),
+                            Color(#colorLiteral(red: 0.91, green: 0.93, blue: 0.95, alpha: 1)),
+                            Color(#colorLiteral(red: 0.96, green: 0.97, blue: 0.98, alpha: 1)),
+                        ],
                         center: .center
                     )
                 )
             Circle()
-                .strokeBorder(.black, lineWidth: 0.8)
+                .strokeBorder(
+                    LinearGradient(colors: [.white, .gray], startPoint: .top, endPoint: .bottom),
+                    lineWidth: 0.65
+                )
             Circle()
-                .strokeBorder(.white, lineWidth: 0.7)
-                .padding(1)
+                .strokeBorder(.white, lineWidth: 0.5)
+                .padding(1.35)
             Circle()
                 .fill(
-                    LinearGradient(
+                    RadialGradient(
                         colors: isPulsing
                             ? [color, color]
-                            : [Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)), Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1))],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                            : [
+                                Color(#colorLiteral(red: 1, green: 0.96, blue: 0.48, alpha: 1)),
+                                Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)),
+                                Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1)),
+                            ],
+                        center: .init(x: 0.35, y: 0.2),
+                        startRadius: 0,
+                        endRadius: 14
                     )
                 )
-                .padding(2.8)
+                .padding(2.45)
             Circle()
-                .strokeBorder(.black, lineWidth: 0.8)
-                .padding(2.8)
+                .strokeBorder(.black.opacity(0.44), lineWidth: 0.65)
+                .padding(2.45)
             Ellipse()
-                .fill(LinearGradient(colors: [.white, isPulsing ? color : Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1))], startPoint: .top, endPoint: .bottom))
-                .frame(width: 10, height: 5)
-                .offset(y: -4)
-            Circle()
-                .fill(.white)
-                .frame(width: 2, height: 2)
-                .offset(x: -4.5, y: -4.5)
+                .fill(LinearGradient(colors: [.white.opacity(0.78), .white.opacity(0.04)], startPoint: .top, endPoint: .bottom))
+                .frame(width: 9, height: 4)
+                .offset(y: -4.1)
         }
+        .shadow(color: isPulsing ? color.opacity(0.38) : .black.opacity(0.24), radius: isPulsing ? 3.5 : 1.6, y: 1)
     }
 }
 
