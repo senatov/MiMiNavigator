@@ -84,10 +84,6 @@ private struct DevBuildBadge: View {
     @State private var center = InAppNoticeCenter.shared
     @State private var isRivetPulsing = false
 
-    private var rivetColor: Color {
-        isRivetPulsing ? center.historyRivetTint : Color(#colorLiteral(red: 1, green: 0.82, blue: 0.03, alpha: 1))
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -97,10 +93,10 @@ private struct DevBuildBadge: View {
                 center.toggleHistory()
                 log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
             } label: {
-                GlossyNoticeRivet(color: rivetColor)
-                    .frame(width: 25, height: 25)
+                GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing)
+                    .frame(width: 20, height: 20)
                     .scaleEffect(isRivetPulsing ? 1.14 : 1)
-                    .frame(width: 26, height: 26)
+                    .frame(width: 21, height: 21)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -116,7 +112,7 @@ private struct DevBuildBadge: View {
             }
         }
         .frame(height: 46, alignment: .center)
-        .offset(y: 6)
+        .offset(y: 8)
     }
 
     private var badgeLabel: some View {
@@ -146,6 +142,7 @@ private struct DevBuildBadge: View {
 // MARK: - Glossy Notice Rivet
 private struct GlossyNoticeRivet: View {
     let color: Color
+    let isPulsing: Bool
 
     // MARK: - Body
     var body: some View {
@@ -153,39 +150,38 @@ private struct GlossyNoticeRivet: View {
             Circle()
                 .fill(
                     AngularGradient(
-                        colors: [Color.white, Color.gray.opacity(0.95), Color.white, Color.gray.opacity(0.82), Color.white],
+                        colors: [Color.white, Color.gray, Color.white, Color.black, Color.white],
                         center: .center
                     )
                 )
-                .opacity(0.78)
             Circle()
-                .strokeBorder(Color.black.opacity(0.58), lineWidth: 0.9)
+                .strokeBorder(.black, lineWidth: 0.8)
             Circle()
-                .strokeBorder(Color.white.opacity(0.9), lineWidth: 0.8)
-                .padding(1.2)
+                .strokeBorder(.white, lineWidth: 0.7)
+                .padding(1)
             Circle()
                 .fill(
-                    RadialGradient(
-                        colors: [color.opacity(0.72), color.opacity(0.61), color.opacity(0.49)],
-                        center: .init(x: 0.38, y: 0.28),
-                        startRadius: 0,
-                        endRadius: 13
+                    LinearGradient(
+                        colors: isPulsing
+                            ? [color, color]
+                            : [Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)), Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1))],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                 )
-                .padding(3.5)
+                .padding(2.8)
             Circle()
-                .strokeBorder(Color.black.opacity(0.72), lineWidth: 1)
-                .padding(3.5)
+                .strokeBorder(.black, lineWidth: 0.8)
+                .padding(2.8)
             Ellipse()
-                .fill(LinearGradient(colors: [Color.white.opacity(0.72), Color.white.opacity(0.02)], startPoint: .top, endPoint: .bottom))
-                .frame(width: 13, height: 7)
-                .offset(y: -5)
+                .fill(LinearGradient(colors: [.white, isPulsing ? color : Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1))], startPoint: .top, endPoint: .bottom))
+                .frame(width: 10, height: 5)
+                .offset(y: -4)
             Circle()
-                .fill(Color.white.opacity(0.8))
-                .frame(width: 2.5, height: 2.5)
-                .offset(x: -5.5, y: -5.5)
+                .fill(.white)
+                .frame(width: 2, height: 2)
+                .offset(x: -4.5, y: -4.5)
         }
-        .shadow(color: Color.black.opacity(0.32), radius: 2, y: 1.5)
     }
 }
 
