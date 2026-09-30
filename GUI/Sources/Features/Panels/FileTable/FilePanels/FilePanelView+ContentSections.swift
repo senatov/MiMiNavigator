@@ -31,7 +31,6 @@ extension FilePanelView {
 
     var thumbnailSection: some View {
         VStack(spacing: 0) {
-            thumbnailUtilitySection
             tableHeaderSection
             ThumbnailGridView(
                 files: files,
@@ -45,21 +44,6 @@ extension FilePanelView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .modifier(panelDropTargetModifier)
         .onAppear(perform: registerNonListKeyboardCallbacks)
-    }
-
-    var thumbnailUtilitySection: some View {
-        HStack(spacing: 0) {
-            Spacer(minLength: 0)
-            BreadCrumbToolBar(selectedSide: viewModel.panelSide, content: .utilities)
-                .frame(width: 66, height: 25, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 25)
-        .background(Color.white)
-        .overlay(alignment: .bottom) {
-            Color(nsColor: .separatorColor)
-                .frame(height: 1)
-        }
     }
 
     var treeSection: some View {

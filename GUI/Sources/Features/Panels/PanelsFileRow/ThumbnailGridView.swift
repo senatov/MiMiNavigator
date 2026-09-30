@@ -221,7 +221,7 @@ private struct ThumbnailCellView: View {
 
             // File metadata
             if !file.isDirectory {
-                Text(fileMetadata)
+                fileMetadata
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -286,10 +286,13 @@ private struct ThumbnailCellView: View {
     }
 
     // MARK: - File metadata
-    private var fileMetadata: String {
+    private var fileMetadata: Text {
         let size = ByteCountFormatter.string(fromByteCount: file.sizeInBytes, countStyle: .file)
-        guard let creationDate = file.creationDate ?? self.creationDate else { return size }
-        return "\(size) · \(Self.creationDateFormatter.string(from: creationDate))"
+        guard let creationDate = file.creationDate ?? self.creationDate else {
+            return Text("\(Image(systemName: "internaldrive")) \(size)")
+        }
+        let date = Self.creationDateFormatter.string(from: creationDate)
+        return Text("\(Image(systemName: "internaldrive")) \(size)  \(Image(systemName: "clock")) \(date)")
     }
 
     // MARK: - Commit Inline Rename

@@ -114,14 +114,20 @@ struct FilePanelView: View {
 
     // MARK: - View Sections
     private var breadcrumbSection: some View {
-        StableKeyView(panelURL.path) {
-            PanelBreadcrumbSection(
-                panelSide: viewModel.panelSide,
-                currentPath: panelURL,
-                onPathChange: { newValue in
-                    viewModel.handlePathChange(to: newValue)
-                }
-            )
+        HStack(spacing: 4) {
+            StableKeyView(panelURL.path) {
+                PanelBreadcrumbSection(
+                    panelSide: viewModel.panelSide,
+                    currentPath: panelURL,
+                    onPathChange: { newValue in
+                        viewModel.handlePathChange(to: newValue)
+                    }
+                )
+            }
+            if currentMode == .thumbnail {
+                BreadCrumbToolBar(selectedSide: viewModel.panelSide, content: .utilities)
+                    .frame(width: 66, height: 25)
+            }
         }
     }
 
