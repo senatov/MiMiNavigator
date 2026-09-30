@@ -5,7 +5,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Grid view for thumbnail mode.
 //   - QLThumbnailGenerator for images, video frames, PDF pages
-//   - SF Symbol icon fallback for all other file types
+//   - System file icon fallback when no content thumbnail is available
 //   - File name + size shown below each cell
 //   - Tappable cells with selection highlight
 //   - Jump-to-edge buttons aligned with scrollbar
@@ -297,39 +297,12 @@ private struct ThumbnailCellView: View {
         return provider
     }
 
-    // MARK: - Fallback SF Symbol icon
+    // MARK: - Fallback system file icon
     private var fallbackIcon: some View {
-        Image(systemName: file.isDirectory ? "folder.fill" : sfSymbol(for: file.nameStr))
+        Image(nsImage: NSWorkspace.shared.icon(forFile: file.urlValue.path))
             .resizable()
             .scaledToFit()
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(file.isDirectory ? .yellow : .secondary)
             .padding(12)
-    }
-
-    // MARK: - SF Symbol picker by extension
-    private func sfSymbol(for name: String) -> String {
-        let ext = (name as NSString).pathExtension.lowercased()
-        switch ext {
-            case "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tiff":
-                return "photo"
-            case "mp4", "mov", "avi", "mkv", "m4v", "wmv":
-                return "film"
-            case "mp3", "aac", "flac", "wav", "m4a", "ogg":
-                return "music.note"
-            case "pdf":
-                return "doc.richtext"
-            case "zip", "tar", "gz", "7z", "rar", "bz2":
-                return "archivebox"
-            case "swift", "py", "js", "ts", "java", "kt", "cpp", "c", "h", "m", "rb", "go", "rs":
-                return "chevron.left.forwardslash.chevron.right"
-            case "txt", "md", "rtf":
-                return "doc.text"
-            case "app":
-                return "app.badge"
-            default:
-                return "doc"
-        }
     }
 
     // MARK: - Thumbnail loading via QLThumbnailGenerator
