@@ -84,44 +84,27 @@ private struct DevBuildBadge: View {
     @State private var center = InAppNoticeCenter.shared
     @State private var isRivetPulsing = false
 
+    private var rivetColor: Color {
+        isRivetPulsing ? center.historyRivetTint : Color(#colorLiteral(red: 1, green: 0.82, blue: 0.03, alpha: 1))
+    }
+
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: -7) {
+        VStack(spacing: -9) {
             badgeLabel
             Button {
                 center.toggleHistory()
                 log.info("[NoticeHistory] rivet clicked visible=\(center.isHistoryVisible)")
             } label: {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                isRivetPulsing
-                                    ? Color(#colorLiteral(red: 0.12, green: 0.82, blue: 0.55, alpha: 1))
-                                    : Color(#colorLiteral(red: 1, green: 0.925, blue: 0.267, alpha: 1)),
-                                isRivetPulsing
-                                    ? Color(#colorLiteral(red: 0.00, green: 0.55, blue: 0.34, alpha: 1))
-                                    : Color(#colorLiteral(red: 1, green: 0.78, blue: 0.055, alpha: 1)),
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 11, height: 11)
-                    .overlay { Circle().strokeBorder(Color.black.opacity(0.28), lineWidth: 0.75) }
-                    .overlay(alignment: .topLeading) {
-                        Circle()
-                            .fill(Color.white.opacity(0.72))
-                            .frame(width: 3.5, height: 3.5)
-                            .padding(1.75)
-                    }
-                    .shadow(color: Color.black.opacity(0.28), radius: 1.5, y: 1)
+                GlossyNoticeRivet(color: rivetColor)
+                    .frame(width: 25, height: 25)
                     .scaleEffect(isRivetPulsing ? 1.14 : 1)
-                    .frame(width: 17, height: 17)
+                    .frame(width: 26, height: 26)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .zIndex(10)
             .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
             .task(id: center.historyRivetPulse) {
@@ -157,6 +140,52 @@ private struct DevBuildBadge: View {
         .background { TopToolbarSurface() }
         .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         .help("Current test build version")
+    }
+}
+
+// MARK: - Glossy Notice Rivet
+private struct GlossyNoticeRivet: View {
+    let color: Color
+
+    // MARK: - Body
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    AngularGradient(
+                        colors: [Color.white, Color.gray.opacity(0.95), Color.white, Color.gray.opacity(0.82), Color.white],
+                        center: .center
+                    )
+                )
+                .opacity(0.78)
+            Circle()
+                .strokeBorder(Color.black.opacity(0.58), lineWidth: 0.9)
+            Circle()
+                .strokeBorder(Color.white.opacity(0.9), lineWidth: 0.8)
+                .padding(1.2)
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [color.opacity(0.72), color.opacity(0.61), color.opacity(0.49)],
+                        center: .init(x: 0.38, y: 0.28),
+                        startRadius: 0,
+                        endRadius: 13
+                    )
+                )
+                .padding(3.5)
+            Circle()
+                .strokeBorder(Color.black.opacity(0.72), lineWidth: 1)
+                .padding(3.5)
+            Ellipse()
+                .fill(LinearGradient(colors: [Color.white.opacity(0.72), Color.white.opacity(0.02)], startPoint: .top, endPoint: .bottom))
+                .frame(width: 13, height: 7)
+                .offset(y: -5)
+            Circle()
+                .fill(Color.white.opacity(0.8))
+                .frame(width: 2.5, height: 2.5)
+                .offset(x: -5.5, y: -5.5)
+        }
+        .shadow(color: Color.black.opacity(0.32), radius: 2, y: 1.5)
     }
 }
 

@@ -86,6 +86,7 @@ final class InAppNoticeCenter {
     private(set) var isHistoryVisible = false
     private(set) var automaticDismissalNoticeID: UUID?
     private(set) var historyRivetPulse = 0
+    private(set) var historyRivetTint: Color = .green
     private var queuedNotices: [InAppNotice.Scope: [InAppNotice]] = [:]
     private var dismissalTasks: [InAppNotice.Scope: Task<Void, Never>] = [:]
     private var performedActionIDs: Set<UUID> = []
@@ -226,7 +227,10 @@ final class InAppNoticeCenter {
     private func automaticallyDismiss(_ notice: InAppNotice) async {
         guard visibleNotices[notice.scope]?.id == notice.id else { return }
         automaticDismissalNoticeID = notice.id
-        if notice.scope == .main { historyRivetPulse += 1 }
+        if notice.scope == .main {
+            historyRivetTint = notice.tint
+            historyRivetPulse += 1
+        }
         try? await Task.sleep(for: .milliseconds(440))
         guard !Task.isCancelled, visibleNotices[notice.scope]?.id == notice.id else { return }
         dismissalTasks[notice.scope] = nil
