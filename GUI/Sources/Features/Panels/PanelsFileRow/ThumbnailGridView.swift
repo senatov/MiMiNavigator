@@ -148,6 +148,12 @@ struct ThumbnailGridView: View {
 
 private struct ThumbnailCellView: View {
 
+    private static let creationDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yy HH:mm"
+        return formatter
+    }()
+
     let file: CustomFile
     let cellSize: CGFloat
     let isSelected: Bool
@@ -157,6 +163,7 @@ private struct ThumbnailCellView: View {
     let onDoubleClick: () -> Void
 
     @State private var thumbnail: NSImage? = nil
+    @State private var creationDate: Date? = nil
     @State private var isHovered = false
 
     @Environment(AppState.self) private var appState
@@ -212,11 +219,13 @@ private struct ThumbnailCellView: View {
             // Selected files reveal the complete name without changing the image size.
             nameView
 
-            // Size
+            // File metadata
             if !file.isDirectory {
-                Text(ByteCountFormatter.string(fromByteCount: file.sizeInBytes, countStyle: .file))
+                Text(fileMetadata)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
         .frame(width: cellWidth)
@@ -276,6 +285,13 @@ private struct ThumbnailCellView: View {
         return String(name.prefix(22)) + "…" + String(name.suffix(13))
     }
 
+    // MARK: - File metadata
+    private var fileMetadata: String {
+        let size = ByteCountFormatter.string(fromByteCount: file.sizeInBytes, countStyle: .file)
+        guard let creationDate = file.creationDate ?? self.creationDate else { return size }
+        return "\(size) · \(Self.creationDateFormatter.string(from: creationDate))"
+    }
+
     // MARK: - Commit Inline Rename
     private func commitInlineRename() {
         InlineRenameCommitter.commit(file: file, panel: panelSide, appState: appState)
@@ -309,8 +325,12 @@ private struct ThumbnailCellView: View {
     @MainActor
     private func loadThumbnail() async {
         thumbnail = nil
+        creationDate = file.creationDate
         if file.isDirectory { return }
         let url = file.urlValue
+        if creationDate == nil, url.isFileURL {
+            creationDate = (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate
+        }
         let edge = max(1, cellSize - 8)
         let size = CGSize(width: edge, height: edge)
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
