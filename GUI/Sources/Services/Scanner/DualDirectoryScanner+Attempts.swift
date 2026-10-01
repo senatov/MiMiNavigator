@@ -37,6 +37,7 @@ extension DualDirectoryScanner {
             let attemptStart = Date()
             let sorted = try await scanAndSortDirectory(
                 at: url,
+                side: context.side,
                 showHidden: context.showHidden,
                 sortKey: context.sortKey,
                 sortAsc: context.sortAsc
@@ -130,12 +131,18 @@ extension DualDirectoryScanner {
     // MARK: - Scan and Sort Directory
     func scanAndSortDirectory(
         at url: URL,
+        side: FavPanelSide,
         showHidden: Bool,
         sortKey: SortKeysEnum,
         sortAsc: Bool
     ) async throws -> [CustomFile] {
+        let includeFinderMetadata = await MainActor.run {
+            let visible = ColumnLayoutStore.shared.layout(for: side).visibleColumns.map(\.id)
+            return visible.contains(.dateLastOpened) || visible.contains(.finderVersion) || visible.contains(.finderComment)
+                || sortKey == .dateLastOpened || sortKey == .finderVersion || sortKey == .finderComment
+        }
         let scanTask = Task.detached(priority: .userInitiated) {
-            try FileScanner.scan(url: url, showHiddenFiles: showHidden)
+            try FileScanner.scan(url: url, showHiddenFiles: showHidden, includeFinderMetadata: includeFinderMetadata)
         }
         let timeout = effectiveTimeout(for: url)
         let scanned = try await scanWithTimeout(scanTask, url: url, timeout: timeout)

@@ -36,6 +36,9 @@ struct FilePublishFingerprint: Equatable {
     let permissions: Int16
     let owner: String
     let group: String
+    let finderVersion: String
+    let finderComment: String
+    let finderTags: [String]
     let isAlias: Bool
     let isSymbolicLink: Bool
     let isOSHidden: Bool
@@ -62,6 +65,9 @@ struct FilePublishFingerprint: Equatable {
         permissions = file.posixPermissions
         owner = file.ownerName
         group = file.groupName
+        finderVersion = file.finderVersion
+        finderComment = file.finderComment
+        finderTags = file.finderTags
         isAlias = file.isAlias
         isSymbolicLink = file.isSymbolicLink
         isOSHidden = file.isOSHidden

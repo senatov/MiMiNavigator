@@ -99,6 +99,9 @@ struct FileRowMetadataColumnsView: View {
         case .dateLastOpened: file.lastOpenedFormatted
         case .dateAdded: file.dateAddedFormatted
         case .group: file.groupNameFormatted
+        case .finderVersion: file.finderVersion
+        case .finderComment: file.finderComment
+        case .finderTags: file.finderTagsFormatted
         case .name: ""
         }
     }
@@ -118,6 +121,9 @@ struct FileRowMetadataColumnsView: View {
         case .dateLastOpened: Text(file.lastOpenedFormatted)
         case .dateAdded: Text(file.dateAddedFormatted)
         case .group: Text(file.groupNameFormatted)
+        case .finderVersion: Text(file.finderVersion)
+        case .finderComment: Text(file.finderComment)
+        case .finderTags: Text(file.finderTagsFormatted)
         case .name: EmptyView()
         }
     }

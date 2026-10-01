@@ -53,10 +53,10 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         .fileSizeKey,
         .contentModificationDateKey,
         .fileSecurityKey,
-        .directoryEntryCountKey,
         .creationDateKey,
         .contentAccessDateKey,
-        .addedToDirectoryDateKey
+        .addedToDirectoryDateKey,
+        .tagNamesKey
     ]
 
     // MARK: - Init
@@ -260,7 +260,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     // MARK: - Make Custom File
     private func makeCustomFile(url: URL) -> CustomFile? {
         if let values = try? url.resourceValues(forKeys: Self.resourceKeys) {
-            return CustomFile(url: url, resourceValues: values)
+            return CustomFile(url: url, resourceValues: values, includeFinderMetadata: true)
         }
         guard !isDirectory(url.path) else { return nil }
         return CustomFile(name: url.lastPathComponent, path: url.path)

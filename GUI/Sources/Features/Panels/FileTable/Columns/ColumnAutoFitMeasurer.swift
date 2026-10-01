@@ -179,6 +179,12 @@ enum ColumnAutoFitMeasurer {
             return (sampled.map(\.dateAddedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .group:
             return (sampled.map(\.groupNameFormatted), .systemFont(ofSize: 12))
+        case .finderVersion:
+            return (sampled.map(\.finderVersion), .systemFont(ofSize: 12))
+        case .finderComment:
+            return (sampled.map(\.finderComment), .systemFont(ofSize: 12))
+        case .finderTags:
+            return (sampled.map(\.finderTagsFormatted), .systemFont(ofSize: 12))
         }
     }
 

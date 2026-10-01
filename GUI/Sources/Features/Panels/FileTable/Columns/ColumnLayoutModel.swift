@@ -16,6 +16,7 @@ final class ColumnLayoutModel: Codable {
     static let defaultOrder: [ColumnID] = [
         .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
         .dateCreated, .dateLastOpened, .dateAdded, .group,
+        .finderVersion, .finderComment, .finderTags,
     ]
 
     private enum LayoutMetrics {
@@ -50,7 +51,7 @@ final class ColumnLayoutModel: Codable {
 
     required init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        self.columns = try c.decode([ColumnSpec].self, forKey: .columns)
+        self.columns = Self.withMissingColumns(try c.decode([ColumnSpec].self, forKey: .columns))
         self.storedNameWidth = try c.decodeIfPresent(CGFloat.self, forKey: .storedNameWidth) ?? 200
         self.storageKey = ""
     }
@@ -65,6 +66,10 @@ final class ColumnLayoutModel: Codable {
         self.storageKey = "ColumnLayout.\(panelSide.rawValue)"
         self.columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
         load()
+    }
+
+    static func withMissingColumns(_ saved: [ColumnSpec]) -> [ColumnSpec] {
+        saved + defaultOrder.filter { id in !saved.contains(where: { $0.id == id }) }.map { ColumnSpec(id: $0) }
     }
 
     private func applyNameWidth(_ value: CGFloat) {
@@ -199,7 +204,7 @@ final class ColumnLayoutModel: Codable {
 
     @MainActor
     func applySnapshot(_ snapshot: Snapshot) {
-        columns = snapshot.columns
+        columns = Self.withMissingColumns(snapshot.columns)
         storedNameWidth = snapshot.nameWidth
         autoFitGeneration += 1
         incrementLayoutVersion()

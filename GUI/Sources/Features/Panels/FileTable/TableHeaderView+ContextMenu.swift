@@ -25,7 +25,13 @@ extension TableHeaderView {
                     get: { layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false },
                     set: { newValue in
                         let current = layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false
-                        if newValue != current { layout.toggle(spec.id) }
+                        if newValue != current {
+                            layout.toggle(spec.id)
+                            if newValue { autoFitAllColumns() }
+                            if newValue, spec.id.needsFinderMetadata {
+                                Task { await appState.refreshFiles(for: panelSide, force: true) }
+                            }
+                        }
                     }
                 ))
             }
@@ -55,6 +61,9 @@ extension TableHeaderView {
     private func applyColumnPreset(_ preset: ColumnLayoutPreset) {
         layout.applyPreset(preset)
         autoFitAllColumns()
+        if layout.visibleColumns.contains(where: { $0.id.needsFinderMetadata }) {
+            Task { await appState.refreshFiles(for: panelSide, force: true) }
+        }
     }
 
     // MARK: - Auto Fit

@@ -16,6 +16,9 @@ struct FileRowMetadataFingerprint: Hashable {
     let permissions: Int16
     let owner: String
     let group: String
+    let finderVersion: String
+    let finderComment: String
+    let finderTags: [String]
     let fileExtension: String
     let isAlias: Bool
     let isSymbolicLink: Bool
@@ -29,6 +32,9 @@ struct FileRowMetadataFingerprint: Hashable {
         permissions = file.posixPermissions
         owner = file.ownerName
         group = file.groupName
+        finderVersion = file.finderVersion
+        finderComment = file.finderComment
+        finderTags = file.finderTags
         fileExtension = file.fileExtension
         isAlias = file.isAlias
         isSymbolicLink = file.isSymbolicLink

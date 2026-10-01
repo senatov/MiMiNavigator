@@ -197,6 +197,9 @@ struct DirectoryTreeRow: View {
         case .dateLastOpened: return file.lastOpenedFormatted
         case .dateAdded: return file.dateAddedFormatted
         case .group: return file.groupNameFormatted
+        case .finderVersion: return file.finderVersion
+        case .finderComment: return file.finderComment
+        case .finderTags: return file.finderTagsFormatted
         }
     }
 

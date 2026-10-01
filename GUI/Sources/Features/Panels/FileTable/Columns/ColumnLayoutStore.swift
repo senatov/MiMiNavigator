@@ -126,10 +126,10 @@ final class ColumnLayoutStore {
 
             // Build ColumnLayoutModel from decoded columns
             let leftModel = ColumnLayoutModel(panelSide: .left)
-            leftModel.columns = leftCols
+            leftModel.columns = ColumnLayoutModel.withMissingColumns(leftCols)
 
             let rightModel = ColumnLayoutModel(panelSide: .right)
-            rightModel.columns = rightCols
+            rightModel.columns = ColumnLayoutModel.withMissingColumns(rightCols)
 
             // Remove old UserDefaults keys after successful migration
             ud.removeObject(forKey: leftKey)

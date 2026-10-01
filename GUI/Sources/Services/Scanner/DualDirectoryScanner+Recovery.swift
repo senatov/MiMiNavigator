@@ -49,6 +49,7 @@ extension DualDirectoryScanner {
         do {
             let sorted = try await scanAndSortDirectory(
                 at: fallbackURL,
+                side: context.side,
                 showHidden: context.showHidden,
                 sortKey: context.sortKey,
                 sortAsc: context.sortAsc

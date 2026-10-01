@@ -26,6 +26,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     case name, dateModified, size, kind, permissions, owner, childCount
     case dateCreated, dateLastOpened, dateAdded, group
+    case finderVersion, finderComment, finderTags
 
     var id: String { rawValue }
 
@@ -48,6 +49,9 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .dateLastOpened: "Last Open"
         case .dateAdded:      "Added"
         case .group:          "Group"
+        case .finderVersion: "Version"
+        case .finderComment: "Comments"
+        case .finderTags:    "Tags"
         }
     }
 
@@ -70,17 +74,24 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .permissions:   82
         case .childCount:    56
         case .owner, .group: 70
+        case .finderVersion: 90
+        case .finderComment, .finderTags: 150
         }
     }
 
     var defaultVisible: Bool {
         switch self {
-        case .dateCreated, .dateLastOpened, .dateAdded, .group: false
+        case .dateCreated, .dateLastOpened, .dateAdded, .group,
+             .finderVersion, .finderComment, .finderTags: false
         default: true
         }
     }
 
     var isRequired: Bool { self == .name }
+
+    var needsFinderMetadata: Bool {
+        self == .dateLastOpened || self == .finderVersion || self == .finderComment
+    }
 
     /// True for columns that use custom SwiftUI views (icons, colored badges)
     /// and cannot be rendered via Canvas text draw.
@@ -111,6 +122,8 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
             cw(5,  .systemFont(ofSize: 8))
         case .childCount:
             cw(5,  .systemFont(ofSize: 8))
+        case .finderVersion, .finderComment, .finderTags:
+            cw(6, .systemFont(ofSize: 8))
         }
     }
 
@@ -130,6 +143,8 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
             cw(40,  .systemFont(ofSize: 12))
         case .childCount:
             cw(50,  .systemFont(ofSize: 12))
+        case .finderVersion, .finderComment, .finderTags:
+            cw(80, .systemFont(ofSize: 12))
         }
     }
 
@@ -196,6 +211,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .owner:          theme.columnOwnerColor
         case .group:          theme.columnGroupColor
         case .childCount:     theme.columnChildCountColor
+        case .finderVersion, .finderComment, .finderTags: theme.columnKindColor
         }
     }
 
@@ -214,6 +230,9 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
         case .owner:         .owner
         case .group:         .group
         case .childCount:    .childCount
+        case .finderVersion: .finderVersion
+        case .finderComment: .finderComment
+        case .finderTags: .finderTags
         }
     }
 

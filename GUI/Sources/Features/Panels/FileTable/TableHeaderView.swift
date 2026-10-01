@@ -360,6 +360,9 @@ struct TableHeaderView: View {
         case .dateLastOpened: return (files.map { $0.lastOpenedFormatted }, .systemFont(ofSize: 12))
         case .dateAdded: return (files.map { $0.dateAddedFormatted }, .systemFont(ofSize: 12))
         case .group: return (files.map { $0.groupNameFormatted }, .systemFont(ofSize: 12))
+        case .finderVersion: return (files.map { $0.finderVersion }, .systemFont(ofSize: 12))
+        case .finderComment: return (files.map { $0.finderComment }, .systemFont(ofSize: 12))
+        case .finderTags: return (files.map { $0.finderTagsFormatted }, .systemFont(ofSize: 12))
         case .name: return ([], .systemFont(ofSize: 12))
         }
     }
