@@ -8,4 +8,5 @@ verification="$PWD/build/binary-packages/verification"
 xcodebuild -project "$verification/MiMiNavigator.xcodeproj" \
     -scheme MiMiNavigator -configuration Debug -destination 'platform=macOS' \
     -derivedDataPath "$PWD/build/binary-packages/DerivedData" \
+    -disableAutomaticPackageResolution -skipPackageUpdates \
     ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build

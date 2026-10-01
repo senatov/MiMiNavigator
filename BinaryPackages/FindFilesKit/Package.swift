@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "FindFilesKit", targets: ["FindFilesKitDependencies"])],
     dependencies: [.package(path: "../LogKit"), .package(path: "../FileModelKit"), .package(path: "../ExternalToolsKit")],
     targets: [
-        .binaryTarget(name: "FindFilesKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-ffba754c7dd76553/FindFilesKit.xcframework.zip", checksum: "e55717d7b41f0c5bd20f71ea3c3734756bc04326e2ac38580574927f6b62cbfc"),
+        .binaryTarget(name: "FindFilesKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-20351929fcfd1e2a/FindFilesKit.xcframework.zip", checksum: "90cd0d5ae7f3a038ec9465e22871b2aaeb2f5863c14016647894cd652b3aa46b"),
         .target(name: "FindFilesKitDependencies", dependencies: ["FindFilesKit", .product(name: "LogKit", package: "LogKit"), .product(name: "FileModelKit", package: "FileModelKit"), .product(name: "ExternalToolsKit", package: "ExternalToolsKit")])
     ]
 )

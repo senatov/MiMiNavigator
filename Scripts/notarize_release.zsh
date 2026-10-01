@@ -10,25 +10,15 @@
 # Prerequisites:
 #   brew install gh && gh auth login
 #   Developer ID Application certificate in Keychain
-#   App-specific password in ~/.ssh/mimi_notary_password
+#   MiMiNotary profile in the login keychain
 
 set -euo pipefail
 
 # ── Credentials ───────────────────────────────────────────────────────────────
-APPLE_ID="senatov@icloud.com"
 TEAM_ID="G2V9T9AD95"
 SIGN_IDENTITY="Developer ID Application: Iakov Senatov (${TEAM_ID})"
 KEYCHAIN_PROFILE="MiMiNotary"
 KEYCHAIN_PATH="${HOME}/Library/Keychains/login.keychain-db"
-
-# read app-specific password from secure file
-PASS_FILE="${HOME}/.ssh/mimi_notary_password"
-if [[ ! -f "${PASS_FILE}" ]]; then
-    echo "❌ App-specific password not found: ${PASS_FILE}"
-    echo "   Create it:  echo 'xxxx-xxxx-xxxx-xxxx' > ~/.ssh/mimi_notary_password && chmod 600 ~/.ssh/mimi_notary_password"
-    exit 1
-fi
-APP_PASSWORD="$(head -1 "${PASS_FILE}" | tr -d '[:space:]')"
 
 # ── Args ──────────────────────────────────────────────────────────────────────
 if [[ $# -lt 1 ]]; then
@@ -434,12 +424,7 @@ codesign \
 codesign --verify --verbose=2 "${DMG}"
 
 # ── Step 9: Notarize ─────────────────────────────────────────────────────────
-echo "[9/10] Ensuring keychain credentials..."
-xcrun notarytool store-credentials "${KEYCHAIN_PROFILE}" \
-    --apple-id "${APPLE_ID}" \
-    --team-id "${TEAM_ID}" \
-    --password "${APP_PASSWORD}" \
-    --keychain "${KEYCHAIN_PATH}" 2>&1 | tail -3
+echo "[9/10] Using ${KEYCHAIN_PROFILE} credentials from the login keychain..."
 
 echo "   Submitting to Apple notary service (this may take 5-15 min)..."
 zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "/tmp/mimi_notarize_result.log"

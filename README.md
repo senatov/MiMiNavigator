@@ -50,6 +50,8 @@ Thumbnail mode fits each complete image proportionally within the selected size,
 
 Explicitly invoking an auxiliary window again replaces its previous presentation, including a hidden or minimized instance, with fresh content for the current action. This applies to search, multi-rename, archive creation, history, favorites, settings, connection and network windows, toolbar customization, media information, About, and Feedback. Saved window geometry is retained; clicking the main window does not trigger this replacement.
 
+In List view, right-click a column header to choose Name, Date Modified, Size, Kind, Permissions, Owner, Count, Created, Last Open, Added, Group, Version, Comments, and Tags. The optional Finder columns read local metadata: Last Open uses Spotlight's last-used date, Version and Comments use Finder metadata, and Tags use Finder labels. A blank optional value means macOS has no value for that file. Columns can be sorted, and newly enabled columns fit their content automatically. Remote entries show only metadata their server provides.
+
 ### Find and clean safely
 
 Search by name, content, size, or date, including inside archives. Focused presets help find large forgotten files, empty folders, and recognizable leftovers from removed applications. Results remain actionable, so several items can be reviewed and processed together.

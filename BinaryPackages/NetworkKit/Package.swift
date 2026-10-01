@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "NetworkKit", targets: ["NetworkKitDependencies"])],
     dependencies: [.package(path: "../LogKit")],
     targets: [
-        .binaryTarget(name: "NetworkKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-ffba754c7dd76553/NetworkKit.xcframework.zip", checksum: "0079524295c5c5aef8c530c73c66c54a622bd5b6e85b4df9fa671ee9dbca1f8c"),
+        .binaryTarget(name: "NetworkKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-20351929fcfd1e2a/NetworkKit.xcframework.zip", checksum: "1dbef59a3de261d1770185750f123c975d8b8bf9fe0f2a9c709de14792b1112a"),
         .target(name: "NetworkKitDependencies", dependencies: ["NetworkKit", .product(name: "LogKit", package: "LogKit")])
     ]
 )

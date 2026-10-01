@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "RenameKit", targets: ["RenameKitDependencies"])],
     dependencies: [.package(path: "../LogKit")],
     targets: [
-        .binaryTarget(name: "RenameKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-ffba754c7dd76553/RenameKit.xcframework.zip", checksum: "8d27f1f7cd5721ce52315bbd5b2925e6ab02e0995f42f72b1a2e45fd979c55e9"),
+        .binaryTarget(name: "RenameKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-20351929fcfd1e2a/RenameKit.xcframework.zip", checksum: "949687b0536dfbddf32d886b3080fe2690f242a452f4a382358f466e2f55a861"),
         .target(name: "RenameKitDependencies", dependencies: ["RenameKit", .product(name: "LogKit", package: "LogKit")])
     ]
 )
