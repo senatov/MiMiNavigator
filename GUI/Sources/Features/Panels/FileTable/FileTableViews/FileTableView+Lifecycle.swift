@@ -16,6 +16,7 @@ extension FileTableView {
         log.debug("[FileTableView] appear panel=\(panelSide) files=\(files.count)")
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
+        if !files.isEmpty { scheduleAutoFitIfNeeded() }
         registerNavigationCallbacks()
         navigationScrollPending = true
         scrollToSelectionFromState()

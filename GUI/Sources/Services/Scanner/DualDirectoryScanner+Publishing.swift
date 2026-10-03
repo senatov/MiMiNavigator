@@ -334,7 +334,7 @@ extension DualDirectoryScanner {
         let didPublish = await updateScannedFiles(files, for: side)
         if didPublish {
             await MainActor.run {
-                AutoFitScheduler.shared.runInitialPublishFit(panel: side, files: files)
+                AutoFitScheduler.shared.scheduleNavigationFit(panel: side, appState: appState)
             }
         }
         await updateFileList(panelSide: side, with: files)
