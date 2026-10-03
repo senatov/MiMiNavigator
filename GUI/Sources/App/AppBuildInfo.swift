@@ -62,7 +62,7 @@ private struct BuildInfoToolbarCluster: View {
 
     // MARK: - Body
     var body: some View {
-        HStack(alignment: .top, spacing: 7) {
+        HStack(alignment: .center, spacing: 7) {
             DevBuildBadge(version: version)
             if showMemory || showThreads {
                 ResourceMonitorToolbarItem(
@@ -71,7 +71,6 @@ private struct BuildInfoToolbarCluster: View {
                     memoryInterval: memoryInterval,
                     threadsInterval: threadsInterval
                 )
-                    .offset(y: 6)
             }
         }
     }
@@ -88,32 +87,31 @@ private struct DevBuildBadge: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: -9) {
-            badgeLabel
-            GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing, isHovered: isRivetHovered)
-                .frame(width: 20, height: 20)
-                .scaleEffect(isRivetPulsing ? 1.16 : isRivetHovered ? 1.10 : 1)
-                .frame(width: 21, height: 21)
-                .background {
-                    RivetPointerMonitor(onHover: { isRivetHovered = $0 }, onClick: toggleHistory)
-                }
-                .animation(.easeOut(duration: 0.16), value: isRivetHovered)
-                .zIndex(10)
-                .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
-                .accessibilityElement()
-                .accessibilityAddTraits(.isButton)
-                .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
-                .accessibilityAction { toggleHistory() }
-                .task(id: center.historyRivetPulse) {
-                    guard center.historyRivetPulse > 0 else { return }
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.58)) { isRivetPulsing = true }
-                    try? await Task.sleep(for: .milliseconds(700))
-                    guard !Task.isCancelled else { return }
-                    withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
-                }
-        }
-        .frame(height: 46, alignment: .center)
-        .offset(y: 8)
+        badgeLabel
+            .overlay(alignment: .bottom) {
+                GlossyNoticeRivet(color: center.historyRivetTint, isPulsing: isRivetPulsing, isHovered: isRivetHovered)
+                    .frame(width: 20, height: 20)
+                    .scaleEffect(isRivetPulsing ? 1.16 : isRivetHovered ? 1.10 : 1)
+                    .frame(width: 21, height: 21)
+                    .background {
+                        RivetPointerMonitor(onHover: { isRivetHovered = $0 }, onClick: toggleHistory)
+                    }
+                    .animation(.easeOut(duration: 0.16), value: isRivetHovered)
+                    .zIndex(10)
+                    .help(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+                    .accessibilityElement()
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(center.isHistoryVisible ? "Hide recent messages" : "Show recent messages")
+                    .accessibilityAction { toggleHistory() }
+                    .task(id: center.historyRivetPulse) {
+                        guard center.historyRivetPulse > 0 else { return }
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.58)) { isRivetPulsing = true }
+                        try? await Task.sleep(for: .milliseconds(700))
+                        guard !Task.isCancelled else { return }
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
+                    }
+                    .offset(y: 8)
+            }
     }
 
     // MARK: - Toggle History
@@ -140,9 +138,9 @@ private struct DevBuildBadge: View {
         }
         .padding(.leading, 6)
         .padding(.trailing, 9)
-        .padding(.vertical, 3)
+        .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }
-        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous))
         .help("Current test build version")
     }
 }

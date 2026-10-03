@@ -100,6 +100,11 @@ private struct AppWindowTitle: View {
 }
 
 // MARK: - Toolbar Button Group
+enum TopToolbarMetrics {
+    static let height: CGFloat = 32
+    static let cornerRadius: CGFloat = 16
+}
+
 struct ToolbarButtonGroup<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
@@ -108,7 +113,8 @@ struct ToolbarButtonGroup<Content: View>: View {
             content()
         }
         .padding(.horizontal, 9)
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
+        .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }
     }
 }
@@ -116,14 +122,14 @@ struct ToolbarButtonGroup<Content: View>: View {
 // MARK: - Top Toolbar Surface
 struct TopToolbarSurface: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 17, style: .continuous)
+        RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
             .fill(.regularMaterial)
             .overlay {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor).opacity(0.26))
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.13), lineWidth: 1)
             }
     }

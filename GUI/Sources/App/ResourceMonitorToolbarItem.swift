@@ -107,6 +107,7 @@ struct ResourceMonitorToolbarItem: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
+        .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }
         .fixedSize()
         .help(helpText)

@@ -17,7 +17,7 @@ enum CommandBarAppearanceDefaults {
 }
 
 // MARK: - Duo Panel Chrome Background
-/// Shared top and bottom command-bar background.
+/// Bottom command-bar background.
 struct DuoPanelToolbarBackground: View {
     let cornerRadius: CGFloat
     @AppStorage("color.commandBarBackground")

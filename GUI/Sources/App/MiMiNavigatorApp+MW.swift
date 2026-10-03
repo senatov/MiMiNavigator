@@ -37,6 +37,7 @@ extension MiMiNavigatorApp {
             // MARK: - Navigation & UI
             .navigationTitle("")
             .toolbar { appToolbarContent }
+            .background { MainWindowTitlebarChrome() }
             .glassEffect(.identity)
             .inAppNoticeHost(scope: .main)
 

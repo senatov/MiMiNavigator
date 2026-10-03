@@ -28,19 +28,40 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     private var hexCommandBarBackground: String = ""
     @AppStorage("commandBar.moireIntensity")
     private var commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
+    @AppStorage("windowToolbar.backgroundColor") private var windowToolbarBackgroundHex = ""
+    @AppStorage("windowToolbar.borderColor") private var windowToolbarBorderHex = ""
+    @AppStorage("windowToolbar.borderWidth") private var windowToolbarBorderWidth = WindowToolbarAppearanceDefaults.borderWidth
 
     private var preset: ColorTheme { ColorThemeStore.shared.activeTheme }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
 
-            // ── Command Bars ───────────────────────────────
+            // ── Window Toolbar ────────────────────────────
             paneGroupBox {
                 VStack(spacing: 0) {
-                    sectionHeader("Command Bars")
+                    sectionHeader("Window Toolbar")
+                    colorRow("Background", help: "Main window titlebar background color",
+                             preset: WindowToolbarAppearanceDefaults.background,
+                             hex: $windowToolbarBackgroundHex, store: store)
+                    Divider()
+                    colorRow("Border", help: "Border color around the main window titlebar",
+                             preset: WindowToolbarAppearanceDefaults.border,
+                             hex: $windowToolbarBorderHex, store: store)
+                    Divider()
+                    sliderRow("Border width", help: "Main window titlebar border thickness",
+                              value: $windowToolbarBorderWidth, range: 0...5, step: 0.25,
+                              displayFormat: "%.2f", unit: " pt") {}
+                }
+            }
+
+            // ── Bottom Command Bar ────────────────────────
+            paneGroupBox {
+                VStack(spacing: 0) {
+                    sectionHeader("Bottom Command Bar")
                     commandBarColorRow
                     Divider()
-                    sliderRow("Moire", help: "Shared texture intensity for the top and bottom command bars",
+                    sliderRow("Moire", help: "Texture intensity for the bottom command bar",
                               value: $commandBarMoireIntensity, range: 0...1, step: 0.05,
                               displayFormat: "%.2f") {}
                 }
@@ -118,6 +139,9 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
                 hexFilterActive = ""
                 hexCommandBarBackground = ""
                 commandBarMoireIntensity = CommandBarAppearanceDefaults.moireIntensity
+                windowToolbarBackgroundHex = ""
+                windowToolbarBorderHex = ""
+                windowToolbarBorderWidth = WindowToolbarAppearanceDefaults.borderWidth
                 store.storedPanelBorderWidth = 0
                 store.reloadOverrides()
             }
@@ -125,7 +149,7 @@ struct SettingsColorsChromePane: View, ColorPaneHelpers {
     }
 
     private var commandBarColorRow: some View {
-        rowLabel("Background:", help: "Shared background color for the top menu and bottom action bar") {
+        rowLabel("Background:", help: "Background color for the bottom action bar") {
             HStack(spacing: 10) {
                 RoundedRectangle(cornerRadius: 3)
                     .fill(CommandBarAppearanceDefaults.backgroundColor)
