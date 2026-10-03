@@ -8,9 +8,9 @@ import SwiftUI
 
 // MARK: - Window Toolbar Appearance Defaults
 enum WindowToolbarAppearanceDefaults {
-    static let background = Color(#colorLiteral(red: 0.914, green: 0.953, blue: 1.000, alpha: 1))
-    static let border = Color(#colorLiteral(red: 0.102, green: 0.247, blue: 0.478, alpha: 1))
-    static let borderWidth = 2.0
+    static let background = Color(#colorLiteral(red: 0.9843137255, green: 0.9960784314, blue: 0.9882352941, alpha: 1))
+    static let border = Color(#colorLiteral(red: 0.6627450980, green: 0.6627450980, blue: 0.6627450980, alpha: 1))
+    static let borderWidth = 1.5
 }
 
 // MARK: - Main Window Titlebar Chrome
