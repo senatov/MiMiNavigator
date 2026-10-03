@@ -10,7 +10,6 @@ import SwiftUI
 
 // MARK: - Metrics
 enum MenuBarMetrics {
-    static let height: CGFloat = 36
-    static let corner: CGFloat = 8
-    static let horizontalPadding: CGFloat = 8
+    static let height: CGFloat = 30
+    static let horizontalPadding: CGFloat = 18
 }

@@ -17,7 +17,11 @@ struct TopMenuBarView: View {
     // MARK: - Body
     var body: some View {
         ZStack(alignment: .top) {
-            DuoPanelToolbarBackground(cornerRadius: MenuBarMetrics.corner)
+            Color(nsColor: .windowBackgroundColor)
+                .opacity(0.82)
+                .overlay(alignment: .bottom) {
+                    Color.primary.opacity(0.10).frame(height: 1)
+                }
             HStack(spacing: 6) {
                 finderSidebarButton
                 ForEach(menuData.dropLast()) { menu in
@@ -39,7 +43,6 @@ struct TopMenuBarView: View {
             .accessibilityLabel("Top menu bar")
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.clear)
         .onAppear {
             log.debug("TopMenuBarView appeared")
             if appState.showFavTreePopup {
@@ -88,9 +91,7 @@ struct TopMenuBarView: View {
                     .font(.callout)
             } icon: {
                 if let icon = menu.icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(menuTint(for: menu))
+                    TopMenuIcon(systemImage: icon, tint: menuTint(for: menu))
                 }
             }
         }

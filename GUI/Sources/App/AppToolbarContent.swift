@@ -4,8 +4,7 @@
 // Created by Iakov Senatov on 24.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Dynamic toolbar content driven by ToolbarStore.
-//   All action buttons grouped in a single framed HStack for visual cohesion.
-//   Menu bar toggle is separate, also framed.
+//   Action buttons and view controls share a restrained toolbar surface.
 
 import AppKit
 import SwiftUI
@@ -100,60 +99,33 @@ private struct AppWindowTitle: View {
     }
 }
 
-// MARK: - Framed Toolbar Button Group
-/// Wraps toolbar buttons in a rounded rect with separator border — matches Breadcrumb style.
+// MARK: - Toolbar Button Group
 struct ToolbarButtonGroup<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             content()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 6)
         .background { TopToolbarSurface() }
     }
 }
 
 // MARK: - Top Toolbar Surface
 struct TopToolbarSurface: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(.ultraThinMaterial)
+        RoundedRectangle(cornerRadius: 17, style: .continuous)
+            .fill(.regularMaterial)
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(colorScheme == .dark ? 0.14 : 0.64),
-                                Color.primary.opacity(colorScheme == .dark ? 0.10 : 0.035),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.26))
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.76), Color.primary.opacity(0.18)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.7
-                    )
+                RoundedRectangle(cornerRadius: 17, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.13), lineWidth: 1)
             }
-            .overlay(alignment: .top) {
-                Capsule()
-                    .fill(Color.white.opacity(colorScheme == .dark ? 0.22 : 0.58))
-                    .frame(height: 0.7)
-                    .padding(.horizontal, 8)
-                    .padding(.top, 1)
-            }
-            .shadow(color: Color.black.opacity(0.10), radius: 1.5, y: 1)
     }
 }
 

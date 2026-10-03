@@ -26,8 +26,8 @@ struct TopMenuButtonStyle: ButtonStyle {
         let isSelected: Bool
         private let cornerRadius: CGFloat = 5
         private let horizontalPadding: CGFloat = 8
-        private let verticalPadding: CGFloat = 5
-        private let minHeight: CGFloat = 25
+        private let verticalPadding: CGFloat = 2
+        private let minHeight: CGFloat = 24
         @Environment(\.isEnabled) private var isEnabled
         @Environment(\.colorScheme) private var colorScheme
         @State private var isHovered: Bool = false

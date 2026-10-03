@@ -12,14 +12,9 @@ import SwiftUI
 struct DuoPanelTopMenuBarSection: View {
     @Binding var isFinderSidebarVisible: Bool
 
-    private enum Layout {
-        static let topMenuPadding: CGFloat = 8
-    }
-    
     var body: some View {
         TopMenuBarView(isFinderSidebarVisible: $isFinderSidebarVisible)
             .frame(maxWidth: .infinity)
-            .padding(Layout.topMenuPadding)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

@@ -7,6 +7,28 @@
 import AppKit
 import SwiftUI
 
+// MARK: - Top Menu Icon
+struct TopMenuIcon: View {
+    let systemImage: String
+    let tint: Color
+
+    // MARK: - Body
+    var body: some View {
+        Image(nsImage: coloredSymbol)
+            .renderingMode(.original)
+            .frame(width: 15, height: 15)
+    }
+
+    private var coloredSymbol: NSImage {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [NSColor(tint)]))
+        let image = NSImage(systemSymbolName: systemImage, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) ?? NSImage(size: NSSize(width: 15, height: 15))
+        image.isTemplate = false
+        return image
+    }
+}
+
 // MARK: - Top Dropdown Label
 struct TopDropdownLabel: View {
     let title: String
@@ -16,9 +38,7 @@ struct TopDropdownLabel: View {
     // MARK: - Body
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(tint)
+            TopMenuIcon(systemImage: systemImage, tint: tint)
             Text(title)
                 .font(.callout)
                 .foregroundStyle(Color.primary.opacity(0.92))
@@ -34,7 +54,7 @@ private struct TopDropdownLabelSurface: ViewModifier {
     func body(content: Content) -> some View {
         content
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 2)
             .background {
                 if isHovered {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
