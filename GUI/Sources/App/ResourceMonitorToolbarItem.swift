@@ -72,7 +72,9 @@ private final class ResourceMonitorModel {
                 footprint: Double(memory.footprintBytes) / 1_048_576,
                 compressed: Double(compressedBytes) / 1_048_576
             )
-            memoryHistory = Array((memoryHistory + [sample]).suffix(24))
+            memoryHistory = memoryHistory.isEmpty
+                ? Array(repeating: sample, count: 24)
+                : Array((memoryHistory + [sample]).suffix(24))
         }
     }
 
@@ -195,15 +197,15 @@ struct ResourceMonitorToolbarItem: View {
 // MARK: - Stacked Memory Sparkline
 private struct StackedMemorySparkline: View {
     let samples: [MemoryGraphSample]
-    private let activeColor = Color(#colorLiteral(red: 0.278, green: 0.518, blue: 0.941, alpha: 1))
-    private let compressedColor = Color(#colorLiteral(red: 0.980, green: 0.702, blue: 0.153, alpha: 1))
+    private let activeColor = Color(#colorLiteral(red: 0.553, green: 0.788, blue: 0.949, alpha: 1))
+    private let compressedColor = Color(#colorLiteral(red: 0.969, green: 0.847, blue: 0.490, alpha: 1))
 
     var body: some View {
         Canvas { context, size in
             guard samples.count > 1 else { return }
-            let maximum = max(samples.map(\.footprint).max() ?? 0, 1)
-            let baseline = size.height - 1
-            let scale = (size.height - 2) / CGFloat(maximum)
+            let maximum = max(samples.map(\.footprint).max() ?? 0, 1) * 1.5
+            let baseline = size.height
+            let scale = size.height / CGFloat(maximum)
             let blue = areaPath(in: size, baseline: baseline, scale: scale, upper: \.uncompressed, lower: { _ in 0 })
             let yellow = areaPath(in: size, baseline: baseline, scale: scale, upper: \.footprint, lower: \.uncompressed)
             context.fill(blue, with: .color(activeColor))
