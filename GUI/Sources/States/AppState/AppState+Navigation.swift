@@ -24,6 +24,11 @@ extension AppState {
             await navigateToRemoteDirectory(remoteURL, on: panel, previousPath: previousPath)
             return
         }
+        if remoteNavigationTargets.removeValue(forKey: panel) != nil {
+            navigatingPanel = nil
+            setLoading(panel, false)
+            AutoFitScheduler.shared.setLoading(false, panel: panel, appState: self)
+        }
         // --- End remote navigation handling ---
 
         if PathUtils.areEqual(previousPath, newPath), !displayedFiles(for: panel).isEmpty {
@@ -113,6 +118,7 @@ extension AppState {
         defer {
             navigatingPanel = nil
             setLoading(panel, false)
+            AutoFitScheduler.shared.setLoading(false, panel: panel, appState: self)
         }
         let maxAttempts = 3
         for attempt in 1...maxAttempts {
@@ -168,10 +174,30 @@ extension AppState {
             log.error("[Navigate] \(panel): remote nav requested but no active connection")
             return
         }
+        let target = remoteURL.absoluteString
+        guard remoteNavigationTargets[panel] != target else {
+            log.debug("[Navigate] \(panel): remote navigation already in progress")
+            return
+        }
+        remoteNavigationTargets[panel] = target
+        let previousFiles = panel == .left ? displayedLeftFiles : displayedRightFiles
+        let previousSelection = self[panel: panel].selectedFile
+        beginPanelNavigationLoading(for: panel)
+        defer {
+            if remoteNavigationTargets[panel] == target {
+                remoteNavigationTargets[panel] = nil
+                navigatingPanel = nil
+                setLoading(panel, false)
+                AutoFitScheduler.shared.setLoading(false, panel: panel, appState: self)
+            }
+        }
         let remotePath = remoteURL.path.isEmpty ? "/" : remoteURL.path
         do {
             let items = try await manager.listDirectory(remotePath)
-            let files = items.map { CustomFile(remoteItem: $0) }
+            guard remoteNavigationTargets[panel] == target else { return }
+            let allFiles = items.map { CustomFile(remoteItem: $0) }
+            let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
+            let files = showHidden ? allFiles : allFiles.filter { !$0.nameStr.hasPrefix(".") }
             let sorted = applySorting(files)
             let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
             let cleanURL = remotePath == "/" ? displayBase : displayBase + remotePath
@@ -180,7 +206,12 @@ extension AppState {
             setSelectedFile(firstRealFile(in: sorted), for: panel)
             log.info("[Navigate] \(panel): remote SUCCESS, \(sorted.count) files")
         } catch {
+            guard remoteNavigationTargets[panel] == target else { return }
             log.error("[Navigate] \(panel): remote FAILED '\(remotePath)' error=\(error.localizedDescription)")
+            if path(for: panel) == previousPath {
+                if panel == .left { displayedLeftFiles = previousFiles } else { displayedRightFiles = previousFiles }
+                setSelectedFile(previousSelection, for: panel)
+            }
         }
     }
 

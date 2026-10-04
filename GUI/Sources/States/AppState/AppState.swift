@@ -59,6 +59,7 @@ final class AppState {
     private(set) var rightNavigationHistory: PanelNavigationHistory!
     var directorySelectionRestore: [FavPanelSide: [String: URL]] = [.left: [:], .right: [:]]
     var directorySelectionRestoreOrder: [FavPanelSide: [String]] = [.left: [], .right: []]
+    var remoteNavigationTargets: [FavPanelSide: String] = [:]
 
     // MARK: - Autosave
     var configurationAutosaveTask: Task<Void, Never>?

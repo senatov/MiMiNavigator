@@ -108,6 +108,10 @@ extension AppState {
             let remotePath = normalizedRemotePath(for: panelURL)
             log.info("[AppState] refreshRemoteFiles panel=\(panel) path=\(remotePath)")
             let items = try await manager.listDirectory(remotePath)
+            guard url(for: panel) == panelURL else {
+                log.debug("[AppState] stale remote refresh skipped panel=\(panel) path=\(remotePath)")
+                return
+            }
             let allFiles = items.map { CustomFile(remoteItem: $0) }
             let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
             let files: [CustomFile]
@@ -122,6 +126,7 @@ extension AppState {
             restoreRemoteSelection(from: sorted, on: panel)
             log.info("[AppState] refreshRemoteFiles done panel=\(panel) path=\(remotePath) items=\(sorted.count)")
         } catch {
+            guard url(for: panel) == panelURL else { return }
             log.error("[AppState] remote listing failed panel=\(panel): \(error.localizedDescription)")
             resetRemotePanelState(panel)
         }

@@ -21,6 +21,7 @@ final class AutoFitScheduler {
 
     // MARK: - State
     private var navigationFitTasks: [FavPanelSide: Task<Void, Never>] = [:]
+    private var pendingNavigationFitPaths: [FavPanelSide: String] = [:]
     private var lastScheduledPath: [FavPanelSide: String] = [:]
     private var lastAutoFitWidth: [FavPanelSide: CGFloat] = [:]
     private var lastResizeFitTime: [FavPanelSide: Date] = [:]
@@ -40,14 +41,21 @@ final class AutoFitScheduler {
         let isSamePath = lastScheduledPath[panel] == path
         lastScheduledPath[panel] = path
         navigationFitTasks[panel]?.cancel()
+        navigationFitTasks[panel] = nil
+        if !isSamePath && UserPreferences.shared.snapshot.autoFitColumnsOnNavigate {
+            pendingNavigationFitPaths[panel] = path
+        }
         guard isSamePath || UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
-        let delay = isSamePath ? contentSettleDelay : eventCoalescingDelay
+        let isNavigationFit = pendingNavigationFitPaths[panel] == path
+        let delay = isNavigationFit ? eventCoalescingDelay : contentSettleDelay
         log.debug("[AutoFit] content event panel=\(panel) path=\(path) samePath=\(isSamePath)")
         navigationFitTasks[panel] = Task { @MainActor in
             try? await Task.sleep(for: delay)
             if Task.isCancelled { return }
+            self.navigationFitTasks[panel] = nil
+            if self.pendingNavigationFitPaths[panel] == path { self.pendingNavigationFitPaths[panel] = nil }
             guard appState.path(for: panel) == path else { return }
-            self.runAutoFit(panel: panel, appState: appState, limitFileCount: isSamePath)
+            self.runAutoFit(panel: panel, appState: appState, limitFileCount: !isNavigationFit)
         }
     }
 
@@ -61,11 +69,15 @@ final class AutoFitScheduler {
     func prepareForNavigationLoading(panel: FavPanelSide) {
         loadingPanels.insert(panel)
         navigationFitTasks[panel]?.cancel()
+        navigationFitTasks[panel] = nil
+        pendingNavigationFitPaths[panel] = nil
         log.debug("[AutoFit] paused for navigation loading panel=\(panel)")
     }
 
     func preserveMirroredLayout(panel: FavPanelSide, path: String) {
         navigationFitTasks[panel]?.cancel()
+        navigationFitTasks[panel] = nil
+        pendingNavigationFitPaths[panel] = nil
         lastAutoFitWidth[panel] = ColumnLayoutStore.shared.layout(for: panel).containerWidth
         log.debug("[AutoFit] preserved mirrored layout panel=\(panel) path=\(path)")
     }
@@ -74,6 +86,8 @@ final class AutoFitScheduler {
         if loading {
             loadingPanels.insert(panel)
             navigationFitTasks[panel]?.cancel()
+            navigationFitTasks[panel] = nil
+            pendingNavigationFitPaths[panel] = nil
             log.debug("[AutoFit] paused panel=\(panel)")
             return
         }

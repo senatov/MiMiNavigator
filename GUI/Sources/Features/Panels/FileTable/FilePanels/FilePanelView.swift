@@ -266,37 +266,12 @@ struct FilePanelView: View {
         log.debug("[FilePanelView] remote entry name=\(file.nameStr)")
         log.debug("[FilePanelView] remote entry isParent=\(file.isParentEntry)")
         log.info("[FilePanelView] enterRemoteDirectory: \(newPath)")
+        let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
+        let sanitized = newPath.hasPrefix("/") ? newPath : "/\(newPath)"
+        let cleanURLString = sanitized == "/" ? origin + "/" : origin + sanitized
         Task { @MainActor in
-            // Update connection's current path and re-list
-            do {
-                let items = try await remoteConnectionManager.listDirectory(newPath)
-                let remoteFiles = items.map { CustomFile(remoteItem: $0) }
-                let sortedFiles = appState.applySorting(remoteFiles)
-                let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
-                let sanitized = newPath.hasPrefix("/") ? newPath : "/\(newPath)"
-                let cleanURLString = sanitized == "/" ? origin + "/" : origin + sanitized
-                guard let cleanURL = URL(string: cleanURLString) else {
-                    log.error("[FilePanelView] invalid remote URL: \(cleanURLString)")
-                    return
-                }
-                appState.updatePath(cleanURL, for: viewModel.panelSide)
-                applyRemoteFiles(sortedFiles)
-            } catch {
-                log.error("[FilePanelView] remote listing failed: \(error.localizedDescription)")
-            }
+            await appState.navigateToDirectory(cleanURLString, on: viewModel.panelSide)
         }
-    }
-
-    private func applyRemoteFiles(_ files: [CustomFile]) {
-        let _ = log.debug(#function + ": \(files.count)")
-        let firstNonParent = files.first(where: { !$0.isParentEntry })
-        switch viewModel.panelSide {
-            case .left:
-                appState.displayedLeftFiles = files
-            case .right:
-                appState.displayedRightFiles = files
-        }
-        setSelectedFile(firstNonParent)
     }
 
     // MARK: - Open file with default app
