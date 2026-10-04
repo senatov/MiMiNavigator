@@ -90,8 +90,7 @@ extension AppState {
         if didClose && shouldRepack {
             _ = await ArchiveManager.shared.markDirtyByTempPath(archiveURL.path)
         }
-        restoreParentArchiveState(for: panel, currentState: state)
-        await activateLocalDirectory(parentDirURL, for: panel)
+        await navigateToDirectory(parentDirURL.path, on: panel)
     }
 
     // MARK: - Archive Open State
@@ -110,20 +109,25 @@ extension AppState {
         setPath(tempDir.path, for: panel)
     }
 
-    @MainActor
-    private func restoreParentArchiveState(for panel: FavPanelSide, currentState: ArchiveNavigationState) {
-        if let parentState = self[panel: panel].archiveAncestors.popLast(),
-           let parentArchiveURL = parentState.archiveURL {
-            setArchiveState(parentState, for: panel)
-            let returnURL = currentState.archiveURL?.deletingLastPathComponent()
-                ?? parentState.archiveTempDir
-                ?? parentArchiveURL.deletingLastPathComponent()
-            tabManager(for: panel).updateActiveTabForArchive(extractedURL: returnURL, archiveURL: parentArchiveURL)
-            return
+    // MARK: - Archive Context Synchronization
+    /// Match archive presentation to the directory being opened, including nested archives and tab/history jumps.
+    func synchronizeArchiveState(for path: String, on panel: FavPanelSide) async {
+        var states: [ArchiveNavigationState] = []
+        var candidate = path
+        var visited: Set<String> = []
+        while let session = await ArchiveManager.shared.sessionForPath(candidate),
+              visited.insert(session.archiveURL.path).inserted {
+            var state = ArchiveNavigationState()
+            state.enterArchive(archiveURL: session.archiveURL, tempDir: session.tempDirectory)
+            states.insert(state, at: 0)
+            candidate = session.archiveURL.path
         }
-        var newState = archiveState(for: panel)
-        newState.exitArchive()
-        setArchiveState(newState, for: panel)
+        let current = states.popLast() ?? ArchiveNavigationState()
+        if archiveState(for: panel) != current || self[panel: panel].archiveAncestors != states {
+            log.info("[Archive] context panel=\(panel) path='\(path)' archive='\(current.archiveURL?.lastPathComponent ?? "none")'")
+            setArchiveState(current, for: panel)
+            self[panel: panel].archiveAncestors = states
+        }
     }
 
     private func activateArchiveDirectory(_ tempDir: URL, for panel: FavPanelSide) async {

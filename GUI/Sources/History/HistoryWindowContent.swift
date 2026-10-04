@@ -111,7 +111,7 @@ struct HistoryWindowContent: View {
                 Divider()
                 List {
                     ForEach(filteredItems) { item in
-                        let path = item.url.path
+                        let path = AppState.pathString(for: item.url)
                         HistoryRow(
                             path: path,
                             addedAt: item.addedAt,
@@ -193,7 +193,7 @@ struct HistoryWindowContent: View {
             matching = directoryItems
         } else {
             let query = searchText.lowercased()
-            matching = directoryItems.filter { $0.url.path.lowercased().contains(query) }
+            matching = directoryItems.filter { AppState.pathString(for: $0.url).lowercased().contains(query) }
         }
         return matching.sorted {
             sortNewestFirst ? $0.addedAt > $1.addedAt : $0.addedAt < $1.addedAt

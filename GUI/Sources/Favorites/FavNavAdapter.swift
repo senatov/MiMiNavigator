@@ -33,7 +33,11 @@ final class FavNavAdapter: FavoritesNavigationDelegate {
 
     func navigate(to url: URL, panel: FavPanelSide) async {
         let targetPanel: FavPanelSide = panel == .left ? .left : .right
-        log.info("\(#function) url=\(url.path) panel=\(panel)")
+        log.info("\(#function) url=\(AppState.pathString(for: url)) panel=\(panel)")
+        if AppState.isRemotePath(url) {
+            await appState.navigateToDirectory(url.absoluteString, on: targetPanel)
+            return
+        }
         let resolvedURL = resolveToExistingAncestor(url)
         if resolvedURL.path != url.path {
             log.warning("\(#function) bookmark target gone, resolved to: \(resolvedURL.path)")
@@ -118,17 +122,8 @@ final class FavNavAdapter: FavoritesNavigationDelegate {
 
     func navigateUp(panel: FavPanelSide) {
         log.info("\(#function) panel=\(panel)")
-
-        let currentPath = panel == .left ? appState.leftPath : appState.rightPath
-        let parentURL = URL(fileURLWithPath: currentPath).deletingLastPathComponent()
-
-        guard parentURL.path != currentPath else {
-            log.debug("\(#function) already at root")
-            return
-        }
-
         Task {
-            await navigate(to: parentURL, panel: panel)
+            await appState.navigateToParent(on: panel)
         }
     }
 
@@ -138,9 +133,7 @@ final class FavNavAdapter: FavoritesNavigationDelegate {
     }
 
     func currentURL(for panel: FavPanelSide) -> URL {
-        // Convert AppState path to URL
-        let path = panel == .left ? appState.leftPath : appState.rightPath
-        return URL(fileURLWithPath: path)
+        appState.url(for: panel)
     }
 
     func canGoBack(panel: FavPanelSide) -> Bool {

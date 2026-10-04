@@ -55,7 +55,12 @@ extension AppState {
     }
 
     private func updateTabPath(_ url: URL, for panel: FavPanelSide) {
-        tabManager(for: panel).updateActiveTabPath(url)
+        let state = archiveState(for: panel)
+        if state.isInsideArchive, let archiveURL = state.archiveURL {
+            tabManager(for: panel).updateActiveTabForArchive(extractedURL: url, archiveURL: archiveURL)
+        } else {
+            tabManager(for: panel).updateActiveTabPath(url)
+        }
     }
 
     private func displayedFileCount(for panel: FavPanelSide) -> Int {

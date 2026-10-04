@@ -149,7 +149,7 @@ final class PathNavigationService {
             await navigateToRemoteTarget(target, side: side)
             return
         }
-        // Local: update AppState + scanner + refresh as before.
+        // Local paths use the same archive-aware transition as other navigation routes.
         await applyLocalTarget(target, side: side)
     }
 
@@ -179,45 +179,6 @@ final class PathNavigationService {
     }
 
     private func applyLocalTarget(_ target: NavigationTarget, side: FavPanelSide) async {
-        if PathUtils.areEqual(appState.url(for: side), target.urlForAppState),
-           !appState.displayedFiles(for: side).isEmpty
-        {
-            log.info("[PathNav] skip redundant local navigation \(side) → \(target.pathForScanner)")
-            return
-        }
-
-        appState.updateKnownDirectoryPath(target.urlForAppState, for: side, displayPath: target.displayPath)
-        await setDirectory(path: target.pathForScanner, side: side)
-        await refresh(side: side)
-    }
-
-    // MARK: - Scanner integration
-
-    private func setDirectory(path: String, side: FavPanelSide) async {
-        switch side {
-            case .left:
-                await appState.scanner.setLeftDirectory(pathStr: path)
-            case .right:
-                await appState.scanner.setRightDirectory(pathStr: path)
-        }
-    }
-
-    private func refreshPanel(_ side: FavPanelSide) async {
-        switch side {
-            case .left:
-                await appState.refreshLeftFiles()
-            case .right:
-                await appState.refreshRightFiles()
-        }
-    }
-
-    private func forceRefreshScanner(_ side: FavPanelSide) async {
-        await appState.scanner.forceRefreshAfterFileOp(side: side)
-    }
-
-    private func refresh(side: FavPanelSide) async {
-        // Force refresh because user explicitly navigated.
-        await forceRefreshScanner(side)
-        await refreshPanel(side)
+        await appState.navigateToDirectory(target.pathForScanner, on: side, displayPath: target.displayPath)
     }
 }

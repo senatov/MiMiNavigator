@@ -15,7 +15,7 @@ extension AppState {
 
     /// Navigate into a directory with retry logic and spinner for slow volumes (USB, NAS).
     /// Shows cached content instantly if available, then refreshes in background.
-    func navigateToDirectory(_ newPath: String, on panel: FavPanelSide) async {
+    func navigateToDirectory(_ newPath: String, on panel: FavPanelSide, displayPath: String? = nil) async {
         let previousPath = path(for: panel)
         log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
         // --- Remote navigation handling ---
@@ -31,6 +31,7 @@ extension AppState {
         }
         // --- End remote navigation handling ---
 
+        await synchronizeArchiveState(for: newPath, on: panel)
         if PathUtils.areEqual(previousPath, newPath), !displayedFiles(for: panel).isEmpty {
             log.info("[Navigate] \(panel): skip redundant local navigation to '\(newPath)'")
             return
@@ -41,7 +42,7 @@ extension AppState {
         await DirectorySizeService.shared.cancelRequests(under: URL(fileURLWithPath: previousPath))
 
         rememberCurrentSelection(for: panel)
-        updateKnownDirectoryPath(URL(fileURLWithPath: newPath), for: panel)
+        updateKnownDirectoryPath(URL(fileURLWithPath: newPath), for: panel, displayPath: displayPath)
         setSelectedFile(nil, for: panel)
         multiSelectionManager?.resetAnchor(for: panel)
 
@@ -158,6 +159,7 @@ extension AppState {
         }
         if displayedFiles(for: panel).isEmpty || !PathUtils.areEqual(path(for: panel), newPath) {
             log.error("\(#function) \(panel): nav failed after \(maxAttempts) attempts → back to '\(previousPath)'")
+            await synchronizeArchiveState(for: previousPath, on: panel)
             updateKnownDirectoryPath(URL(fileURLWithPath: previousPath), for: panel)
             await setScannerDirectoryAndRefresh(previousPath, for: panel)
             if Self.isUserNavigablePath(newPath) {
@@ -201,6 +203,7 @@ extension AppState {
             let sorted = applySorting(files)
             let displayBase = Self.remoteOrigin(from: conn.provider.mountPath)
             let cleanURL = remotePath == "/" ? displayBase : displayBase + remotePath
+            await synchronizeArchiveState(for: cleanURL, on: panel)
             updatePath(cleanURL, for: panel)
             if panel == .left { displayedLeftFiles = sorted } else { displayedRightFiles = sorted }
             setSelectedFile(firstRealFile(in: sorted), for: panel)

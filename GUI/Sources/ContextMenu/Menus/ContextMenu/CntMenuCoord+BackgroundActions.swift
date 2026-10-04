@@ -70,9 +70,9 @@ extension CntMenuCoord {
     }
 
     func navigateUp(from currentPath: URL, panel: FavPanelSide, appState: AppState) {
-        let parent = currentPath.deletingLastPathComponent()
-        log.debug("\(#function) parent='\(parent.path)' panel=\(panel)")
-        navigateTo(parent, panel: panel, appState: appState)
+        Task { @MainActor in
+            await appState.navigateToParent(on: panel)
+        }
     }
 
     func navigateHistoryBack(panel: FavPanelSide, appState: AppState) {
@@ -103,9 +103,9 @@ extension CntMenuCoord {
 
     /// Navigate panel to specified path (with retry + spinner for slow volumes)
     func navigateTo(_ url: URL, panel: FavPanelSide, appState: AppState) {
-        log.debug("\(#function) url='\(url.path)' panel=\(panel)")
+        log.debug("\(#function) url='\(AppState.pathString(for: url))' panel=\(panel)")
         Task { @MainActor in
-            await appState.navigateToDirectory(url.path, on: panel)
+            await appState.navigateToDirectory(AppState.pathString(for: url), on: panel)
         }
     }
 

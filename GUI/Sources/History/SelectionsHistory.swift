@@ -12,7 +12,7 @@ struct RecentHistorySelection: Identifiable, Equatable {
     let url: URL
     let addedAt: Date
     var id: String { "\(url.absoluteString)|\(addedAt.timeIntervalSinceReferenceDate)" }
-    var path: String { url.path }
+    var path: String { AppState.pathString(for: url) }
 }
 
 // MARK: - SelectionsHistory
@@ -61,7 +61,8 @@ final class SelectionsHistory {
     }
 
     private static func makeFileURL(from path: String) -> URL {
-        URL(filePath: path, directoryHint: .inferFromPath, relativeTo: nil)
+        if let url = URL(string: path), AppState.isRemotePath(url) { return url }
+        return URL(filePath: path, directoryHint: .inferFromPath, relativeTo: nil)
     }
 
     private static func isAvailableDirectory(_ url: URL) -> Bool {
@@ -181,12 +182,12 @@ final class SelectionsHistory {
     private func saveToDisk() {
         Self.ensureHistoryDirectoryExists()
         let dto = HistoryDTO(
-            backStack: backStack.map(\.path),
-            forwardStack: forwardStack.map(\.path),
-            current: current?.path,
-            recentSelections: recentSelections.map(\.url.path),
+            backStack: backStack.map { AppState.pathString(for: $0) },
+            forwardStack: forwardStack.map { AppState.pathString(for: $0) },
+            current: current.map { AppState.pathString(for: $0) },
+            recentSelections: recentSelections.map { AppState.pathString(for: $0.url) },
             recentSelectionEntries: recentSelections.map { item in
-                RecentSelectionDTO(path: item.url.path, addedAt: item.addedAt)
+                RecentSelectionDTO(path: AppState.pathString(for: item.url), addedAt: item.addedAt)
             }
         )
         do {

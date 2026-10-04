@@ -184,7 +184,7 @@ struct BreadCrumbToolBar: View {
         appState.isNavigatingFromHistory = true
         Task {
             defer { appState.isNavigatingFromHistory = false }
-            await appState.navigateToDirectory(targetURL.path, on: panelSide)
+            await appState.navigateToDirectory(AppState.pathString(for: targetURL), on: panelSide)
         }
     }
 
@@ -195,7 +195,7 @@ struct BreadCrumbToolBar: View {
         appState.isNavigatingFromHistory = true
         Task {
             defer { appState.isNavigatingFromHistory = false }
-            await appState.navigateToDirectory(targetURL.path, on: panelSide)
+            await appState.navigateToDirectory(AppState.pathString(for: targetURL), on: panelSide)
         }
     }
 

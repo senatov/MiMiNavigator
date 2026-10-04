@@ -223,7 +223,7 @@ final class PanelNavigationHistory {
 
     private func save() {
         let data: [String: Any] = [
-            "history": history.map { $0.path },
+            "history": history.map { AppState.pathString(for: $0) },
             "currentIndex": currentIndex,
         ]
         MiMiDefaults.shared.set(data, forKey: userDefaultsKey)
@@ -239,7 +239,7 @@ final class PanelNavigationHistory {
         let storedCurrentPath = hist.indices.contains(idx) ? hist[idx] : nil
         // Validate paths exist (allow remote paths through)
         let loadedHistory = hist.compactMap { path in
-            let url = URL(fileURLWithPath: path)
+            let url = AppState.url(fromPathString: path)
             if AppState.isRemotePath(url) {
                 return url
             }
@@ -250,7 +250,7 @@ final class PanelNavigationHistory {
             return nil
         }
         let loadedCurrentPath = storedCurrentPath.flatMap { storedPath in
-            loadedHistory.first { $0.path == storedPath }?.standardizedFileURL
+            loadedHistory.first { AppState.pathString(for: $0) == storedPath }?.standardizedFileURL
         }
         history = Self.deduplicatedKeepingLatest(loadedHistory)
 
@@ -270,7 +270,7 @@ final class PanelNavigationHistory {
     private static func deduplicatedKeepingLatest(_ urls: [URL]) -> [URL] {
         var seen = Set<String>()
         return urls.reversed().filter {
-            seen.insert($0.standardizedFileURL.path).inserted
+            seen.insert(AppState.pathString(for: $0.standardizedFileURL)).inserted
         }.reversed()
     }
 
