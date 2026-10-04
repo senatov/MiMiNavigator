@@ -119,7 +119,7 @@ final class MemoryDiagnostics {
         return MemorySnapshot(residentBytes: memory.residentBytes, footprintBytes: memory.footprintBytes, threadCount: captureThreadCount())
     }
 
-    nonisolated static func captureMemory() -> (residentBytes: UInt64, footprintBytes: UInt64) {
+    nonisolated static func captureMemory() -> (residentBytes: UInt64, footprintBytes: UInt64, compressedBytes: UInt64) {
         var basicInfo = mach_task_basic_info()
         var basicCount = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
         let basicResult = withUnsafeMutablePointer(to: &basicInfo) { pointer in
@@ -136,7 +136,8 @@ final class MemoryDiagnostics {
         }
         let resident = basicResult == KERN_SUCCESS ? UInt64(basicInfo.resident_size) : 0
         let footprint = vmResult == KERN_SUCCESS ? UInt64(vmInfo.phys_footprint) : resident
-        return (resident, footprint)
+        let compressed = vmResult == KERN_SUCCESS ? UInt64(vmInfo.compressed) : 0
+        return (resident, footprint, compressed)
     }
 
     nonisolated static func captureThreadCount() -> Int {

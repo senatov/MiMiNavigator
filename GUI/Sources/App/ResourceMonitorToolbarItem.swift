@@ -8,14 +8,23 @@ import AppKit
 import Observation
 import SwiftUI
 
+// MARK: - Memory Graph Sample
+private struct MemoryGraphSample {
+    let footprint: Double
+    let compressed: Double
+
+    var uncompressed: Double { max(footprint - compressed, 0) }
+}
+
 // MARK: - Resource Monitor Model
 @MainActor
 @Observable
 private final class ResourceMonitorModel {
     static let shared = ResourceMonitorModel()
-    private(set) var memoryHistory: [Double] = []
+    private(set) var memoryHistory: [MemoryGraphSample] = []
     private(set) var threadHistory: [Double] = []
     private(set) var memoryLabel = "— MB"
+    private(set) var compressedLabel = "0 MB"
     private(set) var threadLabel = "—"
     private var memoryTimer: Timer?
     private var threadTimer: Timer?
@@ -56,8 +65,14 @@ private final class ResourceMonitorModel {
     @objc private func sampleMemory() {
         let memory = MemoryDiagnostics.captureMemory()
         memoryLabel = MemoryDiagnostics.wholeMemoryLabel(bytes: memory.footprintBytes)
+        let compressedBytes = min(memory.compressedBytes, memory.footprintBytes)
+        compressedLabel = compressedBytes == 0 ? "0 MB" : MemoryDiagnostics.wholeMemoryLabel(bytes: compressedBytes)
         withAnimation(.easeInOut(duration: 0.35)) {
-            memoryHistory = Self.appending(Double(memory.footprintBytes) / 1_048_576, to: memoryHistory)
+            let sample = MemoryGraphSample(
+                footprint: Double(memory.footprintBytes) / 1_048_576,
+                compressed: Double(compressedBytes) / 1_048_576
+            )
+            memoryHistory = Array((memoryHistory + [sample]).suffix(24))
         }
     }
 
@@ -98,7 +113,7 @@ struct ResourceMonitorToolbarItem: View {
     var body: some View {
         HStack(spacing: 7) {
             if showMemory {
-                metric(title: "RAM", value: model.memoryLabel, history: model.memoryHistory, color: #colorLiteral(red: 0.176, green: 0.686, blue: 0.435, alpha: 1))
+                memoryMetric
             }
             if showMemory && showThreads { Divider().frame(height: 26) }
             if showThreads {
@@ -122,13 +137,31 @@ struct ResourceMonitorToolbarItem: View {
     }
 
     private var helpText: String {
-        if showMemory && showThreads { return "MiMiNavigator physical memory and live thread count" }
-        return showMemory ? "MiMiNavigator physical memory" : "MiMiNavigator live thread count"
+        if showMemory && showThreads { return "MiMiNavigator memory footprint \(model.memoryLabel), compressed \(model.compressedLabel); live thread count" }
+        return showMemory ? "MiMiNavigator memory footprint \(model.memoryLabel), compressed \(model.compressedLabel)" : "MiMiNavigator live thread count"
     }
 
     private var accessibilityText: String {
-        if showMemory && showThreads { return "Memory \(model.memoryLabel), threads \(model.threadLabel)" }
-        return showMemory ? "Memory \(model.memoryLabel)" : "Threads \(model.threadLabel)"
+        if showMemory && showThreads { return "Memory footprint \(model.memoryLabel), compressed \(model.compressedLabel), threads \(model.threadLabel)" }
+        return showMemory ? "Memory footprint \(model.memoryLabel), compressed \(model.compressedLabel)" : "Threads \(model.threadLabel)"
+    }
+
+    // MARK: - Memory Metric
+    private var memoryMetric: some View {
+        HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("MEM")
+                    .font(.system(size: 10, weight: .medium, design: .default))
+                    .foregroundStyle(.secondary)
+                Text(model.memoryLabel)
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Color.blue)
+                    .lineLimit(1)
+                    .frame(minWidth: 42, alignment: .leading)
+            }
+            StackedMemorySparkline(samples: model.memoryHistory)
+                .frame(width: 34, height: 24)
+        }
     }
 
     // MARK: - Metric
@@ -142,7 +175,7 @@ struct ResourceMonitorToolbarItem: View {
                     .font(.system(size: 9, weight: .regular, design: .monospaced))
                     .foregroundStyle(Color.blue)
                     .lineLimit(1)
-                    .frame(minWidth: title == "RAM" ? 42 : 20, alignment: .leading)
+                    .frame(minWidth: 20, alignment: .leading)
             }
             ResourceSparkline(values: history, color: Color(nsColor: color))
                 .frame(width: 34, height: 24)
@@ -157,6 +190,49 @@ struct ResourceMonitorToolbarItem: View {
         )
     }
 
+}
+
+// MARK: - Stacked Memory Sparkline
+private struct StackedMemorySparkline: View {
+    let samples: [MemoryGraphSample]
+    private let activeColor = Color(#colorLiteral(red: 0.278, green: 0.518, blue: 0.941, alpha: 1))
+    private let compressedColor = Color(#colorLiteral(red: 0.980, green: 0.702, blue: 0.153, alpha: 1))
+
+    var body: some View {
+        Canvas { context, size in
+            guard samples.count > 1 else { return }
+            let maximum = max(samples.map(\.footprint).max() ?? 0, 1)
+            let baseline = size.height - 1
+            let scale = (size.height - 2) / CGFloat(maximum)
+            let blue = areaPath(in: size, baseline: baseline, scale: scale, upper: \.uncompressed, lower: { _ in 0 })
+            let yellow = areaPath(in: size, baseline: baseline, scale: scale, upper: \.footprint, lower: \.uncompressed)
+            context.fill(blue, with: .color(activeColor))
+            context.fill(yellow, with: .color(compressedColor))
+        }
+    }
+
+    // MARK: - Area Path
+    private func areaPath(
+        in size: CGSize,
+        baseline: CGFloat,
+        scale: CGFloat,
+        upper: KeyPath<MemoryGraphSample, Double>,
+        lower: (MemoryGraphSample) -> Double
+    ) -> Path {
+        var path = Path()
+        for (index, sample) in samples.enumerated() {
+            let point = CGPoint(x: size.width * CGFloat(index) / CGFloat(samples.count - 1), y: baseline - CGFloat(sample[keyPath: upper]) * scale)
+            if index == 0 { path.move(to: point) }
+            else { path.addLine(to: point) }
+        }
+        for index in samples.indices.reversed() {
+            let sample = samples[index]
+            let point = CGPoint(x: size.width * CGFloat(index) / CGFloat(samples.count - 1), y: baseline - CGFloat(lower(sample)) * scale)
+            path.addLine(to: point)
+        }
+        path.closeSubpath()
+        return path
+    }
 }
 
 // MARK: - Resource Sparkline
