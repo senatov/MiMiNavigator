@@ -25,6 +25,8 @@ struct AppToolbarContent: ToolbarContent {
         // All action buttons — left group
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
+                ViewModeToolbarItem(appState: appState)
+                Divider().frame(height: 20)
                 ForEach(store.visibleItems) { item in
                     toolbarButton(for: item)
                 }
@@ -35,10 +37,6 @@ struct AppToolbarContent: ToolbarContent {
             ToolbarButtonGroup {
                 app.makeToolbarToggle(.menuBarToggle)
             }
-        }
-        // View mode toggle — rightmost, near the title/version badge
-        ToolbarItem(placement: .primaryAction) {
-            ViewModeToolbarItem(appState: appState)
         }
     }
 
@@ -141,25 +139,24 @@ private struct ViewModeToolbarItem: View {
     let appState: AppState
 
     var body: some View {
-        ToolbarButtonGroup {
-            let side = appState.focusedPanel
-            let tabManager = appState.tabManager(for: side)
-            Picker("", selection: Binding(
-                get: { tabManager.activeViewMode },
-                set: { tabManager.setActiveViewMode($0) }
-            )) {
-                Image(systemName: "list.bullet")
-                    .tag(PanelViewMode.list)
-                    .help("List view")
-                Image(systemName: "square.grid.2x2")
-                    .tag(PanelViewMode.thumbnail)
-                    .help("Thumbnail view")
-                Image(systemName: "list.bullet.indent")
-                    .tag(PanelViewMode.tree)
-                    .help("Tree view")
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 96)
+        let side = appState.focusedPanel
+        let tabManager = appState.tabManager(for: side)
+        Picker("", selection: Binding(
+            get: { tabManager.activeViewMode },
+            set: { tabManager.setActiveViewMode($0) }
+        )) {
+            Image(systemName: "list.bullet")
+                .tag(PanelViewMode.list)
+                .help("List view")
+            Image(systemName: "square.grid.2x2")
+                .tag(PanelViewMode.thumbnail)
+                .help("Thumbnail view")
+            Image(systemName: "list.bullet.indent")
+                .tag(PanelViewMode.tree)
+                .help("Tree view")
         }
+        .pickerStyle(.segmented)
+        .frame(width: 96)
+        .accessibilityLabel("File view mode")
     }
 }

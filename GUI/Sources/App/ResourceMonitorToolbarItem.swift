@@ -199,6 +199,8 @@ private struct StackedMemorySparkline: View {
     let samples: [MemoryGraphSample]
     private let activeColor = Color(#colorLiteral(red: 0.553, green: 0.788, blue: 0.949, alpha: 1))
     private let compressedColor = Color(#colorLiteral(red: 0.969, green: 0.847, blue: 0.490, alpha: 1))
+    private let activeBorderColor = Color(#colorLiteral(red: 0.278, green: 0.518, blue: 0.741, alpha: 1))
+    private let compressedBorderColor = Color(#colorLiteral(red: 0.710, green: 0.549, blue: 0.176, alpha: 1))
 
     var body: some View {
         Canvas { context, size in
@@ -210,7 +212,23 @@ private struct StackedMemorySparkline: View {
             let yellow = areaPath(in: size, baseline: baseline, scale: scale, upper: \.footprint, lower: \.uncompressed)
             context.fill(blue, with: .color(activeColor))
             context.fill(yellow, with: .color(compressedColor))
+            let borderStyle = StrokeStyle(lineWidth: 0.75, lineCap: .round, lineJoin: .round)
+            context.stroke(linePath(in: size, baseline: baseline, scale: scale, value: \.uncompressed), with: .color(activeBorderColor), style: borderStyle)
+            if samples.contains(where: { $0.compressed > 0 }) {
+                context.stroke(linePath(in: size, baseline: baseline, scale: scale, value: \.footprint), with: .color(compressedBorderColor), style: borderStyle)
+            }
         }
+    }
+
+    // MARK: - Layer Boundary
+    private func linePath(in size: CGSize, baseline: CGFloat, scale: CGFloat, value: KeyPath<MemoryGraphSample, Double>) -> Path {
+        var path = Path()
+        for (index, sample) in samples.enumerated() {
+            let point = CGPoint(x: size.width * CGFloat(index) / CGFloat(samples.count - 1), y: baseline - CGFloat(sample[keyPath: value]) * scale)
+            if index == 0 { path.move(to: point) }
+            else { path.addLine(to: point) }
+        }
+        return path
     }
 
     // MARK: - Area Path
