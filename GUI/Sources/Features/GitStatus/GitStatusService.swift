@@ -5,6 +5,7 @@
 // Description: Read-only porcelain status provider with no repository mutations.
 
 import Foundation
+import Subprocess
 
 // MARK: - Git Status Provider
 protocol GitStatusProviding: Sendable {
@@ -17,34 +18,28 @@ actor GitStatusService: GitStatusProviding {
 
     func snapshot(for directory: URL) async -> GitStatusSnapshot? {
         guard directory.isFileURL else { return nil }
-        guard let rootPath = runGit(["-C", directory.path, "rev-parse", "--show-toplevel"]), !rootPath.isEmpty else { return nil }
+        guard let rootPath = await runGit(["-C", directory.path, "rev-parse", "--show-toplevel"]), !rootPath.isEmpty else { return nil }
         let rootURL = URL(fileURLWithPath: rootPath, isDirectory: true).standardizedFileURL
-        guard let output = runGitData(["-C", rootURL.path, "status", "--porcelain=v1", "-z", "--ignored=matching", "--untracked-files=normal"]) else { return nil }
+        guard let output = await runGitData(["-C", rootURL.path, "status", "--porcelain=v1", "-z", "--ignored=matching", "--untracked-files=normal"]) else { return nil }
         return GitStatusSnapshot(repositoryRoot: rootURL, statesByRelativePath: parsePorcelain(output))
     }
 
-    private func runGit(_ arguments: [String]) -> String? {
-        guard let data = runGitData(arguments) else { return nil }
+    // MARK: - Run Git
+    private func runGit(_ arguments: [String]) async -> String? {
+        guard let data = await runGitData(arguments) else { return nil }
         return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func runGitData(_ arguments: [String]) -> Data? {
-        let process = Process()
-        let output = Pipe()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
-        process.arguments = arguments
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
+    // MARK: - Run Git Data
+    private func runGitData(_ arguments: [String]) async -> Data? {
         do {
-            try process.run()
+            let result = try await Subprocess.run(.path("/usr/bin/git"), arguments: Arguments(arguments), output: .bytes(limit: .max))
+            guard result.terminationStatus.isSuccess else { return nil }
+            return Data(result.standardOutput)
         } catch {
             log.warning("[GitStatus] command failed: \(error.localizedDescription)")
             return nil
         }
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { return nil }
-        return data
     }
 
     private func parsePorcelain(_ data: Data) -> [String: GitFileState] {

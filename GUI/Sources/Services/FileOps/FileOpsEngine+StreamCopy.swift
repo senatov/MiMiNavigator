@@ -31,8 +31,7 @@ extension FileOpsEngine {
         }
     }
 
-
-
+    // MARK: - Perform Stream Copy
     nonisolated static func performStreamCopy(
         from source: URL, to destination: URL,
         onChunk: @Sendable (Int64) -> Void = { _ in }
@@ -48,10 +47,27 @@ extension FileOpsEngine {
             let read = input.read(buffer, maxLength: bufSize)
             if read < 0 { return .failure(.readFailed(source.path)) }
             if read == 0 { break }
-            let written = output.write(buffer, maxLength: read)
-            if written < 0 { return .failure(.writeFailed(source.path)) }
-            onChunk(Int64(written))
+            guard writeFully(buffer, count: read, write: { output.write($0, maxLength: $1) }, onChunk: onChunk) else {
+                return .failure(.writeFailed(destination.path))
+            }
         }
         return .success(())
+    }
+
+    // MARK: - Write Fully
+    nonisolated static func writeFully(
+        _ buffer: UnsafePointer<UInt8>,
+        count: Int,
+        write: (UnsafePointer<UInt8>, Int) -> Int,
+        onChunk: (Int64) -> Void
+    ) -> Bool {
+        var offset = 0
+        while offset < count {
+            let written = write(buffer.advanced(by: offset), count - offset)
+            guard written > 0, written <= count - offset else { return false }
+            offset += written
+            onChunk(Int64(written))
+        }
+        return true
     }
 }

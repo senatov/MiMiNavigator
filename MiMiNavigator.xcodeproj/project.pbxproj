@@ -17,6 +17,7 @@
 		BB000003BB000003BB000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		CA000003CA000003CA000003 /* CacheKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA000002CA000002CA000002 /* CacheKit */; };
 		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
+		CD000003CD000003CD000003 /* Subprocess in Frameworks */ = {isa = PBXBuildFile; productRef = CD000002CD000002CD000002 /* Subprocess */; };
 		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
 		EE000003EE000003EE000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
@@ -62,6 +63,7 @@
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
+				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
@@ -76,6 +78,7 @@
 				Tests/MiMiNavigatorTests/MiMiNavigatorTests.swift,
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
+				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
@@ -121,6 +124,7 @@
 				EE000003EE000003EE000003 /* (null) in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 				CC000003CC000003CC000003 /* Citadel in Frameworks */,
+				CD000003CD000003CD000003 /* Subprocess in Frameworks */,
 				DD000014DD000014DD000014 /* RenameKit in Frameworks */,
 			);
 		};
@@ -193,6 +197,7 @@
 				52D4533F441E4D78BD910304 /* NetworkKit */,
 				AA000002AA000002AA000002 /* LogKit */,
 				CC000002CC000002CC000002 /* Citadel */,
+				CD000002CD000002CD000002 /* Subprocess */,
 				BB000011BB000011BB000011 /* FileModelKit */,
 				BB000012BB000012BB000012 /* ScannerKit */,
 				BB000013BB000013BB000013 /* ArchiveKit */,
@@ -283,6 +288,7 @@
 				BB000002BB000002BB000002 /* XCLocalSwiftPackageReference "BinaryPackages/ScannerKit" */,
 				BB000004BB000004BB000004 /* XCLocalSwiftPackageReference "BinaryPackages/ArchiveKit" */,
 				CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */,
+				CD000001CD000001CD000001 /* XCRemoteSwiftPackageReference "swift-subprocess" */,
 				DD000016DD000016DD000016 /* XCLocalSwiftPackageReference "BinaryPackages/RenameKit" */,
 				CA000001CA000001CA000001 /* XCLocalSwiftPackageReference "BinaryPackages/CacheKit" */,
 			);
@@ -754,6 +760,14 @@
 				minimumVersion = 0.7.0;
 			};
 		};
+		CD000001CD000001CD000001 /* XCRemoteSwiftPackageReference "swift-subprocess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-subprocess.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -806,6 +820,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CC000001CC000001CC000001 /* XCRemoteSwiftPackageReference "Citadel" */;
 			productName = Citadel;
+		};
+		CD000002CD000002CD000002 /* Subprocess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CD000001CD000001CD000001 /* XCRemoteSwiftPackageReference "swift-subprocess" */;
+			productName = Subprocess;
 		};
 		DD000015DD000015DD000015 /* RenameKit */ = {
 			isa = XCSwiftPackageProductDependency;

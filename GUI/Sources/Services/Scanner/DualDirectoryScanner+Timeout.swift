@@ -21,7 +21,7 @@ struct ScanTimeoutError: LocalizedError {
 private enum ScanRaceOutput: @unchecked Sendable {
     case success([CustomFile])
     case timeout
-    case failure(String)
+    case failure(any Error)
 }
 
 // MARK: - Scan Race Result
@@ -35,12 +35,55 @@ private final class ScanRaceResult: @unchecked Sendable {
     }
 
     // MARK: - Resume
-    func resume(_ result: ScanRaceOutput) {
+    func resume(_ result: ScanRaceOutput, beforeResume: () -> Void = {}) {
         lock.lock()
-        defer { lock.unlock() }
-        guard !didResume else { return }
+        guard !didResume else {
+            lock.unlock()
+            return
+        }
         didResume = true
+        lock.unlock()
+        beforeResume()
         continuation.resume(returning: result)
+    }
+}
+
+// MARK: - Scan Timeout Race
+enum ScanTimeoutRace {
+    // MARK: - Run
+    static func run(
+        _ scanTask: Task<[CustomFile], Error>,
+        url: URL,
+        timeout: TimeInterval,
+        waitForTimeout: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
+    ) async throws -> [CustomFile] {
+        let result = await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                let race = ScanRaceResult(continuation)
+                let timeoutTask = Task {
+                    do { try await waitForTimeout(timeout) } catch { return }
+                    race.resume(.timeout, beforeResume: { scanTask.cancel() })
+                }
+                Task {
+                    do {
+                        race.resume(.success(try await scanTask.value))
+                    } catch {
+                        race.resume(.failure(error))
+                    }
+                    timeoutTask.cancel()
+                }
+            }
+        } onCancel: {
+            scanTask.cancel()
+        }
+        switch result {
+        case .success(let files):
+            return files
+        case .timeout:
+            throw ScanTimeoutError(path: url.path, seconds: timeout)
+        case .failure(let error):
+            throw error
+        }
     }
 }
 
@@ -67,34 +110,6 @@ extension DualDirectoryScanner {
         url: URL,
         timeout: TimeInterval? = nil
     ) async throws -> [CustomFile] {
-        let effectiveTimeout = timeout ?? mountedVolumeScanTimeout
-        let result = await withCheckedContinuation { continuation in
-            let race = ScanRaceResult(continuation)
-            Task {
-                do {
-                    race.resume(.success(try await scanTask.value))
-                } catch {
-                    race.resume(.failure(error.localizedDescription))
-                }
-            }
-            Task {
-                let timeoutNanoseconds = UInt64(effectiveTimeout * 1_000_000_000)
-                try? await Task.sleep(nanoseconds: timeoutNanoseconds)
-                scanTask.cancel()
-                race.resume(.timeout)
-            }
-        }
-        switch result {
-        case .success(let files):
-            return files
-        case .timeout:
-            throw ScanTimeoutError(path: url.path, seconds: effectiveTimeout)
-        case .failure(let message):
-            throw NSError(
-                domain: NSCocoaErrorDomain,
-                code: NSFileReadUnknownError,
-                userInfo: [NSLocalizedDescriptionKey: message]
-            )
-        }
+        try await ScanTimeoutRace.run(scanTask, url: url, timeout: timeout ?? mountedVolumeScanTimeout)
     }
 }
