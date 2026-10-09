@@ -19,7 +19,7 @@ struct SettingsPermissionsRestartBanner: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.primary)
             Spacer()
-            DownToolbarButtonView(title: "Restart Now", systemImage: "arrow.clockwise", iconTint: .orange, action: onRestart)
+            DownToolbarButtonView(title: "Restart Now", systemImage: "arrow.clockwise", iconTint: .blue, action: onRestart)
                 .disabled(isRestarting)
         }
         .padding(12)

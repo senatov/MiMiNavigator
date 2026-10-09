@@ -118,7 +118,7 @@ struct MultiRenameWindowContent: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            DownToolbarButtonView(title: "Reset", systemImage: "arrow.counterclockwise", iconTint: .orange) { viewModel.reset() }
+            DownToolbarButtonView(title: "Reset", systemImage: "arrow.counterclockwise", iconTint: .blue) { viewModel.reset() }
             DownToolbarButtonView(title: "Close", systemImage: "xmark", iconTint: .red) { MultiRenameCoordinator.shared.close() }
                 .keyboardShortcut(.cancelAction)
             DownToolbarButtonView(title: "Rename", systemImage: "pencil", iconTint: .blue) { viewModel.rename() }

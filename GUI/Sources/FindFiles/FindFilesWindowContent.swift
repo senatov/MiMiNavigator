@@ -213,7 +213,7 @@ struct FindFilesWindowContent: View {
                 .help("Display search results in the focused panel")
             }
 
-            DownToolbarButtonView(title: "Clear Results", systemImage: "xmark.bin", iconTint: .orange) {
+            DownToolbarButtonView(title: "Clear Results", systemImage: "xmark.bin", iconTint: .blue) {
                 viewModel.clearResults()
             }
             .disabled(viewModel.results.isEmpty || viewModel.searchState == .searching)

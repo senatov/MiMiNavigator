@@ -1,27 +1,26 @@
-# MiMiNavigator v0.9.9.8.5
+# MiMiNavigator v0.9.9.8.6
 
-This release restores file metadata in List view and adds Finder columns for information macOS exposes.
+This release improves button readability and makes file operations more reliable.
 
 ## Highlights
 
-- Fill Created, Added, Group, and other file metadata consistently during local directory scans.
-- Show **Last Open** from Spotlight's last-used date, matching Finder for files with an indexed date.
-- Add optional, sortable **Version**, **Comments**, and **Tags** columns alongside the existing List columns.
-- Fit a newly enabled column to its content and refresh visible rows when the column selection changes.
+- Give action buttons in dialogs, search, multi-rename, and Settings the same raised shape, readable text, divider, and colored symbol.
+- Replace pale orange action icons with saturated blue or purple symbols that remain distinct on light backgrounds.
+- Rework About links and dependency rows with clearer typography, appropriate icons, and full-size button targets.
+- Make the button border, corner, and shadow controls in Settings affect the shared button style and its live preview.
 
-## Other changes
+## Reliability
 
-- Use native text sizes in Favorites rows so names and paths follow macOS text settings.
-- Keep archive session state and temporary extraction folders in ArchiveKit, including dirty tracking and cleanup for nested archives.
-- Rebuild public MiMiKits binary packages from the current private package sources.
+- Prevent copy and directory-scan races and use asynchronous subprocess handling for Git status.
+- Detect Git availability on a clean macOS installation and give useful guidance when Command Line Tools are missing.
 
 ## Validation
 
-- Scanner metadata tests and the source-free Debug application build passed.
-- The release pipeline checks the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
+- Debug build and a visual check of the Settings button preview passed.
+- The release pipeline verifies the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.4...v0.9.9.8.5
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.5...v0.9.9.8.6

@@ -99,28 +99,32 @@ struct AboutView: View {
     // MARK: - Links Section
     private var linksSection: some View {
         VStack(spacing: 10) {
-            linkButton(
+            AboutActionRow(
                 title: "MiMiNavigator on GitHub",
                 subtitle: "Source code, releases, documentation",
-                icon: "link",
+                systemImage: "link",
+                iconTint: .blue,
                 url: githubURL
             )
-            linkButton(
+            AboutActionRow(
                 title: "Report Issue",
                 subtitle: "Found a bug? Let us know",
-                icon: "ladybug",
+                systemImage: "ladybug",
+                iconTint: .red,
                 url: "\(githubURL)/issues/new"
             )
-            linkButton(
+            AboutActionRow(
                 title: "View License",
                 subtitle: "GNU Affero General Public License v3.0",
-                icon: "doc.text",
+                systemImage: "doc.text",
+                iconTint: .blue,
                 url: "\(githubURL)/blob/master/LICENSE"
             )
-            linkButton(
+            AboutActionRow(
                 title: "Third-Party Notices",
                 subtitle: "Libraries, external tools, versions, and licenses",
-                icon: "shippingbox",
+                systemImage: "shippingbox",
+                iconTint: .blue,
                 url: "\(githubURL)/blob/master/THIRD_PARTY_NOTICES.md"
             )
         }
@@ -128,42 +132,11 @@ struct AboutView: View {
         .padding(.horizontal, 24)
     }
 
-    private func linkButton(title: String, subtitle: String, icon: String, url: String) -> some View {
-        Button {
-            if let linkURL = URL(string: url) {
-                NSWorkspace.shared.open(linkURL)
-            }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.body)
-                    .foregroundStyle(.accent)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "arrow.up.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Application Architecture
     private var architectureSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Application Architecture")
-                .font(.caption)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
@@ -233,10 +206,10 @@ struct AboutView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(name)
-                    .font(.caption.weight(.medium))
+                    .font(.callout.weight(.medium))
                     .foregroundStyle(.primary)
                 Text(description)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -251,22 +224,22 @@ struct AboutView: View {
     private var acknowledgmentsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Third-Party Libraries")
-                .font(.caption)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 6) {
                 ForEach(AboutDependencyCatalog.libraries) { dependency in
-                    libraryRow(dependency)
+                    AboutActionRow(title: dependency.name, subtitle: "\(dependency.description) · \(dependency.license)", systemImage: "shippingbox", iconTint: .blue, url: dependency.url)
                 }
                 Text("Optional External Tools")
-                    .font(.caption2.weight(.medium))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
                     .padding(.top, 4)
                 ForEach(AboutDependencyCatalog.externalTools) { dependency in
-                    libraryRow(dependency)
+                    AboutActionRow(title: dependency.name, subtitle: "\(dependency.description) · \(dependency.license)", systemImage: "wrench.and.screwdriver", iconTint: .purple, url: dependency.url)
                 }
             }
         }
@@ -274,57 +247,15 @@ struct AboutView: View {
         .padding(.horizontal, 24)
     }
 
-    private func libraryRow(_ dependency: AboutDependency) -> some View {
-        Button {
-            if let linkURL = URL(string: dependency.url) {
-                NSWorkspace.shared.open(linkURL)
-            }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "shippingbox")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.orange)
-                    .frame(width: 20)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 6) {
-                        Text(dependency.name)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.primary)
-                        Text(dependency.license)
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(Color.secondary.opacity(0.15), in: Capsule())
-                    }
-                    Text(dependency.description)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.quaternary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Credits Section
     private var creditsSection: some View {
         VStack(spacing: 8) {
             Text("Built with")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                creditBadge("Swift 6", color: .orange)
+                creditBadge("Swift 6.2", color: .blue)
                 creditBadge("SwiftUI", color: .blue)
                 creditBadge("AppKit", color: .purple)
             }
@@ -335,7 +266,7 @@ struct AboutView: View {
                 .padding(.top, 6)
 
             Text("Released under GNU AGPL-3.0")
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 14)
@@ -343,7 +274,7 @@ struct AboutView: View {
 
     private func creditBadge(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .medium))
+            .font(.caption.weight(.medium))
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
@@ -354,7 +285,7 @@ struct AboutView: View {
     private var closeButton: some View {
         HStack {
             Spacer()
-            DownToolbarButtonView(title: "Close", systemImage: "xmark") {
+            DownToolbarButtonView(title: "Close", systemImage: "xmark", iconTint: .red) {
                 onClose?()
             }
             .keyboardShortcut(.defaultAction)

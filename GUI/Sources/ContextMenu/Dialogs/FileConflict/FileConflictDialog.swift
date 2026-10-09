@@ -143,7 +143,7 @@ private extension FileConflictDialog {
             }
             .toggleStyle(.checkbox)
             .help("Use the selected action for the remaining conflicts without showing this dialog again.")
-            ConflictButton(title: "Skip Incoming", systemImage: "arrow.right", iconTint: .orange, action: { resolve(.skip) })
+            ConflictButton(title: "Skip Incoming", systemImage: "arrow.right", iconTint: .purple, action: { resolve(.skip) })
             ConflictButton(title: "Save as Copy", systemImage: "doc.on.doc", iconTint: .blue, action: { resolve(.keepBoth) })
             ConflictButton(title: "Replace Existing", systemImage: "arrow.clockwise", iconTint: .red, isPrimary: true, action: { resolve(.replace) })
         }

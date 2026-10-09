@@ -59,9 +59,9 @@ struct SettingsColorsButtonsPane: View, ColorPaneHelpers {
                     sectionHeader("Preview")
                     rowLabel("Buttons:", help: "How styled buttons look with current settings") {
                         HStack(spacing: 12) {
-                            Button("OK")     {}.buttonStyle(ThemedButtonStyle())
-                            Button("Cancel") {}.buttonStyle(ThemedButtonStyle())
-                            Button("Reset")  {}.buttonStyle(ThemedButtonStyle()).tint(.red)
+                            DownToolbarButtonView(title: "OK", systemImage: "checkmark", iconTint: .green) {}
+                            DownToolbarButtonView(title: "Cancel", systemImage: "xmark", iconTint: .red) {}
+                            DownToolbarButtonView(title: "Reset", systemImage: "arrow.counterclockwise", iconTint: .blue) {}
                         }
                     }
                 }

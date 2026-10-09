@@ -76,7 +76,7 @@ struct SettingsTabsPane: View {
             }
             HStack {
                 Spacer()
-                DownToolbarButtonView(title: "Reset tab appearance", systemImage: "arrow.counterclockwise", iconTint: .orange) { resetAppearance() }
+                DownToolbarButtonView(title: "Reset tab appearance", systemImage: "arrow.counterclockwise", iconTint: .blue) { resetAppearance() }
             }
         }
     }

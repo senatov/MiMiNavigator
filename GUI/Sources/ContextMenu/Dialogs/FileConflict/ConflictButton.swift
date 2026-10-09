@@ -29,6 +29,6 @@ struct ConflictButton: View {
 }
 
 #Preview("Secondary Button") {
-    ConflictButton(title: "Skip", systemImage: "arrow.right", iconTint: .orange, action: {})
+    ConflictButton(title: "Skip", systemImage: "arrow.right", iconTint: .purple, action: {})
         .padding()
 }

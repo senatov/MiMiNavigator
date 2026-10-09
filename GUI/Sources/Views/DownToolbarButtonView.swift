@@ -134,6 +134,12 @@ private struct DownToolbarGlassButtonBody: View {
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var contrast
+    @AppStorage("button.borderColor") private var hexButtonBorder = ""
+    @AppStorage("button.borderWidth") private var buttonBorderWidth = 0.5
+    @AppStorage("button.cornerRadius") private var buttonCornerRadius = 6.0
+    @AppStorage("button.shadowColor") private var hexButtonShadow = ""
+    @AppStorage("button.shadowRadius") private var buttonShadowRadius = 1.0
+    @AppStorage("button.shadowY") private var buttonShadowY = 1.5
 
     private var isPressed: Bool {
         configuration.isPressed
@@ -159,11 +165,11 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var shadowRadius: CGFloat {
-        isPressed ? 0.5 : (isHovered ? (raised ? 3.5 : 3) : (raised ? 2.25 : 1.5))
+        isPressed ? 0.5 : CGFloat(buttonShadowRadius) + (isHovered ? (raised ? 2.5 : 2) : (raised ? 1.25 : 0.5))
     }
 
     private var shadowYOffset: CGFloat {
-        isPressed ? 0.5 : (raised ? 2 : 1.5)
+        isPressed ? 0.5 : CGFloat(buttonShadowY) + (raised ? 0.5 : 0)
     }
 
     private var borderOpacity: Double {
@@ -184,20 +190,20 @@ private struct DownToolbarGlassButtonBody: View {
             .padding(.vertical, verticalPadding)
             .background {
                 backgroundLayer
-                    .shadow(color: Color.black.opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
+                    .shadow(color: (Color(hex: hexButtonShadow) ?? .black).opacity(shadowOpacity), radius: shadowRadius, y: shadowYOffset)
             }
             .overlay { buttonBorder }
             .overlay(alignment: .top) { topHighlight }
             .opacity(state == .disabled ? 0.52 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.10), value: configuration.isPressed)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
-            .contentShape(RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: CGFloat(buttonCornerRadius), style: .continuous))
             .focusEffectDisabled()
     }
 
     private var backgroundLayer: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
+            RoundedRectangle(cornerRadius: CGFloat(buttonCornerRadius), style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: isPressed
@@ -212,7 +218,7 @@ private struct DownToolbarGlassButtonBody: View {
     }
 
     private var topHighlight: some View {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.control - 0.5, style: .continuous)
+            RoundedRectangle(cornerRadius: CGFloat(max(buttonCornerRadius - 0.5, 0)), style: .continuous)
             .strokeBorder(Color.white.opacity(isPressed ? 0.10 : (raised ? 0.72 : 0.56)), lineWidth: raised ? 1 : 0.75)
             .padding(0.75)
             .mask(alignment: .top) {
@@ -224,16 +230,16 @@ private struct DownToolbarGlassButtonBody: View {
     @ViewBuilder
     private var tintLayer: some View {
         if let tint {
-            RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
+            RoundedRectangle(cornerRadius: CGFloat(buttonCornerRadius), style: .continuous)
                 .fill(tint.opacity(state == .pressed ? 0.28 : ((state == .focused || state == .selected) ? 0.34 : 0.16)))
         }
     }
 
     private var buttonBorder: some View {
-        RoundedRectangle(cornerRadius: DesignTokens.Radius.control, style: .continuous)
+        RoundedRectangle(cornerRadius: CGFloat(buttonCornerRadius), style: .continuous)
             .strokeBorder(
-                state == .focused ? Color.accentColor.opacity(0.72) : Color.black.opacity(borderOpacity),
-                lineWidth: state == .focused ? DesignTokens.Control.focusBorderWidth : (raised ? DesignTokens.Control.raisedBorderWidth : DesignTokens.Control.borderWidth)
+                state == .focused ? Color.accentColor.opacity(0.72) : (Color(hex: hexButtonBorder) ?? .black).opacity(borderOpacity),
+                lineWidth: state == .focused ? DesignTokens.Control.focusBorderWidth : CGFloat(buttonBorderWidth) + (raised ? 0.5 : 0.25)
             )
     }
 

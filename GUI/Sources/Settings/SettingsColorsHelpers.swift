@@ -131,7 +131,7 @@ extension ColorPaneHelpers {
     func resetButton(action: @escaping () -> Void) -> some View {
         HStack {
             Spacer()
-            DownToolbarButtonView(title: "Reset to Default", systemImage: "arrow.counterclockwise", iconTint: .orange, action: action)
+            DownToolbarButtonView(title: "Reset to Default", systemImage: "arrow.counterclockwise", iconTint: .blue, action: action)
         }
         .padding(.top, 8)
     }

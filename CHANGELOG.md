@@ -1131,6 +1131,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9.8.6] — 2026-10-09
+
+### Changed
+- Standardized full action buttons in dialogs, search, multi-rename, and Settings with raised surfaces, dividers, readable labels, and semantic icons.
+- Replaced pale orange action icons with saturated blue or purple symbols and updated the button preview in Settings.
+- Applied Settings button border, corner, and shadow options to the shared button style.
+- Rebuilt About links and dependency rows with clear fonts, distinct icons, and full button targets.
+
+### Fixed
+- Prevented copy and scan races, used asynchronous Git status handling, and improved Git availability diagnostics on clean macOS installations.
+
 ### Planned
 - Context menu enhancements (colored icons) — future enhancement
 
