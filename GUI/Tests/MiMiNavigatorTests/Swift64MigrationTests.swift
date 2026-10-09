@@ -112,6 +112,21 @@ struct ScanTimeoutTests {
 
 // MARK: - Git Status Subprocess Tests
 struct GitStatusSubprocessTests {
+    @Test func ignoresGitShimWhenNoDeveloperToolchainIsAvailable() {
+        #expect(GitExecutableLocator.resolve(developerDirectory: nil, additionalPaths: []) == nil)
+    }
+
+    @Test func usesExecutableFromSelectedDeveloperDirectory() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("MiMiGitTool-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bin = directory.appendingPathComponent("usr/bin", isDirectory: true)
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        let git = bin.appendingPathComponent("git")
+        try Data().write(to: git)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: git.path)
+        #expect(GitExecutableLocator.resolve(developerDirectory: directory.path, additionalPaths: []) == git.path)
+    }
+
     @Test func preservesNulDelimitedPathsWithWhitespace() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("MiMiGitStatus-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }

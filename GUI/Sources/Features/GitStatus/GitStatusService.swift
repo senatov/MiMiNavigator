@@ -12,28 +12,51 @@ protocol GitStatusProviding: Sendable {
     func snapshot(for directory: URL) async -> GitStatusSnapshot?
 }
 
+// MARK: - Git Executable Locator
+enum GitExecutableLocator {
+    static func resolve(
+        developerDirectory: String?,
+        additionalPaths: [String] = ["/opt/homebrew/bin/git", "/usr/local/bin/git"]
+    ) -> String? {
+        let developerPath = developerDirectory.map { "\($0)/usr/bin/git" }
+        return ([developerPath].compactMap { $0 } + additionalPaths).first {
+            FileManager.default.isExecutableFile(atPath: $0)
+        }
+    }
+}
+
 // MARK: - Git Status Service
 actor GitStatusService: GitStatusProviding {
     static let shared = GitStatusService()
 
     func snapshot(for directory: URL) async -> GitStatusSnapshot? {
         guard directory.isFileURL else { return nil }
-        guard let rootPath = await runGit(["-C", directory.path, "rev-parse", "--show-toplevel"]), !rootPath.isEmpty else { return nil }
+        guard let gitPath = await gitExecutablePath() else { return nil }
+        guard let rootPath = await runGit(["-C", directory.path, "rev-parse", "--show-toplevel"], gitPath: gitPath), !rootPath.isEmpty else { return nil }
         let rootURL = URL(fileURLWithPath: rootPath, isDirectory: true).standardizedFileURL
-        guard let output = await runGitData(["-C", rootURL.path, "status", "--porcelain=v1", "-z", "--ignored=matching", "--untracked-files=normal"]) else { return nil }
+        guard let output = await runGitData(["-C", rootURL.path, "status", "--porcelain=v1", "-z", "--ignored=matching", "--untracked-files=normal"], gitPath: gitPath) else { return nil }
         return GitStatusSnapshot(repositoryRoot: rootURL, statesByRelativePath: parsePorcelain(output))
     }
 
+    // MARK: - Git Executable Path
+    private func gitExecutablePath() async -> String? {
+        let result = try? await Subprocess.run(.path("/usr/bin/xcode-select"), arguments: ["--print-path"], output: .string(limit: 2048))
+        let developerDirectory = result?.terminationStatus.isSuccess == true
+            ? result?.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
+            : nil
+        return GitExecutableLocator.resolve(developerDirectory: developerDirectory)
+    }
+
     // MARK: - Run Git
-    private func runGit(_ arguments: [String]) async -> String? {
-        guard let data = await runGitData(arguments) else { return nil }
+    private func runGit(_ arguments: [String], gitPath: String) async -> String? {
+        guard let data = await runGitData(arguments, gitPath: gitPath) else { return nil }
         return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     // MARK: - Run Git Data
-    private func runGitData(_ arguments: [String]) async -> Data? {
+    private func runGitData(_ arguments: [String], gitPath: String) async -> Data? {
         do {
-            let result = try await Subprocess.run(.path("/usr/bin/git"), arguments: Arguments(arguments), output: .bytes(limit: .max))
+            let result = try await Subprocess.run(.path(.init(gitPath)), arguments: Arguments(arguments), output: .bytes(limit: .max))
             guard result.terminationStatus.isSuccess else { return nil }
             return Data(result.standardOutput)
         } catch {
