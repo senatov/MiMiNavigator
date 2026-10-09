@@ -15,6 +15,7 @@ struct DownToolbarButtonView: View {
     let systemImage: String
     let imageName: String?
     let iconTint: Color
+    let backgroundTint: Color?
     let action: () -> Void
     @State private var isHovered: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -28,6 +29,7 @@ struct DownToolbarButtonView: View {
         systemImage: String,
         imageName: String? = nil,
         iconTint: Color = .primary,
+        backgroundTint: Color? = nil,
         action: @escaping () -> Void
     ) {
         self.title = title
@@ -35,6 +37,7 @@ struct DownToolbarButtonView: View {
         self.systemImage = systemImage
         self.imageName = imageName
         self.iconTint = iconTint
+        self.backgroundTint = backgroundTint
         self.action = action
     }
     var body: some View {
@@ -71,7 +74,7 @@ struct DownToolbarButtonView: View {
                 .truncationMode(.tail)
                 .frame(minWidth: 84)
         }
-        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered, horizontalPadding: 9, verticalPadding: 7, raised: true))
+        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered, tint: backgroundTint, horizontalPadding: 9, verticalPadding: 7, raised: true))
         .onHover { hovering in
             if reduceMotion { isHovered = hovering }
             else { withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering } }

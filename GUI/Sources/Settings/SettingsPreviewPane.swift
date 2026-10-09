@@ -33,7 +33,7 @@ struct SettingsPreviewPane: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 120)
                             modePicker(selection: $newMode)
-                            Button("Add") { addRule() }
+                            DownToolbarButtonView(title: "Add", systemImage: "plus", iconTint: .green) { addRule() }
                                 .disabled(normalizedNewExtension.isEmpty)
                         }
                     }
@@ -60,8 +60,7 @@ struct SettingsPreviewPane: View {
             }
 
             if !store.rules.isEmpty {
-                Button("Remove All Remembered Rules") { store.removeAllRules() }
-                    .foregroundStyle(.red)
+                DownToolbarButtonView(title: "Remove All Remembered Rules", systemImage: "trash", iconTint: .red) { store.removeAllRules() }
             }
         }
     }

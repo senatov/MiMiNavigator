@@ -170,11 +170,9 @@ struct SettingsArchivesPane: View {
                             .buttonStyle(.plain)
                             .help(showPassword ? "Hide password" : "Show password")
 
-                            Button("Save") {
+                            DownToolbarButtonView(title: "Save", systemImage: "checkmark", iconTint: .green) {
                                 ArchivePasswordStore.shared.savePassword(archivePassword)
                             }
-                            .buttonStyle(ThemedButtonStyle())
-                            .controlSize(.small)
                             .disabled(archivePassword.isEmpty)
 
                             if !archivePassword.isEmpty {
@@ -247,15 +245,13 @@ struct SettingsArchivesPane: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(available ? Color.green : Color.red)
             if !available, tool.brewFormula != nil {
-                Button("Install") {
+                DownToolbarButtonView(title: "Install", systemImage: "arrow.down.circle", iconTint: .blue) {
                     Task {
                         let report = await doctor.diagnose(tool)
                         _ = await doctor.promptRepair(tool: tool, report: report, context: tool.purpose)
                         registry.refreshSingle(tool.id)
                     }
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.small)
                 .disabled(doctor.isRepairing)
             }
             if !available {

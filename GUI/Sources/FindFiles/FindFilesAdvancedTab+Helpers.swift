@@ -11,10 +11,7 @@ import SwiftUI
 extension FindFilesAdvancedTab {
     func presetButton(_ title: String, icon: String, preset: FindFilesPreset, action: @escaping () -> Void) -> some View {
         let selected = viewModel.isPresetActive(preset)
-        return Button(action: action) {
-            Label(title, systemImage: selected ? "checkmark.circle.fill" : icon)
-        }
-        .buttonStyle(ThemedButtonStyle())
+        return DownToolbarButtonView(title: title, systemImage: selected ? "checkmark.circle.fill" : icon, iconTint: selected ? .green : .blue, action: action)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(selected ? Color.accentColor.opacity(0.08) : Color.clear)

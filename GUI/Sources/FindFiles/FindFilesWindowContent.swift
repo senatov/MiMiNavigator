@@ -199,53 +199,35 @@ struct FindFilesWindowContent: View {
             }
 
             Spacer()
-            Button {
+            DownToolbarButtonView(title: "Results Window", systemImage: "arrow.up.forward.square", iconTint: .blue) {
                 FindFilesCoordinator.shared.showResultsWindow()
-            } label: {
-                Label("Results Window", systemImage: "arrow.up.forward.square")
             }
-            .buttonStyle(ThemedButtonStyle())
             .help("Open live search results in a separate resizable window")
 
             // Show in Panel — inject results into focused panel
             if let appState, !viewModel.results.isEmpty {
-                Button {
+                DownToolbarButtonView(title: "Show in Panel", systemImage: "sidebar.squares.left", iconTint: .blue) {
                     viewModel.cancelSearch()
                     viewModel.showInPanel(appState: appState)
-                } label: {
-                    Label("Show in Panel", systemImage: "sidebar.squares.left")
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.regular)
                 .help("Display search results in the focused panel")
             }
 
-            Button {
+            DownToolbarButtonView(title: "Clear Results", systemImage: "xmark.bin", iconTint: .orange) {
                 viewModel.clearResults()
-            } label: {
-                Label("Clear Results", systemImage: "xmark.bin")
             }
-            .buttonStyle(ThemedButtonStyle())
-            .controlSize(.regular)
             .disabled(viewModel.results.isEmpty || viewModel.searchState == .searching)
 
             // Primary: Search / Stop (rightmost)
             if viewModel.searchState == .searching {
-                Button("Stop", role: .destructive) {
+                DownToolbarButtonView(title: "Stop", systemImage: "stop.fill", iconTint: .red) {
                     viewModel.cancelSearch()
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.regular)
-                .tint(.red)
                 .keyboardShortcut(.escape, modifiers: [])
             } else {
-                Button {
+                DownToolbarButtonView(title: "Search", systemImage: "magnifyingglass", iconTint: .blue) {
                     viewModel.startSearch()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.regular)
                 .keyboardShortcut(.return, modifiers: [])
             }
         }

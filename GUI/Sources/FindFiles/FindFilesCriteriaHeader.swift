@@ -62,11 +62,9 @@ struct FindFilesActiveFiltersBar: View {
                         }
                     }
                 }
-                Button("Reset Filters") {
+                DownToolbarButtonView(title: "Reset Filters", systemImage: "arrow.counterclockwise", iconTint: .orange) {
                     viewModel.resetAdvancedFilters()
                 }
-                .buttonStyle(.borderless)
-                .font(DesignTokens.Typography.caption)
                 .disabled(viewModel.searchState == .searching)
             }
             .padding(.horizontal, 12)

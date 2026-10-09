@@ -18,17 +18,7 @@ struct ConflictButton: View {
     
     // MARK: - Body
     var body: some View {
-        Button(action: action) {
-            Label {
-                Text(title)
-            } icon: {
-                Image(systemName: systemImage)
-                    .foregroundStyle(iconTint)
-            }
-        }
-        .buttonStyle(ThemedButtonStyle(tint: isPrimary ? .accentColor : nil))
-        .controlSize(.regular)
-        .keyboardFocusable()
+        DownToolbarButtonView(title: title, systemImage: systemImage, iconTint: iconTint, backgroundTint: isPrimary ? .accentColor : nil, action: action)
     }
 }
 

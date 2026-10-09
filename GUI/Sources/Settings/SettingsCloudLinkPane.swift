@@ -50,13 +50,12 @@ struct SettingsCloudLinkPane: View {
                 }
             }
             HStack(spacing: 10) {
-                Button("Save") { saveSettings() }
-                    .buttonStyle(ThemedButtonStyle())
+                DownToolbarButtonView(title: "Save", systemImage: "checkmark", iconTint: .green) { saveSettings() }
                     .keyboardShortcut(.defaultAction)
-                Button("Reload") { loadSettings() }.buttonStyle(ThemedButtonStyle())
-                Button("Clear tokens") { clearTokens() }.buttonStyle(ThemedButtonStyle())
+                DownToolbarButtonView(title: "Reload", systemImage: "arrow.clockwise", iconTint: .blue) { loadSettings() }
+                DownToolbarButtonView(title: "Clear tokens", systemImage: "trash", iconTint: .red) { clearTokens() }
                 Spacer()
-                Button("Reveal ~/.mimi") { revealMimiDirectory() }.buttonStyle(ThemedButtonStyle())
+                DownToolbarButtonView(title: "Reveal ~/.mimi", systemImage: "folder", iconTint: .blue) { revealMimiDirectory() }
             }
             statusRow
             setupHelp
@@ -75,12 +74,9 @@ struct SettingsCloudLinkPane: View {
                 .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {
-                Button("Google OAuth Setup") { openSetupPage(.googleDrive) }
-                    .buttonStyle(ThemedButtonStyle())
-                Button("Dropbox App Console") { openSetupPage(.dropbox) }
-                    .buttonStyle(ThemedButtonStyle())
-                Button("TinyURL API") { openTinyURLSetupPage() }
-                    .buttonStyle(ThemedButtonStyle())
+                DownToolbarButtonView(title: "Google OAuth Setup", systemImage: "arrow.up.right.square", iconTint: .blue) { openSetupPage(.googleDrive) }
+                DownToolbarButtonView(title: "Dropbox App Console", systemImage: "arrow.up.right.square", iconTint: .blue) { openSetupPage(.dropbox) }
+                DownToolbarButtonView(title: "TinyURL API", systemImage: "arrow.up.right.square", iconTint: .blue) { openTinyURLSetupPage() }
             }
         }
         .padding(12)

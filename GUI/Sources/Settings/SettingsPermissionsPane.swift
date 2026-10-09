@@ -64,13 +64,9 @@ struct SettingsPermissionsPane: View {
                         ("folder.badge.gearshape", "Protected app data")
                     ])
                     HStack(spacing: 10) {
-                        Button {
+                        DownToolbarButtonView(title: "Open Full Disk Access Settings", systemImage: "arrow.up.forward.app", iconTint: .blue) {
                             SystemSettingsHelper.openFullDiskAccess()
-                        } label: {
-                            Label("Open Full Disk Access Settings", systemImage: "arrow.up.forward.app")
                         }
-                        .buttonStyle(.glass)
-                        .controlSize(.large)
                         Text("Enable MiMiNavigator, then restart the app.")
                             .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
@@ -108,13 +104,9 @@ struct SettingsPermissionsPane: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Spacer()
-                    Button {
+                    DownToolbarButtonView(title: "Add Folders…", systemImage: "plus", iconTint: .green) {
                         addFolders()
-                    } label: {
-                        Label("Add Folders…", systemImage: "plus")
                     }
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
                 }
                 folderList
                 HStack {
@@ -122,11 +114,9 @@ struct SettingsPermissionsPane: View {
                         .font(.system(size: 11))
                         .foregroundStyle(SettingsVisualStyle.secondaryText)
                     Spacer()
-                    Button("Remove", systemImage: "minus") {
+                    DownToolbarButtonView(title: "Remove", systemImage: "minus", iconTint: .red) {
                         removeSelectedFolder()
                     }
-                    .buttonStyle(.glass)
-                    .controlSize(.small)
                     .disabled(selectedFolderID == nil)
                 }
             }

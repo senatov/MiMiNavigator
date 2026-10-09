@@ -110,8 +110,7 @@ struct SettingsDiffToolPane: View {
 
                         if let id = selectedID,
                            let tool = registry.tools.first(where: { $0.id == id }) {
-                            Button("Edit…") { editingTool = tool }
-                                .controlSize(.small).buttonStyle(ThemedButtonStyle())
+                            DownToolbarButtonView(title: "Edit…", systemImage: "pencil", iconTint: .blue) { editingTool = tool }
                         }
                     }
                 }
@@ -124,12 +123,12 @@ struct SettingsDiffToolPane: View {
                     Text("No diff tool installed. Install KDiff3 (free) or Beyond Compare.")
                         .font(.system(size: 11)).foregroundStyle(SettingsVisualStyle.secondaryText)
                     Spacer()
-                    Button("Install KDiff3") {
+                    DownToolbarButtonView(title: "Install KDiff3", systemImage: "arrow.down.circle", iconTint: .blue) {
                         DiffToolLauncher.offerInstallKDiff3()
-                    }.controlSize(.small)
-                    Button("Beyond Compare↗") {
+                    }
+                    DownToolbarButtonView(title: "Beyond Compare↗", systemImage: "arrow.up.right.square", iconTint: .blue) {
                         NSWorkspace.shared.open(URL(string: "https://www.scootersoftware.com/")!)
-                    }.controlSize(.small)
+                    }
                 }
                 .padding(10)
                 .background(

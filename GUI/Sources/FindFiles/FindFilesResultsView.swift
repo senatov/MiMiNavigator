@@ -161,8 +161,7 @@ struct FindFilesResultsView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
             Spacer()
-            Button("Autofit") { fitRevision += 1 }
-                .buttonStyle(ThemedButtonStyle())
+            DownToolbarButtonView(title: "Autofit", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right", iconTint: .blue) { fitRevision += 1 }
             Menu {
                 columnToggle("Number", id: "number")
                 columnToggle("Name", id: "name")
