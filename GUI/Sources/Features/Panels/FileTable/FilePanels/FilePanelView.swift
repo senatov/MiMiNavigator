@@ -81,6 +81,13 @@ struct FilePanelView: View {
             Color.clear
                 .frame(height: 34)
             contentSection
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(Color(nsColor: .separatorColor).opacity(0.82))
+                        .frame(height: 1)
+                        .padding(.horizontal, 4)
+                        .allowsHitTesting(false)
+                }
             SelectionStatusBar(panelSide: viewModel.panelSide)
         }
         .padding(.horizontal, DesignTokens.grid / 2)

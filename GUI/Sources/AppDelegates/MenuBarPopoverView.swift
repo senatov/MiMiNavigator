@@ -22,7 +22,7 @@ struct MenuBarPopoverView: View {
     // MARK: - Body
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HIGDialogHeader("MiMiNavigator", subtitle: "TEST BUILD · \(version)")
+            HIGDialogHeader("MiMiNavigator", subtitle: "Pre-Release · \(version)")
             informationGroup
             actionsGroup
             DialogFooter {

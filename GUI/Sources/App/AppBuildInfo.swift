@@ -15,7 +15,7 @@ import SwiftUI
 enum AppBuildInfo {
 
     // MARK: - toolBarItem
-    /// ToolbarItem with TEST BUILD badge and optional resource graphs.
+    /// ToolbarItem with Pre-Release badge and optional resource graphs.
     @MainActor
     static func toolBarItem() -> ToolbarItem<(), some View> {
         ToolbarItem(placement: .status) {
@@ -125,7 +125,7 @@ private struct DevBuildBadge: View {
         HStack(spacing: 8) {
             DevBuildCatMedallion()
             VStack(alignment: .leading, spacing: 1) {
-                Text("TEST BUILD")
+                Text("Pre-Release")
                     .font(.system(size: 10, weight: .medium, design: .default))
                     .tracking(0.5)
                     .foregroundStyle(Color.primary.opacity(0.90))
@@ -141,7 +141,7 @@ private struct DevBuildBadge: View {
         .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }
         .contentShape(RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous))
-        .help("Current test build version")
+        .help("Current pre-release build version")
     }
 }
 

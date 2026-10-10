@@ -22,14 +22,18 @@ struct AppToolbarContent: ToolbarContent {
         ToolbarItem(placement: .navigation) {
             AppWindowTitle(version: MiMiNavigatorApp.appVersion)
         }
-        // All action buttons — left group
+        // Action buttons
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
-                ViewModeToolbarItem(appState: appState)
-                Divider().frame(height: 20)
                 ForEach(store.visibleItems) { item in
                     toolbarButton(for: item)
                 }
+            }
+        }
+        // View modes — separate group before the rightmost menu toggle
+        ToolbarItem(placement: .primaryAction) {
+            ToolbarButtonGroup {
+                ViewModeToolbarItem(appState: appState)
             }
         }
         // Menu bar toggle
@@ -128,8 +132,19 @@ struct TopToolbarSurface: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.13), lineWidth: 1)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.primary.opacity(0.055)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
             }
+            .overlay {
+                RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.20), lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.16), radius: 2, y: 2)
     }
 }
 

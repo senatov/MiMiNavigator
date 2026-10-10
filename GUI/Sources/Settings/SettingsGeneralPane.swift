@@ -102,7 +102,7 @@ struct SettingsGeneralPane: View {
                         .frame(maxWidth: 260)
                     }
                     Divider()
-                    SettingsRow(label: "Toolbar graphs:", help: "Choose which live application resource graphs appear beside TEST BUILD") {
+                    SettingsRow(label: "Toolbar graphs:", help: "Choose which live application resource graphs appear beside Pre-Release") {
                         HStack(spacing: 16) {
                             Toggle("Memory", isOn: optionalBoolBinding(\.toolbarShowMemoryGraph))
                                 .toggleStyle(.checkbox)
