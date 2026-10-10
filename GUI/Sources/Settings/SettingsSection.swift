@@ -26,6 +26,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case network        = "Network"
     case cloudLink      = "Cloud Share+Link"
     case diffTool       = "Diff Tool"
+    case gitClients     = "Git Clients"
     case progress       = "Progress Panel"
     case externalTools  = "External Tools"
     case permissions    = "Permissions"
@@ -69,6 +70,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .network:           return "network"
         case .cloudLink:         return "link.badge.plus"
         case .diffTool:          return "arrow.left.arrow.right"
+        case .gitClients:        return "arrow.triangle.branch"
         case .progress:          return "chart.bar.doc.horizontal"
         case .externalTools:     return "wrench.and.screwdriver"
         case .permissions:       return "lock.shield"
@@ -91,6 +93,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .network: return "Network discovery and remote connection behavior"
         case .cloudLink: return "Cloud providers, sharing and shortened links"
         case .diffTool: return "Comparison tools, paths and launch behavior"
+        case .gitClients: return "Preferred Git client and installation"
         case .progress: return "Operation progress window appearance and behavior"
         case .externalTools: return "Command-line dependencies and diagnostics"
         case .permissions: return "Protected locations and authorized folders"
@@ -131,6 +134,8 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
             return "google client secret refresh token dropbox oauth tinyurl api token credentials save reload clear reveal keychain"
         case .diffTool:
             return "compare active tool auto kdiff3 beyond compare custom application binary arguments left right priority installed path scope"
+        case .gitClients:
+            return "git client terminal fork github desktop sourcetree tower sublime merge default install repository"
         case .progress:
             return "background border text title status log font size panel width height auto-close operation saved frames positions reset defaults"
         case .externalTools:

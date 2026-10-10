@@ -232,6 +232,7 @@ struct SettingsWindowView: View {
                             case .network:            SettingsNetworkPane()
                             case .cloudLink:          SettingsCloudLinkPane()
                             case .diffTool:           SettingsDiffToolPane()
+                            case .gitClients:         SettingsGitClientsPane()
                             case .progress:           SettingsProgressPane()
                             case .externalTools:      SettingsExternalToolsPane()
                             case .permissions:        SettingsPermissionsPane()

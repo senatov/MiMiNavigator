@@ -34,4 +34,8 @@ final class GitPanelStatusStore {
         guard let snapshot = snapshotsByDirectory[directory.standardizedFileURL.path] else { return nil }
         return snapshot.summary(for: directory)
     }
+
+    func repositoryRoot(for directory: URL) -> URL? {
+        snapshotsByDirectory[directory.standardizedFileURL.path]?.repositoryRoot
+    }
 }
