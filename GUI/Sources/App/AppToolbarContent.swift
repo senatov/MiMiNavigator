@@ -128,13 +128,13 @@ struct TopToolbarSurface: View {
             .fill(.regularMaterial)
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.26))
+                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.72))
             }
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.18), Color.primary.opacity(0.055)],
+                            colors: [Color.white.opacity(0.23), Color.primary.opacity(0.035)],
                             startPoint: .top,
                             endPoint: .bottom
                         )

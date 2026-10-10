@@ -29,14 +29,9 @@ extension NetworkNeighborhoodView {
                 .foregroundStyle(.secondary)
             Spacer()
             if shouldShowSignIn(for: host) {
-                Button { authTarget = host } label: {
-                    Label("Sign In", systemImage: "key.fill")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                DownToolbarButtonView(title: "Sign In", systemImage: "key.fill", iconTint: .blue) {
+                    authTarget = host
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .controlSize(.mini)
             }
         }
         .padding(.leading, 40)

@@ -220,18 +220,11 @@ struct NetworkNeighborhoodView: View {
                     provider.startDiscovery()
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.caption)
-                        .padding(6)
-                        .background {
-                            Circle()
-                                .fill(.quaternary.opacity(0.9))
-                        }
-                        .overlay {
-                            Circle()
-                                .strokeBorder(.quaternary, lineWidth: 0.8)
-                        }
+                        .font(.system(size: 17, weight: .light))
+                        .foregroundStyle(.blue)
+                        .frame(width: 18, height: 18)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DownToolbarGlassButtonStyle(isHovered: false, horizontalPadding: 7, verticalPadding: 7, raised: true))
                 .help("Rescan (⌘R)")
                 .keyboardShortcut("r", modifiers: .command)
             }

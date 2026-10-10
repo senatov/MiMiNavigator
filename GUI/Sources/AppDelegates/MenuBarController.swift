@@ -179,7 +179,7 @@ import SwiftUI
     // MARK: - Status Image
     private func makeStatusImage() -> NSImage? {
         guard let image = NSApp.applicationIconImage.copy() as? NSImage else { return nil }
-        image.size = NSSize(width: 20, height: 20)
+        image.size = NSSize(width: 24, height: 24)
         image.isTemplate = false
         return image
     }

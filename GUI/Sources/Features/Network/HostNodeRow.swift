@@ -141,24 +141,12 @@ struct HostNodeRow: View {
                     .help(capability.label)
             }
             if host.webUIURL != nil {
-                Button { onOpenWebUI() } label: {
-                    Label("Web UI", systemImage: "safari")
-                        .font(.caption2)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                }
-                .buttonStyle(ThemedButtonStyle())
-                .tint(webUIColor)
-                .controlSize(.mini)
+                DownToolbarButtonView(title: "Web UI", systemImage: "safari", iconTint: webUIColor, action: onOpenWebUI)
             }
             if showsConfigButton {
-                Button { showInfoPopup.toggle() } label: {
-                    Label("Config", systemImage: "gearshape")
-                        .font(.caption2)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
+                DownToolbarButtonView(title: "Config", systemImage: "gearshape", iconTint: .teal) {
+                    showInfoPopup.toggle()
                 }
-                .buttonStyle(ThemedButtonStyle())
-                .tint(.teal)
-                .controlSize(.mini)
                 .help("Device configuration")
                 .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
                     NetworkDeviceInfoPopup(host: host)
@@ -183,20 +171,11 @@ struct HostNodeRow: View {
             if isHovered && !showsConfigButton {
                 Button { showInfoPopup.toggle() } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 14))
+                        .font(.system(size: 17, weight: .light))
                         .foregroundStyle(.blue)
-                        .padding(5)
-                        .background {
-                            Circle()
-                                .fill(.clear)
-                                .glassEffect(.regular.tint(Color.blue.opacity(0.10)))
-                        }
-                        .overlay {
-                            Circle()
-                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8)
-                        }
+                        .frame(width: 18, height: 18)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(DownToolbarGlassButtonStyle(isHovered: isHovered, horizontalPadding: 7, verticalPadding: 7, raised: true))
                 .help("Device info")
                 .popover(isPresented: $showInfoPopup, arrowEdge: .trailing) {
                     NetworkDeviceInfoPopup(host: host)
