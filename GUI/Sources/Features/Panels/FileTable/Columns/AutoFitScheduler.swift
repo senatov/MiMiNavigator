@@ -22,6 +22,7 @@ final class AutoFitScheduler {
     // MARK: - State
     private var navigationFitTasks: [FavPanelSide: Task<Void, Never>] = [:]
     private var pendingNavigationFitPaths: [FavPanelSide: String] = [:]
+    private var pendingPresentationFitPaths: [FavPanelSide: String] = [:]
     private var lastScheduledPath: [FavPanelSide: String] = [:]
     private var lastAutoFitWidth: [FavPanelSide: CGFloat] = [:]
     private var lastResizeFitTime: [FavPanelSide: Date] = [:]
@@ -33,30 +34,40 @@ final class AutoFitScheduler {
 
     /// Coalesces scanner publication and later metadata/size events into one fit per event burst.
     func scheduleNavigationFit(panel: FavPanelSide, appState: AppState) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        let path = appState.path(for: panel)
         guard !loadingPanels.contains(panel), !appState.isLoading(panel) else {
             log.debug("[AutoFit] nav deferred while loading panel=\(panel)")
             return
         }
-        let path = appState.path(for: panel)
         let isSamePath = lastScheduledPath[panel] == path
         lastScheduledPath[panel] = path
         navigationFitTasks[panel]?.cancel()
         navigationFitTasks[panel] = nil
-        if !isSamePath && UserPreferences.shared.snapshot.autoFitColumnsOnNavigate {
+        if !isSamePath {
             pendingNavigationFitPaths[panel] = path
         }
-        guard isSamePath || UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         let isNavigationFit = pendingNavigationFitPaths[panel] == path
+        let isPresentationFit = pendingPresentationFitPaths[panel] == path
         let delay = isNavigationFit ? eventCoalescingDelay : contentSettleDelay
         log.debug("[AutoFit] content event panel=\(panel) path=\(path) samePath=\(isSamePath)")
         navigationFitTasks[panel] = Task { @MainActor in
             try? await Task.sleep(for: delay)
             if Task.isCancelled { return }
             self.navigationFitTasks[panel] = nil
-            if self.pendingNavigationFitPaths[panel] == path { self.pendingNavigationFitPaths[panel] = nil }
+            guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
             guard appState.path(for: panel) == path else { return }
-            self.runAutoFit(panel: panel, appState: appState, limitFileCount: !isNavigationFit)
+            guard self.runAutoFit(panel: panel, appState: appState, limitFileCount: !isNavigationFit && !isPresentationFit) else { return }
+            if self.pendingNavigationFitPaths[panel] == path { self.pendingNavigationFitPaths[panel] = nil }
+            if self.pendingPresentationFitPaths[panel] == path { self.pendingPresentationFitPaths[panel] = nil }
         }
+    }
+
+    // MARK: - Panel Presentation Autofit
+    func schedulePresentationFit(panel: FavPanelSide, appState: AppState) {
+        guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        pendingPresentationFitPaths[panel] = appState.path(for: panel)
+        scheduleNavigationFit(panel: panel, appState: appState)
     }
 
     /// Called after file operations that update the current directory without
@@ -117,7 +128,13 @@ final class AutoFitScheduler {
 
     func handleResize(panel: FavPanelSide, newWidth: CGFloat, appState: AppState) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
+        guard newWidth > 0 else { return }
         guard !loadingPanels.contains(panel), !appState.isLoading(panel) else { return }
+        if pendingNavigationFitPaths[panel] == appState.path(for: panel)
+            || pendingPresentationFitPaths[panel] == appState.path(for: panel) {
+            scheduleNavigationFit(panel: panel, appState: appState)
+            return
+        }
         let files = appState.displayedFiles(for: panel)
         guard !files.isEmpty else { return }
         let lastWidth = lastAutoFitWidth[panel] ?? 0
@@ -134,35 +151,40 @@ final class AutoFitScheduler {
         log.debug("[AutoFit] resize panel=\(panel) delta=\(Int(delta))pt")
         lastAutoFitWidth[panel] = newWidth
         let layout = ColumnLayoutStore.shared.layout(for: panel)
+        guard layout.containerWidth > 0 else { return }
         guard !layout.isColumnReorderActive else { return }
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        pendingNavigationFitPaths[panel] = nil
+        pendingPresentationFitPaths[panel] = nil
         lastAutoFitFinish[panel] = Date()
     }
 
     // MARK: - Helpers
 
-    private func runAutoFit(panel: FavPanelSide, appState: AppState, limitFileCount: Bool) {
+    private func runAutoFit(panel: FavPanelSide, appState: AppState, limitFileCount: Bool) -> Bool {
         guard !loadingPanels.contains(panel), !appState.isLoading(panel) else {
             log.debug("[AutoFit] pass skipped while loading panel=\(panel)")
-            return
+            return false
         }
         let layout = ColumnLayoutStore.shared.layout(for: panel)
+        guard layout.containerWidth > 0 else { return false }
         guard !layout.isColumnReorderActive else {
             log.debug("[AutoFit] runAutoFit skip — column reorder active panel=\(panel)")
-            return
+            return false
         }
         let files = appState.displayedFiles(for: panel)
         guard !files.isEmpty else {
             log.debug("[AutoFit] runAutoFit skip — no files panel=\(panel)")
-            return
+            return false
         }
         guard !limitFileCount || files.count <= maximumAutomaticContentFitCount else {
             log.debug("[AutoFit] same-path fit skipped panel=\(panel) files=\(files.count)")
-            return
+            return false
         }
         lastAutoFitWidth[panel] = layout.containerWidth
         ColumnAutoFitter.autoFitAll(layout: layout, files: files)
         lastAutoFitFinish[panel] = Date()
+        return true
     }
 
 }

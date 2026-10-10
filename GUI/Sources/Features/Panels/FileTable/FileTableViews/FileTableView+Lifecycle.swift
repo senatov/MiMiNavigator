@@ -16,7 +16,7 @@ extension FileTableView {
         log.debug("[FileTableView] appear panel=\(panelSide) files=\(files.count)")
         log.debug("[Columns] panel=\(panelSide) column count=\(layout.columns.count)")
         recomputeSortedCache()
-        if !files.isEmpty { scheduleAutoFitIfNeeded() }
+        if !files.isEmpty { AutoFitScheduler.shared.schedulePresentationFit(panel: panelSide, appState: appState) }
         registerNavigationCallbacks()
         navigationScrollPending = true
         scrollToSelectionFromState()
@@ -130,6 +130,7 @@ extension FileTableView {
     func handleMainWindowDidRestore() {
         log.info("[FileTableView] window restored — rebuilding panel=\(panelSide) files=\(files.count)")
         recomputeSortedCache()
+        AutoFitScheduler.shared.schedulePresentationFit(panel: panelSide, appState: appState)
         navigationScrollPending = true
         nativeScrollView?.documentView?.needsLayout = true
         nativeScrollView?.documentView?.needsDisplay = true

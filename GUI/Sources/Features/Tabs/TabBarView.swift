@@ -195,6 +195,7 @@ struct TabBarView: View {
             let url = newActive.url
             let target = url.isFileURL ? url.path : url.absoluteString
             await appState.navigateToDirectory(target, on: panelSide)
+            AutoFitScheduler.shared.schedulePresentationFit(panel: panelSide, appState: appState)
         }
     }
 }

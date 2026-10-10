@@ -85,7 +85,7 @@ struct PreferencesSnapshot: Codable, Sendable {
         iconSize: "medium",
         showHiddenFiles: false,
         showExtensions: true,
-        autoFitColumnsOnNavigate: false,
+        autoFitColumnsOnNavigate: true,
         toolbarShowMemoryGraph: true,
         toolbarShowThreadsGraph: true,
         toolbarMemoryGraphInterval: 5,
