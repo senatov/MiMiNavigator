@@ -14,13 +14,10 @@
 		97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */ = {isa = PBXBuildFile; productRef = 97D9156B2CD5625D00EB5FDD /* SwiftyBeaver */; };
 		97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 971A28F82F1B140900094ADE /* FavoritesKit */; };
 		AA000003AA000003AA000003 /* LogKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA000002AA000002AA000002 /* LogKit */; };
-		BB000003BB000003BB000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		CA000003CA000003CA000003 /* CacheKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA000002CA000002CA000002 /* CacheKit */; };
 		CC000003CC000003CC000003 /* Citadel in Frameworks */ = {isa = PBXBuildFile; productRef = CC000002CC000002CC000002 /* Citadel */; };
 		CD000003CD000003CD000003 /* Subprocess in Frameworks */ = {isa = PBXBuildFile; productRef = CD000002CD000002CD000002 /* Subprocess */; };
-		DD000003DD000003DD000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		DD000014DD000014DD000014 /* RenameKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD000015DD000015DD000015 /* RenameKit */; };
-		EE000003EE000003EE000003 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		F1000001F1000001F1000001 /* FindFilesKit in Frameworks */ = {isa = PBXBuildFile; productRef = F1000011F1000011F1000011 /* FindFilesKit */; };
 		F2000001F2000001F2000001 /* MediaMetadataKit in Frameworks */ = {isa = PBXBuildFile; productRef = F2000011F2000011F2000011 /* MediaMetadataKit */; };
 		F3000001F3000001F3000001 /* ExternalToolsKit in Frameworks */ = {isa = PBXBuildFile; productRef = F3000011F3000011F3000011 /* ExternalToolsKit */; };
@@ -53,7 +50,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		97E4E59F2E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigator" target */ = {
+		97E4E59F2E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -69,7 +66,7 @@
 			);
 			target = 97AD1A2D2C624E020045C38D /* MiMiNavigator */;
 		};
-		97E4E5A02E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorTests" target */ = {
+		97E4E5A02E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Tests/MiMiNavigatorTests/DiagnosticReportBuilderTests.swift,
@@ -82,7 +79,7 @@
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};
-		97E4E5A12E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorUITests" target */ = {
+		97E4E5A12E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
@@ -96,9 +93,13 @@
 		97E4E59E2E44A072001B4027 /* GUI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				97E4E59F2E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigator" target */,
-				97E4E5A02E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorTests" target */,
-				97E4E5A12E44A084001B4027 /* Exceptions for "GUI" folder in "MiMiNavigatorUITests" target */,
+				97E4E59F2E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				97E4E5A02E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				97E4E5A12E44A084001B4027 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
 			);
 			path = GUI;
 			sourceTree = "<group>";
@@ -118,10 +119,7 @@
 				97ECF2AD2F224FA5005A6EFB /* FavoritesKit in Frameworks */,
 				FF82030CE1584192AE6E4DEA /* NetworkKit in Frameworks */,
 				AA000003AA000003AA000003 /* LogKit in Frameworks */,
-				BB000003BB000003BB000003 /* (null) in Frameworks */,
 				CA000003CA000003CA000003 /* CacheKit in Frameworks */,
-				DD000003DD000003DD000003 /* (null) in Frameworks */,
-				EE000003EE000003EE000003 /* (null) in Frameworks */,
 				97D9156C2CD5625D00EB5FDD /* SwiftyBeaver in Frameworks */,
 				CC000003CC000003CC000003 /* Citadel in Frameworks */,
 				CD000003CD000003CD000003 /* Subprocess in Frameworks */,
@@ -359,7 +357,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		97AD1A532C624E040045C38D /* Debug configuration for PBXProject "MiMiNavigator" */ = {
+		97AD1A532C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -428,7 +426,7 @@
 			};
 			name = Debug;
 		};
-		97AD1A542C624E040045C38D /* Release configuration for PBXProject "MiMiNavigator" */ = {
+		97AD1A542C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -489,7 +487,7 @@
 			};
 			name = Release;
 		};
-		97AD1A562C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigator" */ = {
+		97AD1A562C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -538,7 +536,7 @@
 			};
 			name = Debug;
 		};
-		97AD1A572C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigator" */ = {
+		97AD1A572C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -589,7 +587,7 @@
 			};
 			name = Release;
 		};
-		97AD1A592C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigatorTests" */ = {
+		97AD1A592C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -607,7 +605,7 @@
 			};
 			name = Debug;
 		};
-		97AD1A5A2C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigatorTests" */ = {
+		97AD1A5A2C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -625,7 +623,7 @@
 			};
 			name = Release;
 		};
-		97AD1A5C2C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigatorUITests" */ = {
+		97AD1A5C2C624E040045C38D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -642,7 +640,7 @@
 			};
 			name = Debug;
 		};
-		97AD1A5D2C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigatorUITests" */ = {
+		97AD1A5D2C624E040045C38D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -665,32 +663,32 @@
 		97AD1A292C624E020045C38D /* Build configuration list for PBXProject "MiMiNavigator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				97AD1A532C624E040045C38D /* Debug configuration for PBXProject "MiMiNavigator" */,
-				97AD1A542C624E040045C38D /* Release configuration for PBXProject "MiMiNavigator" */,
+				97AD1A532C624E040045C38D /* Debug */,
+				97AD1A542C624E040045C38D /* Release */,
 			);
 			defaultConfigurationName = Debug;
 		};
 		97AD1A552C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigator" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				97AD1A562C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigator" */,
-				97AD1A572C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigator" */,
+				97AD1A562C624E040045C38D /* Debug */,
+				97AD1A572C624E040045C38D /* Release */,
 			);
 			defaultConfigurationName = Debug;
 		};
 		97AD1A582C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigatorTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				97AD1A592C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigatorTests" */,
-				97AD1A5A2C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigatorTests" */,
+				97AD1A592C624E040045C38D /* Debug */,
+				97AD1A5A2C624E040045C38D /* Release */,
 			);
 			defaultConfigurationName = Debug;
 		};
 		97AD1A5B2C624E040045C38D /* Build configuration list for PBXNativeTarget "MiMiNavigatorUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				97AD1A5C2C624E040045C38D /* Debug configuration for PBXNativeTarget "MiMiNavigatorUITests" */,
-				97AD1A5D2C624E040045C38D /* Release configuration for PBXNativeTarget "MiMiNavigatorUITests" */,
+				97AD1A5C2C624E040045C38D /* Debug */,
+				97AD1A5D2C624E040045C38D /* Release */,
 			);
 			defaultConfigurationName = Debug;
 		};
