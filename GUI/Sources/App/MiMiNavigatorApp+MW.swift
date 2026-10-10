@@ -60,6 +60,13 @@ extension MiMiNavigatorApp {
             .sheet(isPresented: $showFullDiskOnboarding) {
                 FullDiskAccessOnboarding(isPresented: $showFullDiskOnboarding)
             }
+            .sheet(isPresented: $showToolBootstrap) {
+                InitialToolBootstrapView(bootstrap: toolBootstrap) {
+                    showToolBootstrap = false
+                    schedulePermissionOnboarding()
+                    scheduleGitHubStarPromptIfNeeded()
+                }
+            }
             .sheet(isPresented: $showGitHubStarPrompt) {
                 GitHubStarPromptView(isPresented: $showGitHubStarPrompt, store: gitHubStarStore)
             }
@@ -78,7 +85,16 @@ extension MiMiNavigatorApp {
 
     private func handleOnAppear() {
         handleMainWindowAppear()
+        if InitialToolBootstrap.needsSetup {
+            showToolBootstrap = true
+            return
+        }
+        schedulePermissionOnboarding()
+        scheduleGitHubStarPromptIfNeeded()
+    }
 
+    // MARK: - Permission Onboarding
+    private func schedulePermissionOnboarding() {
         // full-disk access first — most critical for a file manager
         if FullDiskAccessOnboarding.needsOnboarding {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -90,7 +106,6 @@ extension MiMiNavigatorApp {
                 showAutomationOnboarding = true
             }
         }
-        scheduleGitHubStarPromptIfNeeded()
     }
 
     // MARK: - GitHub Star Prompt
@@ -99,7 +114,7 @@ extension MiMiNavigatorApp {
         guard !didScheduleGitHubStarPrompt, gitHubStarStore.shouldAutoPrompt else { return }
         didScheduleGitHubStarPrompt = true
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            if showFullDiskOnboarding || showAutomationOnboarding {
+            if showToolBootstrap || showFullDiskOnboarding || showAutomationOnboarding {
                 didScheduleGitHubStarPrompt = false
                 scheduleGitHubStarPromptIfNeeded(after: 1.5)
                 return

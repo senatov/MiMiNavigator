@@ -147,7 +147,7 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 ## Install
 
-The current DMG is signed and notarized by Apple. No App Store account, subscription, or additional installer is required.
+The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and an administrator password.
 
 1. [Download MiMiNavigator v0.9.9.8.6](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.9.8.6).
 2. Open the DMG and drag MiMiNavigator to Applications.
@@ -155,19 +155,13 @@ The current DMG is signed and notarized by Apple. No App Store account, subscrip
 
 [Browse all releases](https://github.com/senatov/MiMiNavigator/releases)
 
-## Optional external tools
+## First-launch command-line setup
 
-Normal browsing and file operations work without extra software. Install only the capabilities you need:
+MiMiNavigator automatically installs missing command-line dependencies on first launch. It downloads the official signed [Homebrew package](https://docs.brew.sh/Installation) for Apple Silicon, checks its macOS installation signature, and installs it in Terminal. macOS may ask permission to control Terminal and request an administrator password. MiMiNavigator waits until installation finishes before continuing to its permission onboarding. If installation stops, check Terminal and use **Retry installation** in MiMiNavigator.
 
-| Purpose | Tool |
-|---------|------|
-| Extended archive formats | `brew install unar sevenzip` |
-| File and directory comparison | `brew install --cask kdiff3` |
-| Video and audio conversion | `brew install ffmpeg` |
-| High-quality animated GIF export | `brew install gifski` |
-| Lottie and TGS conversion | `python3 -m pip install --user lottie` |
+The setup installs Git; unar and sevenzip for archives; ffmpeg (including ffprobe) and gifski for media; sshpass for password-based SSH; and pipx plus python-lottie for Lottie/TGS conversion. Already available tools are kept. The macOS built-in ZIP, TAR, search, SSH, networking, and file tools need no separate installation. Basic browsing can run without these third-party tools, but the first-launch setup prepares the complete feature set.
 
-The project helper installs and refreshes the recommended set:
+GUI Git clients (Fork, GitHub Desktop, Sourcetree, Tower, and Sublime Merge) and comparison apps are chosen separately in Settings; they are not installed automatically. For later tool checks or repair, use **Settings → External Tools**. Developers can refresh the recommended tool set with:
 
 ```zsh
 zsh Scripts/update_external_tools.zsh

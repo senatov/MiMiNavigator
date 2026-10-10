@@ -22,6 +22,8 @@ struct MiMiNavigatorApp: App {
     @State var cntMenuCoord = CntMenuCoord.shared
     @State var showAutomationOnboarding = false
     @State var showFullDiskOnboarding = false
+    @State var showToolBootstrap = false
+    @State var toolBootstrap = InitialToolBootstrap()
     @State var showGitHubStarPrompt = false
     @State var isFinderSidebarVisible = false
     @State var gitHubStarStore = GitHubStarAcknowledgementStore.shared
