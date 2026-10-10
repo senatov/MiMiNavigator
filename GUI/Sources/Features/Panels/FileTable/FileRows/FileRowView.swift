@@ -140,11 +140,11 @@ struct FileRowView: View {
                     .foregroundStyle(nameColor)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                if let gitState, let repositoryRoot = gitStatusStore.repositoryRoot(for: file.urlValue.deletingLastPathComponent()) {
+                if let gitState, let repositoryRoot = gitStatusStore.repositoryRoot(for: file.urlValue, in: file.urlValue.deletingLastPathComponent()) {
                     Button {
                         GitClientRegistry.shared.openPreferred(repository: repositoryRoot)
                     } label: {
-                        GitStatusBadge(state: gitState)
+                        GitStatusBadge(state: gitState, isRepositoryRoot: file.urlValue.standardizedFileURL == repositoryRoot.standardizedFileURL)
                     }
                     .buttonStyle(.plain)
                     .help("Git: \(gitState.title). Click to open preferred Git client; right-click for more.")

@@ -9,9 +9,17 @@ import SwiftUI
 // MARK: - Git Status Badge
 struct GitStatusBadge: View {
     let state: GitFileState
+    var isRepositoryRoot = false
 
     var body: some View {
-        Text(state.badge)
+        HStack(spacing: 2) {
+            if isRepositoryRoot {
+                Image(systemName: "arrow.triangle.branch")
+            }
+            if !isRepositoryRoot || state != .clean {
+                Text(state.badge)
+            }
+        }
             .font(.system(size: 9.5, weight: .medium, design: .default))
             .foregroundStyle(tint)
             .frame(minWidth: 14, minHeight: 13)
@@ -26,6 +34,7 @@ struct GitStatusBadge: View {
 
     private var tint: Color {
         switch state {
+            case .clean: return Color(nsColor: .systemGreen)
             case .modified: return Color(nsColor: .systemOrange)
             case .untracked: return Color(nsColor: .systemGreen)
             case .ignored: return Color(nsColor: .secondaryLabelColor)

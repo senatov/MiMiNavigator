@@ -143,4 +143,27 @@ struct GitStatusSubprocessTests {
         #expect(snapshot?.repositoryRoot == directory.standardizedFileURL)
         #expect(snapshot?.statesByRelativePath[fileName] == .untracked)
     }
+
+    @MainActor @Test func showsRepositoryRootFromItsParentDirectory() async throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent("MiMiGitParent-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let repository = parent.appendingPathComponent("Repository", isDirectory: true)
+        let ordinaryFolder = parent.appendingPathComponent("Ordinary", isDirectory: true)
+        try FileManager.default.createDirectory(at: repository, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: ordinaryFolder, withIntermediateDirectories: true)
+        let git = Process()
+        git.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+        git.arguments = ["-C", repository.path, "init", "-q"]
+        try git.run()
+        git.waitUntilExit()
+        #expect(git.terminationStatus == 0)
+        let store = GitPanelStatusStore.shared
+        await store.refresh(directory: parent)
+        #expect(store.state(for: repository, in: parent) == .clean)
+        #expect(store.repositoryRoot(for: repository, in: parent) == repository.standardizedFileURL)
+        #expect(store.state(for: ordinaryFolder, in: parent) == nil)
+        try Data("change".utf8).write(to: repository.appendingPathComponent("new.txt"))
+        await store.refresh(directory: parent)
+        #expect(store.state(for: repository, in: parent) == .untracked)
+    }
 }

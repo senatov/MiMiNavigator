@@ -8,6 +8,7 @@ import Foundation
 
 // MARK: - Git File State
 enum GitFileState: Int, Sendable {
+    case clean = -1
     case ignored = 0
     case modified = 1
     case untracked = 2
@@ -15,6 +16,7 @@ enum GitFileState: Int, Sendable {
 
     var badge: String {
         switch self {
+            case .clean: return "✓"
             case .modified: return "M"
             case .untracked: return "?"
             case .ignored: return "I"
@@ -24,6 +26,7 @@ enum GitFileState: Int, Sendable {
 
     var title: String {
         switch self {
+            case .clean: return "Clean"
             case .modified: return "Modified"
             case .untracked: return "Untracked"
             case .ignored: return "Ignored"
@@ -45,6 +48,7 @@ struct GitDirectorySummary: Equatable, Sendable {
 
     mutating func include(_ state: GitFileState) {
         switch state {
+            case .clean: break
             case .modified: modified += 1
             case .untracked: untracked += 1
             case .ignored: ignored += 1
