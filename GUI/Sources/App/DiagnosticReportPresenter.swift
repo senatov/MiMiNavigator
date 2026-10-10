@@ -32,7 +32,11 @@ final class DiagnosticReportPresenter: NSObject, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.delegate = self
         WindowPresentationPolicy.apply(.standalone, to: panel)
-        panel.center()
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: "MiMiNavigator.DiagnosticReportWindow",
+            designedSize: NSSize(width: 680, height: 540)
+        )
         WindowPresentationPolicy.presentStandalone(panel)
         self.panel = panel
     }

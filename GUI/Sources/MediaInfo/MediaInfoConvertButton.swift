@@ -18,7 +18,12 @@ struct MediaInfoConvertButton: View {
 
     var body: some View {
         Button(action: action) {
-            Label("Convert", systemImage: "arrow.triangle.2.circlepath")
+            Label {
+                Text("Convert")
+            } icon: {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .foregroundStyle(Color.blue)
+            }
                 .lineLimit(1)
                 .frame(minWidth: 118)
         }

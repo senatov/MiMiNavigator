@@ -203,4 +203,5 @@ struct ProgressPanelFrame: Codable, Equatable {
     var width: Double
     var height: Double
     var lineCount: Int?
+    var screenConfiguration: String?
 }

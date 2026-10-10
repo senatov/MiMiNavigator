@@ -4,7 +4,7 @@
 // Created by Iakov Senatov on 20.02.2026.
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Generic coordinator for History and Favorites standalone NSPanel windows.
-//              Centers dialogs over the main window and persists user-resized sizes.
+//              Restores dialog position and size for the current display layout.
 
 import AppKit
 import SwiftUI
@@ -36,7 +36,6 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     private let windowTitle: String
     private let windowImage: String
     private let defaultSize: NSSize
-    private var sizeDefaultsKey: String { "\(kind.rawValue).size" }
 
     // MARK: - Init
     private init(kind: PanelDialogKind, title: String, systemImage: String, size: NSSize) {
@@ -54,7 +53,6 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     // MARK: - Open
     func open<Content: View>(content: Content) {
         log.debug(#function)
-        savePanelSize()
         WindowReplacement.close(panel)
         panel = nil
         let hostingView = NSHostingView(
@@ -82,8 +80,11 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         // Must be false — becomesKeyOnlyIfNeeded prevents Tab/Shift-Tab chain
         newPanel.becomesKeyOnlyIfNeeded = false
         newPanel.delegate = self
-        newPanel.setFrame(computeDefaultFrame(), display: true)
-        AuxiliaryWindowFramePolicy.ensureVisible(newPanel)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            newPanel,
+            autosaveName: kind.rawValue,
+            designedSize: defaultSize
+        )
         presentAboveMain(newPanel)
         newPanel.recalculateKeyViewLoop()
         panel = newPanel
@@ -106,39 +107,9 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
     }
 
     // MARK: - NSWindowDelegate
-    func windowDidResize(_ notification: Notification) {
-        savePanelSize()
-    }
-
     func windowWillClose(_ notification: Notification) {
-        savePanelSize()
         panel = nil
         isVisible = false
-    }
-
-    // MARK: - Default Frame — centered on main window
-
-    private func computeDefaultFrame() -> NSRect {
-        let size = savedSize()
-        if let mainWindow = NSApp.mainWindow {
-            let mf = mainWindow.frame
-            let x = mf.midX - size.width / 2
-            let y = mf.midY - size.height / 2
-            let screen = mainWindow.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? .zero
-            let cx = max(screen.minX, min(x, screen.maxX - size.width))
-            let cy = max(screen.minY, min(y, screen.maxY - size.height))
-            return NSRect(origin: NSPoint(x: cx, y: cy), size: size)
-        }
-        if let screen = NSScreen.main {
-            let sf = screen.visibleFrame
-            return NSRect(
-                x: sf.midX - size.width / 2,
-                y: sf.midY - size.height / 2,
-                width: size.width,
-                height: size.height
-            )
-        }
-        return NSRect(origin: .zero, size: size)
     }
 
     // MARK: - Present Above Main Window
@@ -146,20 +117,4 @@ final class PanelDialogCoordinator: NSObject, NSWindowDelegate {
         WindowPresentationPolicy.presentStandalone(panel)
     }
 
-    // MARK: - Window Size Persistence
-
-    private func savedSize() -> NSSize {
-        guard let string = UserDefaults.standard.string(forKey: sizeDefaultsKey) else { return defaultSize }
-        let parts = string.split(separator: ",").compactMap { Double($0) }
-        guard parts.count == 2 else { return defaultSize }
-        let width = max(defaultSize.width * 0.6, CGFloat(parts[0]))
-        let height = max(defaultSize.height * 0.6, CGFloat(parts[1]))
-        return NSSize(width: width, height: height)
-    }
-
-    private func savePanelSize() {
-        guard let panel else { return }
-        let size = panel.frame.size
-        UserDefaults.standard.set("\(size.width),\(size.height)", forKey: sizeDefaultsKey)
-    }
 }

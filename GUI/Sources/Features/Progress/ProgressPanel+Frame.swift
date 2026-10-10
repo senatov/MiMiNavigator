@@ -25,11 +25,16 @@ extension ProgressPanel {
     // MARK: - Restore Frame
     func restoreFrameForCurrentOperation() {
         guard let panel else { return }
+        screenConfigurationAtPresentation = AuxiliaryWindowFramePolicy.screenConfiguration()
         isApplyingProgrammaticFrame = true
         defer { isApplyingProgrammaticFrame = false }
         applySavedSizeIfNeeded(to: panel)
+        if let saved = appearance.frame(for: operationKey), shouldRestoreFrame(saved), let mainFrame = hostWindowFrame() {
+            panel.setFrameOrigin(NSPoint(x: mainFrame.minX + CGFloat(saved.relativeX), y: mainFrame.minY + CGFloat(saved.relativeY)))
+        } else {
+            centerInMainWindow()
+        }
         clampPanelToMainWindow()
-        centerInMainWindow()
         AuxiliaryWindowFramePolicy.ensureVisible(panel, preferredScreen: presentationHostWindow?.screen)
     }
 
@@ -42,7 +47,8 @@ extension ProgressPanel {
             relativeY: Double(frame.minY - mainFrame.minY),
             width: Double(frame.width),
             height: Double(frame.height),
-            lineCount: lineCount
+            lineCount: lineCount,
+            screenConfiguration: screenConfigurationAtPresentation
         )
         appearance.updateFrame(stored, for: operationKey)
     }
@@ -179,7 +185,7 @@ extension ProgressPanel {
     func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
         let values = [saved.relativeX, saved.relativeY, saved.width, saved.height]
         guard values.allSatisfy(\.isFinite) else { return false }
-        if abs(saved.relativeX) < 1, abs(saved.relativeY) < 1 { return false }
+        guard saved.screenConfiguration == AuxiliaryWindowFramePolicy.screenConfiguration() else { return false }
         guard saved.width >= Double(ProgressPanelAppearance.defaultMinWidth) else { return false }
         return saved.height >= Double(Layout.minimumPanelHeight)
     }

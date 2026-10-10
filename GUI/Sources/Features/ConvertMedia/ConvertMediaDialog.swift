@@ -24,7 +24,6 @@ struct ConvertMediaDialog: View {
     @State var availablePresets: [MediaConversionPreset]
     @FocusState var isNameFieldFocused: Bool
     @State var configuredWindowNumber: Int?
-    @State var frameSaveWorkItem: DispatchWorkItem?
     @State var windowObserverTokens: [NSObjectProtocol] = []
 
     let sourceFormat: MediaFormat?
@@ -40,7 +39,6 @@ struct ConvertMediaDialog: View {
         static let sectionHeaderHorizontalPadding: CGFloat = 12
         static let sectionHeaderTopPadding: CGFloat = 10
         static let sectionHeaderBottomPadding: CGFloat = 4
-        static let frameAutosaveDelay: TimeInterval = 0.25
         static let panelTintOpacity: Double = 0.10
         static let headerTintOpacity: Double = 0.12
         static let sectionTintOpacity: Double = 0.08
@@ -50,17 +48,7 @@ struct ConvertMediaDialog: View {
     }
 
     enum WindowState {
-        static let frameKey = "convertMediaDialogFrame"
-        static let frameChangedNotification = NSWindow.didMoveNotification
-        static let resizeChangedNotification = NSWindow.didEndLiveResizeNotification
         static let becomeMainNotification = NSWindow.didBecomeMainNotification
-    }
-
-    struct StoredFrame: Codable {
-        let x: Double
-        let y: Double
-        let width: Double
-        let height: Double
     }
 
     init(file: CustomFile, onConvert: @escaping (MediaConversionPreset, URL) -> Void, onCancel: @escaping () -> Void) {

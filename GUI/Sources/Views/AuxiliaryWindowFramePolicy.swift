@@ -16,16 +16,25 @@ enum AuxiliaryWindowFramePolicy {
         designedSize: NSSize,
         relativeTo hostWindow: NSWindow? = NSApp.mainWindow
     ) {
-        let restored = window.setFrameUsingName(autosaveName)
+        let defaults = UserDefaults.standard
+        let screenKey = "\(autosaveName).screenConfiguration"
+        let currentScreens = screenConfiguration()
+        let savedScreens = defaults.string(forKey: screenKey)
+        let restored = savedScreens == currentScreens && window.setFrameUsingName(autosaveName)
         if !restored {
-            let hostFrame = hostWindow?.frame ?? preferredScreen(for: hostWindow)?.visibleFrame
-            let origin = hostFrame.map {
-                NSPoint(x: $0.midX - designedSize.width / 2, y: $0.midY - designedSize.height / 2)
-            } ?? .zero
-            window.setFrame(NSRect(origin: origin, size: designedSize), display: true)
+            let visible = preferredScreen(for: hostWindow)?.visibleFrame
+            let hostFrame = hostWindow?.frame ?? visible
+            let size = NSSize(
+                width: min(designedSize.width, visible?.width ?? designedSize.width),
+                height: min(designedSize.height, visible?.height ?? designedSize.height)
+            )
+            let origin = hostFrame.map { NSPoint(x: $0.midX - size.width / 2, y: $0.midY - size.height / 2) } ?? .zero
+            window.setFrame(NSRect(origin: origin, size: size), display: true)
         }
         ensureVisible(window, preferredScreen: preferredScreen(for: hostWindow))
         window.setFrameAutosaveName(autosaveName)
+        if !restored { window.saveFrame(usingName: autosaveName) }
+        defaults.set(currentScreens, forKey: screenKey)
     }
 
     static func ensureVisible(_ window: NSWindow, preferredScreen: NSScreen? = nil) {
@@ -74,5 +83,12 @@ enum AuxiliaryWindowFramePolicy {
         let intersection = first.intersection(second)
         guard !intersection.isNull else { return 0 }
         return intersection.width * intersection.height
+    }
+
+    static func screenConfiguration() -> String {
+        NSScreen.screens.map { screen in
+            let identifier = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue ?? "unknown"
+            return "\(identifier):\(NSStringFromRect(screen.frame)):\(NSStringFromRect(screen.visibleFrame)):\(screen.backingScaleFactor)"
+        }.sorted().joined(separator: "|")
     }
 }

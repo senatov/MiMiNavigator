@@ -51,8 +51,11 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         PanelTitleHelper.applyIconTitle(to: panel, systemImage: "doc.badge.exclamationmark", title: "File Conflict")
         let fittingSize = hostingView.fittingSize
         panel.setContentSize(NSSize(width: 640, height: max(320, fittingSize.height)))
-        center(panel)
-        AuxiliaryWindowFramePolicy.ensureVisible(panel)
+        AuxiliaryWindowFramePolicy.restoreOrCenter(
+            panel,
+            autosaveName: "MiMiNavigator.FileConflictWindow",
+            designedSize: panel.frame.size
+        )
         panel.makeKeyAndOrderFront(nil)
         self.panel = panel
     }
@@ -74,18 +77,6 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
     private func cancelPendingPresentation() {
         guard continuation != nil else { return }
         complete(with: BatchConflictDecision(resolution: .stop, applyToAll: false))
-    }
-
-    // MARK: - Center
-
-    private func center(_ panel: NSPanel) {
-        guard let host = NSApp.mainWindow else {
-            panel.center()
-            return
-        }
-        let x = host.frame.midX - panel.frame.width / 2
-        let y = host.frame.midY - panel.frame.height / 2
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
     // MARK: - NSWindowDelegate

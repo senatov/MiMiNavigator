@@ -100,40 +100,13 @@ struct MediaInfoPanelView: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(disabled ? .tertiary : .primary)
-                .frame(width: 32, height: 32)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(
-                            .linearGradient(
-                                colors: [
-                                    Color(white: 0.95),
-                                    Color(white: 0.82),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .compositingGroup()
-                        .shadow(color: .black.opacity(0.18), radius: 1.5, x: 0, y: 1.5)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(
-                            .linearGradient(
-                                colors: [
-                                    Color(white: 1.0, opacity: 0.5),
-                                    Color(white: 0.5, opacity: 0.3),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.8
-                        )
-                }
+                .foregroundStyle(Color.blue)
+                .frame(width: 20, height: 20)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DownToolbarGlassButtonStyle(isHovered: false, horizontalPadding: 6, verticalPadding: 6, raised: true))
         .disabled(disabled)
+        .keyboardFocusable()
+        .accessibilityLabel(symbol == "chevron.left" ? "Previous media" : "Next media")
     }
 
     private var contentBody: some View {
@@ -297,6 +270,7 @@ struct MediaInfoPanelView: View {
                     DownToolbarButtonView(
                         title: "Choose…",
                         systemImage: "folder",
+                        iconTint: .blue,
                         action: controller.chooseOutputDir
                     )
                 }

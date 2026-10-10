@@ -67,6 +67,7 @@ final class ProgressPanel: NSObject {
     var autoCloseTask: Task<Void, Never>?
     var framePersistenceTask: Task<Void, Never>?
     var isApplyingProgrammaticFrame = false
+    var screenConfigurationAtPresentation = ""
     var progressStartedAt: Date?
     var lastProgressUpdateAt: Date?
     var lastProgressFraction: Double = 0

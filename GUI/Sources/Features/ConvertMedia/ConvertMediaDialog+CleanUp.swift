@@ -13,8 +13,6 @@ import SwiftUI
 @MainActor
 extension ConvertMediaDialog {
     func cleanupWindowState() {
-        frameSaveWorkItem?.cancel()
-        frameSaveWorkItem = nil
         removeWindowObservers()
     }
 
@@ -27,7 +25,6 @@ extension ConvertMediaDialog {
             configuredWindowNumber = windowNumber
             removeWindowObservers()
             configure(window: window)
-            restoreFrameIfNeeded(for: window)
             bringWindowToFront(window)
             installWindowObservers(for: window)
         }
@@ -49,20 +46,6 @@ extension ConvertMediaDialog {
 
 
 
-    func restoreFrameIfNeeded(for window: NSWindow) {
-        guard let storedFrame = loadStoredFrame() else { return }
-        let frame = NSRect(
-            x: storedFrame.x,
-            y: storedFrame.y,
-            width: max(Layout.minWidth, storedFrame.width),
-            height: max(Layout.minHeight, storedFrame.height)
-        )
-        window.setFrame(frame, display: true)
-        AuxiliaryWindowFramePolicy.ensureVisible(window)
-    }
-
-
-
     func bringWindowToFront(_ window: NSWindow) {
         if let panel = window as? NSPanel, WindowPresentationPolicy.isStandalone(panel) {
             WindowPresentationPolicy.presentStandalone(panel)
@@ -74,16 +57,10 @@ extension ConvertMediaDialog {
 
     func installWindowObservers(for window: NSWindow) {
         let center = NotificationCenter.default
-        let moveToken = addWindowObserver(center: center, name: WindowState.frameChangedNotification, window: window) {
-            scheduleFrameSave(for: window)
-        }
-        let resizeToken = addWindowObserver(center: center, name: WindowState.resizeChangedNotification, window: window) {
-            scheduleFrameSave(for: window)
-        }
         let becomeMainToken = addWindowObserver(center: center, name: WindowState.becomeMainNotification, window: window) {
             bringWindowToFront(window)
         }
-        windowObserverTokens = [moveToken, resizeToken, becomeMainToken]
+        windowObserverTokens = [becomeMainToken]
     }
 
 
@@ -105,31 +82,4 @@ extension ConvertMediaDialog {
     }
 
 
-    func scheduleFrameSave(for window: NSWindow) {
-        frameSaveWorkItem?.cancel()
-        let frame = window.frame
-        let workItem = DispatchWorkItem {
-            saveFrame(frame)
-        }
-        frameSaveWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + Layout.frameAutosaveDelay, execute: workItem)
-    }
-
-
-    func saveFrame(_ frame: NSRect) {
-        let storedFrame = StoredFrame(
-            x: frame.origin.x,
-            y: frame.origin.y,
-            width: frame.size.width,
-            height: frame.size.height
-        )
-        guard let data = try? JSONEncoder().encode(storedFrame) else { return }
-        UserDefaults.standard.set(data, forKey: WindowState.frameKey)
-    }
-
-
-    func loadStoredFrame() -> StoredFrame? {
-        guard let data = UserDefaults.standard.data(forKey: WindowState.frameKey) else { return nil }
-        return try? JSONDecoder().decode(StoredFrame.self, from: data)
-    }
 }

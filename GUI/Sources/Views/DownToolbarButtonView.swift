@@ -28,7 +28,7 @@ struct DownToolbarButtonView: View {
         shortcut: String = "",
         systemImage: String,
         imageName: String? = nil,
-        iconTint: Color = .primary,
+        iconTint: Color = .blue,
         backgroundTint: Color? = nil,
         action: @escaping () -> Void
     ) {

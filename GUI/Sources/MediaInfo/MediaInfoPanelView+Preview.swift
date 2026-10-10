@@ -67,11 +67,11 @@ extension MediaInfoPanelView {
     // MARK: - Actions
     var buttonBar: some View {
         HStack(spacing: Layout.bottomButtonSpacing) {
-            DownToolbarButtonView(title: "Copy Path", systemImage: "link", action: controller.copyPathAction)
-            DownToolbarButtonView(title: "Copy All", systemImage: "doc.on.doc", action: controller.copyAllAction)
+            DownToolbarButtonView(title: "Copy Path", systemImage: "link", iconTint: .blue, action: controller.copyPathAction)
+            DownToolbarButtonView(title: "Copy All", systemImage: "doc.on.doc", iconTint: .blue, action: controller.copyAllAction)
             Spacer()
-            DownToolbarButtonView(title: "Reveal", systemImage: "folder", action: controller.revealAction)
-            DownToolbarButtonView(title: "Close", systemImage: "xmark.circle", action: controller.closeAction)
+            DownToolbarButtonView(title: "Reveal", systemImage: "folder", iconTint: .blue, action: controller.revealAction)
+            DownToolbarButtonView(title: "Close", systemImage: "xmark.circle", iconTint: .purple, action: controller.closeAction)
         }
         .padding(.horizontal, Layout.compactHorizontalPadding)
         .padding(.bottom, 10)
