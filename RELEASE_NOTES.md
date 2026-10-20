@@ -1,26 +1,21 @@
-# MiMiNavigator v0.9.9.8.6
+# MiMiNavigator v0.9.9.8.7
 
-This release improves button readability and makes file operations more reliable.
+This release improves runtime diagnostics and avoids repeated work when showing large directories.
 
 ## Highlights
 
-- Give action buttons in dialogs, search, multi-rename, and Settings the same raised shape, readable text, divider, and colored symbol.
-- Replace pale orange action icons with saturated blue or purple symbols that remain distinct on light backgrounds.
-- Rework About links and dependency rows with clearer typography, appropriate icons, and full-size button targets.
-- Make the button border, corner, and shadow controls in Settings affect the shared button style and its live preview.
-
-## Reliability
-
-- Prevent copy and directory-scan races and use asynchronous subprocess handling for Git status.
-- Detect Git availability on a clean macOS installation and give useful guidance when Command Line Tools are missing.
+- Record active and recent directory scans, size calculations, and column Autofit when the main queue is delayed. Include memory footprint, thread count, and probe gaps to make performance reports easier to investigate.
+- Report the mode, entry count, elapsed time, and outcome of recursive directory-size scans.
+- Stop the automatic fallback size scan when a normal scan exceeds its budget. Keep the folder accessible and show its size as unavailable until its cache is invalidated.
+- Avoid reloading and republishing favorites each time the breadcrumb toolbar appears, and remove noisy constructor logging.
 
 ## Validation
 
-- Debug build and a visual check of the Settings button preview passed.
+- Debug build and running-app checks cover navigation and breadcrumb interactions.
 - The release pipeline verifies the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.5...v0.9.9.8.6
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.6...v0.9.9.8.7

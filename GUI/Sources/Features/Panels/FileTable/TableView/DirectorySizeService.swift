@@ -19,24 +19,21 @@ actor DirectorySizeService {
     // MARK: - Concurrency
     /// Limit simultaneous directory scans
     private let semaphore = DispatchSemaphore(value: 2)
-
     /// Background queue for directory traversal
     private let queue = DispatchQueue(
         label: "MiMiNavigator.dirsize",
         qos: .utility,
         attributes: .concurrent)
-
     // MARK: - Cache
     /// In‑memory cache
     var memoryCache: [String: CacheEntry] = [:]
-
-    /// Paths confirmed unreadable (no perms / sandbox / virtual FS).
-    /// Never retry these — they won't become readable without a restart.
+    /// Paths unavailable until their filesystem context is invalidated.
     var permanentlyUnavailable: Set<String> = []
+    var budgetExceededPaths: Set<String> = []
 
     /// Tracks directory size calculations currently in progress
     /// Prevents the same directory from being scanned multiple times simultaneously.
-    var inFlightTasks: [String: Task<Int64, Never>] = [:]
+    var inFlightTasks: [String: Task<DirectorySizeScanResult, Never>] = [:]
     var inFlightCancellation: [String: DirectorySizeCancellationState] = [:]
 
     let persistentCache = ApplicationPersistentCache.shared
@@ -85,6 +82,7 @@ actor DirectorySizeService {
         let deadPaths = permanentlyUnavailable.filter { $0.hasPrefix("/Volumes/") }
         let deadCache = memoryCache.keys.filter { $0.hasPrefix("/Volumes/") }
         permanentlyUnavailable.subtract(deadPaths)
+        budgetExceededPaths.subtract(deadPaths)
         deadCache.forEach { memoryCache.removeValue(forKey: $0) }
         if !deadPaths.isEmpty || !deadCache.isEmpty {
             log.info("\(#function) vol mounted — purged \(deadPaths.count) unavail + \(deadCache.count) cache entries")
@@ -95,22 +93,26 @@ actor DirectorySizeService {
     /// Request directory size.
     /// Returns cached value immediately if available.
     func requestSize(for url: URL) async -> Int64 {
-        guard !Self.cancellation.isCancelled else { return Self.unavailableSize }
+        await requestSizeResult(for: url).size
+    }
+
+    // MARK: - Request With Outcome
+    func requestSizeResult(for url: URL) async -> DirectorySizeScanResult {
+        guard !Self.cancellation.isCancelled else { return .cancelled }
         let resolvedURL = resolveURLForSizing(url)
         guard !Self.isExpensiveAutomaticRoot(resolvedURL) else {
             log.info("[DirectorySizeService] automatic scan skipped for expensive root: \(resolvedURL.path)")
-            return Self.unavailableSize
+            return .unavailable
         }
         guard !AppState.isAppManagedNetworkMountPath(resolvedURL) else {
-            return Self.unavailableSize
+            return .unavailable
         }
         let key = cacheKey(for: resolvedURL)
-        // fast bail: already known unreadable — don't even try
         if permanentlyUnavailable.contains(key) {
-            return Self.unavailableSize
+            return budgetExceededPaths.contains(key) ? .budgetExceeded : .unavailable
         }
         if let cached = await cachedSize(for: resolvedURL) {
-            return cached
+            return .exact(cached)
         }
         if let existingTask = inFlightTask(for: key) {
             return await existingTask.value
@@ -124,22 +126,25 @@ actor DirectorySizeService {
             clearInFlightTask(for: key)
             inFlightCancellation[key] = nil
         }
-        // mark as permanently unavailable if unreadable
-        if result == Self.unavailableSize, !cancellation.isCancelled {
-            permanentlyUnavailable.insert(key)
-            log.debug("\(#function) marked permanently unavailable: \(key)")
+        if !cancellation.isCancelled {
+            switch result {
+            case .unavailable, .budgetExceeded:
+                permanentlyUnavailable.insert(key)
+                if result.isBudgetExceeded { budgetExceededPaths.insert(key) }
+                log.info("[DirectorySizeService] automatic result status=\(result.status) path='\(key)'; suppressing repeat scan until invalidation")
+            case .exact, .cancelled:
+                break
+            }
         }
         return result
     }
 
     // MARK: - Request helpers
-
     func resolveURLForSizing(_ url: URL) -> URL {
         // Resolve symlinks for consistent cache keys and calculation
         return url.resolvingSymlinksInPath()
     }
     // MARK: - File Attribute Helper
-
     func fileModificationTime(forResolvedPath path: String, urlForScope: URL) -> TimeInterval? {
         let attrs: [FileAttributeKey: Any]?
         attrs = try? DirectorySizeSecurityScope.access(urlForScope) {
@@ -155,11 +160,11 @@ actor DirectorySizeService {
         url.path
     }
 
-    private func inFlightTask(for path: String) -> Task<Int64, Never>? {
+    private func inFlightTask(for path: String) -> Task<DirectorySizeScanResult, Never>? {
         inFlightTasks[path]
     }
 
-    private func setInFlightTask(_ task: Task<Int64, Never>, for path: String) {
+    private func setInFlightTask(_ task: Task<DirectorySizeScanResult, Never>, for path: String) {
         inFlightTasks[path] = task
     }
 
@@ -167,12 +172,12 @@ actor DirectorySizeService {
         inFlightTasks[path] = nil
     }
 
-    private func makeSizeTask(for url: URL, cancellation: DirectorySizeCancellationState) -> Task<Int64, Never> {
-        Task { [weak self] () -> Int64 in
-            guard let self else { return Self.unavailableSize }
-            let size = await self.computeSizeOnBackgroundQueue(for: url, cancellation: cancellation)
-            await self.storeCache(size: size, for: url)
-            return size
+    private func makeSizeTask(for url: URL, cancellation: DirectorySizeCancellationState) -> Task<DirectorySizeScanResult, Never> {
+        Task { [weak self] () -> DirectorySizeScanResult in
+            guard let self else { return .cancelled }
+            let result = await self.computeSizeOnBackgroundQueue(for: url, cancellation: cancellation)
+            await self.storeCache(size: result.size, for: url)
+            return result
         }
     }
 
@@ -229,6 +234,7 @@ actor DirectorySizeService {
                 normalizedRoots.contains { path == $0 || path.hasPrefix($0 + "/") }
             }
         )
+        budgetExceededPaths.formIntersection(permanentlyUnavailable)
         let removed = before - memoryCache.count
         if removed > 0 {
             log.info(
@@ -261,26 +267,27 @@ actor DirectorySizeService {
     private func computeSizeOnBackgroundQueue(
         for url: URL,
         cancellation: DirectorySizeCancellationState
-    ) async -> Int64 {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Int64, Never>) in
+    ) async -> DirectorySizeScanResult {
+        await withCheckedContinuation { (continuation: CheckedContinuation<DirectorySizeScanResult, Never>) in
             queue.async { [semaphore] in
+                let activity = DiagnosticActivity.shared.begin("size:\(url.lastPathComponent)")
                 semaphore.wait()
                 defer { semaphore.signal() }
                 guard !Self.cancellation.isCancelled, !cancellation.isCancelled else {
-                    continuation.resume(returning: Self.unavailableSize)
+                    DiagnosticActivity.shared.end(activity, outcome: "cancelled")
+                    continuation.resume(returning: .cancelled)
                     return
                 }
-                // Phase 2 + 3 native calculation (security-scoped best-effort)
-                let size: Int64 = DirectorySizeSecurityScope.access(url) {
+                let result: DirectorySizeScanResult = DirectorySizeSecurityScope.access(url) {
                     DirectorySizeNativeCalculator.directorySize(url, cancellation: cancellation)
                 }
-                continuation.resume(returning: size)
+                DiagnosticActivity.shared.end(activity, outcome: result.status)
+                continuation.resume(returning: result)
             }
         }
     }
 
     // MARK: - Cache Lookup
-
     private func cachedSize(for url: URL) async -> Int64? {
         let path = url.resolvingSymlinksInPath().path
         guard let mtime = fileModificationTime(forResolvedPath: path, urlForScope: url.resolvingSymlinksInPath()) else {
@@ -305,7 +312,6 @@ actor DirectorySizeService {
     }
 
     // MARK: - Cache Store
-
     private func storeCache(size: Int64, for url: URL) async {
         // Do not cache "unavailable" results.
         guard size != Self.unavailableSize else { return }

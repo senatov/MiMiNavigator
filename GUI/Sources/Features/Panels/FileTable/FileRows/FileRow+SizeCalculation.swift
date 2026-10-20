@@ -141,11 +141,20 @@ extension FileRow {
 
     // MARK: - Phase 2: full recursive directory size
     private func performPhase2FullSize(for url: URL) async {
-        let size = await DirectorySizeService.shared.requestSize(for: url)
-        if Task.isCancelled {
+        let result = await DirectorySizeService.shared.requestSizeResult(for: url)
+        if Task.isCancelled || result.isCancelled {
             file.sizeCalculationStarted = false
             return
         }
+        if result.isBudgetExceeded {
+            file.cachedDirectorySize = DirectorySizeService.unavailableSize
+            file.sizeIsExact = false
+            file.securityState = .normal
+            file.sizeCalculationStarted = false
+            log.info("[FileRow] size unavailable after scan budget path='\(url.path)'; fallback skipped")
+            return
+        }
+        let size = result.size
         if size == DirectorySizeService.unavailableSize {
             let shouldFallback = hasNonZeroChildCountHint() || file.isSymbolicDirectory || isLikelyVirtualDirectory(url)
             if shouldFallback {

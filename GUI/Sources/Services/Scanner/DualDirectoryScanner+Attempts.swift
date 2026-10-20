@@ -33,6 +33,9 @@ extension DualDirectoryScanner {
         attemptNumber: Int,
         context: ScanAttemptContext
     ) async -> ScanAttemptResult {
+        let activity = DiagnosticActivity.shared.begin("scan:\(context.side):\(url.lastPathComponent)")
+        var outcome = "failed"
+        defer { DiagnosticActivity.shared.end(activity, outcome: outcome) }
         do {
             let attemptStart = Date()
             let sorted = try await scanAndSortDirectory(
@@ -44,21 +47,26 @@ extension DualDirectoryScanner {
             )
             let scanDuration = Date().timeIntervalSince(attemptStart)
             guard isCurrentGeneration(context.generation, for: context.side) else {
+                outcome = "stale"
                 logStaleScan(context, phase: "scan")
                 return .stop
             }
             await publishPreviewIfNeeded(sorted, scannedPath: url.path, context: context)
             guard isCurrentGeneration(context.generation, for: context.side) else {
+                outcome = "stale"
                 logStaleScan(context, phase: "preview")
                 return .stop
             }
             guard await MainActor.run(body: { !appState.isTerminating }) else {
+                outcome = "terminating"
                 log.info("[Scan] publish skipped: app is terminating for \(context.side)")
                 return .stop
             }
             await publishScanResult(sorted, url: url, scanDuration: scanDuration, context: context)
+            outcome = "published"
             return .stop
         } catch let error as ScanTimeoutError {
+            outcome = "timeout"
             log.warning("[Scan] \(error.localizedDescription); trying cache fallback")
             await serveCachedOnTimeout(
                 url: url,
@@ -69,6 +77,7 @@ extension DualDirectoryScanner {
             return .stop
         } catch let error as NSError {
             if isPermissionDeniedError(error) {
+                outcome = "permission"
                 log.debug("[Scan] permission denied; trying bookmark recovery for \(url.path)")
                 _ = await requestAndRetryAccess(for: url, side: context.side)
                 return .stop

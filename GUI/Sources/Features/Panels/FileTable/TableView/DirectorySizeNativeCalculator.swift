@@ -8,6 +8,38 @@
 import Darwin
 import Foundation
 
+// MARK: - Directory Size Scan Result
+enum DirectorySizeScanResult: Sendable {
+    case exact(Int64)
+    case unavailable
+    case budgetExceeded
+    case cancelled
+
+    var size: Int64 {
+        if case let .exact(size) = self { return size }
+        return DirectorySizeService.unavailableSize
+    }
+
+    var status: String {
+        switch self {
+        case .exact: "exact"
+        case .unavailable: "unavailable"
+        case .budgetExceeded: "budget"
+        case .cancelled: "cancelled"
+        }
+    }
+
+    var isBudgetExceeded: Bool {
+        if case .budgetExceeded = self { return true }
+        return false
+    }
+
+    var isCancelled: Bool {
+        if case .cancelled = self { return true }
+        return false
+    }
+}
+
 // MARK: - Directory Size Native Calculator
 enum DirectorySizeNativeCalculator {
     private static let maximumEntryCount = 200_000
@@ -38,17 +70,33 @@ enum DirectorySizeNativeCalculator {
     }
 
     // MARK: - Directory Size
-    static func directorySize(_ url: URL, cancellation: DirectorySizeCancellationState) -> Int64 {
+    static func directorySize(_ url: URL, cancellation: DirectorySizeCancellationState) -> DirectorySizeScanResult {
+        directorySize(
+            url,
+            cancellation: cancellation,
+            maximumEntryCount: maximumEntryCount,
+            maximumDuration: maximumDuration
+        )
+    }
+
+    // MARK: - Bounded Directory Size
+    static func directorySize(
+        _ url: URL,
+        cancellation: DirectorySizeCancellationState,
+        maximumEntryCount: Int,
+        maximumDuration: TimeInterval
+    ) -> DirectorySizeScanResult {
         guard FileManager.default.isReadableFile(atPath: url.path) else {
             log.debug("[DirectorySizeService] skipping unreadable directory: \(url.path)")
-            return DirectorySizeService.unavailableSize
+            return .unavailable
         }
         return fullRecursive(
             url,
             cancellation: cancellation,
             options: [],
             maximumEntryCount: maximumEntryCount,
-            maximumDuration: maximumDuration
+            maximumDuration: maximumDuration,
+            mode: "standard"
         )
     }
 
@@ -59,8 +107,9 @@ enum DirectorySizeNativeCalculator {
             cancellation: cancellation,
             options: [],
             maximumEntryCount: fallbackMaximumEntryCount,
-            maximumDuration: fallbackMaximumDuration
-        )
+            maximumDuration: fallbackMaximumDuration,
+            mode: "fallback"
+        ).size
     }
 
     // MARK: - Full Recursive
@@ -69,11 +118,12 @@ enum DirectorySizeNativeCalculator {
         cancellation: DirectorySizeCancellationState,
         options: FileManager.DirectoryEnumerationOptions,
         maximumEntryCount: Int,
-        maximumDuration: TimeInterval
-    ) -> Int64 {
+        maximumDuration: TimeInterval,
+        mode: String
+    ) -> DirectorySizeScanResult {
         guard FileManager.default.isReadableFile(atPath: url.path) else {
             log.debug("[DirectorySizeService] fullRecursive skipped unreadable: \(url.path)")
-            return DirectorySizeService.unavailableSize
+            return .unavailable
         }
         var total: Int64 = 0
         let keys: Set<URLResourceKey> = [
@@ -95,7 +145,7 @@ enum DirectorySizeNativeCalculator {
                 }
             )
         else {
-            return DirectorySizeService.unavailableSize
+            return .unavailable
         }
         var countedFiles = 0
         var skippedDirs = 0
@@ -137,22 +187,22 @@ enum DirectorySizeNativeCalculator {
             isFinished = batch.reachedEnd
 
             if cancellation.isCancelled {
-                log.debug("[DirectorySizeService] fullRecursive cancelled: \(url.path)")
-                return DirectorySizeService.unavailableSize
+                log.debug("[DirectorySizeService] fullRecursive cancelled mode=\(mode) path='\(url.path)' entries=\(visitedEntries) elapsed=\(String(format: "%.3f", Date().timeIntervalSince(startedAt)))s")
+                return .cancelled
             }
-            if visitedEntries >= maximumEntryCount || Date().timeIntervalSince(startedAt) >= maximumDuration {
+            if !isFinished && (visitedEntries >= maximumEntryCount || Date().timeIntervalSince(startedAt) >= maximumDuration) {
                 let elapsed = String(format: "%.1f", Date().timeIntervalSince(startedAt))
                 log.warning(
-                    "[DirectorySizeService] scan budget exceeded path='\(url.path)' "
+                    "[DirectorySizeService] scan budget exceeded mode=\(mode) path='\(url.path)' "
                         + "entries=\(visitedEntries) elapsed=\(elapsed)s"
                 )
-                return DirectorySizeService.unavailableSize
+                return .budgetExceeded
             }
         }
         log.debug(
-            "[DirectorySizeService] fullRecursive done: \(url.path) total=\(total) files=\(countedFiles) skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)"
+            "[DirectorySizeService] fullRecursive done mode=\(mode) path='\(url.path)' total=\(total) entries=\(visitedEntries) files=\(countedFiles) elapsed=\(String(format: "%.3f", Date().timeIntervalSince(startedAt)))s skippedDirs=\(skippedDirs) skippedSymlinks=\(skippedSymlinks) rvFail=\(resourceValueFailures) statFallbacks=\(statFallbacks)"
         )
-        return total
+        return .exact(total)
     }
 
     // MARK: - Accumulated Size

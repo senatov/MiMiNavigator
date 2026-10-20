@@ -40,6 +40,8 @@ final class ResponsivenessDiagnostics: @unchecked Sendable {
     private func tick() {
         let now = DispatchTime.now().uptimeNanoseconds
         if lastTick > 0 && now - lastTick > 10_000_000_000 {
+            let gap = String(format: "%.3f", Double(now - lastTick) / 1e9)
+            log.info("[Responsiveness] monitor-gap seconds=\(gap); delay measurement reset")
             pendingSince = nil
             warned = false
             generation = UUID()
@@ -48,7 +50,9 @@ final class ResponsivenessDiagnostics: @unchecked Sendable {
         if let pendingSince {
             if !warned {
                 warned = true
-                log.warning("[Responsiveness] main-queue-delayed seconds=\(Double(now - pendingSince) / 1e9) pid=\(ProcessInfo.processInfo.processIdentifier); capture sample while delay persists")
+                let memory = MemoryDiagnostics.capture()
+                let delay = String(format: "%.3f", Double(now - pendingSince) / 1e9)
+                log.warning("[Responsiveness] main-queue-delayed seconds=\(delay) pid=\(ProcessInfo.processInfo.processIdentifier) threads=\(memory.threadCount) footprintMB=\(memory.footprintBytes / 1_048_576) \(DiagnosticActivity.shared.snapshot()); capture sample while delay persists")
             }
             return
         }
@@ -58,7 +62,8 @@ final class ResponsivenessDiagnostics: @unchecked Sendable {
             self.queue.async {
                 guard self.generation == currentGeneration else { return }
                 if self.warned, let started = self.pendingSince {
-                    log.warning("[Responsiveness] main-queue-recovered seconds=\(Double(DispatchTime.now().uptimeNanoseconds - started) / 1e9)")
+                    let delay = String(format: "%.3f", Double(DispatchTime.now().uptimeNanoseconds - started) / 1e9)
+                    log.warning("[Responsiveness] main-queue-recovered seconds=\(delay) \(DiagnosticActivity.shared.snapshot())")
                 }
                 self.pendingSince = nil
                 self.warned = false

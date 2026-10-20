@@ -14,7 +14,8 @@ struct DirectorySizeCalculatorTests {
         let displaySize = DirectorySizeNativeCalculator.directorySize(root, cancellation: cancellation)
         let fallbackSize = DirectorySizeNativeCalculator.fallbackDirectorySize(root, cancellation: cancellation)
         let operationScan = await DirSizeCalculator.scan([root])
-        #expect(displaySize == 33)
+        #expect(displaySize.size == 33)
+        #expect(displaySize.status == "exact")
         #expect(fallbackSize == 33)
         #expect(operationScan.totalBytes == 33)
     }
@@ -24,7 +25,24 @@ struct DirectorySizeCalculatorTests {
         let cancellation = DirectorySizeCancellationState()
         cancellation.cancel()
         let size = DirectorySizeNativeCalculator.directorySize(root, cancellation: cancellation)
-        #expect(size == DirectorySizeService.unavailableSize)
+        #expect(size.isCancelled)
+        #expect(size.size == DirectorySizeService.unavailableSize)
+    }
+    @Test func distinguishesScanBudgetFromUnreadableDirectory() throws {
+        let root = try makeFixtureDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for index in 0..<520 {
+            let file = root.appendingPathComponent("entry-\(index)")
+            try Data().write(to: file)
+        }
+        let result = DirectorySizeNativeCalculator.directorySize(
+            root,
+            cancellation: DirectorySizeCancellationState(),
+            maximumEntryCount: 1,
+            maximumDuration: 8
+        )
+        #expect(result.isBudgetExceeded)
+        #expect(result.size == DirectorySizeService.unavailableSize)
     }
     // MARK: - Fixture
     private func makeFixtureDirectory() throws -> URL {

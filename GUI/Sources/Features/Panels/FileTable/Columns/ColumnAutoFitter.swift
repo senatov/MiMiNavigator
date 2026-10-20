@@ -13,18 +13,30 @@ enum ColumnAutoFitter {
 
     // MARK: - Auto Fit All
     static func autoFitAll(layout: ColumnLayoutModel, files: [CustomFile], nameExtraWidths: [CGFloat] = []) {
+        let activity = DiagnosticActivity.shared.begin("autofit:\(files.count)")
+        let started = Date()
+        var outcome = "no-result"
+        defer {
+            DiagnosticActivity.shared.end(activity, outcome: outcome)
+            let elapsed = Date().timeIntervalSince(started)
+            if elapsed >= 0.05 {
+                log.warning("[AutoFit] slow measurement files=\(files.count) columns=\(layout.fixedColumns.count) outcome=\(outcome) elapsed=\(String(format: "%.3f", elapsed))s")
+            }
+        }
         log.verbose("[AutoFit] autoFitAll start container=\(ColumnAutoFitLayout.pt(layout.containerWidth)) files=\(files.count) fixedCols=\(layout.fixedColumns.count)")
         guard let result = makeAutoFitResult(layout: layout, files: files, nameExtraWidths: nameExtraWidths) else {
             log.verbose("[AutoFit] autoFitAll skip no result")
             return
         }
         guard needsUpdate(layout: layout, result: result) else {
+            outcome = "stable"
             log.verbose("[AutoFit] autoFitAll skip widths stable")
             return
         }
         let colSummary = result.fixedColumns.map { "\($0.id.rawValue)=\(ColumnAutoFitLayout.pt($0.width))" }.joined(separator: " ")
         log.info("[AutoFit] APPLY name=\(ColumnAutoFitLayout.pt(result.nameWidth)) \(colSummary)")
         apply(result: result, to: layout)
+        outcome = "applied"
     }
 
     // MARK: - Result

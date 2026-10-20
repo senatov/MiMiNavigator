@@ -61,7 +61,6 @@ struct BreadCrumbToolBar: View {
             }
         }
         .keyboardFocusSection()
-        .onAppear(perform: handleAppear)
     }
 
     private var navigationGroup: some View {
@@ -81,7 +80,6 @@ struct BreadCrumbToolBar: View {
 
     // MARK: - Init
     init(selectedSide: FavPanelSide, content: Content = .navigation) {
-        log.debug("[BreadCrumbToolBar] init panel=\(selectedSide)")
         self.panelSide = selectedSide
         self.content = content
     }
@@ -171,10 +169,6 @@ struct BreadCrumbToolBar: View {
         )
         .keyboardFocusable()
         .help("Favorites — \(panelSide.rawValue)")
-    }
-
-    private func handleAppear() {
-        store.load()
     }
 
     private func handleBackTap(canGoBack: Bool) {

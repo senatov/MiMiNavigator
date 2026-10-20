@@ -21,6 +21,7 @@ extension DirectorySizeService {
         let memoryCount = memoryCache.count
         memoryCache = memoryCache.filter { !isRelated($0.key) }
         permanentlyUnavailable = Set(permanentlyUnavailable.filter { !isRelated($0) })
+        budgetExceededPaths = Set(budgetExceededPaths.filter { !isRelated($0) })
         for path in inFlightTasks.keys.filter(isRelated) {
             inFlightTasks[path]?.cancel()
             inFlightCancellation[path]?.cancel()
