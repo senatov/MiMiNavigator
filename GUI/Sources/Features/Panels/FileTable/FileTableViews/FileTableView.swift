@@ -59,7 +59,7 @@ struct FileTableView: View {
     /// Measured height of the scroll viewport — used to compute real pageStep
     @State var viewHeight: CGFloat = 400
 
-    /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
+    /// Reader fallback when the native scroll view is not available yet.
     @State var scrollAnchorID: CustomFile.ID? = nil
     @State var nativeScrollView: NSScrollView? = nil
 

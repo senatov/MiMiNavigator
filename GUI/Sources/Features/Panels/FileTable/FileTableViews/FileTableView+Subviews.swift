@@ -20,7 +20,7 @@ extension FileTableView {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
-                    FileTableScrollViewCapture { scrollView in
+                    FileTableScrollViewCapture(hasScrollableContent: hasScrollableRows) { scrollView in
                         nativeScrollView = scrollView
                         if let scrollView {
                             ScrollBarSetup.apply(to: scrollView, hasScrollableContent: hasScrollableRows)
