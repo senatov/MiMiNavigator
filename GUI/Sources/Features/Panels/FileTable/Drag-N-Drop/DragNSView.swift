@@ -11,10 +11,15 @@ final class DragNSView: NSView, NSDraggingSource {
     weak var dragDropManager: DragDropManager?
     weak var appState: AppState?
     weak var fileScrollView: NSScrollView?
-    private var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
+    var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
     var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
+    private var mouseUpMonitor: Any?
+    var pendingRemoteDrag: Task<Void, Never>?
+    var pendingRemoteDragKey: [String]?
+    var stagedRemoteDrag: (key: [String], urls: [URL], expires: Date)?
+    var latestRemoteDragEvent: NSEvent?
     private var isToParentContact = false
     private var lastLoggedHoverSide: FavPanelSide?
     private var lastLoggedTargetPath: String?
@@ -50,6 +55,10 @@ final class DragNSView: NSView, NSDraggingSource {
             if let self, self.handleMouseDragged(event) { return nil }
             return event
         }
+        mouseUpMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            if let self, !self.dragState.didStart { self.resetDragState() }
+            return event
+        }
     }
 
     private func removeMonitors() {
@@ -61,10 +70,15 @@ final class DragNSView: NSView, NSDraggingSource {
             NSEvent.removeMonitor(m)
             dragMonitor = nil
         }
+        if let m = mouseUpMonitor {
+            NSEvent.removeMonitor(m)
+            mouseUpMonitor = nil
+        }
     }
 
     // MARK: - Mouse Down
     private func handleMouseDown(_ event: NSEvent) {
+        latestRemoteDragEvent = nil
         guard canStartPanelDrag else { return }
         guard hasWindowContext(for: event) else { return }
         guard event.type == .leftMouseDown, isPrimaryMouseDown,
@@ -107,13 +121,17 @@ final class DragNSView: NSView, NSDraggingSource {
         guard expandedBounds(tolerance: DragNSViewUI.dragStartTolerance).contains(currentPoint) else { return false }
         guard passedDragThreshold(from: mouseDownPoint, to: currentWindowPoint) else { return false }
         guard !cachedSelection.isEmpty else { return false }
-        beginDrag(with: cachedSelection, event: event)
+        if cachedSelection.contains(where: { AppState.isRemotePath($0.urlValue) }) {
+            return handleRemoteDrag(event)
+        }
+        beginDrag(with: cachedSelection, urls: cachedSelection.map(\.urlValue), event: event)
         return true
     }
 
-    private func beginDrag(with files: [CustomFile], event: NSEvent) {
+    // MARK: - Begin Drag
+    func beginDrag(with files: [CustomFile], urls: [URL], event: NSEvent) {
         let mouseInView = convert(event.locationInWindow, from: nil)
-        let draggingItems = makeDraggingItems(from: files, at: mouseInView)
+        let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
         guard !draggingItems.isEmpty else { return }
         dragState.didStart = true
         registerDragStart(files: files)
@@ -143,32 +161,11 @@ final class DragNSView: NSView, NSDraggingSource {
         dragDropManager?.startDrag(files: files, from: panelSide, appState: appState)
     }
 
-    private func makeDraggingItems(from files: [CustomFile], at mouseInView: NSPoint) -> [NSDraggingItem] {
-        if let panelSide, let appState, appState.archiveState(for: panelSide).isInsideArchive {
-            let promises = files.map { ExternalFilePromise(file: $0, source: .local($0.urlValue)) }
-            return DragSessionBuilder.makeDraggingItems(from: promises, at: mouseInView)
-        }
-        if files.contains(where: { AppState.isRemotePath($0.urlValue) }),
-           let provider = RemoteConnectionManager.shared.activeConnection?.provider {
-            let promises = files.map {
-                ExternalFilePromise(file: $0, source: .remote(path: $0.urlValue.path, provider: provider))
-            }
-            return DragSessionBuilder.makeDraggingItems(from: promises, at: mouseInView)
-        }
-        if files.contains(where: { AppState.isRemotePath($0.urlValue) }) { return [] }
-        let urls = pasteboardURLs(from: files)
-        return DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
-    }
-
-    private func pasteboardURLs(from files: [CustomFile]) -> [URL] {
-        files.map(\.urlValue)
-    }
-
     var dragContainsAppManagedNetworkMount: Bool {
         cachedSelection.contains { AppState.isAppManagedNetworkMountPath($0.urlValue) }
     }
 
-    var isPromisedDrag: Bool {
+    var isVirtualDrag: Bool {
         let archive = panelSide.map { appState?.archiveState(for: $0).isInsideArchive ?? false } ?? false
         return archive || cachedSelection.contains { AppState.isRemotePath($0.urlValue) }
     }
@@ -368,6 +365,7 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     func resetDragState() {
+        latestRemoteDragEvent = nil
         dragState = DragState(startPoint: nil, didStart: false, isResize: false)
         cachedSelection = []
         isToParentContact = false

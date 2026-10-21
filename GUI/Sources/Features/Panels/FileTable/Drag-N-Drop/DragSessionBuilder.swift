@@ -24,17 +24,6 @@ struct DragSessionBuilder {
         }
     }
 
-    // MARK: - File Promises
-    static func makeDraggingItems(from promises: [ExternalFilePromise], at mouseLocation: NSPoint) -> [NSDraggingItem] {
-        promises.enumerated().map { index, promise in
-            let item = NSDraggingItem(pasteboardWriter: promise.makeProvider())
-            let previewURL = URL(fileURLWithPath: promise.name)
-            let preview = makePreviewImage(firstURL: previewURL, itemCount: index == 0 ? promises.count : 1, isContact: false)
-            item.setDraggingFrame(draggingFrame(for: preview.size, at: mouseLocation), contents: preview)
-            return item
-        }
-    }
-
     // MARK: - Preview Image
     static func makePreviewImage(firstURL: URL, itemCount: Int, isContact: Bool) -> NSImage {
         let size = NSSize(width: itemCount > 1 ? 58 : 42, height: 42)
