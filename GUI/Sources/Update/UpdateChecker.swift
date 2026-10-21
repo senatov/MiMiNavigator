@@ -77,9 +77,13 @@ final class UpdateChecker: ObservableObject {
     }
 
     // MARK: - Version Comparison
-    private func isNewer(_ latest: String, than current: String) -> Bool {
+    static func isNewer(_ latest: String, than current: String) -> Bool {
         let latestParts = latest.split(separator: ".").compactMap { Int($0) }
         let currentParts = current.split(separator: ".").compactMap { Int($0) }
+        let correctedLine = latestParts.count == 3 && latestParts.prefix(2) == [0, 9]
+        let legacyLine = currentParts.count > 3 && currentParts.prefix(3) == [0, 9, 9]
+        if correctedLine && (legacyLine || current == "9.9.1") { return true }
+        if latestParts.count > 3 && latestParts.prefix(3) == [0, 9, 9] && currentParts.count == 3 && currentParts.prefix(2) == [0, 9] { return false }
         
         for i in 0..<max(latestParts.count, currentParts.count) {
             let l = i < latestParts.count ? latestParts[i] : 0
@@ -95,7 +99,7 @@ final class UpdateChecker: ObservableObject {
             log.info("[Update] release replacement disabled for development bundle='\(Bundle.main.bundleURL.path)'")
             return nil
         }
-        if isNewer(release.normalizedVersion, than: currentVersion) { return .newerVersion }
+        if Self.isNewer(release.normalizedVersion, than: currentVersion) { return .newerVersion }
         guard release.normalizedVersion == currentVersion, let asset = preferredAsset(in: release) else { return nil }
         let remoteFingerprint = UpdateAssetIdentityStore.assetFingerprint(asset)
         if let installed = UpdateAssetIdentityStore.installedIdentity(), installed.version == currentVersion {

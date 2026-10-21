@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/macOS-26.0+-black?logo=apple&logoColor=white" alt="macOS 26+">
   <img src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white" alt="Swift 6.2">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0">
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v9.9.1"><img src="https://img.shields.io/badge/release-v9.9.1-blue" alt="Release v9.9.1"></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1"><img src="https://img.shields.io/badge/release-v0.9.1-blue" alt="Release v0.9.1"></a>
 </p>
 
 <p align="center">
@@ -82,7 +82,7 @@ Media files can be previewed, inspected, and converted from the same workflow. O
 
 Conversion rejects an output that aliases the source (including symbolic and hard links) and serializes operations to protect progress and cancellation state. Lottie/TGS subprocesses run asynchronously with continuously drained output. Diagnostic logs record process IDs, arguments, duration, exit status, bounded error-output tails, and 30-second running checkpoints. See [Runtime diagnostics](GUI/Docs/Diagnostics.md) for performance fields and sample-capture guidance. Memory checkpoints include window counts; a background main-queue probe records responsiveness delays and recovery without treating them as confirmed deadlocks.
 
-The top toolbar places a live, in-process resource monitor immediately beside the central Pre-Release badge. Memory and thread histories use independent lightweight samplers and timers, with default refresh intervals of 5 and 10 seconds. The compact SwiftUI sparkline is adapted from the MIT-licensed [Hop](https://github.com/antonyshakirov/hop) system monitor. Both graphs can be independently hidden and their intervals changed under **Settings → General → Toolbar graphs**; both are enabled by default.
+The top toolbar places a live, in-process resource monitor immediately beside the central Pre-Release badge. Memory and thread histories use independent lightweight samplers and timers, with default refresh intervals of 5 and 10 seconds. The compact charts show actual samples from startup, restrained grid lines, current-value markers, and calibrated memory and thread scales. Their source retains attribution to the MIT-licensed [Hop](https://github.com/antonyshakirov/hop) sparkline. Both graphs can be independently hidden and their intervals changed under **Settings → General → Toolbar graphs**; both are enabled by default.
 
 If GIF size reduction fails or is cancelled, the already converted GIF is restored. If a conflicting file prevents restoration, the recovery copy is retained and its exact path is recorded in the diagnostic log.
 
@@ -149,7 +149,7 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and an administrator password.
 
-1. [Download MiMiNavigator v9.9.1](https://github.com/senatov/MiMiNavigator/releases/tag/v9.9.1).
+1. [Download MiMiNavigator v0.9.1](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1).
 2. Open the DMG and drag MiMiNavigator to Applications.
 3. Launch it from Applications.
 

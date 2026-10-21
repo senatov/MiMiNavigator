@@ -1131,15 +1131,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [9.9.1] — 2026-10-21
+## [0.9.1] — 2026-10-21
 
 ### Changed
-- The public version now uses three numeric components; the marketing version is `9.9.1` and the build number is `149`.
+- The public version now uses three numeric components; the marketing version is `0.9.1` and the build number is `150`.
 - Remote SFTP selections are prepared as local files before starting a native external drag, allowing apps that require file URLs to accept them.
 - Recently prepared remote files are reused when a drag is cancelled and tried again.
+- Toolbar resource badges now show measured history without startup filler or animated redraws, with clearer labels, calibrated scales, and restrained chart grids.
 
 ### Fixed
 - Archive entries and remote files can be dragged to external applications, including Finder and Telegram.
+- The update checker recognizes `0.9.1` as newer than both legacy `0.9.9.*` releases and the withdrawn `9.9.1` release.
 
 ## [0.9.9.8.6] — 2026-10-09
 

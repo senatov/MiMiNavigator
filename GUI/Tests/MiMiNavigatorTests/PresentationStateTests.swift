@@ -50,6 +50,29 @@ final class RemoteServerURLParserTests: XCTestCase {
         XCTAssertTrue(UpdateChecker.isDevelopmentBundle(url))
         XCTAssertFalse(UpdateChecker.isDevelopmentBundle(URL(fileURLWithPath: "/Applications/MiMiNavigator.app")))
     }
+
+    // MARK: - Corrected Release Version
+    func testCorrectedVersionReplacesLegacyAndMistypedRelease() {
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.1", than: "0.9.9.8.7"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.1", than: "9.9.1"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.9.9.8.7", than: "0.9.1"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.2", than: "0.9.1"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.9.1", than: "0.9.2"))
+    }
+
+    // MARK: - Resource Chart Scale
+    func testResourceChartScaleKeepsHeadroomWithoutExaggeratingThreadChanges() {
+        let samples = [MemoryGraphSample(footprint: 101, compressed: 0), MemoryGraphSample(footprint: 108, compressed: 8)]
+        XCTAssertEqual(ResourceChartScale.memoryCeiling(samples), 128)
+        XCTAssertEqual(ResourceChartScale.memoryCeiling([]), 32)
+        let bounds = ResourceChartScale.threadBounds([10, 11])
+        XCTAssertEqual(bounds, 7...14)
+        let first = ResourceChartScale.point(index: 0, count: 2, value: 10, bounds: bounds, size: CGSize(width: 62, height: 22))
+        let last = ResourceChartScale.point(index: 1, count: 2, value: 11, bounds: bounds, size: CGSize(width: 62, height: 22))
+        XCTAssertLessThan(first.x, last.x)
+        XCTAssertLessThan(last.y, first.y)
+        XCTAssertLessThan(first.y - last.y, 4)
+    }
 }
 
 // MARK: - Presentation State Tests
