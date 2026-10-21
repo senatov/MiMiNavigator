@@ -66,6 +66,7 @@ extension FileTableView {
         Task { @MainActor in
             for attempt in 1...5 {
                 try? await Task.sleep(nanoseconds: UInt64(attempt) * 50_000_000)
+                guard selectedFileIDFromState == selectedID else { return }
                 guard let index = cachedIndexByID[selectedID] else { return }
                 if let scrollView = nativeScrollView {
                     scrollNativeScrollView(scrollView, toRow: index)
@@ -84,10 +85,22 @@ extension FileTableView {
         let clipView = scrollView.contentView
         let visibleHeight = clipView.bounds.height
         let documentHeight = scrollView.documentView?.bounds.height ?? 0
-        let rowMidY = CGFloat(index) * rowHeight + rowHeight / 2
+        let rowTop = TableHeaderStyle.height + 2 + CGFloat(index) * rowHeight
+        let rowBottom = rowTop + rowHeight
+        let currentY = clipView.bounds.minY
+        let visibleTop = currentY + TableHeaderStyle.height
+        let visibleBottom = currentY + visibleHeight - 4
         let maxY = max(0, documentHeight - visibleHeight)
-        let targetY = min(max(0, rowMidY - visibleHeight / 2), maxY)
-        clipView.scroll(to: NSPoint(x: clipView.bounds.origin.x, y: targetY))
+        let targetY: CGFloat
+        if rowTop < visibleTop {
+            targetY = rowTop - TableHeaderStyle.height
+        } else if rowBottom > visibleBottom {
+            targetY = rowBottom - visibleHeight + 4
+        } else {
+            return
+        }
+        let clampedY = min(max(0, targetY), maxY)
+        clipView.scroll(to: NSPoint(x: clipView.bounds.origin.x, y: clampedY))
         scrollView.reflectScrolledClipView(clipView)
     }
 

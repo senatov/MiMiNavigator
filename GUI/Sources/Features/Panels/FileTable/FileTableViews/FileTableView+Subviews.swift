@@ -73,7 +73,7 @@ extension FileTableView {
             .contextMenu { panelBackgroundMenu }
             .onChange(of: scrollAnchorID) { _, newID in
                 guard let id = newID else { return }
-                proxy.scrollTo(id, anchor: .center)
+                proxy.scrollTo(id)
             }
         }
     }
