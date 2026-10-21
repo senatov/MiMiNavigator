@@ -20,7 +20,7 @@ extension DragNSView {
     ) -> NSDragOperation {
         switch context {
             case .outsideApplication:
-                return dragContainsAppManagedNetworkMount ? [.copy] : [.copy, .move]
+                return dragContainsAppManagedNetworkMount || isPromisedDrag ? [.copy] : [.copy, .move]
             case .withinApplication:
                 return [.move]
             @unknown default:

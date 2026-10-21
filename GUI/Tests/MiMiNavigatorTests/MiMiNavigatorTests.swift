@@ -5,6 +5,7 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
+import FileModelKit
 import XCTest
 
 @testable import MiMiNavigator
@@ -227,4 +228,30 @@ final class MiMiNavigatorTests: XCTestCase {
             )
         )
     }
+
+    // MARK: - External File Promise
+    @MainActor
+    func testArchiveFilePromiseCopiesContents() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("mimi-promise-test-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = directory.appendingPathComponent("source.txt")
+        let destination = directory.appendingPathComponent("destination.txt")
+        let contents = Data("archive entry".utf8)
+        try contents.write(to: source)
+        let file = CustomFile(path: source.path)
+        let promise = ExternalFilePromise(file: file, source: .local(source))
+        let provider = promise.makeProvider()
+        XCTAssertNotNil(provider.delegate)
+        XCTAssertEqual(promise.filePromiseProvider(provider, fileNameForType: provider.fileType), file.nameStr)
+        let completed = expectation(description: "promised file copied")
+        promise.filePromiseProvider(provider, writePromiseTo: destination) { error in
+            XCTAssertNil(error)
+            completed.fulfill()
+        }
+        await fulfillment(of: [completed], timeout: 5)
+        XCTAssertEqual(try Data(contentsOf: destination), contents)
+        XCTAssertEqual(try Data(contentsOf: source), contents)
+    }
+
 }

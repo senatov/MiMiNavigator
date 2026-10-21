@@ -112,11 +112,12 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func beginDrag(with files: [CustomFile], event: NSEvent) {
+        let mouseInView = convert(event.locationInWindow, from: nil)
+        let draggingItems = makeDraggingItems(from: files, at: mouseInView)
+        guard !draggingItems.isEmpty else { return }
         dragState.didStart = true
         registerDragStart(files: files)
-        let mouseInView = convert(event.locationInWindow, from: nil)
         log.debug("[DragNSView] starting drag with \(files.count) file(s) at \(mouseInView)")
-        let draggingItems = makeDraggingItems(from: files, at: mouseInView)
         let session = beginDraggingSession(with: draggingItems, event: event, source: self)
         configureDraggingSession(session)
     }
@@ -143,22 +144,33 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func makeDraggingItems(from files: [CustomFile], at mouseInView: NSPoint) -> [NSDraggingItem] {
+        if let panelSide, let appState, appState.archiveState(for: panelSide).isInsideArchive {
+            let promises = files.map { ExternalFilePromise(file: $0, source: .local($0.urlValue)) }
+            return DragSessionBuilder.makeDraggingItems(from: promises, at: mouseInView)
+        }
+        if files.contains(where: { AppState.isRemotePath($0.urlValue) }),
+           let provider = RemoteConnectionManager.shared.activeConnection?.provider {
+            let promises = files.map {
+                ExternalFilePromise(file: $0, source: .remote(path: $0.urlValue.path, provider: provider))
+            }
+            return DragSessionBuilder.makeDraggingItems(from: promises, at: mouseInView)
+        }
+        if files.contains(where: { AppState.isRemotePath($0.urlValue) }) { return [] }
         let urls = pasteboardURLs(from: files)
         return DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
     }
 
     private func pasteboardURLs(from files: [CustomFile]) -> [URL] {
-        files.map { file in
-            let url = file.urlValue
-            if AppState.isRemotePath(url) {
-                return URL(fileURLWithPath: file.pathStr)
-            }
-            return url
-        }
+        files.map(\.urlValue)
     }
 
     var dragContainsAppManagedNetworkMount: Bool {
         cachedSelection.contains { AppState.isAppManagedNetworkMountPath($0.urlValue) }
+    }
+
+    var isPromisedDrag: Bool {
+        let archive = panelSide.map { appState?.archiveState(for: $0).isInsideArchive ?? false } ?? false
+        return archive || cachedSelection.contains { AppState.isRemotePath($0.urlValue) }
     }
 
     func resolveDropContext(
