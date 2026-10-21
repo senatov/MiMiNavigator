@@ -99,11 +99,7 @@ extension FileTableView {
             .overlay(panelBorder)
             .contentShape(Rectangle())
             .animation(nil as Animation?, value: isFocused)
-            .animation(nil as Animation?, value: selectedID)
             .animation(nil as Animation?, value: filesVersion)
-            .transaction { transaction in
-                transaction.disablesAnimations = true
-            }
             .focusable(true)
             .focusEffectDisabled()
             .onGeometryChange(

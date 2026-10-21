@@ -59,9 +59,10 @@ struct FileTableView: View {
     /// Measured height of the scroll viewport — used to compute real pageStep
     @State var viewHeight: CGFloat = 400
 
-    /// O(1) scroll target — set by keyboard nav, consumed by ScrollView(.scrollPosition)
+    /// Fallback scroll target used only before the native scroll view is captured.
     @State var scrollAnchorID: CustomFile.ID? = nil
     @State var nativeScrollView: NSScrollView? = nil
+    @State var keyboardNavigationTargetID: CustomFile.ID? = nil
 
     @State var showSpinner: Bool = false
     @State var spinnerTask: Task<Void, Never>? = nil
@@ -117,9 +118,9 @@ struct FileTableView: View {
         )
     }
 
-    /// Number of fully visible rows based on measured viewport height.
+    /// Number of fully visible rows below the pinned header.
     var visibleRowCount: Int {
-        max(1, Int(floor(viewHeight / FilePanelStyle.rowHeight)))
+        max(1, Int(floor((viewHeight - TableHeaderStyle.height - 4) / FilePanelStyle.rowHeight)))
     }
 
     var keyboardNav: TableKeyboardNavigation {
@@ -127,9 +128,23 @@ struct FileTableView: View {
             files: cachedSortedRows,
             indexByID: cachedIndexByID,
             selectedID: $selectedID,
-            scrollAnchorID: $scrollAnchorID,
             onSelect: onSelect,
-            pageStep: visibleRowCount,
+            onNavigate: { index, kind in
+                let targetID = cachedSortedRows[index].id
+                keyboardNavigationTargetID = selectedID == targetID ? nil : targetID
+                if let scrollView = nativeScrollView {
+                    TableScrollAnimator.scroll(
+                        scrollView,
+                        toRow: index,
+                        fromRow: selectedID.flatMap { cachedIndexByID[$0] },
+                        kind: kind
+                    )
+                } else {
+                    scrollAnchorID = nil
+                    scrollAnchorID = targetID
+                }
+            },
+            pageStep: max(1, visibleRowCount - 1),
             panelSide: panelSide
         )
     }

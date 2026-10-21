@@ -3,6 +3,7 @@
 //   Parent ".." strip is now a separate panel (ParentNavigationStripPanel) —
 //   this view only renders real filesystem entries.
 
+import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -28,17 +29,13 @@ struct FileTableRowsView: View {
         }
     }
 
-    private static let selectionSpring = Animation.interpolatingSpring(
-        mass: 0.22,
-        stiffness: 240,
-        damping: 24,
-        initialVelocity: 0
-    )
+    private static let selectionSpring = Animation.snappy(duration: 0.18, extraBounce: 0.03)
 
     @Environment(AppState.self) private var appState
     @Environment(\.displayScale) private var displayScale
     private var onePixel: CGFloat { 1.0 / displayScale }
     @State private var colorStore = ColorThemeStore.shared
+    @State private var cursorDisplayIndex: Int? = nil
 
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
@@ -61,17 +58,17 @@ struct FileTableRowsView: View {
     }
 
     private var selectedDisplayIndex: Int? {
-        rows.firstIndex { $0.id == currentSelectedID }
+        currentSelectedID.flatMap { indexByID[$0] }
     }
 
     private var selectedRowYOffset: CGFloat? {
-        guard let selectedDisplayIndex else { return nil }
+        guard let cursorDisplayIndex else { return nil }
         return SelectionOverlayMetrics.rowsTopInset
-            + CGFloat(selectedDisplayIndex) * FilePanelStyle.rowHeight
+            + CGFloat(cursorDisplayIndex) * FilePanelStyle.rowHeight
     }
 
     private var selectedRowHeight: CGFloat? {
-        guard selectedDisplayIndex != nil else { return nil }
+        guard cursorDisplayIndex != nil else { return nil }
         return FilePanelStyle.rowHeight
     }
 
@@ -100,6 +97,16 @@ struct FileTableRowsView: View {
             rowsLayer
             bottomBreathingSpace
         }
+        .onAppear { cursorDisplayIndex = selectedDisplayIndex }
+        .onChange(of: selectedDisplayIndex) { oldIndex, newIndex in
+            if let oldIndex, let newIndex,
+               abs(newIndex - oldIndex) <= 3,
+               !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                withAnimation(Self.selectionSpring) { cursorDisplayIndex = newIndex }
+            } else {
+                cursorDisplayIndex = newIndex
+            }
+        }
     }
 
     // MARK: - View Sections
@@ -110,8 +117,6 @@ struct FileTableRowsView: View {
             rowsStack
             selectionBorderOverlay
         }
-        .animation(Self.selectionSpring, value: selectedDisplayIndex)
-        .animation(Self.selectionSpring, value: selectedRowYOffset)
     }
 
     private var rowsStack: some View {

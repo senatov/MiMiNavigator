@@ -95,10 +95,6 @@ struct FilePanelView: View {
         .background(panelBackground)
         .frame(width: calculatedWidth)
         .animation(nil, value: leftPanelWidth)
-        .transaction { tx in
-            tx.disablesAnimations = true
-            tx.animation = nil
-        }
         .background(DesignTokens.panelBg)
         .overlay { panelEmptyStateOverlay }
         .overlay { navigationOverlay }
