@@ -96,15 +96,13 @@ extension FileTableView {
             .eraseToAnyPublisher()
     }
 
-    func handleJumpToFirst(_ notification: Notification) {
-        guard notification.object as? FavPanelSide == panelSide else { return }
-        appState.focusedPanel = panelSide
+    func handleJumpToFirst(_: Notification) {
+        guard isFocused else { return }
         keyboardNav.jumpToFirst()
     }
 
-    func handleJumpToLast(_ notification: Notification) {
-        guard notification.object as? FavPanelSide == panelSide else { return }
-        appState.focusedPanel = panelSide
+    func handleJumpToLast(_: Notification) {
+        guard isFocused else { return }
         keyboardNav.jumpToLast()
     }
 
