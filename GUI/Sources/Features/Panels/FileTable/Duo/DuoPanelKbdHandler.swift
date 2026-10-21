@@ -77,8 +77,6 @@ final class DuoFilePanelKeyboardHandler {
         let keyCode = event.keyCode
         let modifiers = event.modifierFlags
 
-        log.debug("[KEY] keyCode=\(keyCode) (0x\(String(keyCode, radix: 16))) modifiers=\(modifiers.rawValue)")
-
         // Shift+Up/Down: mark current file and move selection (Finder-style multi-select)
         // Must be handled BEFORE HotKeyStore lookup, because HotKeyStore only has
         // unmodified Up/Down bindings and won't match Shift+Arrow.

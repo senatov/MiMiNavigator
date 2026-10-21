@@ -14,7 +14,6 @@ extension AppState {
     private static let maxRememberedSelectionDirectories = 10
 
     func select(_ file: CustomFile, on panel: FavPanelSide) {
-        log.debug(#function)
         selectionManager?.select(file, on: panel)
     }
 
@@ -52,7 +51,6 @@ extension AppState {
             directorySelectionRestore[panel]?.removeValue(forKey: removedPath)
         }
         directorySelectionRestoreOrder[panel] = order
-        log.debug("[Selection] remembered \(selected.nameStr) for \(directoryPath) panel=\(panel)")
     }
 
     func rememberCurrentSelection(for panel: FavPanelSide) {

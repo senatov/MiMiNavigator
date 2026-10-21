@@ -127,10 +127,16 @@ struct FileTableView: View {
             files: cachedSortedRows,
             indexByID: cachedIndexByID,
             selectedID: $selectedID,
-            scrollAnchorID: $scrollAnchorID,
+            onScrollToRow: { index, id in
+                if let scrollView = nativeScrollView {
+                    scrollNativeScrollView(scrollView, toRow: index)
+                } else {
+                    scrollAnchorID = nil
+                    scrollAnchorID = id
+                }
+            },
             onSelect: onSelect,
-            pageStep: visibleRowCount,
-            panelSide: panelSide
+            pageStep: visibleRowCount
         )
     }
 

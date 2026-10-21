@@ -28,13 +28,6 @@ struct FileTableRowsView: View {
         }
     }
 
-    private static let selectionSpring = Animation.interpolatingSpring(
-        mass: 0.22,
-        stiffness: 240,
-        damping: 24,
-        initialVelocity: 0
-    )
-
     @Environment(AppState.self) private var appState
     @Environment(\.displayScale) private var displayScale
     private var onePixel: CGFloat { 1.0 / displayScale }
@@ -61,7 +54,7 @@ struct FileTableRowsView: View {
     }
 
     private var selectedDisplayIndex: Int? {
-        rows.firstIndex { $0.id == currentSelectedID }
+        currentSelectedID.flatMap { indexByID[$0] }
     }
 
     private var selectedRowYOffset: CGFloat? {
@@ -110,8 +103,6 @@ struct FileTableRowsView: View {
             rowsStack
             selectionBorderOverlay
         }
-        .animation(Self.selectionSpring, value: selectedDisplayIndex)
-        .animation(Self.selectionSpring, value: selectedRowYOffset)
     }
 
     private var rowsStack: some View {

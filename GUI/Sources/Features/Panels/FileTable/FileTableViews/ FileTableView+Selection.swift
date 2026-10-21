@@ -42,9 +42,7 @@ extension FileTableView {
 
 
     func updateSelectedIndex(for newID: CustomFile.ID?) {
-        if let id = newID,
-            let rowIndex = cachedSortedRows.firstIndex(where: { $0.id == id })
-        {
+        if let id = newID, let rowIndex = cachedIndexByID[id] {
             appState.setSelectedIndex(rowIndex, for: panelSide)
         } else {
             appState.setSelectedIndex(0, for: panelSide)

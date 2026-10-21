@@ -18,7 +18,6 @@ final class SelectionManager {
     // MARK: - State
     private var isRestoringSelections = false
     private var lastRecordedURL: [FavPanelSide: URL] = [:]
-    private var lastKnownIndex: [FavPanelSide: Int] = [:]
 
 
 
@@ -47,16 +46,10 @@ final class SelectionManager {
             log.error("[SelectionManager] appState is nil")
             return
         }
-        log.debug("[SelectionManager] select file=\(file.nameStr) on=\(panelSide)")
         updatePanel(panelSide) { panel in
             panel.selectedFile = file
         }
         state.rememberSelection(file, on: panelSide)
-        // Resolve index safely (no magic 0)
-        let items = state.displayedFiles(for: panelSide)
-        if let idx = items.firstIndex(where: { $0.urlValue.standardizedFileURL == file.urlValue.standardizedFileURL }) {
-            lastKnownIndex[panelSide] = idx
-        }
         state.focusedPanel = panelSide
     }
 
@@ -110,7 +103,6 @@ final class SelectionManager {
         updatePanel(panelSide) { panel in
             panel.selectedFile = next
         }
-        lastKnownIndex[panelSide] = nextIdx
         log.debug("[SelectionManager] selection idx=\(nextIdx) file=\(next.nameStr)")
     }
 
@@ -125,9 +117,6 @@ final class SelectionManager {
         }
         updatePanel(panelSide) { panel in
             panel.selectedFile = target
-        }
-        if let idx = items.firstIndex(where: { $0.urlValue.standardizedFileURL == target.urlValue.standardizedFileURL }) {
-            lastKnownIndex[panelSide] = idx
         }
         log.debug("[SelectionManager] moveToEdge top=\(top) file=\(target.nameStr)")
     }

@@ -7,8 +7,7 @@
 //   Parent strip is now a separate panel outside the table —
 //   this struct works only with real filesystem entries.
 //
-// Scroll strategy: uses ScrollViewReader.scrollTo(id:) — Finder-style minimum scroll.
-// Only scrolls when the target row is outside the visible rect; reveals at nearest edge.
+// Scroll strategy: reveal the selected row at the nearest visible edge.
 
 import FileModelKit
 import SwiftUI
@@ -22,15 +21,11 @@ import SwiftUI
 struct TableKeyboardNavigation {
     let files: [CustomFile]
     let selectedID: Binding<CustomFile.ID?>
-    /// Legacy binding — retained for API compatibility but no longer drives scrolling.
-    let scrollAnchorID: Binding<CustomFile.ID?>
+    let onScrollToRow: (Int, CustomFile.ID) -> Void
     let onSelect: (CustomFile) -> Void
     let pageStep: Int
-    let panelSide: FavPanelSide
     // Injected from outside — built once when list changes, not on every keypress
     private let indexByID: [CustomFile.ID: Int]
-
-    private let logPrefix = "[Nav]"
 
     // MARK: - Init
 
@@ -38,18 +33,16 @@ struct TableKeyboardNavigation {
         files: [CustomFile],
         indexByID: [CustomFile.ID: Int],
         selectedID: Binding<CustomFile.ID?>,
-        scrollAnchorID: Binding<CustomFile.ID?>,
+        onScrollToRow: @escaping (Int, CustomFile.ID) -> Void,
         onSelect: @escaping (CustomFile) -> Void,
-        pageStep: Int = 20,
-        panelSide: FavPanelSide
+        pageStep: Int = 20
     ) {
         self.files = files
         self.indexByID = indexByID
         self.selectedID = selectedID
-        self.scrollAnchorID = scrollAnchorID
+        self.onScrollToRow = onScrollToRow
         self.onSelect = onSelect
         self.pageStep = pageStep
-        self.panelSide = panelSide
     }
 
     // MARK: - Navigation Actions
@@ -60,7 +53,6 @@ struct TableKeyboardNavigation {
         if selectedID.wrappedValue == nil { return }
         let idx = currentIndex()
         if idx == 0 {
-            log.debug("\(logPrefix) moveUp ignored at top panel=\(panelSide.rawValue)")
             return
         }
         selectAndScroll(at: idx - 1)
@@ -90,7 +82,6 @@ struct TableKeyboardNavigation {
         }
         let idx = currentIndex()
         if idx == 0 {
-            log.debug("\(logPrefix) pageUp ignored at top panel=\(panelSide.rawValue)")
             return
         }
         let target = max(0, idx - pageStep)
@@ -133,11 +124,8 @@ struct TableKeyboardNavigation {
     private func selectAndScroll(at index: Int) {
         guard index >= 0 && index < files.count else { return }
         let file = files[index]
-        log.debug("\(logPrefix) resolved target idx=\(index) name='\(file.nameStr)'")
         selectedID.wrappedValue = file.id
         onSelect(file)
-        // Reset anchor to nil first so onChange fires even for same ID
-        scrollAnchorID.wrappedValue = nil
-        scrollAnchorID.wrappedValue = file.id
+        onScrollToRow(index, file.id)
     }
 }

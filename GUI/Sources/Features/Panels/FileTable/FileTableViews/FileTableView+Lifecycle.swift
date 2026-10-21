@@ -80,7 +80,7 @@ extension FileTableView {
         }
     }
 
-    private func scrollNativeScrollView(_ scrollView: NSScrollView, toRow index: Int) {
+    func scrollNativeScrollView(_ scrollView: NSScrollView, toRow index: Int) {
         let rowHeight = FilePanelStyle.rowHeight
         let clipView = scrollView.contentView
         let visibleHeight = clipView.bounds.height
