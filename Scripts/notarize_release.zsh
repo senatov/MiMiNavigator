@@ -2,10 +2,11 @@
 # MARK: - notarize_release.zsh
 # Full pipeline: validate release refs → version stamp → clean Release build
 # with Developer ID signing → hardened runtime → DMG → notarize → staple
-# → publish branch/tag → upload to GitHub release.
+# → optionally publish branch/tag and upload to GitHub release.
 #
 # Usage:  zsh Scripts/notarize_release.zsh <version>
 # Example: zsh Scripts/notarize_release.zsh 0.9.7.1
+# Set MIMI_RELEASE_LOCAL_ONLY=1 to stop after notarization without pushing refs.
 #
 # Prerequisites:
 #   brew install gh && gh auth login
@@ -456,6 +457,13 @@ echo "   Running Gatekeeper assessment..."
 spctl --assess --type open --context context:primary-signature --verbose=2 "${DMG}"
 
 # ── Step 10: Upload to GitHub ─────────────────────────────────────────────────
+if [[ "${MIMI_RELEASE_LOCAL_ONLY:-0}" == "1" ]]; then
+    echo "[10/10] Local release is ready; publishing was skipped."
+    echo "   App: ${APP}"
+    echo "   DMG: ${DMG}"
+    RELEASE_SUCCEEDED=true
+    exit 0
+fi
 echo "[10/10] Uploading to GitHub release ${TAG}..."
 
 if gh release view "${TAG}" &>/dev/null; then

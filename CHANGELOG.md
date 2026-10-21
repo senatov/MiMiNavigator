@@ -1131,6 +1131,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.9.1] — 2026-10-21
+
+### Changed
+- The public version now uses three numeric components; the marketing version is `9.9.1` and the build number is `149`.
+- Remote SFTP selections are prepared as local files before starting a native external drag, allowing apps that require file URLs to accept them.
+- Recently prepared remote files are reused when a drag is cancelled and tried again.
+
+### Fixed
+- Archive entries and remote files can be dragged to external applications, including Finder and Telegram.
+
 ## [0.9.9.8.6] — 2026-10-09
 
 ### Changed

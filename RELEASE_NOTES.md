@@ -1,21 +1,21 @@
-# MiMiNavigator v0.9.9.8.7
+# MiMiNavigator v9.9.1
 
-This release improves runtime diagnostics and avoids repeated work when showing large directories.
+This release makes files from SFTP directories and archives available to other macOS applications through drag and drop. The public version now uses three numeric components.
 
 ## Highlights
 
-- Record active and recent directory scans, size calculations, and column Autofit when the main queue is delayed. Include memory footprint, thread count, and probe gaps to make performance reports easier to investigate.
-- Report the mode, entry count, elapsed time, and outcome of recursive directory-size scans.
-- Stop the automatic fallback size scan when a normal scan exceeds its budget. Keep the folder accessible and show its size as unavailable until its cache is invalidated.
-- Avoid reloading and republishing favorites each time the breadcrumb toolbar appears, and remove noisy constructor logging.
+- Drag files from SFTP panels to Finder and apps such as Telegram. Remote files are prepared locally before the external drag starts.
+- Drag extracted archive entries to other applications as local files.
+- Retry a remote drag after cancelling the first drop without downloading the same selection again during the short staging cache period.
 
 ## Validation
 
-- Debug build and running-app checks cover navigation and breadcrumb interactions.
+- The Debug build completed successfully.
+- A live SFTP drag opened Telegram's attachment preview. After cancelling it, the same file was dragged again and appeared in Finder.
 - The release pipeline verifies the arm64 executable, Developer ID signature, signed DMG, Apple notarization, stapling, and Gatekeeper assessment.
 
 ## Download
 
 For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.6...v0.9.9.8.7
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.8.7...v9.9.1
