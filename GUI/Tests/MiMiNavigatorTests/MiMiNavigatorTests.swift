@@ -41,6 +41,28 @@ final class MiMiNavigatorTests: XCTestCase {
 
     // MARK: - Column Auto Fit
 
+    func testAutoFitKeepsLongNameInsidePanel() {
+        let fixedColumns: [FittedColumn] = [
+            .init(id: .dateModified, width: 123),
+            .init(id: .size, width: 77),
+            .init(id: .kind, width: 64),
+            .init(id: .permissions, width: 83),
+            .init(id: .owner, width: 54),
+        ]
+        let nameWidth = ColumnAutoFitLayout.nameWidth(
+            calculatedNameWidth: 324,
+            containerWidth: 787,
+            fixedColumns: fixedColumns
+        )
+        XCTAssertEqual(nameWidth, 299)
+        XCTAssertEqual(
+            nameWidth + ColumnAutoFitLayout.totalFixedWidth(fixedColumns)
+                + ColumnAutoFitLayout.dividerTotal(for: fixedColumns.count)
+                + ColumnAutoFitMetrics.trailingPanelInset,
+            787
+        )
+    }
+
     func testChildCountColumnFollowsDirectoryPresenceWithoutChangingPreference() throws {
         let layout = ColumnLayoutModel(panelSide: .left)
         let index = try XCTUnwrap(layout.columns.firstIndex(where: { $0.id == .childCount }))
