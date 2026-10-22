@@ -12,6 +12,12 @@ The activity snapshot reports the total active count and lists at most eight old
 
 `[DirectorySizeService] fullRecursive` lines include the scan mode, path, visited entries, elapsed time, and outcome. Standard automatic scans are limited to 200,000 entries or eight seconds. A budget result is cached for the current directory context, and the row leaves size unavailable without marking the directory restricted or launching a larger fallback scan. Cache invalidation after file changes or volume mounts allows a later attempt. Unreadable and cancelled scans have separate outcomes; fallback behavior for paths that cannot be read directly remains available.
 
+## Large flat directories
+
+The list uses the ordinary rendering path below 2,000 entries. At 2,000 entries it sorts and indexes on a worker task, then keeps the visible rows plus three screenfuls on either side in the SwiftUI hierarchy. At 50,000 entries the same bounded path remains in use; the second threshold labels a very large directory for diagnostics and future tuning. File count on one level determines the mode, independent of byte size.
+
+On navigation, column Autofit measures the nearby window first. A utility-priority pass then traverses the rest of the list and measures a bounded sample after scrolling settles. Stale sort and Autofit results are ignored when the list or path changes. A slow initial scan may still occur because the global sort requires all entries before final publication.
+
 ## Reading the log
 
 Start with warning and error lines, then inspect surrounding scan, size, and Autofit events. Compare `footprintMB` and `[Memory]` checkpoints across several minutes before treating an increase as a leak. View initialization is not a reliable measure of SwiftUI rendering cost, so constructor logging is intentionally omitted from the breadcrumb toolbar.

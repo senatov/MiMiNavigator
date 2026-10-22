@@ -54,6 +54,9 @@ struct FileTableView: View {
     /// Unlike cachedSortedFiles, this array may include synthetic navigation rows
     /// such as the parent directory entry.
     @State var cachedSortedRows: [CustomFile] = []
+    @State var sortTask: Task<Void, Never>?
+    @State var sortGeneration: Int = 0
+    @State var firstVisibleRow: Int = 0
     @State var isPanelDropTargeted: Bool = false
 
     /// Measured height of the scroll viewport — used to compute real pageStep
@@ -154,6 +157,14 @@ struct FileTableView: View {
     }
 
     var sortedRows: [CustomFile] { cachedSortedRows }
+
+    var visibleWindow: Range<Int> {
+        LargeDirectoryPolicy.visibleWindow(
+            count: cachedSortedRows.count,
+            firstVisible: firstVisibleRow,
+            visibleCount: visibleRowCount
+        )
+    }
 
     func handleSortChange<T>(_: T) {
         recomputeSortedCache()

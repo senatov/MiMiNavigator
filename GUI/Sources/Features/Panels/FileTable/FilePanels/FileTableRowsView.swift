@@ -34,6 +34,7 @@ struct FileTableRowsView: View {
     @State private var colorStore = ColorThemeStore.shared
 
     let rows: [CustomFile]
+    let visibleWindow: Range<Int>
     let indexByID: [CustomFile.ID: Int]
     @Binding var selectedID: CustomFile.ID?
     let panelSide: FavPanelSide
@@ -105,14 +106,27 @@ struct FileTableRowsView: View {
         }
     }
 
+    @ViewBuilder
     private var rowsStack: some View {
-        LazyVStack(alignment: .leading, spacing: 0) {
-            ForEach(rows) { file in
-                sizeAwareRow(index: indexByID[file.id] ?? 0, file: file)
+        if rows.count < LargeDirectoryPolicy.largeEntryCount {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(rows) { file in
+                    sizeAwareRow(index: indexByID[file.id] ?? 0, file: file)
+                }
             }
+            .padding(.top, SelectionOverlayMetrics.rowsTopInset)
+            .transaction { $0.disablesAnimations = true }
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                Color.clear.frame(height: CGFloat(visibleWindow.lowerBound) * FilePanelStyle.rowHeight)
+                ForEach(rows[visibleWindow]) { file in
+                    sizeAwareRow(index: indexByID[file.id] ?? 0, file: file)
+                }
+                Color.clear.frame(height: CGFloat(rows.count - visibleWindow.upperBound) * FilePanelStyle.rowHeight)
+            }
+            .padding(.top, SelectionOverlayMetrics.rowsTopInset)
+            .transaction { $0.disablesAnimations = true }
         }
-        .padding(.top, SelectionOverlayMetrics.rowsTopInset)
-        .transaction { $0.disablesAnimations = true }
     }
 
     @ViewBuilder

@@ -27,8 +27,19 @@ final class AutoFitScheduler {
     private var lastAutoFitWidth: [FavPanelSide: CGFloat] = [:]
     private var lastResizeFitTime: [FavPanelSide: Date] = [:]
     private var loadingPanels: Set<FavPanelSide> = []
+    private var visibleRows: [FavPanelSide: (first: Int, count: Int)] = [:]
+    private var lastVisibleChange: [FavPanelSide: Date] = [:]
+    private var backgroundFitTasks: [FavPanelSide: Task<Void, Never>] = [:]
 
     private init() {}
+
+    // MARK: - Visible Rows
+    func updateVisibleRows(first: Int, count: Int, panel: FavPanelSide) {
+        let previous = visibleRows[panel]
+        guard previous?.first != first || previous?.count != count else { return }
+        visibleRows[panel] = (first, count)
+        lastVisibleChange[panel] = Date()
+    }
 
     // MARK: - Content Autofit
 
@@ -79,7 +90,10 @@ final class AutoFitScheduler {
 
     func prepareForNavigationLoading(panel: FavPanelSide) {
         loadingPanels.insert(panel)
+        visibleRows[panel] = nil
+        lastVisibleChange[panel] = nil
         navigationFitTasks[panel]?.cancel()
+        backgroundFitTasks[panel]?.cancel()
         navigationFitTasks[panel] = nil
         pendingNavigationFitPaths[panel] = nil
         log.debug("[AutoFit] paused for navigation loading panel=\(panel)")
@@ -97,6 +111,7 @@ final class AutoFitScheduler {
         if loading {
             loadingPanels.insert(panel)
             navigationFitTasks[panel]?.cancel()
+            backgroundFitTasks[panel]?.cancel()
             navigationFitTasks[panel] = nil
             pendingNavigationFitPaths[panel] = nil
             log.debug("[AutoFit] paused panel=\(panel)")
@@ -153,7 +168,11 @@ final class AutoFitScheduler {
         let layout = ColumnLayoutStore.shared.layout(for: panel)
         guard layout.containerWidth > 0 else { return }
         guard !layout.isColumnReorderActive else { return }
-        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        if files.count >= LargeDirectoryPolicy.largeEntryCount {
+            fitLargeDirectory(files, layout: layout, panel: panel, appState: appState)
+        } else {
+            ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        }
         pendingNavigationFitPaths[panel] = nil
         pendingPresentationFitPaths[panel] = nil
         lastAutoFitFinish[panel] = Date()
@@ -182,9 +201,39 @@ final class AutoFitScheduler {
             return false
         }
         lastAutoFitWidth[panel] = layout.containerWidth
-        ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        if files.count >= LargeDirectoryPolicy.largeEntryCount {
+            fitLargeDirectory(files, layout: layout, panel: panel, appState: appState)
+        } else {
+            ColumnAutoFitter.autoFitAll(layout: layout, files: files)
+        }
         lastAutoFitFinish[panel] = Date()
         return true
+    }
+
+    // MARK: - Large Directory Fit
+    private func fitLargeDirectory(_ files: [CustomFile], layout: ColumnLayoutModel, panel: FavPanelSide, appState: AppState) {
+        let position = visibleRows[panel] ?? (first: 0, count: 30)
+        let window = LargeDirectoryPolicy.visibleWindow(count: files.count, firstVisible: position.first, visibleCount: position.count)
+        let nearby = Array(files[window])
+        ColumnAutoFitter.autoFitAll(layout: layout, files: nearby)
+        backgroundFitTasks[panel]?.cancel()
+        let path = appState.path(for: panel)
+        let version = panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion
+        backgroundFitTasks[panel] = Task { @MainActor in
+            let worker = Task.detached(priority: .utility) {
+                LargeDirectoryPolicy.backgroundSample(from: files, excluding: window)
+            }
+            let remaining = await worker.value
+            guard !Task.isCancelled, appState.path(for: panel) == path else { return }
+            guard (panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion) == version else { return }
+            while Date().timeIntervalSince(lastVisibleChange[panel] ?? .distantPast) < 0.5 {
+                try? await Task.sleep(for: .milliseconds(500))
+                if Task.isCancelled { return }
+            }
+            guard !loadingPanels.contains(panel), !appState.isLoading(panel) else { return }
+            ColumnAutoFitter.autoFitAll(layout: layout, files: nearby + remaining)
+            log.debug("[AutoFit] background sample panel=\(panel) total=\(files.count) measured=\(nearby.count + remaining.count)")
+        }
     }
 
 }

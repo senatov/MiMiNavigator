@@ -15,31 +15,6 @@ extension FileTableView {
         appState.path(for: panelSide)
     }
 
-    /// Lightweight metadata signature for visible rows.
-    /// Used to refresh cached rows when external FSEvents update file metadata
-    /// without changing the overall file-id set.
-    var filesMetadataSignature: Int {
-        var hasher = Hasher()
-        hasher.combine(files.count)
-
-        for file in files {
-            hasher.combine(file.id)
-            hasher.combine(file.nameStr)
-            hasher.combine(file.pathStr)
-            hasher.combine(file.isDirectory)
-            hasher.combine(file.cachedChildCount)
-            hasher.combine(file.cachedDirectorySize)
-            hasher.combine(file.cachedShallowSize)
-            hasher.combine(file.sizeInBytes)
-            hasher.combine(file.sizeVersion)
-            hasher.combine(file.sizeIsExact)
-            hasher.combine(file.modifiedDate?.timeIntervalSince1970 ?? 0)
-            hasher.combine(String(describing: file.securityState))
-        }
-
-        return hasher.finalize()
-    }
-
     var isMenuTracking: Bool {
         activeMenuTrackingCount > 0
     }
@@ -111,15 +86,14 @@ extension FileTableView {
                 of: { geometry in geometry.size.height }
             ) { newHeight in
                 viewHeight = newHeight
+                let visibleCount = max(1, Int(floor(newHeight / FilePanelStyle.rowHeight)))
+                AutoFitScheduler.shared.updateVisibleRows(first: firstVisibleRow, count: visibleCount, panel: panelSide)
             }
             .onChange(of: layout.containerWidth) { _, newWidth in
                 handleContainerWidthChange(newWidth)
             }
             .onChange(of: filesVersion) { _, newValue in
                 handleFilesVersionChange(newValue)
-            }
-            .onChange(of: filesMetadataSignature) { _, _ in
-                handleFilesMetadataChange()
             }
             .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
                 handleMenuTrackingBegan()
@@ -165,6 +139,7 @@ extension FileTableView {
             .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
             .onDisappear {
                 spinnerTask?.cancel()
+                sortTask?.cancel()
                 deferredFilesVersion = nil
                 activeMenuTrackingCount = 0
             }

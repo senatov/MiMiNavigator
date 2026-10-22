@@ -8,7 +8,7 @@
 import FileModelKit
 
 // MARK: - Table File Sorter
-struct TableFileSorter {
+struct TableFileSorter: Sendable {
     let sortKey: SortKeysEnum
     let ascending: Bool
     let excludeDirectoriesFromSorting: Bool

@@ -32,6 +32,7 @@ extension FileTableView {
                         Section {
                             FileTableRowsView(
                                 rows: sortedRows,
+                                visibleWindow: visibleWindow,
                                 indexByID: cachedIndexByID,
                                 selectedID: $selectedID,
                                 panelSide: panelSide,
@@ -74,6 +75,14 @@ extension FileTableView {
             .onChange(of: scrollAnchorID) { _, newID in
                 guard let id = newID else { return }
                 proxy.scrollTo(id)
+            }
+            .onScrollGeometryChange(for: Int.self) { geometry in
+                max(0, Int((geometry.contentOffset.y - TableHeaderStyle.height) / FilePanelStyle.rowHeight))
+            } action: { _, newStart in
+                let screen = max(1, visibleRowCount)
+                let windowAnchor = (newStart / screen) * screen
+                if firstVisibleRow != windowAnchor { firstVisibleRow = windowAnchor }
+                AutoFitScheduler.shared.updateVisibleRows(first: newStart, count: visibleRowCount, panel: panelSide)
             }
         }
     }

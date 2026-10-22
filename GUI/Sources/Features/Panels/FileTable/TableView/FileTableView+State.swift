@@ -14,52 +14,38 @@ extension FileTableView {
 
     private static let log = SwiftyBeaver.self
 
-    private func makeSortedRows(from sortedFiles: [CustomFile], currentPath: String) -> [CustomFile] {
-        var rows: [CustomFile] = []
-        rows.reserveCapacity(sortedFiles.count)
-
-        // Parent ".." strip is now a separate panel (ParentNavigationStripPanel)
-        // — no longer injected into the rows array.
-
-        for file in sortedFiles where shouldIncludeInRows(file) {
-            rows.append(file)
-        }
-
-        return rows
-    }
-
-    private func makeIndexByID(from sortedFiles: [CustomFile]) -> [CustomFile.ID: Int] {
-        var index = [CustomFile.ID: Int](minimumCapacity: sortedFiles.count)
-
-        for (offset, file) in sortedFiles.enumerated() where shouldIncludeInRows(file) {
-            index[file.id] = offset
-        }
-
-        return index
-    }
-
-    private func shouldIncludeInRows(_ file: CustomFile) -> Bool {
-        !file.isParentEntry && file.nameStr != ".."
-    }
-
     func recomputeSortedCache() {
-        cachedSortedFiles = files.sorted(by: sorter.compare)
-        rebuildIndexByID()
-        scrollToSelectionFromState()
-        Self.log.debug(
-            "[FileTableState] rebuilt sorted cache panel=\(panelSide.rawValue) count=\(cachedSortedFiles.count)")
+        sortTask?.cancel()
+        sortGeneration &+= 1
+        let generation = sortGeneration
+        let filesToSort = files
+        let activeSorter = sorter
+        if filesToSort.count < LargeDirectoryPolicy.largeEntryCount {
+            applySortedSnapshot(.build(files: filesToSort, sorter: activeSorter))
+            return
+        }
+        sortTask = Task { @MainActor in
+            let worker = Task.detached(priority: .userInitiated) {
+                FileTableSortedSnapshot.build(files: filesToSort, sorter: activeSorter)
+            }
+            let snapshot = await withTaskCancellationHandler {
+                await worker.value
+            } onCancel: {
+                worker.cancel()
+            }
+            guard !Task.isCancelled, generation == sortGeneration else { return }
+            applySortedSnapshot(snapshot)
+        }
     }
 
-    /// Rebuilds the O(1) lookup dictionary and the rows array after list changes. Called only on list update.
-    private func rebuildIndexByID() {
-        let currentPath = appState.path(for: panelSide)
-        cachedSortedRows = makeSortedRows(from: cachedSortedFiles, currentPath: currentPath)
-        // Build index from rows (not raw files) so positions match what keyboardNav sees
-        cachedIndexByID = makeIndexByID(from: cachedSortedRows)
-
-        Self.log.debug(
-            "[FileTableState] rebuilt rows panel=\(panelSide.rawValue) files=\(cachedSortedFiles.count) rows=\(cachedSortedRows.count) index=\(cachedIndexByID.count) path='\(currentPath)'"
-        )
+    // MARK: - Apply Sorted Snapshot
+    private func applySortedSnapshot(_ snapshot: FileTableSortedSnapshot) {
+        cachedSortedFiles = snapshot.files
+        cachedSortedRows = snapshot.rows
+        cachedIndexByID = snapshot.indexByID
+        firstVisibleRow = min(firstVisibleRow, max(0, snapshot.rows.count - 1))
+        scrollToSelectionFromState()
+        Self.log.debug("[FileTableState] rebuilt sorted cache panel=\(panelSide.rawValue) count=\(snapshot.files.count) mode=\(LargeDirectoryPolicy.mode(for: snapshot.files.count))")
     }
 
     /// Register navigation callbacks so DuoFilePanelKeyboardHandler

@@ -72,16 +72,13 @@ struct SelectionStatusBar: View {
     private var gitRefreshKey: Int {
         var hasher = Hasher()
         hasher.combine(currentPath)
-        for file in appState.displayedFiles(for: panelSide) {
-            hasher.combine(file.id)
-            hasher.combine(file.sizeInBytes)
-            hasher.combine(file.modifiedDateFormatted)
-        }
+        hasher.combine(isLeftPanel ? appState.leftFilesVersion : appState.rightFilesVersion)
         return hasher.finalize()
     }
 
     private var markedFiles: [CustomFile] {
         let marked = appState.markedFiles(for: panelSide)
+        guard !marked.isEmpty else { return [] }
         return displayedPanelFiles.filter { marked.contains($0.id) }
     }
 

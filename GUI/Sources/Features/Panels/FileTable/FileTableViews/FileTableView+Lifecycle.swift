@@ -167,15 +167,6 @@ extension FileTableView {
         scheduleAutoFitIfNeeded()
     }
 
-    func handleFilesMetadataChange() {
-        guard !isMenuTracking else {
-            log.debug("[FileTableView] metadata refresh deferred panel=\(panelSide) while menu is open")
-            return
-        }
-        guard !files.isEmpty else { return }
-        log.debug("[FileTableView] metadata changed panel=\(panelSide) files=\(files.count)")
-        recomputeSortedCache()
-    }
 }
 
 extension Notification.Name {

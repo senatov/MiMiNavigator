@@ -56,3 +56,28 @@ struct DirectorySizeCalculatorTests {
         return root
     }
 }
+
+// MARK: - Large Directory Policy Tests
+struct LargeDirectoryPolicyTests {
+    @Test func keepsSmallDirectoriesComplete() {
+        #expect(LargeDirectoryPolicy.visibleWindow(count: 1_999, firstVisible: 900, visibleCount: 30) == (0..<1_999))
+        #expect(LargeDirectoryPolicy.mode(for: 1_999) == "standard")
+        #expect(LargeDirectoryPolicy.mode(for: 2_000) == "large")
+        #expect(LargeDirectoryPolicy.mode(for: 49_999) == "large")
+        #expect(LargeDirectoryPolicy.mode(for: 50_000) == "very-large")
+    }
+    @Test func boundsVisibleRowsAtTheStartMiddleAndEnd() {
+        #expect(LargeDirectoryPolicy.visibleWindow(count: 19_367, firstVisible: 0, visibleCount: 30) == (0..<120))
+        #expect(LargeDirectoryPolicy.visibleWindow(count: 19_367, firstVisible: 10_000, visibleCount: 30) == (9_910..<10_120))
+        #expect(LargeDirectoryPolicy.visibleWindow(count: 200_000, firstVisible: 199_990, visibleCount: 30) == (199_900..<200_000))
+    }
+    @Test func samplesTheRestWithoutIncludingVisibleRows() {
+        let items = Array(0..<200_000)
+        let window = LargeDirectoryPolicy.visibleWindow(count: items.count, firstVisible: 100_000, visibleCount: 30)
+        let sample = LargeDirectoryPolicy.backgroundSample(from: items, excluding: window)
+        #expect(sample.count <= LargeDirectoryPolicy.backgroundSampleCount)
+        #expect(sample.allSatisfy { !window.contains($0) })
+        #expect(sample.first == 0)
+        #expect(sample.last ?? 0 > 190_000)
+    }
+}
