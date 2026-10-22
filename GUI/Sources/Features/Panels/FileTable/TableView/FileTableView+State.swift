@@ -41,6 +41,7 @@ extension FileTableView {
     // MARK: - Apply Sorted Snapshot
     private func applySortedSnapshot(_ snapshot: FileTableSortedSnapshot) {
         layout.setContainsDirectories(snapshot.containsDirectories)
+        layout.setContainsUsablePermissions(snapshot.containsUsablePermissions)
         cachedSortedFiles = snapshot.files
         cachedSortedRows = snapshot.rows
         cachedIndexByID = snapshot.indexByID

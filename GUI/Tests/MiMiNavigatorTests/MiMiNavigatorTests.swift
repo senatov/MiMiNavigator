@@ -56,6 +56,21 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .childCount }))
     }
 
+    func testPermissionsColumnFollowsAvailableDataWithoutChangingPreference() throws {
+        let layout = ColumnLayoutModel(panelSide: .right)
+        let index = try XCTUnwrap(layout.columns.firstIndex(where: { $0.id == .permissions }))
+        layout.columns[index].isVisible = true
+        layout.setContainsUsablePermissions(false)
+        XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .permissions }))
+        XCTAssertTrue(layout.configuredVisibleColumns.contains(where: { $0.id == .permissions }))
+        layout.setContainsUsablePermissions(true)
+        XCTAssertTrue(layout.visibleColumns.contains(where: { $0.id == .permissions }))
+        layout.columns[index].isVisible = false
+        layout.setContainsUsablePermissions(false)
+        layout.setContainsUsablePermissions(true)
+        XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .permissions }))
+    }
+
     func testKindWidthIncludesRenderedPaddingAndTextReserve() {
         let padding = ColumnID.kind.contentPadding.leading + ColumnID.kind.contentPadding.trailing
         XCTAssertEqual(

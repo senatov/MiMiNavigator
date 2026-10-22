@@ -53,18 +53,29 @@ struct FileTableSortedSnapshot: Sendable {
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
     let containsDirectories: Bool
+    let containsUsablePermissions: Bool
 
     // MARK: - Build
     static func build(files: [CustomFile], sorter: TableFileSorter) -> Self {
         let sorted = files.sorted(by: sorter.compare)
-        if Task.isCancelled { return Self(files: [], rows: [], indexByID: [:], containsDirectories: false) }
+        if Task.isCancelled {
+            return Self(files: [], rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false)
+        }
         let rows = sorted.filter { !$0.isParentEntry && $0.nameStr != ".." }
         var index = [CustomFile.ID: Int](minimumCapacity: rows.count)
         var containsDirectories = false
+        var containsUsablePermissions = false
         for (offset, file) in rows.enumerated() {
             index[file.id] = offset
             if file.isDirectory { containsDirectories = true }
+            if file.posixPermissions != 0 { containsUsablePermissions = true }
         }
-        return Self(files: sorted, rows: rows, indexByID: index, containsDirectories: containsDirectories)
+        return Self(
+            files: sorted,
+            rows: rows,
+            indexByID: index,
+            containsDirectories: containsDirectories,
+            containsUsablePermissions: containsUsablePermissions
+        )
     }
 }

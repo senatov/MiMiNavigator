@@ -35,6 +35,7 @@ final class ColumnLayoutModel: Codable {
     private let storageKey: String
     private(set) var isColumnReorderActive = false
     private(set) var containsDirectories = true
+    private(set) var containsUsablePermissions = true
 
     /// tick bumped on every autofit apply — syncColumnWidths skips 1 render cycle after
     var autoFitGeneration: Int = 0
@@ -42,7 +43,13 @@ final class ColumnLayoutModel: Codable {
 
     var configuredVisibleColumns: [ColumnSpec] { columns.filter { $0.isVisible } }
     var visibleColumns: [ColumnSpec] {
-        configuredVisibleColumns.filter { $0.id != .childCount || containsDirectories }
+        configuredVisibleColumns.filter { spec in
+            switch spec.id {
+            case .childCount: containsDirectories
+            case .permissions: containsUsablePermissions
+            default: true
+            }
+        }
     }
     var fixedColumns: [ColumnSpec] { visibleColumns.filter { $0.id != .name } }
 
@@ -50,6 +57,14 @@ final class ColumnLayoutModel: Codable {
     func setContainsDirectories(_ value: Bool) {
         guard containsDirectories != value else { return }
         containsDirectories = value
+        updateNameWidthForContainer()
+        incrementLayoutVersion()
+    }
+
+    // MARK: - Permissions Visibility
+    func setContainsUsablePermissions(_ value: Bool) {
+        guard containsUsablePermissions != value else { return }
+        containsUsablePermissions = value
         updateNameWidthForContainer()
         incrementLayoutVersion()
     }
