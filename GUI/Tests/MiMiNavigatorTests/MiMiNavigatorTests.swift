@@ -41,6 +41,21 @@ final class MiMiNavigatorTests: XCTestCase {
 
     // MARK: - Column Auto Fit
 
+    func testChildCountColumnFollowsDirectoryPresenceWithoutChangingPreference() throws {
+        let layout = ColumnLayoutModel(panelSide: .left)
+        let index = try XCTUnwrap(layout.columns.firstIndex(where: { $0.id == .childCount }))
+        layout.columns[index].isVisible = true
+        layout.setContainsDirectories(false)
+        XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .childCount }))
+        XCTAssertTrue(layout.configuredVisibleColumns.contains(where: { $0.id == .childCount }))
+        layout.setContainsDirectories(true)
+        XCTAssertTrue(layout.visibleColumns.contains(where: { $0.id == .childCount }))
+        layout.columns[index].isVisible = false
+        layout.setContainsDirectories(false)
+        layout.setContainsDirectories(true)
+        XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .childCount }))
+    }
+
     func testKindWidthIncludesRenderedPaddingAndTextReserve() {
         let padding = ColumnID.kind.contentPadding.leading + ColumnID.kind.contentPadding.trailing
         XCTAssertEqual(

@@ -95,6 +95,9 @@ extension FileTableView {
             .onChange(of: filesVersion) { _, newValue in
                 handleFilesVersionChange(newValue)
             }
+            .onChange(of: appState[panel: panelSide].filterQuery) { _, _ in
+                recomputeSortedCache()
+            }
             .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
                 handleMenuTrackingBegan()
             }

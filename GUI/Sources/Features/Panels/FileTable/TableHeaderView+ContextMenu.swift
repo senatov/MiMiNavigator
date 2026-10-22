@@ -11,7 +11,7 @@ extension TableHeaderView {
     @ViewBuilder
     var columnToggleMenu: some View {
         Picker("Column Preset", selection: Binding<ColumnLayoutPreset?>(
-            get: { ColumnLayoutPreset.allCases.first { layout.visibleColumns.map(\.id) == $0.columns } },
+            get: { ColumnLayoutPreset.allCases.first { layout.configuredVisibleColumns.map(\.id) == $0.columns } },
             set: { if let preset = $0 { applyColumnPreset(preset) } }
         )) {
             ForEach(ColumnLayoutPreset.allCases) { preset in

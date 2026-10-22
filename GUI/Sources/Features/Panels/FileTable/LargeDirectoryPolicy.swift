@@ -52,14 +52,19 @@ struct FileTableSortedSnapshot: Sendable {
     let files: [CustomFile]
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
+    let containsDirectories: Bool
 
     // MARK: - Build
     static func build(files: [CustomFile], sorter: TableFileSorter) -> Self {
         let sorted = files.sorted(by: sorter.compare)
-        if Task.isCancelled { return Self(files: [], rows: [], indexByID: [:]) }
+        if Task.isCancelled { return Self(files: [], rows: [], indexByID: [:], containsDirectories: false) }
         let rows = sorted.filter { !$0.isParentEntry && $0.nameStr != ".." }
         var index = [CustomFile.ID: Int](minimumCapacity: rows.count)
-        for (offset, file) in rows.enumerated() { index[file.id] = offset }
-        return Self(files: sorted, rows: rows, indexByID: index)
+        var containsDirectories = false
+        for (offset, file) in rows.enumerated() {
+            index[file.id] = offset
+            if file.isDirectory { containsDirectories = true }
+        }
+        return Self(files: sorted, rows: rows, indexByID: index, containsDirectories: containsDirectories)
     }
 }
