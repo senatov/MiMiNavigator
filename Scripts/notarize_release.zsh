@@ -238,6 +238,16 @@ else
         echo "   HEAD: ${HEAD_SHA}"
         exit 1
     fi
+    PREVIOUS_TAG="$(git describe --tags --match 'v[0-9]*' --exclude="${TAG}" --abbrev=0 HEAD 2>/dev/null || true)"
+    if [[ -z "${PREVIOUS_TAG}" ]]; then
+        echo "❌ Cannot find the previous app release tag for ${TAG}."
+        exit 1
+    fi
+    EXPECTED_VERSION="$(zsh "${PROJECT_DIR}/Scripts/next_release_version.zsh" "${PREVIOUS_TAG}")"
+    if [[ "${VERSION}" != "${EXPECTED_VERSION}" ]]; then
+        echo "❌ ${TAG} does not follow ${PREVIOUS_TAG}; expected v${EXPECTED_VERSION}."
+        exit 1
+    fi
     echo "   GitHub release ${TAG} not found; refs will be published after notarization."
 fi
 
