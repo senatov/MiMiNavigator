@@ -13,7 +13,7 @@ Complete the signed, notarized, stapled DMG and publish the application release 
 
 ## Later stages
 
-1. Record a macOS 26 baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work.
+1. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 26 when a test system is available.
 2. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
 3. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
 4. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
@@ -21,3 +21,13 @@ Complete the signed, notarized, stapled DMG and publish the application release 
 6. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
 
 Carry every version component after the major number from 0 through 9. For example, `0.9.1.9` is followed by `0.9.2.0`.
+
+## Performance stage 1: local baseline (2026-10-23)
+
+- Host: macOS 27.0.1. The app and private packages retain a macOS 26.0 deployment target; a macOS 26 runtime was unavailable.
+- Startup checkpoint: 0.395 seconds in the new Debug build. This is a single warm launch, not a cold-start benchmark.
+- Local flat folder: 20,000 empty `.txt` files under `/tmp`. The prior build spent 2.723 seconds in scan/sort. With conditional metadata fallbacks in FileModelKit, the same scan took 1.178 seconds (57% less).
+- Full panel refresh in the new build took 2.869 seconds, including 1.249 seconds to publish the result. The before/after panel modes differed, so this total is not a controlled comparison.
+- List scrolling by three pages moved the visible window from `file-19999.txt` to `file-19848.txt`. The Debug toolbar reported 48 MB at launch, 266 MB after opening the large folder, and up to 325 MB during the interaction; investigate memory and publication cost separately.
+- Remote-operation latency remains unmeasured because no test server or disposable remote directory was available.
+- The fix is in the private MiMiKits source. Public binary wrappers and the installed release will receive it when the next release packages are published.
