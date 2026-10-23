@@ -34,11 +34,20 @@ extension AppState {
                 for archivePath in archivePaths {
                     let archiveURL = URL(fileURLWithPath: archivePath)
                     let isDirty = await ArchiveManager.shared.isDirty(archiveURL: archiveURL)
+                    var shouldRepack = false
                     if isDirty {
-                        let shouldRepack = await confirmRepackSearchResult(archiveName: archiveURL.lastPathComponent)
-                        try? await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: shouldRepack)
-                    } else {
-                        try? await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: false)
+                        shouldRepack = await confirmRepackSearchResult(archiveName: archiveURL.lastPathComponent)
+                    }
+                    do {
+                        try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: shouldRepack)
+                    } catch {
+                        log.error("[SearchResults] Error closing archive: \(error.localizedDescription)")
+                        ErrorAlertService.show(
+                            title: "Could Not Save Archive",
+                            message: "\"\(archiveURL.lastPathComponent)\" could not be saved. Your changes remain open in the search results.\n\n\(error.localizedDescription)",
+                            style: .critical
+                        )
+                        return
                     }
                 }
                 self.searchResultArchives[panel] = nil

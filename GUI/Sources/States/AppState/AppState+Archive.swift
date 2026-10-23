@@ -80,15 +80,16 @@ extension AppState {
         if isDirty {
             shouldRepack = await confirmRepack(archiveName: archiveURL.lastPathComponent)
         }
-        var didClose = false
         do {
             try await ArchiveManager.shared.closeArchive(at: archiveURL, repackIfDirty: shouldRepack)
-            didClose = true
         } catch {
             log.error("[AppState] Error closing archive: \(error.localizedDescription)")
-        }
-        if didClose && shouldRepack {
-            _ = await ArchiveManager.shared.markDirtyByTempPath(archiveURL.path)
+            ErrorAlertService.show(
+                title: "Could Not Save Archive",
+                message: "\"\(archiveURL.lastPathComponent)\" could not be saved. Your changes remain open in the archive.\n\n\(error.localizedDescription)",
+                style: .critical
+            )
+            return
         }
         await navigateToDirectory(parentDirURL.path, on: panel)
     }
