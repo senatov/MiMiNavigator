@@ -127,37 +127,17 @@ struct PanelFilterBar: View {
     private var historyPopover: some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(history.entries, id: \.self) { entry in
-                HStack(spacing: 6) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.tertiary)
-                        .frame(width: 12)
-
-                    Text(entry)
-                        .font(.system(size: 12))
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // Per-item delete
-                    Button {
+                PanelFilterHistoryRow(
+                    entry: entry,
+                    onSelect: {
+                        query = entry
+                        showHistory = false
+                    },
+                    onRemove: {
                         history.remove(entry)
                         if history.entries.isEmpty { showHistory = false }
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundStyle(.tertiary)
                     }
-                    .buttonStyle(.plain)
-                    .help("Remove from history")
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    query = entry
-                    showHistory = false
-                }
-
+                )
                 if entry != history.entries.last {
                     Divider().padding(.horizontal, 8)
                 }
@@ -165,5 +145,42 @@ struct PanelFilterBar: View {
         }
         .frame(minWidth: 180, maxWidth: 240)
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Filter History Row
+private struct PanelFilterHistoryRow: View {
+    let entry: String
+    let onSelect: () -> Void
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: onSelect) {
+                HStack(spacing: 6) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 12)
+                    Text(entry)
+                        .font(.system(size: 12))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Use filter \(entry)")
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .help("Remove from history")
+            .accessibilityLabel("Remove \(entry) from filter history")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
     }
 }
