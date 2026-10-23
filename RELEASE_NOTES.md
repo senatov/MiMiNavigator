@@ -10,12 +10,17 @@ This release improves archive reliability and file-panel responsiveness. It star
 - Navigate large folders more smoothly by updating visible rows incrementally; column autofit also stays within narrow panels.
 - Show Count and Permissions columns only where their data is meaningful, including File Provider locations.
 - Detect this four-component release as an update from the earlier three-component release and legacy five-component builds.
+- Return promptly when a directory scan is cancelled, even if filesystem enumeration is blocked. Cancelled scans no longer retry alias paths or publish stale panel rows.
+- Select and remove saved local filters through separate, accessible controls.
+- Check the decimal version sequence before notarizing a new release.
 
 ## Validation
 
 - ArchiveKit tests cover TAR and TAR.GZ extraction, ZIP/TAR repacking, hidden files, empty ZIP files, and failure recovery.
 - The application was built from local source-free MiMiKits binaries with a macOS 26 deployment target.
 - In the running Debug app, modified ZIP contents were saved and an unsupported GZ repack left the original and extracted files intact.
+- All five scan-timeout tests passed against the source-free MiMiKits build, including cancellation of a blocked scan.
+- The filter-history actions were checked in the running Debug app; selecting a saved filter and removing one without applying it both worked.
 
 ## Download
 

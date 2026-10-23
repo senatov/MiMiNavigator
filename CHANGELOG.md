@@ -12,12 +12,15 @@ and releases now use four numeric components; each component after the major ver
 ### Changed
 - Adopted four-component release numbers with digits 0-9 after the major version.
 - Improved large-directory row updates, column sizing, and contextual Count/Permissions visibility.
+- Made filter-history selection and deletion separate accessible controls.
+- Validated the next four-component version before starting a new notarized release.
 
 ### Fixed
 - Opened TAR and TAR.GZ archives with macOS-compatible tar options and surfaced extraction failures.
 - Repacked archives into a verified staged file before replacing the original; included hidden entries.
 - Retained extracted archive sessions and showed an error when repacking failed.
 - Recognized this release as newer than the older three- and five-component version lines.
+- Returned immediately from cancelled directory scans and prevented late results from updating panels.
 
 ## [0.9.9.8.3] — 2026-09-22
 
