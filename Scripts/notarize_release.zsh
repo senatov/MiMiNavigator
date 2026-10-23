@@ -48,6 +48,7 @@ DMG="/tmp/MiMiNavigator-${VERSION}.dmg"
 DMG_STAGE=""
 NOTES_FILE="${PROJECT_DIR}/RELEASE_NOTES.md"
 TEMP_DMG_DEVICE=""
+DMG_IMAGE_BACKEND=""
 ACTIVE_CHILD_PID=""
 STAMP_BACKUP_DIR=""
 RELEASE_SUCCEEDED=false
@@ -56,11 +57,12 @@ PACKAGE_MAX_ATTEMPTS=2
 
 cleanup_dmg_mount() {
     if [[ -n "${TEMP_DMG_DEVICE}" ]]; then
-        hdiutil detach "${TEMP_DMG_DEVICE}" >/dev/null 2>&1 || true
+        dmg_image_detach "${TEMP_DMG_DEVICE}" >/dev/null 2>&1 || true
         TEMP_DMG_DEVICE=""
     fi
 }
 
+source "${PROJECT_DIR}/Scripts/dmg_image_commands.zsh"
 source "${PROJECT_DIR}/Scripts/release_process_guard.zsh"
 
 verify_dmg_volume_icon() {
@@ -70,7 +72,7 @@ verify_dmg_volume_icon() {
     local mount_point
     local attributes
     local verification_failed=0
-    attach_output="$(hdiutil attach -readonly -noverify -nobrowse "${dmg_path}")"
+    attach_output="$(dmg_image_attach "${dmg_path}" readonly)"
     device="$(print -r -- "${attach_output}" | awk '/\/Volumes\// {print $1; exit}')"
     mount_point="$(print -r -- "${attach_output}" | sed -n 's|.*\(/Volumes/.*\)|\1|p' | head -1)"
     if [[ ! -f "${mount_point}/.VolumeIcon.icns" ]]; then
@@ -82,7 +84,7 @@ verify_dmg_volume_icon() {
         echo "❌ DMG volume custom-icon attribute is missing after remount"
         verification_failed=1
     fi
-    hdiutil detach "${device}" >/dev/null
+    dmg_image_detach "${device}" >/dev/null
     if [[ ${verification_failed} -ne 0 ]]; then
         return 1
     fi
@@ -343,8 +345,15 @@ xattr -cr "${APP}"
 # ── Step 8: Create fancy DMG with background + Applications symlink ──────────
 echo "[8/10] Creating fancy DMG installer..."
 DMG_BG="${PROJECT_DIR}/Scripts/dmg_background.png"
-DMG_RW="/tmp/MiMiNavigator-${VERSION}-rw.dmg"
 DMG_VOL="MiMiNavigator"
+dmg_image_select_backend
+# diskutil creates writable folder images as sparse bundles, then converts them to UDZO.
+if [[ "${DMG_IMAGE_BACKEND}" == diskutil ]]; then
+    DMG_RW="/tmp/MiMiNavigator-${VERSION}-rw.sparsebundle"
+else
+    DMG_RW="/tmp/MiMiNavigator-${VERSION}-rw.dmg"
+fi
+echo "   Disk image backend: ${DMG_IMAGE_BACKEND}"
 DMG_WINDOW_LEFT=200
 DMG_WINDOW_TOP=120
 DMG_WINDOW_WIDTH=660
@@ -377,16 +386,12 @@ fi
 cp "${DMG_VOLUME_ICON}" "${DMG_STAGE}/.VolumeIcon.icns"
 
 # create read-write DMG first
-rm -f "${DMG_RW}" "${DMG}"
-hdiutil create \
-    -volname "${DMG_VOL}" \
-    -srcfolder "${DMG_STAGE}" \
-    -ov \
-    -format UDRW \
-    "${DMG_RW}"
+dmg_image_remove_rw "${DMG_RW}"
+rm -f "${DMG}"
+dmg_image_create_rw "${DMG_STAGE}" "${DMG_VOL}" "${DMG_RW}"
 
 # mount r/w, style with AppleScript
-MOUNT_OUT=$(hdiutil attach -readwrite -noverify -nobrowse "${DMG_RW}" | grep '/Volumes/')
+MOUNT_OUT=$(dmg_image_attach "${DMG_RW}" readwrite | grep '/Volumes/')
 DEVICE=$(echo "${MOUNT_OUT}" | head -1 | awk '{print $1}')
 MOUNT_PT=$(echo "${MOUNT_OUT}" | head -1 | sed 's|.*\(/Volumes/.*\)|\1|')
 TEMP_DMG_DEVICE="${DEVICE}"
@@ -429,13 +434,13 @@ APPLESCRIPT
 
 apply_dmg_volume_icon "${MOUNT_PT}" "${DMG_VOLUME_ICON}"
 sleep 2
-hdiutil detach "${DEVICE}"
+dmg_image_detach "${DEVICE}"
 TEMP_DMG_DEVICE=""
 sleep 1
 
 # convert to compressed read-only DMG
-hdiutil convert "${DMG_RW}" -format UDZO -o "${DMG}"
-rm -f "${DMG_RW}"
+dmg_image_convert "${DMG_RW}" "${DMG}"
+dmg_image_remove_rw "${DMG_RW}"
 verify_dmg_volume_icon "${DMG}"
 echo "   DMG: ${DMG} ($(du -sh "${DMG}" | cut -f1))"
 echo "   Signing DMG container..."
