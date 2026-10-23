@@ -5,8 +5,10 @@
 # → optionally publish branch/tag and upload to GitHub release.
 #
 # Usage:  zsh Scripts/notarize_release.zsh <version>
-# Example: zsh Scripts/notarize_release.zsh 0.9.7.1
+# Example: zsh Scripts/notarize_release.zsh 0.9.1.2
 # Set MIMI_RELEASE_LOCAL_ONLY=1 to stop after notarization without pushing refs.
+# Set MIMI_RELEASE_LOCAL_KITS=1 with local-only mode to build against the
+# verified local XCFrameworks before their public release assets are uploaded.
 #
 # Prerequisites:
 #   brew install gh && gh auth login
@@ -23,14 +25,14 @@ KEYCHAIN_PATH="${HOME}/Library/Keychains/login.keychain-db"
 
 # ── Args ──────────────────────────────────────────────────────────────────────
 if [[ $# -lt 1 ]]; then
-    print -u2 "Usage: $0 <version>   e.g. $0 0.9.7.1"
+    print -u2 "Usage: $0 <version>   e.g. $0 0.9.1.2"
     exit 1
 fi
 
 VERSION="$1"
 TAG="v${VERSION}"
-if [[ ! "${VERSION}" =~ '^[0-9]+(\.[0-9]+)+$' ]]; then
-    print -u2 "Invalid version '${VERSION}'. Expected digits separated by dots."
+if [[ ! "${VERSION}" =~ '^[0-9]+\.[0-9]\.[0-9]\.[0-9]$' ]]; then
+    print -u2 "Invalid version '${VERSION}'. Expected four components with digits 0-9 after the major version."
     exit 1
 fi
 
@@ -158,6 +160,10 @@ if ! sed 's/\r$//' "${NOTES_FILE}" | grep -Fqx "# MiMiNavigator ${TAG}"; then
     echo "❌ ${NOTES_FILE} does not describe ${TAG}."
     exit 1
 fi
+if [[ "${MIMI_RELEASE_LOCAL_KITS:-0}" == "1" && "${MIMI_RELEASE_LOCAL_ONLY:-0}" != "1" ]]; then
+    echo "❌ Local MiMiKits artifacts require MIMI_RELEASE_LOCAL_ONLY=1."
+    exit 1
+fi
 
 assert_editable_uploaded_release() {
     local immutable
@@ -244,6 +250,13 @@ RELEASE_VERSION="${VERSION}" Scripts/refreshVersionFile.zsh
 if ! grep -Fq "MARKETING_VERSION = ${VERSION};" "${PROJECT_FILE}/project.pbxproj"; then
     echo "❌ MARKETING_VERSION was not updated to ${VERSION}."
     exit 1
+fi
+if [[ "${MIMI_RELEASE_LOCAL_KITS:-0}" == "1" ]]; then
+    echo "   Configuring source-free checkout with local MiMiKits artifacts..."
+    python3 "${PROJECT_DIR}/Scripts/BinaryPackages/configure.py" --verify
+    PROJECT_FILE="${PROJECT_DIR}/build/binary-packages/verification/MiMiNavigator.xcodeproj"
+    cp "${PROJECT_DIR}/GUI/Resources/curr_version.asc" "${PROJECT_DIR}/build/binary-packages/verification/GUI/Resources/curr_version.asc"
+    cp "${PROJECT_DIR}/MiMiNavigator.xcodeproj/project.pbxproj" "${PROJECT_FILE}/project.pbxproj"
 fi
 
 # ── Step 2: Isolated build workspace ─────────────────────────────────────────

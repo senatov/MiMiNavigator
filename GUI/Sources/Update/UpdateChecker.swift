@@ -80,10 +80,10 @@ final class UpdateChecker: ObservableObject {
     static func isNewer(_ latest: String, than current: String) -> Bool {
         let latestParts = latest.split(separator: ".").compactMap { Int($0) }
         let currentParts = current.split(separator: ".").compactMap { Int($0) }
-        let correctedLine = latestParts.count == 3 && latestParts.prefix(2) == [0, 9]
+        let correctedLine = correctedVersion(latestParts)
         let legacyLine = currentParts.count > 3 && currentParts.prefix(3) == [0, 9, 9]
         if correctedLine && (legacyLine || current == "9.9.1") { return true }
-        if latestParts.count > 3 && latestParts.prefix(3) == [0, 9, 9] && currentParts.count == 3 && currentParts.prefix(2) == [0, 9] { return false }
+        if latestParts.count > 3 && latestParts.prefix(3) == [0, 9, 9] && correctedVersion(currentParts) { return false }
         
         for i in 0..<max(latestParts.count, currentParts.count) {
             let l = i < latestParts.count ? latestParts[i] : 0
@@ -92,6 +92,10 @@ final class UpdateChecker: ObservableObject {
             if l < c { return false }
         }
         return false
+    }
+    // MARK: - Corrected Version Line
+    private static func correctedVersion(_ parts: [Int]) -> Bool {
+        (parts.count == 3 || parts.count == 4) && parts.prefix(2) == [0, 9]
     }
     // MARK: - Asset Comparison
     private func availabilityReason(for release: GitHubRelease) -> AvailabilityReason? {

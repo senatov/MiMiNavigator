@@ -3,9 +3,21 @@
 All notable changes to MiMiNavigator will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and releases now use four numeric components; each component after the major version carries at 9.
 
 ## [Unreleased]
+
+## [0.9.1.2] - 2026-10-23
+
+### Changed
+- Adopted four-component release numbers with digits 0-9 after the major version.
+- Improved large-directory row updates, column sizing, and contextual Count/Permissions visibility.
+
+### Fixed
+- Opened TAR and TAR.GZ archives with macOS-compatible tar options and surfaced extraction failures.
+- Repacked archives into a verified staged file before replacing the original; included hidden entries.
+- Retained extracted archive sessions and showed an error when repacking failed.
+- Recognized this release as newer than the older three- and five-component version lines.
 
 ## [0.9.9.8.3] — 2026-09-22
 
@@ -1355,7 +1367,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.6.0...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...HEAD
+[0.9.1.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.2
 [0.9.9.6.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.6.0
 [0.9.9.5.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.8...v0.9.9.5.9
 [0.9.9.5.8]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.7...v0.9.9.5.8

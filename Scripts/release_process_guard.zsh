@@ -34,7 +34,7 @@ restore_version_stamp() {
         return
     fi
     cp "${STAMP_BACKUP_DIR}/curr_version.asc" "${PROJECT_DIR}/GUI/Resources/curr_version.asc"
-    cp "${STAMP_BACKUP_DIR}/project.pbxproj" "${PROJECT_FILE}/project.pbxproj"
+    cp "${STAMP_BACKUP_DIR}/project.pbxproj" "${PROJECT_DIR}/MiMiNavigator.xcodeproj/project.pbxproj"
     rm -rf "${STAMP_BACKUP_DIR}"
     STAMP_BACKUP_DIR=""
 }

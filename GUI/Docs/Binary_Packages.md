@@ -5,8 +5,9 @@
 The distribution pipeline builds private MiMiKits modules as individual static
 XCFrameworks. On 2026-09-12 the application built successfully from an isolated
 copy with no private Packages directory, using the extracted ZIP artifacts.
-The grouped sorting regression test also passed. The public project uses release
-`kits-ffba754c7dd76553`, built from MiMiKits commit `7259b0e`. Runtime and UI
+The grouped sorting regression test also passed. The v0.9.1.2 public wrappers reference binary release
+`kits-3f53511a20cf81ff`, built from MiMiKits commit `d43e581`. Its assets must
+be published before a clean public checkout can resolve them. Runtime and UI
 behavior remain separate from build verification.
 
 The first artifact set targets Apple Silicon (arm64), macOS 26 or newer for both

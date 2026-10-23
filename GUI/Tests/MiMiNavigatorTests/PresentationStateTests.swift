@@ -54,8 +54,13 @@ final class RemoteServerURLParserTests: XCTestCase {
     // MARK: - Corrected Release Version
     func testCorrectedVersionReplacesLegacyAndMistypedRelease() {
         XCTAssertTrue(UpdateChecker.isNewer("0.9.1", than: "0.9.9.8.7"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.1.2", than: "0.9.9.8.7"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.1.2", than: "0.9.1"))
+        XCTAssertTrue(UpdateChecker.isNewer("0.9.2.0", than: "0.9.1.9"))
         XCTAssertTrue(UpdateChecker.isNewer("0.9.1", than: "9.9.1"))
         XCTAssertFalse(UpdateChecker.isNewer("0.9.9.8.7", than: "0.9.1"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.9.9.8.7", than: "0.9.1.2"))
+        XCTAssertFalse(UpdateChecker.isNewer("0.9.1.9", than: "0.9.2.0"))
         XCTAssertTrue(UpdateChecker.isNewer("0.9.2", than: "0.9.1"))
         XCTAssertFalse(UpdateChecker.isNewer("0.9.1", than: "0.9.2"))
     }

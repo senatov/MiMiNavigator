@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "ScannerKit", targets: ["ScannerKitDependencies"])],
     dependencies: [.package(path: "../LogKit"), .package(path: "../FileModelKit")],
     targets: [
-        .binaryTarget(name: "ScannerKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-20351929fcfd1e2a/ScannerKit.xcframework.zip", checksum: "cc1041e80474cea6b96eee0337cc438e676806d7fcc9901a7ea5bdc6a95f98f8"),
+        .binaryTarget(name: "ScannerKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-3f53511a20cf81ff/ScannerKit.xcframework.zip", checksum: "7cc4d64c745b4572e17be041beca1ae4e9514cbc34fc206e5de1249db4680efb"),
         .target(name: "ScannerKitDependencies", dependencies: ["ScannerKit", .product(name: "LogKit", package: "LogKit"), .product(name: "FileModelKit", package: "FileModelKit")])
     ]
 )
