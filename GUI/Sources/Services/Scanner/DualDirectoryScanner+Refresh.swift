@@ -146,7 +146,7 @@ extension DualDirectoryScanner {
             task.cancel()
             activeScanTask.removeValue(forKey: side)
         }
-
+        scanGeneration[side, default: 0] += 1
         scanInProgress[side] = false
         log.debug("[Scanner] Cancelled scan for \(side)")
     }

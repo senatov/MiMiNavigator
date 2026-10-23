@@ -14,7 +14,9 @@ extension DualDirectoryScanner {
         originalURL: URL,
         context: ScanAttemptContext
     ) async {
-        for (index, url) in urls.enumerated() where validateDirectoryURL(url) {
+        for (index, url) in urls.enumerated() {
+            guard !Task.isCancelled else { return }
+            guard validateDirectoryURL(url) else { continue }
             log.info("[Scan] attempt \(index + 1)/\(urls.count): \(url.path)")
             let result = await performScanAttempt(
                 at: url,
@@ -45,6 +47,10 @@ extension DualDirectoryScanner {
                 sortKey: context.sortKey,
                 sortAsc: context.sortAsc
             )
+            guard !Task.isCancelled else {
+                outcome = "cancelled"
+                return .stop
+            }
             let scanDuration = Date().timeIntervalSince(attemptStart)
             guard isCurrentGeneration(context.generation, for: context.side) else {
                 outcome = "stale"
@@ -64,6 +70,9 @@ extension DualDirectoryScanner {
             }
             await publishScanResult(sorted, url: url, scanDuration: scanDuration, context: context)
             outcome = "published"
+            return .stop
+        } catch is CancellationError {
+            outcome = "cancelled"
             return .stop
         } catch let error as ScanTimeoutError {
             outcome = "timeout"
