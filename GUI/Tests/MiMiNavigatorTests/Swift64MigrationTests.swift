@@ -53,6 +53,37 @@ struct StreamCopyTests {
 }
 
 // MARK: - Scan Timeout Tests
+private final class SuspendedScan: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var isReleased = false
+
+    // MARK: - Wait
+    func wait() async {
+        await withCheckedContinuation { continuation in
+            lock.lock()
+            if isReleased {
+                lock.unlock()
+                continuation.resume()
+                return
+            }
+            self.continuation = continuation
+            lock.unlock()
+        }
+    }
+
+    // MARK: - Release
+    func release() {
+        lock.lock()
+        isReleased = true
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume()
+    }
+}
+
+// MARK: - Scan Timeout Tests
 struct ScanTimeoutTests {
     // MARK: - Scan Failure
     private struct ScanFailure: Error {}
@@ -97,6 +128,27 @@ struct ScanTimeoutTests {
         }
         let caller = Task {
             try await ScanTimeoutRace.run(scanTask, url: URL(fileURLWithPath: "/tmp"), timeout: 30)
+        }
+        caller.cancel()
+        do {
+            _ = try await caller.value
+            Issue.record("Expected cancellation")
+        } catch is CancellationError {
+            #expect(scanTask.isCancelled)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+
+    @Test func callerCancellationDoesNotWaitForBlockedScan() async {
+        let gate = SuspendedScan()
+        defer { gate.release() }
+        let scanTask = Task.detached { () throws -> [CustomFile] in
+            await gate.wait()
+            return []
+        }
+        let caller = Task {
+            try await ScanTimeoutRace.run(scanTask, url: URL(fileURLWithPath: "/tmp"), timeout: 0.2)
         }
         caller.cancel()
         do {

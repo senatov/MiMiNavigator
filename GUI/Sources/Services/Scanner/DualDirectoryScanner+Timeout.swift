@@ -27,24 +27,50 @@ private enum ScanRaceOutput: @unchecked Sendable {
 // MARK: - Scan Race Result
 private final class ScanRaceResult: @unchecked Sendable {
     private let lock = NSLock()
-    private var didResume = false
-    private let continuation: CheckedContinuation<ScanRaceOutput, Never>
+    private var result: ScanRaceOutput?
+    private var continuation: CheckedContinuation<ScanRaceOutput, Never>?
+    private var timeoutTask: Task<Void, Never>?
 
-    init(_ continuation: CheckedContinuation<ScanRaceOutput, Never>) {
+    // MARK: - Install Continuation
+    func install(_ continuation: CheckedContinuation<ScanRaceOutput, Never>) {
+        lock.lock()
+        if let result {
+            lock.unlock()
+            continuation.resume(returning: result)
+            return
+        }
         self.continuation = continuation
+        lock.unlock()
+    }
+
+    // MARK: - Set Timeout Task
+    func setTimeoutTask(_ task: Task<Void, Never>) {
+        lock.lock()
+        if result != nil {
+            lock.unlock()
+            task.cancel()
+            return
+        }
+        timeoutTask = task
+        lock.unlock()
     }
 
     // MARK: - Resume
     func resume(_ result: ScanRaceOutput, beforeResume: () -> Void = {}) {
         lock.lock()
-        guard !didResume else {
+        guard self.result == nil else {
             lock.unlock()
             return
         }
-        didResume = true
+        self.result = result
+        let continuation = self.continuation
+        self.continuation = nil
+        let timeoutTask = self.timeoutTask
+        self.timeoutTask = nil
         lock.unlock()
         beforeResume()
-        continuation.resume(returning: result)
+        timeoutTask?.cancel()
+        continuation?.resume(returning: result)
     }
 }
 
@@ -57,24 +83,25 @@ enum ScanTimeoutRace {
         timeout: TimeInterval,
         waitForTimeout: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
     ) async throws -> [CustomFile] {
+        let race = ScanRaceResult()
         let result = await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                let race = ScanRaceResult(continuation)
+                race.install(continuation)
                 let timeoutTask = Task {
                     do { try await waitForTimeout(timeout) } catch { return }
                     race.resume(.timeout, beforeResume: { scanTask.cancel() })
                 }
+                race.setTimeoutTask(timeoutTask)
                 Task {
                     do {
                         race.resume(.success(try await scanTask.value))
                     } catch {
                         race.resume(.failure(error))
                     }
-                    timeoutTask.cancel()
                 }
             }
         } onCancel: {
-            scanTask.cancel()
+            race.resume(.failure(CancellationError()), beforeResume: { scanTask.cancel() })
         }
         switch result {
         case .success(let files):
