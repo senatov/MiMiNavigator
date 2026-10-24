@@ -13,6 +13,7 @@ and releases now use four numeric components; each component after the major ver
 
 ### Fixed
 - Prevented a downloaded app that requires a newer macOS release from replacing the installed application; a missing or malformed minimum-version declaration also cancels installation.
+- Stopped release packaging when the signed app version or executable deployment target disagrees with the release number and required macOS version.
 
 ### Planned opportunities
 - Evaluate macOS 27 SwiftUI toolbar priorities and overflow controls for narrow Commander windows without maintaining custom overflow behavior.

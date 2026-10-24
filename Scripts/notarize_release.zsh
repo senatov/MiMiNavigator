@@ -340,6 +340,7 @@ codesign --verify --deep --strict "${APP}" 2>&1 && echo "   ✅ Signature valid"
     echo "❌ Signature verification failed!"
     exit 1
 }
+zsh "${PROJECT_DIR}/Scripts/verify_release_bundle.zsh" "${APP}" "${VERSION}"
 xattr -cr "${APP}"
 
 # ── Step 8: Create fancy DMG with background + Applications symlink ──────────
