@@ -2,6 +2,7 @@
 // MiMiNavigatorTests
 
 import Foundation
+import FileModelKit
 import Testing
 @testable import MiMiNavigator
 
@@ -91,5 +92,23 @@ struct LargeDirectoryPolicyTests {
         #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 900..<1_000).last == 897)
         #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 0..<1_000).isEmpty)
         #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 1_100..<1_200).first == 0)
+    }
+}
+
+// MARK: - File Table Sorted Snapshot Tests
+struct FileTableSortedSnapshotTests {
+    @Test func keepsSortedRowsAndExcludesSyntheticParent() {
+        let root = "/tmp/mimi-sorted-snapshot-test"
+        let alpha = CustomFile(name: "alpha.txt", path: "\(root)/alpha.txt")
+        let beta = CustomFile(name: "beta.txt", path: "\(root)/beta.txt")
+        let parent = ParentDirectoryEntry.make(for: root)
+        let sorter = TableFileSorter(sortKey: .name, ascending: true, excludeDirectoriesFromSorting: true, directoryNameAscending: true)
+        let flat = FileTableSortedSnapshot.build(files: [beta, alpha], sorter: sorter)
+        let withParent = FileTableSortedSnapshot.build(files: [beta, parent, alpha], sorter: sorter)
+        #expect(flat.rows.map(\.nameStr) == ["alpha.txt", "beta.txt"])
+        #expect(withParent.rows.map(\.nameStr) == ["alpha.txt", "beta.txt"])
+        #expect(withParent.indexByID[alpha.id] == 0)
+        #expect(withParent.indexByID[beta.id] == 1)
+        #expect(withParent.indexByID[parent.id] == nil)
     }
 }

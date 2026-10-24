@@ -51,7 +51,6 @@ enum LargeDirectoryPolicy {
 
 // MARK: - Sorted File Table Snapshot
 struct FileTableSortedSnapshot: Sendable {
-    let files: [CustomFile]
     let rows: [CustomFile]
     let indexByID: [CustomFile.ID: Int]
     let containsDirectories: Bool
@@ -61,9 +60,10 @@ struct FileTableSortedSnapshot: Sendable {
     static func build(files: [CustomFile], sorter: TableFileSorter) -> Self {
         let sorted = files.sorted(by: sorter.compare)
         if Task.isCancelled {
-            return Self(files: [], rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false)
+            return Self(rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false)
         }
-        let rows = sorted.filter { !$0.isParentEntry && $0.nameStr != ".." }
+        let hasParentEntry = sorted.contains { $0.isParentEntry || $0.nameStr == ".." }
+        let rows = hasParentEntry ? sorted.filter { !$0.isParentEntry && $0.nameStr != ".." } : sorted
         var index = [CustomFile.ID: Int](minimumCapacity: rows.count)
         var containsDirectories = false
         var containsUsablePermissions = false
@@ -73,7 +73,6 @@ struct FileTableSortedSnapshot: Sendable {
             if file.posixPermissions != 0 { containsUsablePermissions = true }
         }
         return Self(
-            files: sorted,
             rows: rows,
             indexByID: index,
             containsDirectories: containsDirectories,

@@ -42,17 +42,11 @@ struct FileTableView: View {
         nonmutating set { appState.bSortAscending = newValue }
     }
 
-    /// Cached real filesystem entries after sorting.
-    /// This array does not include the synthetic parent-navigation row.
-    @State var cachedSortedFiles: [CustomFile] = []
-
-    /// O(1) lookup table: file.id → position in cachedSortedFiles.
+    /// O(1) lookup table: file.id → position in cachedSortedRows.
     /// Rebuilt only when the file list changes.
     @State var cachedIndexByID: [CustomFile.ID: Int] = [:]
 
-    /// Cached UI rows for LazyVStack.
-    /// Unlike cachedSortedFiles, this array may include synthetic navigation rows
-    /// such as the parent directory entry.
+    /// Cached filesystem rows for LazyVStack; the parent strip is separate.
     @State var cachedSortedRows: [CustomFile] = []
     @State var sortTask: Task<Void, Never>?
     @State var sortGeneration: Int = 0

@@ -42,12 +42,11 @@ extension FileTableView {
     private func applySortedSnapshot(_ snapshot: FileTableSortedSnapshot) {
         layout.setContainsDirectories(snapshot.containsDirectories)
         layout.setContainsUsablePermissions(snapshot.containsUsablePermissions)
-        cachedSortedFiles = snapshot.files
         cachedSortedRows = snapshot.rows
         cachedIndexByID = snapshot.indexByID
         firstVisibleRow = min(firstVisibleRow, max(0, snapshot.rows.count - 1))
         scrollToSelectionFromState()
-        Self.log.debug("[FileTableState] rebuilt sorted cache panel=\(panelSide.rawValue) count=\(snapshot.files.count) mode=\(LargeDirectoryPolicy.mode(for: snapshot.files.count))")
+        Self.log.debug("[FileTableState] rebuilt sorted cache panel=\(panelSide.rawValue) count=\(snapshot.rows.count) mode=\(LargeDirectoryPolicy.mode(for: snapshot.rows.count))")
     }
 
     /// Register navigation callbacks so DuoFilePanelKeyboardHandler

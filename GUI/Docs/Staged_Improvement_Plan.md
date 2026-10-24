@@ -57,3 +57,10 @@ Carry every version component after the major number from 0 through 9. For examp
 - Skip parent-entry array mutation when the scan has no `..` entry, and skip the old-file size lookup when the incoming scan has no directories.
 - The Debug app displayed all 19,367 rows. An unchanged forced refresh skipped republishing the panel. One initial scan took 1.630 seconds for scan/sort and 0.411 seconds for publication; this single run does not establish an end-to-end speedup.
 - Next measure the remaining full-list content hash and table snapshot rebuild separately before changing their concurrency or cache ownership.
+
+## Performance stage 4: sorted table snapshot (2026-10-24)
+
+- Removed the unused sorted-file array from table view state. The snapshot now keeps only rows and the selection index.
+- When no synthetic parent entry is present, the sorted array becomes the row array directly; filtering still removes `..` when present.
+- The Debug build and focused snapshot test passed on macOS 27.0.1. In the running Debug app, the requested 19,367-file directory displayed all items, and jump-to-bottom and jump-to-top navigation worked.
+- This removes one array allocation on the flat-folder path; total memory savings were not measured.
