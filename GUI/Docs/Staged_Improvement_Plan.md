@@ -26,7 +26,7 @@ CI now detects Xcode failures piped through `xcbeautify`. Build failures fail th
 
 ## macOS 27 opportunities to assess
 
-- Try SwiftUI toolbar visibility priorities and overflow menus in narrow two-panel windows; preserve keyboard actions and existing customization before replacing controls.
+- Keep view modes and the fixed menu toggle visible longer with SwiftUI toolbar visibility priorities; expose individual actions in native toolbar overflow. `ToolbarOverflowMenu` is unavailable on macOS in Xcode 27, so assess other platform-specific toolbar APIs before adopting them.
 - Try native drag reordering for Favorites and other ordered views; verify stable identity, focus, and accessibility in the running app.
 - Review item-bound alerts and confirmation dialogs to reduce duplicated presentation state.
 - Profile lazy `@State` initialization and Xcode 27 `ContentBuilder` compilation separately. The compiler benefit comes from Xcode 27, not simply from raising the deployment target.

@@ -22,12 +22,10 @@ struct AppToolbarContent: ToolbarContent {
         ToolbarItem(placement: .navigation) {
             AppWindowTitle(version: MiMiNavigatorApp.appVersion)
         }
-        // Action buttons
-        ToolbarItem(placement: .primaryAction) {
-            ToolbarButtonGroup {
-                ForEach(store.visibleItems) { item in
-                    toolbarButton(for: item)
-                }
+        // Individual items keep actions available in the native overflow menu.
+        ForEach(store.visibleItems) { item in
+            ToolbarItem(placement: .primaryAction) {
+                ToolbarActionButton(app: app, appState: appState, item: item)
             }
         }
         // View modes — separate group before the rightmost menu toggle
@@ -36,41 +34,65 @@ struct AppToolbarContent: ToolbarContent {
                 ViewModeToolbarItem(appState: appState)
             }
         }
+        .visibilityPriority(.high)
         // Menu bar toggle
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
                 app.makeToolbarToggle(.menuBarToggle)
             }
         }
+        .visibilityPriority(.high)
+    }
+}
+
+// MARK: - Toolbar Action Button
+private struct ToolbarActionButton: View {
+    let app: MiMiNavigatorApp
+    let appState: AppState
+    let item: ToolbarItemID
+
+    var body: some View {
+        let isActive = switch item {
+        case .hiddenFiles: appState.showHiddenFiles
+        case .preview: PreviewPaneStore.shared.isVisible
+        default: false
+        }
+        Button(item.label, systemImage: item == .hiddenFiles && isActive ? "eye.fill" : item.systemImage) {
+            performAction()
+        }
+        .labelStyle(.iconOnly)
+        .foregroundStyle(isActive ? Color.accentColor : Color.primary)
+        .help(item.helpText)
+        .accessibilityValue(item == .hiddenFiles || item == .preview ? (isActive ? "On" : "Off") : "")
     }
 
-    @ViewBuilder
-    private func toolbarButton(for item: ToolbarItemID) -> some View {
+    // MARK: - Toolbar Action
+    private func performAction() {
         switch item {
         case .refresh:
-            app.makeToolbarIcon(.refresh) { app.performRefresh() }
+            app.performRefresh()
         case .hiddenFiles:
-            app.makeToolbarToggle(.hiddenFiles)
+            app.performToggleHidden()
         case .swapPanels:
-            app.makeToolbarIcon(.swapPanels) { app.performSwapPanels() }
+            app.performSwapPanels()
         case .compare:
-            app.makeToolbarIcon(.compare) { app.performCompare() }
+            app.performCompare()
         case .network:
-            app.makeToolbarIcon(.network) { app.performNetwork() }
+            app.performNetwork()
         case .connectServer:
-            app.makeToolbarIcon(.connectServer) { app.performConnectServer() }
+            app.performConnectServer()
         case .findFiles:
-            app.makeToolbarIcon(.findFiles) { app.performFindFiles() }
+            app.performFindFiles()
         case .multiRename:
-            app.makeToolbarIcon(.multiRename) { app.performMultiRename() }
+            app.performMultiRename()
         case .settings:
-            app.makeToolbarIcon(.settings) { app.performSettings() }
+            app.performSettings()
         case .feedback:
-            FeedbackToolbarButton(action: FeedbackCoordinator.shared.show)
+            FeedbackCoordinator.shared.show()
         case .preview:
-            app.makeToolbarToggle(.preview)
+            PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
         case .menuBarToggle:
-            EmptyView()
+            ToolbarStore.shared.menuBarVisible.toggle()
         }
     }
 }

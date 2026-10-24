@@ -258,28 +258,7 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    // MARK: - ═══════════════════════════════════════
-    // MARK:   Toolbar Icon / Toggle Factories
-    // MARK: - ═══════════════════════════════════════
-    /// Creates a ToolbarButton for a given ToolbarItemID with action closure.
-    func makeToolbarIcon(_ id: ToolbarItemID, action: @escaping () -> Void) -> some View {
-        ToolbarButton(systemImage: id.systemImage, help: id.helpText, iconColor: toolbarIconColor(for: id), action: action)
-    }
-
-    // MARK: - Toolbar Icon Color
-    private func toolbarIconColor(for id: ToolbarItemID) -> Color? {
-        switch id {
-            case .refresh:
-                return Color(#colorLiteral(red: 0.05, green: 0.48, blue: 0.58, alpha: 1.0))
-            case .network, .connectServer:
-                return Color(#colorLiteral(red: 0.10, green: 0.38, blue: 0.72, alpha: 1.0))
-            case .multiRename:
-                return Color(#colorLiteral(red: 0.2470588235, green: 0.0784313725, blue: 0.3921568627, alpha: 1.0))
-            default:
-                return nil
-        }
-    }
-
+    // MARK: - Toolbar Toggle Factory
     /// Creates a ToolbarToggleButton for specific known toggle items.
     @ViewBuilder
     func makeToolbarToggle(_ id: ToolbarItemID) -> some View {
