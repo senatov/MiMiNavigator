@@ -70,3 +70,9 @@ Carry every version component after the major number from 0 through 9. For examp
 - On the requested 19,367-file `webview/assets` fixture, full content hashing took about 40 ms on the main actor in two forced-refresh samples. Building the sorted table snapshot took 135–161 ms, already in a detached task.
 - Large-directory hashing now runs in a detached task. A per-panel publication generation and expected-path check discard stale results after overlapping refreshes or navigation; smaller folders keep the synchronous path.
 - The Debug build displayed all 19,367 files, and an unchanged forced refresh still skipped duplicate publication. The first off-main hash measurements took 43–52 ms including task scheduling; these samples do not establish an end-to-end speedup.
+
+## Performance stage 6: reuse sorted scan order (2026-10-24)
+
+- The scanner already sorts local scan results. For a table with at least 2,000 rows, the snapshot now checks adjacent items against its active comparator and reuses the input order when it is valid. A changed order still takes the normal sort path.
+- On the requested 19,367-file fixture, the Debug log confirmed `reusedInput=true` for the date-sorted table after publication. Snapshot construction took 123–135 ms in two runs; the previous 135–161 ms samples overlap, so an overall speedup is not established. Reusing the order avoids one full-size sort array allocation.
+- A focused test covers the large sorted path and re-sorting after a direction change. The verification scan remains linear and can still be expensive when many adjacent values require localized name comparisons.

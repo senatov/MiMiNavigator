@@ -111,4 +111,22 @@ struct FileTableSortedSnapshotTests {
         #expect(withParent.indexByID[beta.id] == 1)
         #expect(withParent.indexByID[parent.id] == nil)
     }
+
+    @Test func acceptsPresortedLargeInputAndResortsForChangedDirection() {
+        let root = "/tmp/mimi-sorted-snapshot-test"
+        let files = (0..<2_000).map { index in
+            CustomFile(name: String(format: "file-%04d.txt", index), path: "\(root)/file-\(index).txt")
+        }
+        let ascending = TableFileSorter(sortKey: .name, ascending: true, excludeDirectoriesFromSorting: true, directoryNameAscending: true)
+        let descending = TableFileSorter(sortKey: .name, ascending: false, excludeDirectoriesFromSorting: true, directoryNameAscending: true)
+        let presorted = FileTableSortedSnapshot.build(files: files, sorter: ascending)
+        let reversed = FileTableSortedSnapshot.build(files: files, sorter: descending)
+        #expect(presorted.reusedInputOrder)
+        #expect(!reversed.reusedInputOrder)
+        #expect(presorted.rows.first?.nameStr == "file-0000.txt")
+        #expect(presorted.rows.last?.nameStr == "file-1999.txt")
+        #expect(reversed.rows.first?.nameStr == "file-1999.txt")
+        #expect(reversed.rows.last?.nameStr == "file-0000.txt")
+        #expect(reversed.indexByID[files[0].id] == 1_999)
+    }
 }

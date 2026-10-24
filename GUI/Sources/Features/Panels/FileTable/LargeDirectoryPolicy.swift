@@ -55,12 +55,14 @@ struct FileTableSortedSnapshot: Sendable {
     let indexByID: [CustomFile.ID: Int]
     let containsDirectories: Bool
     let containsUsablePermissions: Bool
+    let reusedInputOrder: Bool
 
     // MARK: - Build
     static func build(files: [CustomFile], sorter: TableFileSorter) -> Self {
-        let sorted = files.sorted(by: sorter.compare)
+        let alreadySorted = files.count >= LargeDirectoryPolicy.largeEntryCount && isAlreadySorted(files, by: sorter)
+        let sorted = alreadySorted ? files : files.sorted(by: sorter.compare)
         if Task.isCancelled {
-            return Self(rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false)
+            return Self(rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false, reusedInputOrder: false)
         }
         let hasParentEntry = sorted.contains { $0.isParentEntry || $0.nameStr == ".." }
         let rows = hasParentEntry ? sorted.filter { !$0.isParentEntry && $0.nameStr != ".." } : sorted
@@ -76,7 +78,16 @@ struct FileTableSortedSnapshot: Sendable {
             rows: rows,
             indexByID: index,
             containsDirectories: containsDirectories,
-            containsUsablePermissions: containsUsablePermissions
+            containsUsablePermissions: containsUsablePermissions,
+            reusedInputOrder: alreadySorted
         )
+    }
+
+    // MARK: - Existing Order
+    private static func isAlreadySorted(_ files: [CustomFile], by sorter: TableFileSorter) -> Bool {
+        for index in 1..<files.count {
+            if sorter.compare(files[index], files[index - 1]) { return false }
+        }
+        return true
     }
 }

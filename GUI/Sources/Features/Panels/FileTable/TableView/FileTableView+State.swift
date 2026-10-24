@@ -36,7 +36,7 @@ extension FileTableView {
             }
             guard !Task.isCancelled, generation == sortGeneration else { return }
             applySortedSnapshot(snapshot)
-            Self.log.debug("[FileTableState] sorted snapshot panel=\(panelSide.rawValue) count=\(snapshot.rows.count) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - sortStart))s")
+            Self.log.debug("[FileTableState] sorted snapshot panel=\(panelSide.rawValue) count=\(snapshot.rows.count) key=\(activeSorter.sortKey) ascending=\(activeSorter.ascending) reusedInput=\(snapshot.reusedInputOrder) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - sortStart))s")
         }
     }
 
