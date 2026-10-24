@@ -25,7 +25,7 @@ extension DualDirectoryScanner {
         do {
             let showHidden = await MainActor.run { UserPreferences.shared.snapshot.showHiddenFiles }
             let scanned = try FileScanner.scan(url: url, showHiddenFiles: showHidden)
-            await updateScannedFiles(scanned, for: side)
+            guard let _ = await updateScannedFiles(scanned, for: side, expectedPath: url.path) else { return false }
             await updateFileList(panelSide: side, with: scanned)
             log.info("[Permissions] bookmark rescan succeeded items=\(scanned.count)")
             return true
@@ -44,7 +44,7 @@ extension DualDirectoryScanner {
             let sortAsc = await MainActor.run { appState.bSortAscending }
             let scanned = try FileScanner.scan(url: homeURL, showHiddenFiles: showHidden)
             let sorted = FileSortingService.sort(scanned, by: sortKey, bDirection: sortAsc)
-            await updateScannedFiles(sorted, for: side)
+            guard let _ = await updateScannedFiles(sorted, for: side, expectedPath: homeURL.path) else { return }
             await updateFileList(panelSide: side, with: sorted)
             log.info("[Permissions] home fallback succeeded items=\(sorted.count)")
         } catch {

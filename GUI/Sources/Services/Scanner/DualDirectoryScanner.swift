@@ -58,6 +58,7 @@ actor DualDirectoryScanner {
     @MainActor var lastUpdateTime: [FavPanelSide: Date] = [:]
     @MainActor var lastContentHashOnMain: [FavPanelSide: Int] = [:]
     @MainActor var lastPublishedPathOnMain: [FavPanelSide: String] = [:]
+    @MainActor var publishGenerationOnMain: [FavPanelSide: Int] = [:]
 
     // MARK: - Derived values
 

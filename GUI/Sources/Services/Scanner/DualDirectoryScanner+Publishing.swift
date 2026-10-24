@@ -170,8 +170,7 @@ extension DualDirectoryScanner {
         return sanitized
     }
 
-    @MainActor
-    func makeContentHash(for files: [CustomFile]) -> Int {
+    nonisolated static func makeContentHash(for files: [CustomFile]) -> Int {
         var hasher = Hasher()
         hasher.combine(files.count)
         for file in files {
@@ -279,13 +278,30 @@ extension DualDirectoryScanner {
 
     @MainActor
     @discardableResult
-    func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide) -> Bool {
+    func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide, expectedPath: String) async -> Bool? {
         let publishedFiles = sanitizedPublishedFiles(from: incomingFiles)
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
 
         let currentPath = currentPanelPathOnMain(for: side)
-        let contentHash = makeContentHash(for: publishedFiles)
+        guard Self.normalizedPath(expectedPath) == Self.normalizedPath(currentPath) ||
+              Self.resolvedNormalizedPath(expectedPath) == Self.resolvedNormalizedPath(currentPath) else { return nil }
+        publishGenerationOnMain[side, default: 0] &+= 1
+        let generation = publishGenerationOnMain[side]
+        let hashStart = ProcessInfo.processInfo.systemUptime
+        let contentHash: Int
+        if publishedFiles.count >= 2_000 {
+            contentHash = await Task.detached(priority: .userInitiated) {
+                Self.makeContentHash(for: publishedFiles)
+            }.value
+        } else {
+            contentHash = Self.makeContentHash(for: publishedFiles)
+        }
+        guard !Task.isCancelled, publishGenerationOnMain[side] == generation,
+              currentPanelPathOnMain(for: side) == currentPath else { return nil }
+        if publishedFiles.count >= 2_000 {
+            log.debug("[Scan] off-main content hash side=\(side) count=\(publishedFiles.count) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - hashStart))s")
+        }
 
         if shouldSkipIdenticalPublish(
             side: side,
@@ -337,7 +353,7 @@ extension DualDirectoryScanner {
             log.info("[Scan] publish skipped stale path side=\(side) scanned='\(scannedPath)' current='\(currentPath)'")
             return
         }
-        let didPublish = await updateScannedFiles(files, for: side)
+        guard let didPublish = await updateScannedFiles(files, for: side, expectedPath: scannedPath) else { return }
         if didPublish {
             await MainActor.run {
                 AutoFitScheduler.shared.scheduleNavigationFit(panel: side, appState: appState)

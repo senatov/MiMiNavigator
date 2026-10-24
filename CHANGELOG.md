@@ -8,6 +8,7 @@ and releases now use four numeric components; each component after the major ver
 ## [Unreleased]
 
 ### Changed
+- Moved large-directory content hashing off the main actor and ignored stale scan results after concurrent refreshes or panel navigation.
 - Removed an unused sorted-file table cache and reused sorted rows directly when no synthetic parent entry needs filtering.
 - Skipped parent-entry normalization mutations and directory-size lookup construction when publishing flat folders without parent entries or subfolders.
 - Bounded large-folder column-width sampling to the selected rows instead of traversing every file in the background.

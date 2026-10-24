@@ -25,6 +25,7 @@ extension FileTableView {
             return
         }
         sortTask = Task { @MainActor in
+            let sortStart = ProcessInfo.processInfo.systemUptime
             let worker = Task.detached(priority: .userInitiated) {
                 FileTableSortedSnapshot.build(files: filesToSort, sorter: activeSorter)
             }
@@ -35,6 +36,7 @@ extension FileTableView {
             }
             guard !Task.isCancelled, generation == sortGeneration else { return }
             applySortedSnapshot(snapshot)
+            Self.log.debug("[FileTableState] sorted snapshot panel=\(panelSide.rawValue) count=\(snapshot.rows.count) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - sortStart))s")
         }
     }
 

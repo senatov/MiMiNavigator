@@ -64,3 +64,9 @@ Carry every version component after the major number from 0 through 9. For examp
 - When no synthetic parent entry is present, the sorted array becomes the row array directly; filtering still removes `..` when present.
 - The Debug build and focused snapshot test passed on macOS 27.0.1. In the running Debug app, the requested 19,367-file directory displayed all items, and jump-to-bottom and jump-to-top navigation worked.
 - This removes one array allocation on the flat-folder path; total memory savings were not measured.
+
+## Performance stage 5: scan publication hashing (2026-10-24)
+
+- On the requested 19,367-file `webview/assets` fixture, full content hashing took about 40 ms on the main actor in two forced-refresh samples. Building the sorted table snapshot took 135–161 ms, already in a detached task.
+- Large-directory hashing now runs in a detached task. A per-panel publication generation and expected-path check discard stale results after overlapping refreshes or navigation; smaller folders keep the synchronous path.
+- The Debug build displayed all 19,367 files, and an unchanged forced refresh still skipped duplicate publication. The first off-main hash measurements took 43–52 ms including task scheduling; these samples do not establish an end-to-end speedup.
