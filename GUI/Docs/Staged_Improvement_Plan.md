@@ -14,6 +14,7 @@ Complete the signed, notarized, stapled DMG and publish the application release 
 ## Later stages
 
 The release pipeline now checks the signed app's version and macOS minimum in both `Info.plist` and the executable before creating a DMG. The remaining macOS 27 installation checks below still need validation on a macOS 26 host.
+CI now detects Xcode failures piped through `xcbeautify`. Build failures fail the job; tests remain advisory until the UI test suite is validated on the hosted runner.
 
 1. Complete the macOS 27 transition gate: verify the in-app installer against signed candidate metadata, keep legacy clients on v0.9.1.2 in the update feed, enforce the minimum in Homebrew, and move CI to Xcode 27. Deploy the feed before publishing the first macOS 27 release and test rejection on macOS 26. Finder drag-to-install from a DMG cannot run a pre-copy check; decide whether the first 27-only release needs a signed installer package with an OS-version installation check. Existing v0.9.1.2 users on macOS 27 must install the first 27-only release manually because that client does not report its host OS.
 2. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 27.

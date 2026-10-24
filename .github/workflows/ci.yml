@@ -26,7 +26,9 @@ jobs:
         run: brew install xcbeautify
 
       - name: Build (Debug)
+        shell: zsh {0}
         run: |
+          set -e -o pipefail
           xcodebuild clean build \
             -project MiMiNavigator.xcodeproj \
             -scheme MiMiNavigator \
@@ -40,7 +42,9 @@ jobs:
         # Keep a bounded test duration on the hosted runner.
         timeout-minutes: 15
         continue-on-error: true
+        shell: zsh {0}
         run: |
+          set -e -o pipefail
           xcodebuild test \
             -project MiMiNavigator.xcodeproj \
             -scheme MiMiNavigator \
