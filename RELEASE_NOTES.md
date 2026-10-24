@@ -6,9 +6,9 @@ This is the first release that requires **macOS 27 or newer** on Apple silicon. 
 
 - Keep view modes and the menu toggle visible in narrower windows, with individual toolbar actions available through native overflow.
 - Open file and folder context menus without reading cloud tokens. Choosing unrelated actions such as Media & Convert no longer triggers a Dropbox Keychain password prompt.
-- Reduce work in large directories by bounding column-width sampling, skipping unnecessary flat-folder publication work, hashing large scan results away from the main actor, and reusing sorted scan order for file tables.
+- Reduce work in large directories by bounding column-width sampling, skipping unnecessary flat-folder publication work, hashing large scan results away from the main actor, reusing sorted scan order, and collecting row metadata in one pass.
 - Check the downloaded application's minimum macOS version before an in-app update replaces an installed copy. Missing or malformed version metadata also cancels installation.
-- Validate the signed app version and macOS deployment target before DMG packaging. CI now propagates Xcode build failures correctly.
+- Validate the signed app version and macOS deployment target before DMG packaging. DMG styling targets the mounted Finder window on macOS 27; CI now propagates Xcode build failures correctly.
 
 ## Compatibility and installation
 

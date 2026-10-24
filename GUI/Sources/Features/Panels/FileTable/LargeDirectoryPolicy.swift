@@ -64,16 +64,20 @@ struct FileTableSortedSnapshot: Sendable {
         if Task.isCancelled {
             return Self(rows: [], indexByID: [:], containsDirectories: false, containsUsablePermissions: false, reusedInputOrder: false)
         }
-        let hasParentEntry = sorted.contains { $0.isParentEntry || $0.nameStr == ".." }
-        let rows = hasParentEntry ? sorted.filter { !$0.isParentEntry && $0.nameStr != ".." } : sorted
-        var index = [CustomFile.ID: Int](minimumCapacity: rows.count)
+        var index = [CustomFile.ID: Int](minimumCapacity: sorted.count)
         var containsDirectories = false
         var containsUsablePermissions = false
-        for (offset, file) in rows.enumerated() {
-            index[file.id] = offset
+        var parentCount = 0
+        for (offset, file) in sorted.enumerated() {
+            if file.isParentEntry || file.nameStr == ".." {
+                parentCount += 1
+                continue
+            }
+            index[file.id] = offset - parentCount
             if file.isDirectory { containsDirectories = true }
             if file.posixPermissions != 0 { containsUsablePermissions = true }
         }
+        let rows = parentCount == 0 ? sorted : sorted.filter { !$0.isParentEntry && $0.nameStr != ".." }
         return Self(
             rows: rows,
             indexByID: index,

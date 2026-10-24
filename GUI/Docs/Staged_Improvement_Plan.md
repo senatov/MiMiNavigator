@@ -76,3 +76,8 @@ Carry every version component after the major number from 0 through 9. For examp
 - The scanner already sorts local scan results. For a table with at least 2,000 rows, the snapshot now checks adjacent items against its active comparator and reuses the input order when it is valid. A changed order still takes the normal sort path.
 - On the requested 19,367-file fixture, the Debug log confirmed `reusedInput=true` for the date-sorted table after publication. Snapshot construction took 123–135 ms in two runs; the previous 135–161 ms samples overlap, so an overall speedup is not established. Reusing the order avoids one full-size sort array allocation.
 - A focused test covers the large sorted path and re-sorting after a direction change. The verification scan remains linear and can still be expensive when many adjacent values require localized name comparisons.
+
+## Performance stage 7: single-pass row metadata (2026-10-25)
+
+- Combined synthetic-parent detection with selection indexing and directory/permission metadata collection. Flat directories reuse the sorted rows without a separate parent-entry scan; directories containing `..` still filter it and keep correct row offsets.
+- The focused sorted-snapshot tests passed on macOS 27, including parent exclusion and a 2,000-row sort-direction change. The 19,367-file fixture was not remeasured in this stage, so the total runtime effect remains unquantified.

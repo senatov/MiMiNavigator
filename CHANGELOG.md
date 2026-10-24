@@ -7,9 +7,10 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
-## [0.9.1.3] - 2026-10-24
+## [0.9.1.3] - 2026-10-25
 
 ### Changed
+- Combined synthetic-parent detection with row indexing and metadata collection, removing one full scan when preparing sorted rows for flat directories.
 - Reused the scanner's ordering for already sorted large file tables, avoiding a second sort and its array allocation while retaining a fallback for changed sort settings.
 - Moved large-directory content hashing off the main actor and ignored stale scan results after concurrent refreshes or panel navigation.
 - Removed an unused sorted-file table cache and reused sorted rows directly when no synthetic parent entry needs filtering.
@@ -20,6 +21,7 @@ and releases now use four numeric components; each component after the major ver
 - Kept view modes and the menu toggle visible longer in narrow windows, and made individual toolbar actions available through native overflow.
 
 ### Fixed
+- Selected the mounted DMG's Finder window for release styling and verified its target before changing the layout.
 - Prevented file and folder context menus from reading cloud tokens and triggering a Keychain password prompt while opening unrelated actions such as Media & Convert.
 - Prevented a downloaded app that requires a newer macOS release from replacing the installed application; a missing or malformed minimum-version declaration also cancels installation.
 - Stopped release packaging when the signed app version or executable deployment target disagrees with the release number and required macOS version.
