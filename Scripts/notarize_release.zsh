@@ -408,7 +408,8 @@ osascript << APPLESCRIPT
 tell application "Finder"
     set dmgDisk to POSIX file "${MOUNT_PT}" as alias
     open dmgDisk
-    set dmgWindow to container window of dmgDisk
+    set dmgWindow to front Finder window
+    if (POSIX path of (target of dmgWindow as alias)) is not "${MOUNT_PT}/" then error "Wrong DMG Finder window"
     set current view of dmgWindow to icon view
     set toolbar visible of dmgWindow to false
     set statusbar visible of dmgWindow to false
