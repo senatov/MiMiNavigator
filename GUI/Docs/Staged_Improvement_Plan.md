@@ -44,3 +44,9 @@ Carry every version component after the major number from 0 through 9. For examp
 - List scrolling by three pages moved the visible window from `file-19999.txt` to `file-19848.txt`. The Debug toolbar reported 48 MB at launch, 266 MB after opening the large folder, and up to 325 MB during the interaction; investigate memory and publication cost separately.
 - Remote-operation latency remains unmeasured because no test server or disposable remote directory was available.
 - The fix is in the private MiMiKits source. Public binary wrappers and the installed release will receive it when the next release packages are published.
+
+## Performance stage 2: bounded column-width sampling (2026-10-24)
+
+- Large-directory autofit still measures visible rows first and keeps the same evenly spaced background sample of at most 300 entries.
+- The background sampler now accesses only those selected entries instead of traversing the full directory array. It also clamps the excluded window to valid array bounds.
+- The Debug build and four focused `LargeDirectoryPolicyTests` passed on macOS 27.0.1. Runtime memory and scrolling measurements remain a separate stage.

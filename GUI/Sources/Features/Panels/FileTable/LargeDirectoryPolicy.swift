@@ -33,15 +33,17 @@ enum LargeDirectoryPolicy {
     // MARK: - Background Sample
     static func backgroundSample<T>(from items: [T], excluding window: Range<Int>) -> [T] {
         guard !items.isEmpty else { return [] }
-        let outsideCount = items.count - min(items.count, window.count)
+        let excludedStart = min(max(0, window.lowerBound), items.count)
+        let excludedEnd = min(max(excludedStart, window.upperBound), items.count)
+        let excludedCount = excludedEnd - excludedStart
+        let outsideCount = items.count - excludedCount
         guard outsideCount > 0 else { return [] }
-        let stride = max(1, (outsideCount + backgroundSampleCount - 1) / backgroundSampleCount)
+        let step = max(1, (outsideCount + backgroundSampleCount - 1) / backgroundSampleCount)
         var sampled: [T] = []
         sampled.reserveCapacity(min(outsideCount, backgroundSampleCount))
-        var outsideIndex = 0
-        for index in items.indices where !window.contains(index) {
-            if outsideIndex % stride == 0 { sampled.append(items[index]) }
-            outsideIndex += 1
+        for outsideIndex in Swift.stride(from: 0, to: outsideCount, by: step) {
+            let index = outsideIndex < excludedStart ? outsideIndex : outsideIndex + excludedCount
+            sampled.append(items[index])
         }
         return sampled
     }

@@ -80,4 +80,16 @@ struct LargeDirectoryPolicyTests {
         #expect(sample.first == 0)
         #expect(sample.last ?? 0 > 190_000)
     }
+    @Test func samplesAcrossWindowEdgesWithoutScanningEveryEntry() {
+        let items = Array(0..<1_000)
+        let middle = LargeDirectoryPolicy.backgroundSample(from: items, excluding: 400..<500)
+        #expect(middle.count == 300)
+        #expect(middle[133] == 399)
+        #expect(middle[134] == 502)
+        #expect(middle.last == 997)
+        #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 0..<100).first == 100)
+        #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 900..<1_000).last == 897)
+        #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 0..<1_000).isEmpty)
+        #expect(LargeDirectoryPolicy.backgroundSample(from: items, excluding: 1_100..<1_200).first == 0)
+    }
 }
