@@ -14,11 +14,7 @@ enum CloudLinkSetupCoordinator {
     private static let googleGuideKey = "cloudLink.setupGuide.googleDriveShown"
     private static let dropboxGuideKey = "cloudLink.setupGuide.dropboxShown"
     private static let tinyURLGuideKey = "cloudLink.setupGuide.tinyURLShown"
-    // MARK: - Provider Action Availability
-    static func isProviderActionEnabled(_ provider: CloudProvider) -> Bool {
-        guard provider == .googleDrive || provider == .dropbox else { return true }
-        return hasRequiredCredentials(for: provider)
-    }
+    // MARK: - Provider Setup Guidance
     static func shouldShowSetupAction(for provider: CloudProvider) -> Bool {
         !hasRequiredCredentials(for: provider) && !guideWasShown(for: provider)
     }
@@ -43,7 +39,11 @@ enum CloudLinkSetupCoordinator {
         guard !hasRequiredCredentials(for: provider) else {
             return prepareTinyURLFallback()
         }
-        showSetupGuide(for: provider)
+        if guideWasShown(for: provider) {
+            SettingsCoordinator.shared.openOnSection(.cloudLink)
+        } else {
+            showSetupGuide(for: provider)
+        }
         return false
     }
     // MARK: - Required Credentials

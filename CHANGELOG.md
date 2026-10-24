@@ -13,6 +13,7 @@ and releases now use four numeric components; each component after the major ver
 - Kept view modes and the menu toggle visible longer in narrow windows, and made individual toolbar actions available through native overflow.
 
 ### Fixed
+- Prevented file and folder context menus from reading cloud tokens and triggering a Keychain password prompt while opening unrelated actions such as Media & Convert.
 - Prevented a downloaded app that requires a newer macOS release from replacing the installed application; a missing or malformed minimum-version declaration also cancels installation.
 - Stopped release packaging when the signed app version or executable deployment target disagrees with the release number and required macOS version.
 - Made CI detect Xcode failures behind `xcbeautify`; build failures now fail the job, while advisory test failures are reported accurately.
