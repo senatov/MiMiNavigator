@@ -51,6 +51,18 @@ final class RemoteServerURLParserTests: XCTestCase {
         XCTAssertFalse(UpdateChecker.isDevelopmentBundle(URL(fileURLWithPath: "/Applications/MiMiNavigator.app")))
     }
 
+    // MARK: - Update Minimum System Version
+    func testUpdateRejectsAnUnsupportedSystemBeforeReplacement() {
+        let minimum = UpdateSystemCompatibility.parse("27.0")
+        XCTAssertNotNil(minimum)
+        XCTAssertNil(UpdateSystemCompatibility.parse("27.beta"))
+        XCTAssertNil(UpdateSystemCompatibility.parse(""))
+        guard let minimum else { return }
+        XCTAssertFalse(UpdateSystemCompatibility.supports(current: OperatingSystemVersion(majorVersion: 26, minorVersion: 9, patchVersion: 0), minimum: minimum))
+        XCTAssertTrue(UpdateSystemCompatibility.supports(current: OperatingSystemVersion(majorVersion: 27, minorVersion: 0, patchVersion: 0), minimum: minimum))
+        XCTAssertTrue(UpdateSystemCompatibility.supports(current: OperatingSystemVersion(majorVersion: 27, minorVersion: 1, patchVersion: 0), minimum: minimum))
+    }
+
     // MARK: - Corrected Release Version
     func testCorrectedVersionReplacesLegacyAndMistypedRelease() {
         XCTAssertTrue(UpdateChecker.isNewer("0.9.1", than: "0.9.9.8.7"))

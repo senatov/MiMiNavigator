@@ -26,7 +26,8 @@ final class UpdateChecker: ObservableObject {
     @Published var error: String?
 
     private var apiURL: URL {
-        URL(string: "https://miminavi.tech/api/github/release")!
+        let macOSMajor = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        return URL(string: "https://miminavi.tech/api/github/release?project=navigator&channel=latest&macos=\(macOSMajor)")!
     }
     
     var currentVersion: String {

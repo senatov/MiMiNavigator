@@ -8,20 +8,19 @@ on:
 
 jobs:
   build-and-quality:
-    name: Build & Quality (macOS 26 / Xcode 26.2)
-    runs-on: macos-26
+    name: Build & Quality (macOS 27 / Xcode 27)
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 26.2
-        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
-
       - name: Show versions
         run: |
           xcodebuild -version
           swift --version
+          test "$(sw_vers -productVersion | cut -d. -f1)" -ge 27
+          xcodebuild -version | grep -q '^Xcode 27'
 
       - name: Install xcbeautify
         run: brew install xcbeautify
@@ -38,7 +37,7 @@ jobs:
           | xcbeautify --renderer github-actions
 
       - name: Run tests
-        # xcodebuild test на Xcode 26 известны зависания — ставим жёсткий таймаут
+        # Keep a bounded test duration on the hosted runner.
         timeout-minutes: 15
         continue-on-error: true
         run: |
@@ -66,6 +65,6 @@ jobs:
         if: always()
         run: |
           echo "### ✅ CI finished" >> $GITHUB_STEP_SUMMARY
-          echo "- Runner: macOS 26 (Tahoe)" >> $GITHUB_STEP_SUMMARY
-          echo "- Xcode: 26.2" >> $GITHUB_STEP_SUMMARY
+          echo "- Runner: macOS 27" >> $GITHUB_STEP_SUMMARY
+          echo "- Xcode: $(xcodebuild -version | head -1)" >> $GITHUB_STEP_SUMMARY
           echo "- Date: $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY

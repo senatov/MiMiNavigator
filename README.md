@@ -28,6 +28,10 @@
 
 > **macOS 26 support ends with [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2). This is the last release that runs on macOS 26. Current source builds and future releases require macOS 27 or newer.**
 
+The in-app updater checks the downloaded application's declared minimum macOS version before replacing an existing installation. The update feed keeps older clients on the final compatible release; the Homebrew installer checks the host version before installing a macOS 27 release. Direct DMG copying uses Finder, which does not run MiMiNavigator's installer check; verify the release's stated requirement before dragging the app to Applications.
+
+The already published v0.9.1.2 updater does not report the host OS. For safety, it will not automatically offer the first macOS 27-only release, even on a Mac already running macOS 27. Install that first release manually from the download page; subsequent updates will use the OS-aware feed.
+
 MiMiNavigator brings the practical two-panel workflow of Total Commander and Norton Commander to macOS. It keeps the source and destination visible, remembers your tabs and views, and handles everyday file work without a pile of Finder windows.
 
 It is free, open source, built with SwiftUI, signed, and notarized.

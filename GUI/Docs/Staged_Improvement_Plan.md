@@ -13,12 +13,13 @@ Complete the signed, notarized, stapled DMG and publish the application release 
 
 ## Later stages
 
-1. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 27.
-2. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
-3. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
-4. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
-5. Profile concurrency, cancellation, I/O, caches, and large-directory behavior before changing task structure or buffers.
-6. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
+1. Complete the macOS 27 transition gate: verify the in-app installer against signed candidate metadata, keep legacy clients on v0.9.1.2 in the update feed, enforce the minimum in Homebrew, and move CI to Xcode 27. Deploy the feed before publishing the first macOS 27 release and test rejection on macOS 26. Existing v0.9.1.2 users on macOS 27 must install the first 27-only release manually because that client does not report its host OS.
+2. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 27.
+3. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
+4. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
+5. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
+6. Profile concurrency, cancellation, I/O, caches, and large-directory behavior before changing task structure or buffers.
+7. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
 
 ## macOS 27 opportunities to assess
 

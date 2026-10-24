@@ -16,6 +16,8 @@ private enum UpdateInstallerError: LocalizedError {
     case invalidApplication
     case invalidSignature
     case invalidVersion
+    case invalidMinimumSystemVersion
+    case unsupportedSystem(required: String)
     case installationLocation
 
     var errorDescription: String? {
@@ -26,6 +28,8 @@ private enum UpdateInstallerError: LocalizedError {
             case .invalidApplication: return "The disk image does not contain MiMiNavigator.app."
             case .invalidSignature: return "The update is not signed by the expected developer."
             case .invalidVersion: return "The downloaded application version does not match the release."
+            case .invalidMinimumSystemVersion: return "The update does not declare a valid minimum macOS version."
+            case .unsupportedSystem(let required): return "This update requires macOS \(required) or newer. The installed app was not changed."
             case .installationLocation: return "MiMiNavigator must be installed in a writable Applications folder."
         }
     }
@@ -170,6 +174,17 @@ enum UpdateInstaller {
             throw UpdateInstallerError.invalidVersion
         }
         log.info("[Update] bundle metadata verified version=\(expectedVersion)")
+        guard let minimumOS = bundle.object(forInfoDictionaryKey: "LSMinimumSystemVersion") as? String,
+              let requiredVersion = UpdateSystemCompatibility.parse(minimumOS) else {
+            log.error("[Update] missing or invalid LSMinimumSystemVersion in downloaded app")
+            throw UpdateInstallerError.invalidMinimumSystemVersion
+        }
+        let currentOS = ProcessInfo.processInfo.operatingSystemVersion
+        guard UpdateSystemCompatibility.supports(current: currentOS, minimum: requiredVersion) else {
+            log.warning("[Update] install blocked: macOS \(currentOS.majorVersion).\(currentOS.minorVersion) is below required \(minimumOS)")
+            throw UpdateInstallerError.unsupportedSystem(required: minimumOS)
+        }
+        log.info("[Update] macOS compatibility verified required=\(minimumOS) current=\(currentOS.majorVersion).\(currentOS.minorVersion)")
         _ = try run("/usr/sbin/spctl", ["--assess", "--type", "execute", "--verbose=2", appURL.path])
         log.info("[Update] Gatekeeper assessment passed")
     }
@@ -280,5 +295,23 @@ enum UpdateInstaller {
             throw NSError(domain: "UpdateInstaller", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: String(decoding: errorOutput, as: UTF8.self)])
         }
         return includeErrorOutput ? standardOutput + errorOutput : standardOutput
+    }
+}
+
+// MARK: - Update System Compatibility
+enum UpdateSystemCompatibility {
+    // MARK: - Parse Minimum Version
+    static func parse(_ value: String) -> OperatingSystemVersion? {
+        let components = value.split(separator: ".", omittingEmptySubsequences: false)
+        let numbers = components.compactMap { Int($0) }
+        guard (1...3).contains(components.count), numbers.count == components.count,
+              numbers.allSatisfy({ $0 >= 0 }) else { return nil }
+        return OperatingSystemVersion(majorVersion: numbers[0], minorVersion: numbers.count > 1 ? numbers[1] : 0, patchVersion: numbers.count > 2 ? numbers[2] : 0)
+    }
+    // MARK: - Supports Minimum Version
+    static func supports(current: OperatingSystemVersion, minimum: OperatingSystemVersion) -> Bool {
+        let actual = [current.majorVersion, current.minorVersion, current.patchVersion]
+        let required = [minimum.majorVersion, minimum.minorVersion, minimum.patchVersion]
+        return actual.lexicographicallyPrecedes(required) == false
     }
 }

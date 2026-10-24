@@ -69,7 +69,7 @@ struct UpdateView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
-            Text("Could not check for updates")
+            Text(checker.updateAvailable ? "Update installation cancelled" : "Could not check for updates")
                 .font(.headline)
             Text(error)
                 .font(.system(size: 12))
