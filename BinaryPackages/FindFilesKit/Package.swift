@@ -1,9 +1,9 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "FindFilesKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "FindFilesKit", targets: ["FindFilesKitDependencies"])],
     dependencies: [.package(path: "../LogKit"), .package(path: "../FileModelKit"), .package(path: "../ExternalToolsKit")],
     targets: [

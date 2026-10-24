@@ -1,9 +1,9 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "ArchiveKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "ArchiveKit", targets: ["ArchiveKitDependencies"])],
     dependencies: [.package(path: "../LogKit"), .package(path: "../FileModelKit")],
     targets: [

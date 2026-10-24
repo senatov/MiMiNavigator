@@ -10,6 +10,8 @@ The grouped sorting regression test also passed. The v0.9.1.2 public wrappers re
 be published before a clean public checkout can resolve them. Runtime and UI
 behavior remain separate from build verification.
 
+Current development builds and newly generated XCFrameworks target macOS 27 or newer. Their SwiftPM manifests require Swift tools 6.4 (Xcode 27). The v0.9.1.2 binaries above remain the final macOS 26-compatible release artifacts; changing wrapper manifests does not change those published binaries.
+
 The first artifact set targets Apple Silicon (arm64), macOS 26 or newer for both
 the libraries and the application. It is built with Xcode 27 beta
 (27A5252f), Swift 6.4. Earlier Xcode versions are not verified. Build future public

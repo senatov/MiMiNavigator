@@ -2,6 +2,8 @@
 
 This release improves archive reliability and file-panel responsiveness. It starts the four-component version sequence; each component after the major version runs from 0 through 9 before carrying to the left.
 
+**v0.9.1.2 is the last release that supports macOS 26. Later releases require macOS 27 or newer.**
+
 ## Highlights
 
 - Open TAR and TAR.GZ archives with the options supported by macOS tar. Extraction errors are reported instead of showing an empty archive.

@@ -1,9 +1,9 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "LogKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "LogKit", targets: ["LogKitDependencies"])],
     dependencies: [.package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver", exact: "2.1.1")],
     targets: [

@@ -1,9 +1,9 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "CacheKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "CacheKit", targets: ["CacheKitDependencies"])],
     dependencies: [.package(url: "https://github.com/groue/GRDB.swift.git", exact: "7.11.1")],
     targets: [

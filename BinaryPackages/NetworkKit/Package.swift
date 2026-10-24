@@ -1,9 +1,9 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "NetworkKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "NetworkKit", targets: ["NetworkKitDependencies"])],
     dependencies: [.package(path: "../LogKit")],
     targets: [

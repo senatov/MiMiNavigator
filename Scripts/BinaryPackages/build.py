@@ -46,9 +46,9 @@ def prepare():
         graph[kit] = names
         shutil.copytree(ROOT / 'Packages' / kit / 'Sources' / kit, WORK / 'Sources' / kit)
         targets.append(f'.target(name: "{kit}", dependencies: [{", ".join(dependencies)}], swiftSettings: [.unsafeFlags(["-enable-library-evolution", "-emit-module-interface"])])')
-    manifest = '''// swift-tools-version: 6.2
+    manifest = '''// swift-tools-version: 6.4
 import PackageDescription
-let package = Package(name: "MiMiKitsDistribution", platforms: [.macOS(.v26)],
+let package = Package(name: "MiMiKitsDistribution", platforms: [.macOS(.v27)],
 products: [%s], dependencies: [
 .package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver", exact: "2.1.1"),
 .package(url: "https://github.com/groue/GRDB.swift.git", exact: "7.11.1")
@@ -79,7 +79,7 @@ def package():
         shutil.copy2(interface, modules / 'arm64-apple-macos.swiftinterface')
         info = dict(CFBundleIdentifier=f'com.senatov.MiMiKits.{kit}', CFBundleName=kit,
                     CFBundleExecutable=kit, CFBundlePackageType='FMWK', CFBundleVersion='1',
-                    CFBundleShortVersionString='1.0', MinimumOSVersion='26.0')
+                    CFBundleShortVersionString='1.0', MinimumOSVersion='27.0')
         resources = version / 'Resources'
         resources.mkdir()
         (resources / 'Info.plist').write_bytes(plistlib.dumps(info))

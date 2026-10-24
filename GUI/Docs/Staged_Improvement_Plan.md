@@ -1,6 +1,6 @@
 # MiMiNavigator staged improvements
 
-The staged program covers the entire application. Keep each change small enough to build, inspect, and commit independently. Preserve the macOS 26 deployment target and check new SwiftUI APIs against that target before adopting them.
+The staged program covers the entire application. Keep each change small enough to build, inspect, and commit independently. Current development targets macOS 27; v0.9.1.2 is the final macOS 26-compatible release. Check new SwiftUI APIs against the macOS 27 deployment target before adopting them.
 
 ## Scope of v0.9.1.2
 
@@ -13,12 +13,21 @@ Complete the signed, notarized, stapled DMG and publish the application release 
 
 ## Later stages
 
-1. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 26 when a test system is available.
+1. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 27.
 2. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
 3. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
 4. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
 5. Profile concurrency, cancellation, I/O, caches, and large-directory behavior before changing task structure or buffers.
 6. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
+
+## macOS 27 opportunities to assess
+
+- Try SwiftUI toolbar visibility priorities and overflow menus in narrow two-panel windows; preserve keyboard actions and existing customization before replacing controls.
+- Try native drag reordering for Favorites and other ordered views; verify stable identity, focus, and accessibility in the running app.
+- Review item-bound alerts and confirmation dialogs to reduce duplicated presentation state.
+- Profile lazy `@State` initialization and Xcode 27 `ContentBuilder` compilation separately. The compiler benefit comes from Xcode 27, not simply from raising the deployment target.
+
+These are candidates, not shipped features or assumed performance gains. See [Apple's SwiftUI 2027 overview](https://developer.apple.com/swiftui/whats-new/).
 
 Carry every version component after the major number from 0 through 9. For example, `0.9.1.9` is followed by `0.9.2.0`.
 

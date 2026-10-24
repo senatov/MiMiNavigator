@@ -7,6 +7,14 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+### Changed
+- Raised the application, private MiMiKits packages, public binary-package wrappers, and future XCFramework deployment target to macOS 27. Version 0.9.1.2 remains the final macOS 26-compatible release.
+
+### Planned opportunities
+- Evaluate macOS 27 SwiftUI toolbar priorities and overflow controls for narrow Commander windows without maintaining custom overflow behavior.
+- Evaluate native reordering for Favorites and other ordered collections, plus item-bound alerts and confirmation dialogs where they simplify state ownership.
+- Audit SwiftUI `@State` initialization and `ContentBuilder` changes under Xcode 27; measure build time and runtime behavior before claiming an improvement.
+
 ## [0.9.1.2] - 2026-10-23
 
 ### Changed

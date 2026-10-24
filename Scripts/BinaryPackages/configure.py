@@ -40,12 +40,12 @@ def configure(destination, local):
             checksum = hashlib.sha256((OUT / 'artifacts' / f'{kit}.xcframework.zip').read_bytes()).hexdigest()
             url = f'https://github.com/senatov/MiMiNavigator/releases/download/{tag}/{kit}.xcframework.zip'
             binary = f'.binaryTarget(name: "{kit}", url: "{url}", checksum: "{checksum}")'
-        manifest = '''// swift-tools-version: 6.2
+        manifest = '''// swift-tools-version: 6.4
 import PackageDescription
 
 let package = Package(
     name: "%s",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     products: [.library(name: "%s", targets: ["%sDependencies"])],
     dependencies: [%s],
     targets: [

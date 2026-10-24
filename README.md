@@ -6,11 +6,11 @@
   <br>
 </h1>
 
-<h4 align="center">A native dual-panel file manager for macOS 26+</h4>
+<h4 align="center">A native dual-panel file manager for macOS</h4>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-26.0+-black?logo=apple&logoColor=white" alt="macOS 26+">
-  <img src="https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white" alt="Swift 6.2">
+  <img src="https://img.shields.io/badge/development-macOS_27+-black?logo=apple&logoColor=white" alt="Development requires macOS 27+">
+  <img src="https://img.shields.io/badge/Swift-6.4-F05138?logo=swift&logoColor=white" alt="Swift 6.4">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0">
   <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2"><img src="https://img.shields.io/badge/release-v0.9.1.2-blue" alt="Release v0.9.1.2"></a>
 </p>
@@ -25,6 +25,8 @@
 </p>
 
 ---
+
+> **macOS 26 support ends with [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2). This is the last release that runs on macOS 26. Current source builds and future releases require macOS 27 or newer.**
 
 MiMiNavigator brings the practical two-panel workflow of Total Commander and Norton Commander to macOS. It keeps the source and destination visible, remembers your tabs and views, and handles everyday file work without a pile of Finder windows.
 
@@ -195,8 +197,8 @@ The notarized release script uses a fresh temporary build and DMG staging direct
 
 Requirements:
 
-- macOS 26+ on Apple Silicon
-- Current Xcode with Swift 6.2
+- macOS 27+ on Apple Silicon (for current source builds)
+- Xcode 27 with Swift 6.4
 
 ```zsh
 git clone https://github.com/senatov/MiMiNavigator.git
@@ -217,7 +219,7 @@ Advanced Find Files includes Large stale files, App leftovers, Empty old folders
 
 ## Architecture
 
-MiMiNavigator is a native SwiftUI application using Swift 6.2 strict concurrency. The code is organized around a small set of product areas:
+MiMiNavigator is a native SwiftUI application using Swift 6.4 strict concurrency. The code is organized around a small set of product areas:
 
 ```text
 GUI/Sources/
