@@ -50,3 +50,10 @@ Carry every version component after the major number from 0 through 9. For examp
 - Large-directory autofit still measures visible rows first and keeps the same evenly spaced background sample of at most 300 entries.
 - The background sampler now accesses only those selected entries instead of traversing the full directory array. It also clamps the excluded window to valid array bounds.
 - The Debug build and four focused `LargeDirectoryPolicyTests` passed on macOS 27.0.1. Runtime memory and scrolling measurements remain a separate stage.
+
+## Performance stage 3: flat-directory publication (2026-10-24)
+
+- Used the requested VS Code extension `webview/assets` directory as a read-only fixture: 19,367 files and no immediate subfolders.
+- Skip parent-entry array mutation when the scan has no `..` entry, and skip the old-file size lookup when the incoming scan has no directories.
+- The Debug app displayed all 19,367 rows. An unchanged forced refresh skipped republishing the panel. One initial scan took 1.630 seconds for scan/sort and 0.411 seconds for publication; this single run does not establish an end-to-end speedup.
+- Next measure the remaining full-list content hash and table snapshot rebuild separately before changing their concurrency or cache ownership.

@@ -8,6 +8,7 @@ and releases now use four numeric components; each component after the major ver
 ## [Unreleased]
 
 ### Changed
+- Skipped parent-entry normalization mutations and directory-size lookup construction when publishing flat folders without parent entries or subfolders.
 - Bounded large-folder column-width sampling to the selected rows instead of traversing every file in the background.
 - Raised the application, private MiMiKits packages, public binary-package wrappers, and future XCFramework deployment target to macOS 27. Version 0.9.1.2 remains the final macOS 26-compatible release.
 - Moved CI to the macOS 27/Xcode 27 runner and added a minimum-system-version check before in-app update replacement.

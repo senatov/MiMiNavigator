@@ -86,10 +86,12 @@ extension DualDirectoryScanner {
     @MainActor
     private func transferCachedSizes(from oldFiles: [CustomFile], to newFiles: [CustomFile]) {
         guard !oldFiles.isEmpty else { return }
+        let directories = newFiles.filter { $0.isDirectory }
+        guard !directories.isEmpty else { return }
         let lookup = Dictionary(oldFiles.map { ($0.pathStr, $0) }, uniquingKeysWith: { $1 })
         var transferred = 0
-        for file in newFiles {
-            guard file.isDirectory, let old = lookup[file.pathStr] else { continue }
+        for file in directories {
+            guard let old = lookup[file.pathStr] else { continue }
             transferred += transferDirectorySize(from: old, to: file)
             transferCachedMetadata(from: old, to: file)
         }
@@ -146,6 +148,10 @@ extension DualDirectoryScanner {
 
     @MainActor
     func sanitizedPublishedFiles(from files: [CustomFile]) -> [CustomFile] {
+        guard files.contains(where: { $0.isParentEntry }) else {
+            log.verbose("[Scanner] sanitizedPublishedFiles original=\(files.count) sanitized=\(files.count)")
+            return files
+        }
         var sanitized = files
         let originalCount = files.count
         var seenParent = false
