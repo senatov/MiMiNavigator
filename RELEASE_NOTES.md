@@ -1,31 +1,24 @@
-# MiMiNavigator v0.9.1.2
+# MiMiNavigator v0.9.1.3
 
-This release improves archive reliability and file-panel responsiveness. It starts the four-component version sequence; each component after the major version runs from 0 through 9 before carrying to the left.
-
-**v0.9.1.2 is the last release that supports macOS 26. Later releases require macOS 27 or newer.**
+This is the first release that requires **macOS 27 or newer** on Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains available for macOS 26.
 
 ## Highlights
 
-- Open TAR and TAR.GZ archives with the options supported by macOS tar. Extraction errors are reported instead of showing an empty archive.
-- Repack changed archives into a separate file, verify it, and replace the original only after verification succeeds. Hidden files are included.
-- Keep the extracted archive open and show an error if repacking fails, so changes remain available for another attempt.
-- Navigate large folders more smoothly by updating visible rows incrementally; column autofit also stays within narrow panels.
-- Show Count and Permissions columns only where their data is meaningful, including File Provider locations.
-- Detect this four-component release as an update from the earlier three-component release and legacy five-component builds.
-- Return promptly when a directory scan is cancelled, even if filesystem enumeration is blocked. Cancelled scans no longer retry alias paths or publish stale panel rows.
-- Select and remove saved local filters through separate, accessible controls.
-- Check the decimal version sequence before notarizing a new release.
+- Keep view modes and the menu toggle visible in narrower windows, with individual toolbar actions available through native overflow.
+- Open file and folder context menus without reading cloud tokens. Choosing unrelated actions such as Media & Convert no longer triggers a Dropbox Keychain password prompt.
+- Reduce work in large directories by bounding column-width sampling, skipping unnecessary flat-folder publication work, hashing large scan results away from the main actor, and reusing sorted scan order for file tables.
+- Check the downloaded application's minimum macOS version before an in-app update replaces an installed copy. Missing or malformed version metadata also cancels installation.
+- Validate the signed app version and macOS deployment target before DMG packaging. CI now propagates Xcode build failures correctly.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. The application bundle and executable declare the macOS 27 minimum.
+- The v0.9.1.2 updater cannot report the host OS. It continues to receive the final macOS 26 release, including when running on macOS 27. To move from v0.9.1.2 to this release, download the DMG manually. Later updates use the OS-aware feed.
+- Finder's drag-to-Applications installation does not run the in-app compatibility check. Check the macOS requirement before copying the app.
 
 ## Validation
 
-- ArchiveKit tests cover TAR and TAR.GZ extraction, ZIP/TAR repacking, hidden files, empty ZIP files, and failure recovery.
-- The application was built from local source-free MiMiKits binaries with a macOS 26 deployment target.
-- In the running Debug app, modified ZIP contents were saved and an unsupported GZ repack left the original and extracted files intact.
-- All five scan-timeout tests passed against the source-free MiMiKits build, including cancellation of a blocked scan.
-- The filter-history actions were checked in the running Debug app; selecting a saved filter and removing one without applying it both worked.
+- Focused large-directory and update compatibility checks passed on macOS 27.0.1. The 19,367-file VS Code extension assets directory was used as a read-only fixture during development.
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
 
-## Download
-
-For Apple silicon Macs running macOS 26 or later. Open the signed and notarized DMG and drag MiMiNavigator to Applications.
-
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.2
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...v0.9.1.3

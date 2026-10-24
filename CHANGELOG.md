@@ -7,6 +7,8 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.3] - 2026-10-24
+
 ### Changed
 - Reused the scanner's ordering for already sorted large file tables, avoiding a second sort and its array allocation while retaining a fallback for changed sort settings.
 - Moved large-directory content hashing off the main actor and ignored stale scan results after concurrent refreshes or panel navigation.
@@ -1391,7 +1393,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...HEAD
+[0.9.1.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...v0.9.1.3
 [0.9.1.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.2
 [0.9.9.6.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.6.0
 [0.9.9.5.9]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.8...v0.9.9.5.9

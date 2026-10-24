@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/development-macOS_27+-black?logo=apple&logoColor=white" alt="Development requires macOS 27+">
   <img src="https://img.shields.io/badge/Swift-6.4-F05138?logo=swift&logoColor=white" alt="Swift 6.4">
   <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="AGPL-3.0">
-  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2"><img src="https://img.shields.io/badge/release-v0.9.1.2-blue" alt="Release v0.9.1.2"></a>
+  <a href="https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.3"><img src="https://img.shields.io/badge/release-v0.9.1.3-blue" alt="Release v0.9.1.3"></a>
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 ---
 
-> **macOS 26 support ends with [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2). This is the last release that runs on macOS 26. Current source builds and future releases require macOS 27 or newer.**
+> **macOS 26 support ends with [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2). This is the last release that runs on macOS 26. v0.9.1.3 and newer require macOS 27 or newer.**
 
 The in-app updater checks the downloaded application's declared minimum macOS version before replacing an existing installation. The update feed keeps older clients on the final compatible release; the Homebrew installer checks the host version before installing a macOS 27 release. Direct DMG copying uses Finder, which does not run MiMiNavigator's installer check; verify the release's stated requirement before dragging the app to Applications.
 
@@ -155,7 +155,7 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and an administrator password.
 
-1. [Download MiMiNavigator v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
+1. [Download MiMiNavigator v0.9.1.3](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.3) for macOS 27 or newer. For macOS 26, use [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
 2. Open the DMG and drag MiMiNavigator to Applications.
 3. Launch it from Applications.
 
