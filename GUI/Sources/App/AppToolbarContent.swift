@@ -22,12 +22,12 @@ struct AppToolbarContent: ToolbarContent {
         ToolbarItem(placement: .navigation) {
             AppWindowTitle(version: MiMiNavigatorApp.appVersion)
         }
-        // Individual items keep actions available in the native overflow menu.
-        ForEach(store.visibleItems) { item in
-            ToolbarItem(placement: .primaryAction) {
+        ToolbarItemGroup(placement: .primaryAction) {
+            ForEach(store.visibleItems) { item in
                 ToolbarActionButton(app: app, appState: appState, item: item)
             }
         }
+        .sharedBackgroundVisibility(.visible)
         // View modes — separate group before the rightmost menu toggle
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
@@ -61,6 +61,7 @@ private struct ToolbarActionButton: View {
             performAction()
         }
         .labelStyle(.iconOnly)
+        .accessibilityLabel(item.label)
         .foregroundStyle(isActive ? Color.accentColor : Color.primary)
         .help(item.helpText)
         .accessibilityValue(item == .hiddenFiles || item == .preview ? (isActive ? "On" : "Off") : "")
@@ -133,10 +134,10 @@ struct ToolbarButtonGroup<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 3) {
             content()
         }
-        .padding(.horizontal, 9)
+        .padding(.horizontal, 6)
         .padding(.vertical, 4)
         .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }

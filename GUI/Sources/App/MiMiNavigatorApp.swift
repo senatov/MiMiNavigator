@@ -56,8 +56,6 @@ struct MiMiNavigatorApp: App {
         Group {
             AppToolbarContent(app: self, appState: appState)
                 .sharedBackgroundVisibility(.hidden)
-            AppBuildInfo.toolBarItem()
-                .sharedBackgroundVisibility(.hidden)
             if !gitHubStarStore.isAcknowledged {
                 ToolbarItem(placement: .status) {
                     GitHubStarBadge {

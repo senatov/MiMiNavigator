@@ -17,9 +17,10 @@ enum AppBuildInfo {
     // MARK: - toolBarItem
     /// ToolbarItem with Pre-Release badge and optional resource graphs.
     @MainActor
-    static func toolBarItem() -> ToolbarItem<(), some View> {
-        ToolbarItem(placement: .status) {
+    static func toolBarItem(dividerOffset: CGFloat) -> ToolbarItem<(), some View> {
+        ToolbarItem(placement: .principal) {
             BuildInfoToolbarCluster(version: versionString())
+                .offset(x: dividerOffset)
         }
     }
 
@@ -54,6 +55,7 @@ enum AppBuildInfo {
 private struct BuildInfoToolbarCluster: View {
     let version: String
     @State private var prefs = UserPreferences.shared
+    @State private var monitorWidth: CGFloat = 0
 
     private var showMemory: Bool { prefs.snapshot.toolbarShowMemoryGraph ?? true }
     private var showThreads: Bool { prefs.snapshot.toolbarShowThreadsGraph ?? true }
@@ -62,17 +64,25 @@ private struct BuildInfoToolbarCluster: View {
 
     // MARK: - Body
     var body: some View {
-        HStack(alignment: .center, spacing: 7) {
-            DevBuildBadge(version: version)
-            if showMemory || showThreads {
-                ResourceMonitorToolbarItem(
-                    showMemory: showMemory,
-                    showThreads: showThreads,
-                    memoryInterval: memoryInterval,
-                    threadsInterval: threadsInterval
-                )
+        DevBuildBadge(version: version)
+            .overlay(alignment: .leading) {
+                if showMemory || showThreads {
+                    ResourceMonitorToolbarItem(
+                        showMemory: showMemory,
+                        showThreads: showThreads,
+                        memoryInterval: memoryInterval,
+                        threadsInterval: threadsInterval
+                    )
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear
+                                .onAppear { monitorWidth = geometry.size.width }
+                                .onChange(of: geometry.size.width) { _, width in monitorWidth = width }
+                        }
+                    }
+                    .offset(x: -monitorWidth - 7)
+                }
             }
-        }
     }
 }
 

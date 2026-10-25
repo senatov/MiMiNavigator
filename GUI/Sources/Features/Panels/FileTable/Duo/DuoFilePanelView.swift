@@ -18,11 +18,10 @@ struct DuoFilePanelView: View {
     @State private var leftPanelWidth: CGFloat = 0
     @State private var isInitialized = false
     @State private var lastContainerWidth: CGFloat = 0
+    @State private var windowContentWidth: CGFloat = 0
     @State private var pendingContainerWidth: CGFloat = 0
     @State private var isGeometryUpdateScheduled = false
     @State private var keyboardHandler: DuoFilePanelKeyboardHandler?
-
-    // MARK: - Persisted divider position (via MiMiDefaults JSON storage)
 
     // MARK: - Constants
     private enum Layout {
@@ -59,6 +58,18 @@ struct DuoFilePanelView: View {
             MiMiDefaults.shared.set(newValue, forKey: "leftPanelWidth")
             MiMiDefaults.shared.set(savedLeftPanelRatio(for: newValue, containerWidth: lastContainerWidth), forKey: "leftPanelWidthRatio")
         }
+        .toolbar {
+            AppBuildInfo.toolBarItem(dividerOffset: dividerOffset)
+                .sharedBackgroundVisibility(.hidden)
+        }
+    }
+
+    // MARK: - Titlebar Divider Alignment
+    private var dividerOffset: CGFloat {
+        guard windowContentWidth > 0, leftPanelWidth > 0 else { return 0 }
+        let sidebarWidth = isFinderSidebarVisible ? Layout.finderSidebarWidth : 0
+        let dividerCenter = sidebarWidth + leftPanelWidth + PanelDividerMetrics.hitAreaWidth / 2
+        return dividerCenter - windowContentWidth / 2
     }
 
     private var geometrySection: some View {
@@ -89,9 +100,11 @@ struct DuoFilePanelView: View {
                 }
                 Color.clear
                     .onAppear {
+                        windowContentWidth = geometry.size.width
                         scheduleGeometryWidthUpdate(panelWidth)
                     }
                     .onChange(of: geometry.size.width) { _, newWidth in
+                        windowContentWidth = newWidth
                         scheduleGeometryWidthUpdate(panelsContainerWidth(for: newWidth))
                     }
                     .onChange(of: isFinderSidebarVisible) { _, isVisible in
