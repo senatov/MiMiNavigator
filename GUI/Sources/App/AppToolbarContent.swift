@@ -128,7 +128,7 @@ private struct AppWindowTitle: View {
 enum TopToolbarMetrics {
     static let height: CGFloat = 32
     static let cornerRadius: CGFloat = 16
-    static let borderWidth: CGFloat = 1
+    static let borderWidth: CGFloat = 0.75
 }
 
 struct ToolbarButtonGroup<Content: View>: View {
@@ -149,26 +149,12 @@ struct ToolbarButtonGroup<Content: View>: View {
 struct TopToolbarSurface: View {
     var body: some View {
         RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-            .fill(.regularMaterial)
+            .fill(Color(nsColor: .controlBackgroundColor))
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.88))
+                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: TopToolbarMetrics.borderWidth)
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.20), Color.primary.opacity(0.025)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.18), lineWidth: TopToolbarMetrics.borderWidth)
-            }
-            .shadow(color: Color.black.opacity(0.20), radius: 2.5, y: 1.5)
+            .shadow(color: Color.black.opacity(0.12), radius: 1.5, y: 1)
     }
 }
 
