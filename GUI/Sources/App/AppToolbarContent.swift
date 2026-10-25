@@ -128,6 +128,7 @@ private struct AppWindowTitle: View {
 enum TopToolbarMetrics {
     static let height: CGFloat = 32
     static let cornerRadius: CGFloat = 16
+    static let borderWidth: CGFloat = 1
 }
 
 struct ToolbarButtonGroup<Content: View>: View {
@@ -151,13 +152,13 @@ struct TopToolbarSurface: View {
             .fill(.regularMaterial)
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.72))
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.88))
             }
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.23), Color.primary.opacity(0.035)],
+                            colors: [Color.white.opacity(0.20), Color.primary.opacity(0.025)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -165,9 +166,9 @@ struct TopToolbarSurface: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.20), lineWidth: 1)
+                    .strokeBorder(Color.primary.opacity(0.18), lineWidth: TopToolbarMetrics.borderWidth)
             }
-            .shadow(color: Color.black.opacity(0.16), radius: 2, y: 2)
+            .shadow(color: Color.black.opacity(0.20), radius: 2.5, y: 1.5)
     }
 }
 
