@@ -111,3 +111,9 @@ Carry every version component after the major number from 0 through 9. For examp
 
 - The Volumes menu now gets mounted volumes from `FileManager.mountedVolumeURLs` with hidden volumes omitted, instead of scanning `/Volumes`. It excludes the root filesystem and app-managed SMB mounts, which already appear under Remote Sessions. Cloud-storage folder discovery remains separate.
 - The menu also refreshes on volume rename notifications. On the current host, the Debug app listed three mounted volumes, kept the cloud section, opened `/Volumes/MiMiTrends` from its menu item, and returned to the original panel path. Mount, unmount, and rename events were not exercised with a test device.
+
+## macOS services stage 2: local volume scanning (2026-10-25)
+
+- ScannerKit previously treated every path under `/Volumes` as a network mount, using lightweight rows without creation dates, ownership, permissions, or Finder tags even for local disks. It now asks the volume for `volumeIsLocal`, retaining the lean metadata path when the volume is remote or the answer is unavailable. File Provider paths and app-managed network mounts keep their prior handling.
+- The scanner's prefetch policy moved into its own file, bringing `FileScanner.swift` below 400 lines. ScannerKit's three existing tests passed, and a check against the currently mounted local `/Volumes/MiMiTrends` volume selected full metadata while an app-managed mount path selected lean metadata. `rebuild_private_kits.zsh` rebuilt the XCFrameworks and compiled a source-free verification copy of the app against those binaries.
+- No large external-volume scan was benchmarked, and no File Provider copy or move fixture was available. Coordinate such operations only after an operation-specific failure or controlled test shows a need; `NSFileCoordinator` does not replace the app's conflict handling, progress reporting, or remote transfer strategies.
