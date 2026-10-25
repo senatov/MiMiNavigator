@@ -25,7 +25,8 @@ The release pipeline checks the signed app's version and macOS minimum in both `
 4. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
 5. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
 6. Profile concurrency, cancellation, I/O, caches, and large-directory behavior before changing task structure or buffers.
-7. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
+7. Audit the use of macOS system services before adding or retaining custom infrastructure. Start with the existing FSEvents watcher and its interaction with `fseventsd`, periodic scans, cache invalidation, and local versus remote volumes. For each relevant workflow, identify the supported system API, what it guarantees, where the app still needs its own logic, and whether the custom work duplicates macOS behavior. Apply the same review to other built-in file, metadata, preview, search, and volume services where they could simplify the app. Measure correctness and performance before replacing an implementation.
+8. Review CI, signing, notarization, update delivery, release notes, and rollback checks before each subsequent release.
 
 ## macOS 27 opportunities to assess
 
