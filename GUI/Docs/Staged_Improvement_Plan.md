@@ -81,3 +81,10 @@ Carry every version component after the major number from 0 through 9. For examp
 
 - Combined synthetic-parent detection with selection indexing and directory/permission metadata collection. Flat directories reuse the sorted rows without a separate parent-entry scan; directories containing `..` still filter it and keep correct row offsets.
 - The focused sorted-snapshot tests passed on macOS 27, including parent exclusion and a 2,000-row sort-direction change. The 19,367-file fixture was not remeasured in this stage, so the total runtime effect remains unquantified.
+
+## Performance stage 8: off-main publication preparation (2026-10-25)
+
+- Measured the requested read-only `webview/assets` fixture in the running Debug app: 19,367 files, 1.562 seconds for the scan, 1.252 seconds in publication, and 154 ms for the table snapshot. The pre-change publication included a full-list parent-entry check on the main actor; the content hash alone took 42 ms off-main.
+- For lists of at least 2,000 entries, parent-entry normalization and the content hash now run together in one detached task. Smaller lists retain the direct path. The existing generation and path guards still discard stale preparation results. Normalization now recognizes the actual `..` marker used by `ParentDirectoryEntry.make`, including duplicate entries.
+- After rebuilding and relaunching, the same fixture displayed 19,367 items, and jump-to-bottom, jump-to-top, and unchanged refresh worked. Preparation took 43–49 ms off-main. A focused test confirmed flat input and duplicate `..` normalization. One launch measured 1.619 seconds for scan/sort and 0.384 seconds for publication; the before run navigated through Favorites while the after run restored an existing tab, so this is not a controlled end-to-end speedup claim.
+- Debug memory footprint rose from 123 MB before navigation to 286 MB after loading the folder; the later relaunched Debug process reached 407 MB after refreshing and scrolling. Memory growth remains a separate profiling target. Remote-operation latency remains unmeasured.

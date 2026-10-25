@@ -146,27 +146,21 @@ extension DualDirectoryScanner {
         return displayedFilesBinding(for: side)
     }
 
-    @MainActor
-    func sanitizedPublishedFiles(from files: [CustomFile]) -> [CustomFile] {
-        guard files.contains(where: { $0.isParentEntry }) else {
-            log.verbose("[Scanner] sanitizedPublishedFiles original=\(files.count) sanitized=\(files.count)")
-            return files
-        }
+    nonisolated static func sanitizedPublishedFiles(from files: [CustomFile]) -> [CustomFile] {
+        guard files.contains(where: ParentDirectoryEntry.isParentEntry) else { return files }
         var sanitized = files
-        let originalCount = files.count
         var seenParent = false
         sanitized.removeAll { file in
-            if file.isParentEntry {
+            if ParentDirectoryEntry.isParentEntry(file) {
                 if seenParent { return true }
                 seenParent = true
             }
             return false
         }
-        if let parentIndex = sanitized.firstIndex(where: { $0.isParentEntry }), parentIndex != 0 {
+        if let parentIndex = sanitized.firstIndex(where: ParentDirectoryEntry.isParentEntry), parentIndex != 0 {
             let parent = sanitized.remove(at: parentIndex)
             sanitized.insert(parent, at: 0)
         }
-        log.verbose("[Scanner] sanitizedPublishedFiles original=\(originalCount) sanitized=\(sanitized.count)")
         return sanitized
     }
 
@@ -279,7 +273,6 @@ extension DualDirectoryScanner {
     @MainActor
     @discardableResult
     func updateScannedFiles(_ incomingFiles: [CustomFile], for side: FavPanelSide, expectedPath: String) async -> Bool? {
-        let publishedFiles = sanitizedPublishedFiles(from: incomingFiles)
         let now = Date()
         let isFirstUpdate = lastUpdateTime[side] == nil
 
@@ -288,19 +281,22 @@ extension DualDirectoryScanner {
               Self.resolvedNormalizedPath(expectedPath) == Self.resolvedNormalizedPath(currentPath) else { return nil }
         publishGenerationOnMain[side, default: 0] &+= 1
         let generation = publishGenerationOnMain[side]
-        let hashStart = ProcessInfo.processInfo.systemUptime
+        let preparationStart = ProcessInfo.processInfo.systemUptime
+        let publishedFiles: [CustomFile]
         let contentHash: Int
-        if publishedFiles.count >= 2_000 {
-            contentHash = await Task.detached(priority: .userInitiated) {
-                Self.makeContentHash(for: publishedFiles)
+        if incomingFiles.count >= 2_000 {
+            (publishedFiles, contentHash) = await Task.detached(priority: .userInitiated) {
+                let sanitized = Self.sanitizedPublishedFiles(from: incomingFiles)
+                return (sanitized, Self.makeContentHash(for: sanitized))
             }.value
         } else {
+            publishedFiles = Self.sanitizedPublishedFiles(from: incomingFiles)
             contentHash = Self.makeContentHash(for: publishedFiles)
         }
         guard !Task.isCancelled, publishGenerationOnMain[side] == generation,
               currentPanelPathOnMain(for: side) == currentPath else { return nil }
-        if publishedFiles.count >= 2_000 {
-            log.debug("[Scan] off-main content hash side=\(side) count=\(publishedFiles.count) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - hashStart))s")
+        if incomingFiles.count >= 2_000 {
+            log.debug("[Scan] off-main publish preparation side=\(side) count=\(publishedFiles.count) elapsed=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - preparationStart))s")
         }
 
         if shouldSkipIdenticalPublish(

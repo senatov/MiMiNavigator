@@ -130,3 +130,17 @@ struct FileTableSortedSnapshotTests {
         #expect(reversed.indexByID[files[0].id] == 1_999)
     }
 }
+
+// MARK: - Scanner Publication Preparation Tests
+struct ScannerPublicationPreparationTests {
+    @Test func keepsFlatInputAndNormalizesDuplicateParentEntries() {
+        let root = "/tmp/mimi-publish-preparation-test"
+        let alpha = CustomFile(name: "alpha.txt", path: "\(root)/alpha.txt")
+        let beta = CustomFile(name: "beta.txt", path: "\(root)/beta.txt")
+        let parent = ParentDirectoryEntry.make(for: root)
+        let flat = DualDirectoryScanner.sanitizedPublishedFiles(from: [alpha, beta])
+        let nested = DualDirectoryScanner.sanitizedPublishedFiles(from: [alpha, parent, beta, parent])
+        #expect(flat.map(\.id) == [alpha.id, beta.id])
+        #expect(nested.map(\.id) == [parent.id, alpha.id, beta.id])
+    }
+}
