@@ -56,6 +56,7 @@ extension FileTableView {
     /// instead of relying on NSEvent passthrough to SwiftUI .onKeyPress.
     func registerNavigationCallbacks() {
         appState.navigationCallbacks[panelSide] = PanelNavigationCallbacks(
+            ownerID: navigationCallbackID,
             moveUp: { [self] in
                 handleMoveUpCommand()
             },

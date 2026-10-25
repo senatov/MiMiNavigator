@@ -14,6 +14,7 @@ import Foundation
 /// dispatches arrow/PgUp/PgDown/Home/End through AppState.navigationCallbacks.
 @MainActor
 struct PanelNavigationCallbacks {
+    var ownerID: UUID = UUID()
     var moveUp: () -> Void = {}
     var moveDown: () -> Void = {}
     var pageUp: () -> Void = {}

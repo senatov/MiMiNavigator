@@ -143,6 +143,10 @@ extension FileTableView {
             .onDisappear {
                 spinnerTask?.cancel()
                 sortTask?.cancel()
+                sortTask = nil
+                if appState.navigationCallbacks[panelSide]?.ownerID == navigationCallbackID {
+                    appState.navigationCallbacks[panelSide] = nil
+                }
                 deferredFilesVersion = nil
                 activeMenuTrackingCount = 0
             }

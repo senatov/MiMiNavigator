@@ -48,6 +48,7 @@ struct FileTableView: View {
 
     /// Cached filesystem rows for LazyVStack; the parent strip is separate.
     @State var cachedSortedRows: [CustomFile] = []
+    @State var navigationCallbackID = UUID()
     @State var sortTask: Task<Void, Never>?
     @State var sortGeneration: Int = 0
     @State var firstVisibleRow: Int = 0
