@@ -207,7 +207,7 @@ struct HistoryWindowContent: View {
             Task { @MainActor in
                 let mgr = RemoteConnectionManager.shared
                 if mgr.activeConnection != nil {
-                    await appState.navigateToDirectory(path, on: panelSide)
+                    await appState.navigateToHistory(url, on: panelSide)
                 } else {
                     // Dead — try to reconnect from saved server matching origin
                     let origin = AppState.remoteOrigin(from: path)
@@ -217,7 +217,7 @@ struct HistoryWindowContent: View {
                         let pwd = RemoteServerKeychain.loadPassword(for: server)
                         await mgr.connect(to: server, password: pwd)
                         if mgr.isConnected {
-                            await appState.navigateToDirectory(path, on: panelSide)
+                            await appState.navigateToHistory(url, on: panelSide)
                         }
                     }
                 }
@@ -230,10 +230,8 @@ struct HistoryWindowContent: View {
             log.warning("[History] navigate unavailable path='\(path)'")
             return
         }
-        appState.isNavigatingFromHistory = true
         Task { @MainActor in
-            defer { appState.isNavigatingFromHistory = false }
-            await appState.navigateToDirectory(path, on: panelSide)
+            await appState.navigateToHistory(localURL, on: panelSide)
         }
     }
     // MARK: - Delete from History

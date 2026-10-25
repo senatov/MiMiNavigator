@@ -76,26 +76,24 @@ extension CntMenuCoord {
     }
 
     func navigateHistoryBack(panel: FavPanelSide, appState: AppState) {
+        appState.captureHistoryState(for: panel)
         guard let path = appState.selectionsHistory.goBack() else {
             log.debug("\(#function) no history panel=\(panel)")
             return
         }
         Task { @MainActor in
-            appState.isNavigatingFromHistory = true
-            defer { appState.isNavigatingFromHistory = false }
-            navigateTo(path, panel: panel, appState: appState)
+            await appState.navigateToHistory(path, on: panel)
         }
     }
 
     func navigateHistoryForward(panel: FavPanelSide, appState: AppState) {
+        appState.captureHistoryState(for: panel)
         guard let path = appState.selectionsHistory.goForward() else {
             log.debug("\(#function) no history panel=\(panel)")
             return
         }
         Task { @MainActor in
-            appState.isNavigatingFromHistory = true
-            defer { appState.isNavigatingFromHistory = false }
-            navigateTo(path, panel: panel, appState: appState)
+            await appState.navigateToHistory(path, on: panel)
         }
     }
 

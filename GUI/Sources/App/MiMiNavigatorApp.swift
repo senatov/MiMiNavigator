@@ -117,6 +117,10 @@ struct MiMiNavigatorApp: App {
     func handleScenePhaseChange() {
         log.debug(#function)
         if scenePhase == .background {
+            appState.captureHistoryState(for: .left)
+            appState.captureHistoryState(for: .right)
+            appState.navigationHistory(for: .left).flush()
+            appState.navigationHistory(for: .right).flush()
             Task {
                 await BookmarkStore.shared.stopAll()
             }

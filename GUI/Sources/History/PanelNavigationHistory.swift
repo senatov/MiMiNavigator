@@ -30,6 +30,7 @@ final class PanelNavigationHistory {
 
     /// Stack of visited paths (oldest first, newest last)
     private var history: [URL] = []
+    private var snapshots: [String: PanelHistorySnapshot] = [:]
 
     /// Current position in history (points to current path)
     private var currentIndex: Int = -1 {
@@ -53,11 +54,28 @@ final class PanelNavigationHistory {
         return history[currentIndex]
     }
 
+    // MARK: - Saved Panel State
+    func snapshot(for url: URL) -> PanelHistorySnapshot? {
+        snapshots[AppState.pathString(for: url.standardizedFileURL)]
+    }
+
+    func setSnapshot(_ snapshot: PanelHistorySnapshot, for url: URL) {
+        let key = AppState.pathString(for: url.standardizedFileURL)
+        guard history.contains(where: { AppState.pathString(for: $0) == key }) else { return }
+        snapshots[key] = snapshot
+        scheduleSave()
+    }
+
+    func flush() {
+        saveTask?.cancel()
+        save()
+    }
+
     // MARK: - Init
 
-    init(panel: FavPanelSide) {
+    init(panel: FavPanelSide, storageKey: String? = nil) {
         self.panel = panel
-        self.userDefaultsKey = "PanelNavigationHistory.\(panel)"
+        self.userDefaultsKey = storageKey ?? "PanelNavigationHistory.\(panel)"
         load()
         log.debug("\(#function) panel=\(panel) loaded \(history.count) entries, currentIndex=\(currentIndex)")
     }
@@ -94,6 +112,7 @@ final class PanelNavigationHistory {
         if currentIndex < history.count - 1 {
             log.debug("\(#function) truncating forward history from index \(currentIndex + 1)")
             history = Array(history.prefix(currentIndex + 1))
+            pruneSnapshots()
             updateNavigationState()
         }
 
@@ -114,6 +133,7 @@ final class PanelNavigationHistory {
                 history.removeFirst(removeCount)
                 currentIndex -= removeCount
             }
+            pruneSnapshots()
 
             scheduleSave()
         }
@@ -225,6 +245,7 @@ final class PanelNavigationHistory {
         let data: [String: Any] = [
             "history": history.map { AppState.pathString(for: $0) },
             "currentIndex": currentIndex,
+            "snapshots": (try? JSONEncoder().encode(snapshots)) ?? Data(),
         ]
         MiMiDefaults.shared.set(data, forKey: userDefaultsKey)
     }
@@ -253,6 +274,10 @@ final class PanelNavigationHistory {
             loadedHistory.first { AppState.pathString(for: $0) == storedPath }?.standardizedFileURL
         }
         history = Self.deduplicatedKeepingLatest(loadedHistory)
+        if let snapshotData = data["snapshots"] as? Data {
+            snapshots = (try? JSONDecoder().decode([String: PanelHistorySnapshot].self, from: snapshotData)) ?? [:]
+            pruneSnapshots()
+        }
 
         // Adjust index if needed
         if history.isEmpty {
@@ -274,9 +299,15 @@ final class PanelNavigationHistory {
         }.reversed()
     }
 
+    private func pruneSnapshots() {
+        let retained = Set(history.map { AppState.pathString(for: $0) })
+        snapshots = snapshots.filter { retained.contains($0.key) }
+    }
+
     /// Clear history (for testing or reset)
     func clear() {
         history.removeAll()
+        snapshots.removeAll()
         currentIndex = -1
         save()
     }

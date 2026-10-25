@@ -282,3 +282,37 @@ final class MiMiNavigatorTests: XCTestCase {
     }
 
 }
+
+// MARK: - Panel History Snapshot Tests
+@MainActor
+final class PanelHistorySnapshotTests: XCTestCase {
+    // MARK: - Back, Forward, and Persistence
+    func testPanelHistoryRestoresStateAfterBackForwardAndReload() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let first = root.appendingPathComponent("first", isDirectory: true)
+        let second = root.appendingPathComponent("second", isDirectory: true)
+        try FileManager.default.createDirectory(at: first, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: second, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let storageKey = "PanelNavigationHistory.test.\(UUID().uuidString)"
+        let history = PanelNavigationHistory(panel: .left, storageKey: storageKey)
+        history.navigateTo(first)
+        let firstState = PanelHistorySnapshot(sortKey: "date", sortAscending: false,
+                                              selectedPath: first.appendingPathComponent("selected.txt").path,
+                                              viewMode: .thumbnail)
+        history.setSnapshot(firstState, for: first)
+        history.navigateTo(second)
+        let secondState = PanelHistorySnapshot(sortKey: "size", sortAscending: true,
+                                               selectedPath: nil, viewMode: .tree)
+        history.setSnapshot(secondState, for: second)
+        XCTAssertEqual(history.goBack(), first)
+        XCTAssertEqual(history.snapshot(for: first), firstState)
+        XCTAssertEqual(history.goForward(), second)
+        XCTAssertEqual(history.snapshot(for: second), secondState)
+        XCTAssertTrue(history.jumpTo(second))
+        let reloaded = PanelNavigationHistory(panel: .left, storageKey: storageKey)
+        XCTAssertEqual(reloaded.snapshot(for: first), firstState)
+        XCTAssertEqual(reloaded.snapshot(for: second), secondState)
+        XCTAssertEqual(reloaded.goBack(), first)
+    }
+}

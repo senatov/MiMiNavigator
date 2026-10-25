@@ -174,22 +174,16 @@ struct BreadCrumbToolBar: View {
     private func handleBackTap(canGoBack: Bool) {
         guard canGoBack else { return }
         log.info("[Nav] back panel=\(panelSide)")
-        guard let targetURL = appState.navigationHistory(for: panelSide).goBack() else { return }
-        appState.isNavigatingFromHistory = true
         Task {
-            defer { appState.isNavigatingFromHistory = false }
-            await appState.navigateToDirectory(AppState.pathString(for: targetURL), on: panelSide)
+            await appState.navigateBackInPanelHistory(on: panelSide)
         }
     }
 
     private func handleForwardTap(canGoForward: Bool) {
         guard canGoForward else { return }
         log.info("[Nav] forward panel=\(panelSide)")
-        guard let targetURL = appState.navigationHistory(for: panelSide).goForward() else { return }
-        appState.isNavigatingFromHistory = true
         Task {
-            defer { appState.isNavigatingFromHistory = false }
-            await appState.navigateToDirectory(AppState.pathString(for: targetURL), on: panelSide)
+            await appState.navigateForwardInPanelHistory(on: panelSide)
         }
     }
 

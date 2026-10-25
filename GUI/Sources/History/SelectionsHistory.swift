@@ -11,6 +11,7 @@ import Foundation
 struct RecentHistorySelection: Identifiable, Equatable {
     let url: URL
     let addedAt: Date
+    var snapshot: PanelHistorySnapshot? = nil
     var id: String { "\(url.absoluteString)|\(addedAt.timeIntervalSinceReferenceDate)" }
     var path: String { AppState.pathString(for: url) }
 }
@@ -48,6 +49,7 @@ final class SelectionsHistory {
     private struct RecentSelectionDTO: Codable {
         var path: String
         var addedAt: Date
+        var snapshot: PanelHistorySnapshot?
     }
 
     // MARK: - Path helpers
@@ -96,10 +98,13 @@ final class SelectionsHistory {
             trimHistory()
         }
         let now = Date()
+        let previousSnapshot = recentSelections.first {
+            Self.historyKey(for: $0.url) == Self.historyKey(for: normalized)
+        }?.snapshot
         recentSelections.removeAll {
             Self.historyKey(for: $0.url) == Self.historyKey(for: normalized)
         }
-        recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: now), at: 0)
+        recentSelections.insert(RecentHistorySelection(url: normalized, addedAt: now, snapshot: previousSnapshot), at: 0)
         if recentSelections.count > Self.maxEntries {
             recentSelections.removeLast()
         }
@@ -148,6 +153,18 @@ final class SelectionsHistory {
     func getRecentSelectionItems() -> [RecentHistorySelection] {
         recentSelections
     }
+    // MARK: - Saved Panel State
+    func snapshot(for url: URL) -> PanelHistorySnapshot? {
+        recentSelections.first { Self.historyKey(for: $0.url) == Self.historyKey(for: url) }?.snapshot
+    }
+
+    func setSnapshot(_ snapshot: PanelHistorySnapshot, for url: URL) {
+        guard let index = recentSelections.firstIndex(where: {
+            Self.historyKey(for: $0.url) == Self.historyKey(for: url)
+        }) else { return }
+        recentSelections[index].snapshot = snapshot
+        saveToDisk()
+    }
     // MARK: - Clean Recent Selections
     func cleanRecentSelections() {
         guard sanitizePersistedHistory() else { return }
@@ -187,7 +204,8 @@ final class SelectionsHistory {
             current: current.map { AppState.pathString(for: $0) },
             recentSelections: recentSelections.map { AppState.pathString(for: $0.url) },
             recentSelectionEntries: recentSelections.map { item in
-                RecentSelectionDTO(path: AppState.pathString(for: item.url), addedAt: item.addedAt)
+                RecentSelectionDTO(path: AppState.pathString(for: item.url), addedAt: item.addedAt,
+                                   snapshot: item.snapshot)
             }
         )
         do {
@@ -212,7 +230,8 @@ final class SelectionsHistory {
             current = dto.current.map(Self.makeFileURL(from:))
             if let entries = dto.recentSelectionEntries {
                 recentSelections = entries.map { entry in
-                    RecentHistorySelection(url: Self.makeFileURL(from: entry.path), addedAt: entry.addedAt)
+                    RecentHistorySelection(url: Self.makeFileURL(from: entry.path), addedAt: entry.addedAt,
+                                           snapshot: entry.snapshot)
                 }
             } else {
                 recentSelections = dto.recentSelections.map { path in

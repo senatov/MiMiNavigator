@@ -18,6 +18,7 @@ extension AppState {
     func navigateToDirectory(_ newPath: String, on panel: FavPanelSide, displayPath: String? = nil) async {
         let previousPath = path(for: panel)
         log.info("[Navigate] \(panel): '\(previousPath)' → '\(newPath)'")
+        if previousPath != newPath && !isNavigatingFromHistory { captureHistoryState(for: panel) }
         // --- Remote navigation handling ---
         if let remoteURL = URL(string: newPath), Self.isRemotePath(remoteURL) {
             log.info("[Navigate] remote: \(remoteURL)")
