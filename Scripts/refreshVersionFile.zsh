@@ -37,7 +37,7 @@ fi
 
 # Use the documented release date for published versions and today's date for development builds.
 RELEASE_HEADER="## [${GIT_VERSION}] - "
-RELEASE_DATE=$(awk -v header="${RELEASE_HEADER}" 'index($0, header) == 1 { print substr($0, length(header) + 1); exit }' "${PROJECT_DIR}/CHANGELOG.md")
+RELEASE_DATE=$(awk -v header="${RELEASE_HEADER}" 'index($0, header) == 1 { date = substr($0, length(header) + 1); sub(/\r$/, "", date); print date; exit }' "${PROJECT_DIR}/CHANGELOG.md")
 if [[ -n "${RELEASE_DATE}" && ! "${RELEASE_DATE}" =~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' ]]; then
     echo "❌ ERROR: CHANGELOG.md has an invalid release date for ${GIT_VERSION}: ${RELEASE_DATE}." >&2
     exit 3
