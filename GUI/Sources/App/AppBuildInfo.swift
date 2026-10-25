@@ -19,7 +19,7 @@ enum AppBuildInfo {
     @MainActor
     static func toolBarItem(dividerOffset: CGFloat) -> ToolbarItem<(), some View> {
         ToolbarItem(placement: .principal) {
-            BuildInfoToolbarCluster(version: versionString())
+            BuildInfoToolbarCluster(buildStamp: versionString(), displayDate: releaseDateString())
                 .offset(x: dividerOffset)
         }
     }
@@ -49,11 +49,23 @@ enum AppBuildInfo {
             return "MiMi Navigator — cannot determine version"
         }
     }
+
+    // MARK: - Release Date
+    static func releaseDateString() -> String {
+        if let url = Bundle.main.url(forResource: "release_date", withExtension: "asc"),
+           let raw = try? String(contentsOf: url, encoding: .utf8)
+        {
+            let date = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !date.isEmpty { return date }
+        }
+        return String(versionString().prefix(10))
+    }
 }
 
 // MARK: - Build Info Toolbar Cluster
 private struct BuildInfoToolbarCluster: View {
-    let version: String
+    let buildStamp: String
+    let displayDate: String
     @State private var prefs = UserPreferences.shared
     @State private var monitorWidth: CGFloat = 0
 
@@ -64,7 +76,7 @@ private struct BuildInfoToolbarCluster: View {
 
     // MARK: - Body
     var body: some View {
-        DevBuildBadge(version: version)
+        DevBuildBadge(buildStamp: buildStamp, displayDate: displayDate)
             .overlay(alignment: .leading) {
                 if showMemory || showThreads {
                     ResourceMonitorToolbarItem(
@@ -89,7 +101,8 @@ private struct BuildInfoToolbarCluster: View {
 // MARK: - DevBuildBadge
 
 private struct DevBuildBadge: View {
-    let version: String
+    let buildStamp: String
+    let displayDate: String
     @State private var center = InAppNoticeCenter.shared
     @State private var isRivetPulsing = false
     @State private var isRivetHovered = false
@@ -134,24 +147,22 @@ private struct DevBuildBadge: View {
     private var badgeLabel: some View {
         HStack(spacing: 8) {
             DevBuildCatMedallion()
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Pre-Release")
-                    .font(.system(size: 10, weight: .medium, design: .default))
-                    .tracking(0.5)
-                    .foregroundStyle(Color.primary.opacity(0.90))
-                Text(version)
-                    .font(.system(size: 9, weight: .regular, design: .default))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            Text("Pre-Release")
+                .font(.system(size: 10, weight: .medium, design: .default))
+                .tracking(0.5)
+                .foregroundStyle(Color.primary.opacity(0.90))
+            Text(displayDate)
+                .font(.system(size: 9, weight: .regular, design: .default))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
         .padding(.leading, 6)
         .padding(.trailing, 9)
         .frame(height: TopToolbarMetrics.height)
         .background { TopToolbarSurface() }
         .contentShape(RoundedRectangle(cornerRadius: TopToolbarMetrics.cornerRadius, style: .continuous))
-        .help("Current pre-release build version")
+        .help("Release date: \(displayDate). Build: \(buildStamp)")
     }
 }
 

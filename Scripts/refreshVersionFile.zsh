@@ -22,6 +22,7 @@ SCRIPT_DIR="$(cd -- "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 TARGET_DIR="$PROJECT_DIR/GUI/Resources"
 TARGET_FILE="${TARGET_DIR}/curr_version.asc"
+RELEASE_DATE_FILE="${TARGET_DIR}/release_date.asc"
 PBXPROJ="$PROJECT_DIR/MiMiNavigator.xcodeproj/project.pbxproj"
 
 # ✅ Получение версии из RELEASE_VERSION or git tag (e.g. "v0.9.7" → "0.9.7")
@@ -32,6 +33,23 @@ elif TAG=$($GIT -C "$PROJECT_DIR" describe --tags --abbrev=0 2>/dev/null); then
     GIT_VERSION="${TAG#v}"
 else
     GIT_VERSION="0.0.0"
+fi
+
+# Use the documented release date for published versions and today's date for development builds.
+RELEASE_HEADER="## [${GIT_VERSION}] - "
+RELEASE_DATE=$(awk -v header="${RELEASE_HEADER}" 'index($0, header) == 1 { print substr($0, length(header) + 1); exit }' "${PROJECT_DIR}/CHANGELOG.md")
+if [[ -n "${RELEASE_DATE}" && ! "${RELEASE_DATE}" =~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' ]]; then
+    echo "❌ ERROR: CHANGELOG.md has an invalid release date for ${GIT_VERSION}: ${RELEASE_DATE}." >&2
+    exit 3
+fi
+if [[ -z "${RELEASE_DATE}" ]]; then
+    if [[ -n "${RELEASE_VERSION:-}" ]]; then
+        echo "❌ ERROR: CHANGELOG.md has no release date for ${GIT_VERSION}." >&2
+        exit 3
+    fi
+    RELEASE_DATE=$(date +"%Y.%m.%d")
+else
+    RELEASE_DATE=${RELEASE_DATE//-/.}
 fi
 
 # ✅ Диагностика
@@ -52,6 +70,7 @@ fi
 
 # ✅ Запись строки версии в файл
 echo "$VERSION_STRING" > "$TARGET_FILE"
+echo "$RELEASE_DATE" > "$RELEASE_DATE_FILE"
 
 # ✅ Проверка, что файл не пуст
 if [[ ! -s "$TARGET_FILE" ]]; then

@@ -257,6 +257,7 @@ fi
 echo "[1/10] Updating version stamp..."
 STAMP_BACKUP_DIR="$(mktemp -d /tmp/mimi_release_stamp.XXXXXX)"
 cp "${PROJECT_DIR}/GUI/Resources/curr_version.asc" "${STAMP_BACKUP_DIR}/curr_version.asc"
+cp "${PROJECT_DIR}/GUI/Resources/release_date.asc" "${STAMP_BACKUP_DIR}/release_date.asc"
 cp "${PROJECT_FILE}/project.pbxproj" "${STAMP_BACKUP_DIR}/project.pbxproj"
 RELEASE_VERSION="${VERSION}" Scripts/refreshVersionFile.zsh
 if ! grep -Fq "MARKETING_VERSION = ${VERSION};" "${PROJECT_FILE}/project.pbxproj"; then
@@ -268,6 +269,7 @@ if [[ "${MIMI_RELEASE_LOCAL_KITS:-0}" == "1" ]]; then
     python3 "${PROJECT_DIR}/Scripts/BinaryPackages/configure.py" --verify
     PROJECT_FILE="${PROJECT_DIR}/build/binary-packages/verification/MiMiNavigator.xcodeproj"
     cp "${PROJECT_DIR}/GUI/Resources/curr_version.asc" "${PROJECT_DIR}/build/binary-packages/verification/GUI/Resources/curr_version.asc"
+    cp "${PROJECT_DIR}/GUI/Resources/release_date.asc" "${PROJECT_DIR}/build/binary-packages/verification/GUI/Resources/release_date.asc"
     cp "${PROJECT_DIR}/MiMiNavigator.xcodeproj/project.pbxproj" "${PROJECT_FILE}/project.pbxproj"
 fi
 

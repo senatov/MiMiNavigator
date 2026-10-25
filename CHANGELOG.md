@@ -7,6 +7,10 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+### Fixed
+- Show the documented release date in the pre-release toolbar badge without placing text behind the notice button; keep the full build stamp for update identity and the badge tooltip.
+- Bring the staged improvement plan up to date with the published macOS 27 release and its remaining validation work.
+
 ## [0.9.1.3] - 2026-10-25
 
 ### Changed

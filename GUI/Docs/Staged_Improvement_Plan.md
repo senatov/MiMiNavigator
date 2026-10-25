@@ -2,21 +2,24 @@
 
 The staged program covers the entire application. Keep each change small enough to build, inspect, and commit independently. Current development targets macOS 27; v0.9.1.2 is the final macOS 26-compatible release. Check new SwiftUI APIs against the macOS 27 deployment target before adopting them.
 
-## Scope of v0.9.1.2
+## Completed in v0.9.1.2
 
 1. Archive reliability: TAR extraction errors, safe repacking, and recovery of edited contents after a failed repack.
 2. Release preparation: four-component decimal versioning, binary MiMiKits verification, and release-sequence validation.
 3. Responsiveness: prompt cancellation of blocked directory scans and protection against stale panel updates.
 4. GUI: independent, accessible selection and deletion in local filter history.
 
-Complete the signed, notarized, stapled DMG and publish the application release only after these changes are built and verified from the final commit.
+The signed, notarized, stapled v0.9.1.2 DMG was published after these changes.
+
+## Current release: v0.9.1.3
+
+The first macOS 27-only release is published. Its app and executable minimum-version checks, in-app replacement guard, macOS 27/Xcode 27 CI configuration, and native toolbar overflow are in place. The README documents the OS-aware update feed and Homebrew minimum-version check. Local titlebar changes after the release keep the notice button above the panel divider, put resource graphs to its left, group actions on a compact native surface, and show the documented release date without covering it. These changes are not part of v0.9.1.3.
 
 ## Later stages
 
-The release pipeline now checks the signed app's version and macOS minimum in both `Info.plist` and the executable before creating a DMG. The remaining macOS 27 installation checks below still need validation on a macOS 26 host.
-CI now detects Xcode failures piped through `xcbeautify`. Build failures fail the job; tests remain advisory until the UI test suite is validated on the hosted runner.
+The release pipeline checks the signed app's version and macOS minimum in both `Info.plist` and the executable before creating a DMG. Build failures behind `xcbeautify` fail CI; tests remain advisory until the UI test suite is validated on the hosted runner.
 
-1. Complete the macOS 27 transition gate: verify the in-app installer against signed candidate metadata, keep legacy clients on v0.9.1.2 in the update feed, enforce the minimum in Homebrew, and move CI to Xcode 27. Deploy the feed before publishing the first macOS 27 release and test rejection on macOS 26. Finder drag-to-install from a DMG cannot run a pre-copy check; decide whether the first 27-only release needs a signed installer package with an OS-version installation check. Existing v0.9.1.2 users on macOS 27 must install the first 27-only release manually because that client does not report its host OS.
+1. Validate the macOS 27 transition on a macOS 26 host: check the OS-aware feed, Homebrew rejection, and the in-app installer against the signed v0.9.1.3 candidate. Finder drag-to-install from a DMG cannot run a pre-copy check; decide whether a future release needs a signed installer package with an OS-version installation check. Existing v0.9.1.2 users on macOS 27 must install v0.9.1.3 manually because that client does not report its host OS.
 2. Record a performance baseline for startup, large folders, scrolling, memory, and remote operations. Use measurements to select the next performance work. Repeat runtime checks on macOS 27.
 3. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
 4. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
@@ -26,7 +29,7 @@ CI now detects Xcode failures piped through `xcbeautify`. Build failures fail th
 
 ## macOS 27 opportunities to assess
 
-- Keep view modes and the fixed menu toggle visible longer with SwiftUI toolbar visibility priorities; expose individual actions in native toolbar overflow. `ToolbarOverflowMenu` is unavailable on macOS in Xcode 27, so assess other platform-specific toolbar APIs before adopting them.
+- Recheck the compact native toolbar group, view-mode visibility priorities, and individual action labels at narrow Commander window widths. `ToolbarOverflowMenu` is unavailable on macOS in Xcode 27, so assess other platform-specific toolbar APIs before adopting them.
 - Try native drag reordering for Favorites and other ordered views; verify stable identity, focus, and accessibility in the running app.
 - Review item-bound alerts and confirmation dialogs to reduce duplicated presentation state.
 - Profile lazy `@State` initialization and Xcode 27 `ContentBuilder` compilation separately. The compiler benefit comes from Xcode 27, not simply from raising the deployment target.
@@ -37,13 +40,13 @@ Carry every version component after the major number from 0 through 9. For examp
 
 ## Performance stage 1: local baseline (2026-10-23)
 
-- Host: macOS 27.0.1. The app and private packages retain a macOS 26.0 deployment target; a macOS 26 runtime was unavailable.
+- Host: macOS 27.0.1. At the time of this measurement, the app and private packages retained a macOS 26.0 deployment target; a macOS 26 runtime was unavailable. v0.9.1.3 later raised the target to macOS 27.
 - Startup checkpoint: 0.395 seconds in the new Debug build. This is a single warm launch, not a cold-start benchmark.
 - Local flat folder: 20,000 empty `.txt` files under `/tmp`. The prior build spent 2.723 seconds in scan/sort. With conditional metadata fallbacks in FileModelKit, the same scan took 1.178 seconds (57% less).
 - Full panel refresh in the new build took 2.869 seconds, including 1.249 seconds to publish the result. The before/after panel modes differed, so this total is not a controlled comparison.
 - List scrolling by three pages moved the visible window from `file-19999.txt` to `file-19848.txt`. The Debug toolbar reported 48 MB at launch, 266 MB after opening the large folder, and up to 325 MB during the interaction; investigate memory and publication cost separately.
 - Remote-operation latency remains unmeasured because no test server or disposable remote directory was available.
-- The fix is in the private MiMiKits source. Public binary wrappers and the installed release will receive it when the next release packages are published.
+- The fix was in private MiMiKits source at the time of this measurement; v0.9.1.3 subsequently published the updated packages.
 
 ## Performance stage 2: bounded column-width sampling (2026-10-24)
 
@@ -56,7 +59,7 @@ Carry every version component after the major number from 0 through 9. For examp
 - Used the requested VS Code extension `webview/assets` directory as a read-only fixture: 19,367 files and no immediate subfolders.
 - Skip parent-entry array mutation when the scan has no `..` entry, and skip the old-file size lookup when the incoming scan has no directories.
 - The Debug app displayed all 19,367 rows. An unchanged forced refresh skipped republishing the panel. One initial scan took 1.630 seconds for scan/sort and 0.411 seconds for publication; this single run does not establish an end-to-end speedup.
-- Next measure the remaining full-list content hash and table snapshot rebuild separately before changing their concurrency or cache ownership.
+- The remaining full-list content hash and table snapshot rebuild were measured in stages 5–8 below.
 
 ## Performance stage 4: sorted table snapshot (2026-10-24)
 
