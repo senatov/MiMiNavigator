@@ -106,3 +106,8 @@ Carry every version component after the major number from 0 through 9. For examp
 - Instruments Allocations could not attach to the Debug process or launch it for tracing on this host; Developer Mode is disabled. No OS security setting was changed. An allocation trace remains necessary before attributing the remaining footprint to a specific cache or view.
 - Source review found that `AppState.navigationCallbacks` holds closures capturing the entire `FileTableView`, including its file array; the old registration could remain when a table disappeared without an immediate replacement. The table now removes only its own registration and releases its completed sort-task handle on disappearance. A registration identifier prevents an outgoing table from removing its successor's callbacks.
 - The rebuilt Debug app displayed all 19,367 files, jumped to the bottom, returned to the parent folder, and accepted keyboard navigation. Its toolbar footprint fell from about 309 MB in the large folder to 218 MB after the exit. This is a functional check, not a controlled estimate of memory saved by the change.
+
+## macOS services stage 1: mounted volumes (2026-10-25)
+
+- The Volumes menu now gets mounted volumes from `FileManager.mountedVolumeURLs` with hidden volumes omitted, instead of scanning `/Volumes`. It excludes the root filesystem and app-managed SMB mounts, which already appear under Remote Sessions. Cloud-storage folder discovery remains separate.
+- The menu also refreshes on volume rename notifications. On the current host, the Debug app listed three mounted volumes, kept the cloud section, opened `/Volumes/MiMiTrends` from its menu item, and returned to the original panel path. Mount, unmount, and rename events were not exercised with a test device.

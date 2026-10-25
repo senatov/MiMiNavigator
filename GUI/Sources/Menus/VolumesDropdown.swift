@@ -53,6 +53,9 @@ struct VolumesDropdown: View {
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
             refreshLocations()
         }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didRenameVolumeNotification)) { _ in
+            refreshLocations()
+        }
     }
 
     // MARK: - Menu Content
@@ -106,24 +109,37 @@ struct VolumesDropdown: View {
     // MARK: - Scan Locations
     private static func scanLocations() -> [VolumeLocation] {
         let fileManager = FileManager.default
-        let volumesRoot = URL(fileURLWithPath: "/Volumes", isDirectory: true)
         let cloudRoot = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage", isDirectory: true)
         let iCloudURL = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
-        let mounted = directoryChildren(of: volumesRoot, kind: .mounted, excludingSystemDirectories: true)
-        var cloud = directoryChildren(of: cloudRoot, kind: .cloud, excludingSystemDirectories: false)
+        let mounted = mountedVolumes()
+        var cloud = directoryChildren(of: cloudRoot, kind: .cloud)
         if isDirectory(iCloudURL) {
             cloud.insert(location(url: iCloudURL, title: "iCloud Drive", kind: .cloud), at: 0)
         }
         return deduplicated(mounted, normalizeCloudTags: false) + deduplicated(cloud, normalizeCloudTags: true)
     }
 
+    // MARK: - Mounted Volumes
+    private static func mountedVolumes() -> [VolumeLocation] {
+        let keys: [URLResourceKey] = [.volumeLocalizedNameKey, .volumeNameKey]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
+        return urls.compactMap { url in
+            guard url.standardizedFileURL.path != "/", !AppState.isAppManagedNetworkMountPath(url) else { return nil }
+            let values = try? url.resourceValues(forKeys: Set(keys))
+            let title = values?.volumeLocalizedName ?? values?.volumeName ?? url.lastPathComponent
+            guard !title.isEmpty else { return nil }
+            return location(url: url, title: title, kind: .mounted)
+        }
+        .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
     // MARK: - Directory Children
-    private static func directoryChildren(of root: URL, kind: VolumeLocation.Kind, excludingSystemDirectories: Bool) -> [VolumeLocation] {
+    private static func directoryChildren(of root: URL, kind: VolumeLocation.Kind) -> [VolumeLocation] {
         let keys: [URLResourceKey] = [.isDirectoryKey, .isHiddenKey, .isSymbolicLinkKey]
         guard let children = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]) else { return [] }
         return children.compactMap { url in
             let name = url.lastPathComponent
-            guard !name.isEmpty, !name.hasPrefix("."), !(excludingSystemDirectories && name.hasPrefix("com.apple.")) else { return nil }
+            guard !name.isEmpty, !name.hasPrefix(".") else { return nil }
             var isDirectory: ObjCBool = false
             guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue else { return nil }
             let resolvedPath = url.resolvingSymlinksInPath().standardizedFileURL.path
