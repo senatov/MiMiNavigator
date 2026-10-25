@@ -133,7 +133,7 @@ private struct DevBuildBadge: View {
                         guard !Task.isCancelled else { return }
                         withAnimation(.spring(response: 0.42, dampingFraction: 0.78)) { isRivetPulsing = false }
                     }
-                    .offset(y: 8)
+                    .offset(y: 5)
             }
     }
 

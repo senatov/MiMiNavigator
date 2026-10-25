@@ -126,8 +126,8 @@ private struct AppWindowTitle: View {
 
 // MARK: - Toolbar Button Group
 enum TopToolbarMetrics {
-    static let height: CGFloat = 32
-    static let cornerRadius: CGFloat = 16
+    static let height: CGFloat = 38
+    static let cornerRadius: CGFloat = 19
     static let borderWidth: CGFloat = 0.75
 }
 
