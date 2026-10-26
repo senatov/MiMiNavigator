@@ -5,6 +5,7 @@
 //  Created by Iakov Senatov on 06.08.24.
 //
 
+import CoreServices
 import FileModelKit
 import XCTest
 
@@ -322,5 +323,18 @@ final class PanelHistorySnapshotTests: XCTestCase {
         XCTAssertEqual(reloaded.snapshot(for: second), secondState)
         XCTAssertEqual(reloaded.goBack(), first)
         MiMiDefaults.shared.removeObject(forKey: storageKey)
+    }
+}
+
+// MARK: - FSEvents Continuity Tests
+final class FSEventsContinuityTests: XCTestCase {
+    // MARK: - Dropped and Root Events
+    func testContinuityFlagsRequireFullRescan() {
+        let ordinary = FSEventStreamEventFlags(kFSEventStreamEventFlagItemModified)
+        let dropped = FSEventStreamEventFlags(kFSEventStreamEventFlagUserDropped)
+        let rootChanged = FSEventStreamEventFlags(kFSEventStreamEventFlagRootChanged)
+        XCTAssertFalse(FSEventsDirectoryWatcher.requiresFullRescan([ordinary]))
+        XCTAssertTrue(FSEventsDirectoryWatcher.requiresFullRescan([ordinary, dropped]))
+        XCTAssertTrue(FSEventsDirectoryWatcher.requiresFullRescan([rootChanged]))
     }
 }

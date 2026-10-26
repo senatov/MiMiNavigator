@@ -150,19 +150,13 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     // MARK: - Handle Events
     private func handleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
         let watched = watchedPath
-        let filtered = filteredEvents(paths: paths, flags: flags, watchedPath: watched)
-        guard !filtered.paths.isEmpty else { return }
-        let rescanFlags = FSEventStreamEventFlags(
-            kFSEventStreamEventFlagMustScanSubDirs
-                | kFSEventStreamEventFlagUserDropped
-                | kFSEventStreamEventFlagKernelDropped
-                | kFSEventStreamEventFlagRootChanged
-        )
-        if filtered.flags.contains(where: { $0 & rescanFlags != 0 }) {
+        if Self.requiresFullRescan(flags) {
             log.warning("[FSEvents] continuity flag received; full rescan for '\(watched)'")
             onPatch(makeFullRescanPatch(watchedPath: watched, childCounts: [:]))
             return
         }
+        let filtered = filteredEvents(paths: paths, flags: flags, watchedPath: watched)
+        guard !filtered.paths.isEmpty else { return }
         var classification = classifyEvents(filtered.paths, watchedPath: watched)
         if classification.watchedDirectoryChanged && classification.directChildren.isEmpty {
             log.info("[FSEvents] watched directory changed; full rescan for '\(watched)'")
@@ -174,7 +168,6 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             classification.directChildren,
             childCounts: &classification.childCountUpdates
         )
-        //log.info("[FSEvents] \(classification.directChildren.count) item(s) changed in '\(watched)'")
         onPatch(DirectoryPatch(
             childCountUpdates: classification.childCountUpdates,
             addedOrModified: changes.added,
@@ -182,6 +175,17 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             watchedPath: watched,
             needsFullRescan: false
         ))
+    }
+
+    // MARK: - Continuity Flags
+    static func requiresFullRescan(_ flags: [FSEventStreamEventFlags]) -> Bool {
+        let rescanFlags = FSEventStreamEventFlags(
+            kFSEventStreamEventFlagMustScanSubDirs
+                | kFSEventStreamEventFlagUserDropped
+                | kFSEventStreamEventFlagKernelDropped
+                | kFSEventStreamEventFlagRootChanged
+        )
+        return flags.contains { $0 & rescanFlags != 0 }
     }
 
     // MARK: - Self-Generated Event Filtering

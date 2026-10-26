@@ -136,10 +136,11 @@ extension DualDirectoryScanner {
         let removedPaths = patch.removedPaths
         let addedOrModified = patch.addedOrModified
         let state = await currentPatchState(for: side)
+        guard requestedWatchedPath[side] == patch.watchedPath else { return }
         let totalChanges = addedOrModified.count + removedPaths.count
         if totalChanges == 0 {
             applyChildCountUpdates(childUpdates, to: state.files)
-            await publishDisplayedFiles(state.files, for: side)
+            guard await publishPatchFiles(state.files, for: side, watchedPath: patch.watchedPath) else { return }
             await DirectoryContentCache.shared.store(
                 path: patch.watchedPath,
                 files: state.files,
@@ -164,7 +165,7 @@ extension DualDirectoryScanner {
         if !useIncremental {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
-        await publishDisplayedFiles(merged, for: side)
+        guard await publishPatchFiles(merged, for: side, watchedPath: patch.watchedPath) else { return }
         await DirectoryContentCache.shared.store(
             path: patch.watchedPath,
             files: merged,
@@ -180,6 +181,16 @@ extension DualDirectoryScanner {
             sortKey: appState.sortKey,
             sortAsc: appState.bSortAscending
         )
+    }
+
+    @MainActor
+    func publishPatchFiles(_ files: [CustomFile], for side: FavPanelSide, watchedPath: String) -> Bool {
+        guard PathUtils.areEqual(appState.path(for: side), watchedPath) else {
+            log.debug("[FSEvents] patch discarded after panel navigation: '\(watchedPath)'")
+            return false
+        }
+        publishDisplayedFiles(files, for: side)
+        return true
     }
 
     func mergeUpdatedFiles(
