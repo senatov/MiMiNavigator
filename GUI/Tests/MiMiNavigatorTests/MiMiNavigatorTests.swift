@@ -310,9 +310,17 @@ final class PanelHistorySnapshotTests: XCTestCase {
         XCTAssertEqual(history.goForward(), second)
         XCTAssertEqual(history.snapshot(for: second), secondState)
         XCTAssertTrue(history.jumpTo(second))
+        let stored = try XCTUnwrap(MiMiDefaults.shared.dictionary(forKey: storageKey))
+        XCTAssertTrue(JSONSerialization.isValidJSONObject([storageKey: stored]))
+        XCTAssertNotNil(stored["snapshots"] as? String)
+        let jsonURL = root.appendingPathComponent("history.json")
+        try SafeJSONStorage.writeJSONObject([storageKey: stored], to: jsonURL, label: "history test")
+        XCTAssertThrowsError(try SafeJSONStorage.writeJSONObject(
+            ["invalid": ["data": Data([1, 2, 3])]], to: jsonURL, label: "history test"))
         let reloaded = PanelNavigationHistory(panel: .left, storageKey: storageKey)
         XCTAssertEqual(reloaded.snapshot(for: first), firstState)
         XCTAssertEqual(reloaded.snapshot(for: second), secondState)
         XCTAssertEqual(reloaded.goBack(), first)
+        MiMiDefaults.shared.removeObject(forKey: storageKey)
     }
 }

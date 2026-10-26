@@ -245,7 +245,7 @@ final class PanelNavigationHistory {
         let data: [String: Any] = [
             "history": history.map { AppState.pathString(for: $0) },
             "currentIndex": currentIndex,
-            "snapshots": (try? JSONEncoder().encode(snapshots)) ?? Data(),
+            "snapshots": (try? JSONEncoder().encode(snapshots).base64EncodedString()) ?? "",
         ]
         MiMiDefaults.shared.set(data, forKey: userDefaultsKey)
     }
@@ -274,7 +274,9 @@ final class PanelNavigationHistory {
             loadedHistory.first { AppState.pathString(for: $0) == storedPath }?.standardizedFileURL
         }
         history = Self.deduplicatedKeepingLatest(loadedHistory)
-        if let snapshotData = data["snapshots"] as? Data {
+        let snapshotData = (data["snapshots"] as? String).flatMap { Data(base64Encoded: $0) }
+            ?? data["snapshots"] as? Data
+        if let snapshotData {
             snapshots = (try? JSONDecoder().decode([String: PanelHistorySnapshot].self, from: snapshotData)) ?? [:]
             pruneSnapshots()
         }

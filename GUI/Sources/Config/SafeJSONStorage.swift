@@ -81,6 +81,7 @@ enum SafeJSONStorage {
         label: String,
         options: JSONSerialization.WritingOptions = [.prettyPrinted, .sortedKeys]
     ) throws {
+        guard JSONSerialization.isValidJSONObject(object) else { throw CocoaError(.fileWriteUnknown) }
         let data = try JSONSerialization.data(withJSONObject: object, options: options)
         _ = try decodeJSONObject(data)
         try writeVerifiedData(data, to: fileURL, label: label) { writtenData in
