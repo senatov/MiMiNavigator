@@ -23,8 +23,9 @@ struct AppToolbarContent: ToolbarContent {
             AppWindowTitle(version: MiMiNavigatorApp.appVersion)
         }
         ToolbarItemGroup(placement: .primaryAction) {
-            ForEach(store.visibleItems) { item in
-                ToolbarContentItem(app: app, appState: appState, item: item)
+            let actions = store.visibleItems.filter { !$0.isStatusBadge }
+            ForEach(0..<((actions.count + 2) / 3), id: \.self) { groupIndex in
+                ToolbarActionPod(app: app, appState: appState, items: Array(actions.dropFirst(groupIndex * 3).prefix(3)))
             }
         }
         .sharedBackgroundVisibility(.hidden)
@@ -45,23 +46,24 @@ struct AppToolbarContent: ToolbarContent {
     }
 }
 
-// MARK: - Toolbar Content Item
-private struct ToolbarContentItem: View {
+// MARK: - Toolbar Action Button
+private struct ToolbarActionPod: View {
     let app: MiMiNavigatorApp
     let appState: AppState
-    let item: ToolbarItemID
-    @State private var prefs = UserPreferences.shared
+    let items: [ToolbarItemID]
     var body: some View {
-        switch item {
-        case .memory:
-            ResourceMonitorToolbarItem(showMemory: true, showThreads: false, memoryInterval: prefs.snapshot.toolbarMemoryGraphInterval ?? 5, threadsInterval: prefs.snapshot.toolbarThreadsGraphInterval ?? 10)
-        case .threads:
-            ResourceMonitorToolbarItem(showMemory: false, showThreads: true, memoryInterval: prefs.snapshot.toolbarMemoryGraphInterval ?? 5, threadsInterval: prefs.snapshot.toolbarThreadsGraphInterval ?? 10)
-        case .buildInfo:
-            AppBuildInfo.toolbarBadge()
-        default:
-            ToolbarActionButton(app: app, appState: appState, item: item)
+        HStack(spacing: 2) {
+            ForEach(items) { item in
+                ToolbarActionButton(app: app, appState: appState, item: item)
+            }
         }
+        .background(alignment: .top) {
+            Capsule().fill(Color(nsColor: .controlBackgroundColor))
+                .overlay { Capsule().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.75) }
+                .frame(height: TopToolbarMetrics.podHeight)
+        }
+        .padding(.horizontal, 4)
+        .offset(y: 14)
     }
 }
 
@@ -82,19 +84,18 @@ private struct ToolbarActionButton: View {
         Button {
             performAction()
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: 2) {
                 Image(systemName: item == .hiddenFiles && isActive ? "eye.fill" : item.systemImage)
                     .font(.system(size: 17, weight: .regular))
-                    .frame(height: 20)
+                    .frame(height: TopToolbarMetrics.podHeight)
                 if store.labelStyle == .iconAndText {
-                    Text(item.label)
+                    Text(toolbarTitle)
                         .font(.system(size: 9))
                         .lineLimit(1)
                 }
             }
-            .frame(minWidth: 42, minHeight: TopToolbarMetrics.height)
-            .padding(.horizontal, 4)
-            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .frame(width: 48, height: TopToolbarMetrics.toolbarHeight, alignment: .top)
+            .contentShape(Rectangle())
         }
         .buttonStyle(MailToolbarButtonStyle(isHovered: isHovered))
         .onHover { isHovered = $0 }
@@ -102,6 +103,16 @@ private struct ToolbarActionButton: View {
         .foregroundStyle(isActive ? Color.accentColor : Color.primary)
         .help(item.helpText)
         .accessibilityValue(item == .hiddenFiles || item == .preview ? (isActive ? "On" : "Off") : "")
+    }
+
+    private var toolbarTitle: String {
+        switch item {
+        case .hiddenFiles: "Hidden"
+        case .swapPanels: "Swap"
+        case .findFiles: "Find"
+        case .multiRename: "Rename"
+        default: item.label
+        }
     }
 
     // MARK: - Toolbar Action
@@ -143,9 +154,10 @@ private struct MailToolbarButtonStyle: ButtonStyle {
     // MARK: - Button Body
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background {
-                RoundedRectangle(cornerRadius: 9)
+            .background(alignment: .top) {
+                Capsule()
                     .fill(Color.primary.opacity(configuration.isPressed ? 0.16 : isHovered ? 0.08 : 0))
+                    .frame(height: TopToolbarMetrics.podHeight)
             }
             .animation(.easeOut(duration: 0.12), value: isHovered)
             .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
@@ -180,7 +192,9 @@ private struct AppWindowTitle: View {
 
 // MARK: - Toolbar Button Group
 enum TopToolbarMetrics {
-    static let height: CGFloat = 46
+    static let toolbarHeight: CGFloat = 65
+    static let podHeight: CGFloat = 36
+    static let height: CGFloat = 38
     static let cornerRadius: CGFloat = 14
     static let borderWidth: CGFloat = 0.75
 }

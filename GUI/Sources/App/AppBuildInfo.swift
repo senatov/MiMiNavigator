@@ -14,6 +14,15 @@ import SwiftUI
 /// Used by MiMiNavigatorApp to avoid polluting the @main App struct.
 enum AppBuildInfo {
 
+    // MARK: - Centered Toolbar Item
+    @MainActor
+    static func toolBarItem(dividerOffset: CGFloat) -> ToolbarItem<(), some View> {
+        ToolbarItem(placement: .principal) {
+            BuildInfoToolbarCluster(buildStamp: versionString(), displayDate: releaseDateString())
+                .offset(x: dividerOffset)
+        }
+    }
+
     // MARK: - Toolbar Badge
     @MainActor
     static func toolbarBadge() -> some View {
@@ -55,6 +64,36 @@ enum AppBuildInfo {
             if !date.isEmpty { return date }
         }
         return String(versionString().prefix(10))
+    }
+}
+
+// MARK: - Build Info Toolbar Cluster
+private struct BuildInfoToolbarCluster: View {
+    let buildStamp: String
+    let displayDate: String
+    @State private var store = ToolbarStore.shared
+    @State private var prefs = UserPreferences.shared
+    private var showMemory: Bool { store.visibleIDs.contains(.memory) }
+    private var showThreads: Bool { store.visibleIDs.contains(.threads) }
+    private var memoryInterval: TimeInterval { prefs.snapshot.toolbarMemoryGraphInterval ?? 5 }
+    private var threadsInterval: TimeInterval { prefs.snapshot.toolbarThreadsGraphInterval ?? 10 }
+    // MARK: - Body
+    var body: some View {
+        DevBuildBadge(buildStamp: buildStamp, displayDate: displayDate)
+            .overlay(alignment: .leading) {
+                if showMemory || showThreads {
+                    ResourceMonitorToolbarItem(
+                        showMemory: showMemory,
+                        showThreads: showThreads,
+                        memoryInterval: memoryInterval,
+                        threadsInterval: threadsInterval
+                    )
+                    .frame(width: 257, alignment: .trailing)
+                    .offset(x: -264)
+                } else {
+                    Color.clear.frame(width: 257, height: TopToolbarMetrics.height).offset(x: -264)
+                }
+            }
     }
 }
 

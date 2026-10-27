@@ -29,7 +29,7 @@ struct ToolbarCustChip: View {
                 .foregroundStyle(.primary.opacity(0.92))
                 .lineLimit(1)
                 .multilineTextAlignment(.center)
-                .frame(width: 74)
+                .frame(width: isInToolbar ? 68 : 74)
         }
         .padding(.horizontal, 2)
         .padding(.vertical, 3)

@@ -167,7 +167,8 @@ final class ToolbarStore {
                 .filter { !$0.isFixed }
             let knownSaved = Set(decoded)
             let newIDs = ToolbarItemID.allCases.filter { !$0.isFixed && !knownSaved.contains($0) }
-            orderedIDs = decoded + newIDs
+            let restored = decoded + newIDs
+            orderedIDs = restored.filter { !$0.isStatusBadge } + restored.filter(\.isStatusBadge)
         }
 
         // Load visibility — new IDs not in saved set are added as visible by default

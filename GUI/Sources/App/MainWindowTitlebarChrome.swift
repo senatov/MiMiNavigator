@@ -66,6 +66,7 @@ final class TitlebarChromeProbe: NSView {
     private func applyChrome() {
         guard let window, let frameView = window.contentView?.superview else { return }
         window.titlebarAppearsTransparent = true
+        window.toolbar?.displayMode = .iconAndLabel
         window.backgroundColor = fillColor
         if outline == nil {
             let newOutline = TitlebarOutlineView(frame: .zero)

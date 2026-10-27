@@ -17,6 +17,7 @@ extension MiMiNavigatorApp {
         .defaultSize(width: 1200, height: 700)
         .defaultPosition(.center)
         .windowToolbarStyle(.unified)
+        .windowToolbarLabelStyle(fixed: .titleAndIcon)
         .commands {
             AppCommands(
                 appState: appState,

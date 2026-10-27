@@ -27,7 +27,7 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     case preview        = "preview"
     case memory         = "memory"
     case threads        = "threads"
-    case buildInfo      = "buildInfo"
+    case buildInfo      = "buildInfo"  // reserved for migration; badge stays centered
     case menuBarToggle  = "menuBarToggle"  // fixed — cannot be removed from toolbar
 
     var id: String { rawValue }
@@ -35,7 +35,8 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     // MARK: - Display metadata
 
     /// Fixed items that cannot be removed from the toolbar (always visible).
-    var isFixed: Bool { self == .menuBarToggle }
+    var isFixed: Bool { self == .menuBarToggle || self == .buildInfo }
+    var isStatusBadge: Bool { self == .memory || self == .threads }
 
     /// Short label shown below icon in the dialog palette.
     var label: String {
@@ -120,6 +121,5 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .feedback,
         .memory,
         .threads,
-        .buildInfo,
     ]
 }

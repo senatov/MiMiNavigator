@@ -13,7 +13,7 @@ struct ToolbarCustInsertionDropZone: View {
         Capsule(style: .continuous)
             .fill(isActive ? DialogColors.accent : Color.clear)
             .frame(width: 4, height: 42)
-            .frame(width: 16, height: 58)
+            .frame(width: 10, height: 58)
             .contentShape(Rectangle())
             .animation(.easeOut(duration: 0.12), value: isActive)
     }

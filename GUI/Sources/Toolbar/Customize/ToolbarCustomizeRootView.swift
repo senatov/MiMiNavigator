@@ -36,7 +36,7 @@ struct ToolbarCustomizeRootView: View {
 
     // MARK: - Current Toolbar (D-n-D reorder zone)
     private var currentToolbarSection: some View {
-        sectionCard(title: "Current toolbar", caption: "Drag to reorder; drag an item above to remove it.") {
+        sectionCard(title: "Current toolbar", caption: "Memory and Threads stay beside the centered build badge. Drag command buttons to reorder.") {
             currentToolbarStrip
         }
         .padding(.horizontal, 22)
@@ -45,8 +45,13 @@ struct ToolbarCustomizeRootView: View {
 
     private var currentToolbarStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
-                let items = store.customizableVisibleItems
+            HStack(spacing: 2) {
+                ForEach(store.customizableVisibleItems.filter(\.isStatusBadge)) { item in
+                    ToolbarCustChip(item: item, isInToolbar: true, isDragging: false)
+                }
+                ToolbarCustChip(item: .buildInfo, isInToolbar: true, isDragging: false)
+                Rectangle().fill(.primary.opacity(0.12)).frame(width: 1, height: 44).padding(.horizontal, 8)
+                let items = store.customizableVisibleItems.filter { !$0.isStatusBadge }
                 ForEach(Array(items.enumerated()), id: \.element) { index, item in
                     insertionZone(at: index)
                     ToolbarCustChip(item: item, isInToolbar: true, isDragging: dragItem == item)
@@ -137,14 +142,14 @@ struct ToolbarCustomizeRootView: View {
                 ) {
                     ForEach(store.customizableItems) { item in
                         let isVisible = store.visibleIDs.contains(item)
-                        ToolbarCustPaletteCell(
-                            item: item,
-                            isVisible: isVisible,
-                            onToggle: { store.toggleVisibility(item) }
-                        )
-                        .onDrag {
-                            dragItem = item
-                            return NSItemProvider(object: item.rawValue as NSString)
+                        if item.isStatusBadge {
+                            ToolbarCustPaletteCell(item: item, isVisible: isVisible, onToggle: { store.toggleVisibility(item) })
+                        } else {
+                            ToolbarCustPaletteCell(item: item, isVisible: isVisible, onToggle: { store.toggleVisibility(item) })
+                                .onDrag {
+                                    dragItem = item
+                                    return NSItemProvider(object: item.rawValue as NSString)
+                                }
                         }
                     }
                 }

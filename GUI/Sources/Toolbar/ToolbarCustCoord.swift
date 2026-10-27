@@ -20,7 +20,7 @@ final class ToolbarCustomizeCoordinator {
     private var window: NSPanel?
     private var isClosing = false
 
-    private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize.v3"
+    private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize.v4"
     private let toolbarHeight: CGFloat = 70
     private let panelMargin: CGFloat = 12
     private let defaultWidth: CGFloat = 1400
