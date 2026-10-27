@@ -33,6 +33,9 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     private let callbackQueue = DispatchQueue(label: "mimi.fsevents", qos: .utility)
     private let onPatch: @Sendable (DirectoryPatch) -> Void
     private var showHiddenFiles = false
+    private let pendingLock = NSLock()
+    private var isStopped = true
+    private var pendingGeneration: UInt64 = 0
     private var pendingWork: DispatchWorkItem?
     private var pendingPaths: [String] = []
     private var pendingFlags: [FSEventStreamEventFlags] = []
@@ -104,7 +107,9 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             return false
         }
         FSEventStreamSetDispatchQueue(newStream, callbackQueue)
+        pendingLock.withLock { isStopped = false }
         guard FSEventStreamStart(newStream) else {
+            pendingLock.withLock { isStopped = true }
             FSEventStreamInvalidate(newStream)
             FSEventStreamRelease(newStream)
             log.error("[FSEvents] stream start failed for '\(path)'")
@@ -117,10 +122,14 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
 
     // MARK: - Stop
     func stop() {
-        pendingWork?.cancel()
-        pendingWork = nil
-        pendingPaths.removeAll()
-        pendingFlags.removeAll()
+        pendingLock.withLock {
+            isStopped = true
+            pendingGeneration &+= 1
+            pendingWork?.cancel()
+            pendingWork = nil
+            pendingPaths.removeAll()
+            pendingFlags.removeAll()
+        }
         guard let stream else { return }
         FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
@@ -131,19 +140,30 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
 
     // MARK: - Schedule Event Handling
     private func scheduleHandleEvents(paths: [String], flags: [FSEventStreamEventFlags]) {
-        pendingPaths.append(contentsOf: paths)
-        pendingFlags.append(contentsOf: flags)
-        pendingWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            let paths = self.pendingPaths
-            let flags = self.pendingFlags
-            self.pendingPaths.removeAll()
-            self.pendingFlags.removeAll()
-            self.pendingWork = nil
-            self.handleEvents(paths: paths, flags: flags)
+        let work = pendingLock.withLock { () -> DispatchWorkItem? in
+            guard !isStopped else { return nil }
+            pendingPaths.append(contentsOf: paths)
+            pendingFlags.append(contentsOf: flags)
+            pendingWork?.cancel()
+            pendingGeneration &+= 1
+            let generation = pendingGeneration
+            let work = DispatchWorkItem { [weak self] in
+                guard let self else { return }
+                let batch = self.pendingLock.withLock { () -> (paths: [String], flags: [FSEventStreamEventFlags])? in
+                    guard !self.isStopped, self.pendingGeneration == generation else { return nil }
+                    let batch = (paths: self.pendingPaths, flags: self.pendingFlags)
+                    self.pendingPaths.removeAll()
+                    self.pendingFlags.removeAll()
+                    self.pendingWork = nil
+                    return batch
+                }
+                guard let batch else { return }
+                self.handleEvents(paths: batch.paths, flags: batch.flags)
+            }
+            pendingWork = work
+            return work
         }
-        pendingWork = work
+        guard let work else { return }
         callbackQueue.asyncAfter(deadline: .now() + throttleDelay, execute: work)
     }
 
