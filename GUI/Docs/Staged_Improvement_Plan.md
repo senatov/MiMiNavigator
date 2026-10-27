@@ -136,3 +136,9 @@ Carry every version component after the major number from 0 through 9. For examp
 - A watcher restarted for the same panel path could receive a delayed patch from its predecessor. Path checks alone could accept that patch, including one built with the previous hidden-files setting. Each start request and active watcher now has an identifier; delayed starts and patches from replaced watchers are rejected. A hidden-files toggle stops the old streams before requesting replacements.
 - The Debug build and focused FSEvents continuity test passed. In the running Debug app, a new visible file appeared and disappeared without manual refresh. After toggling hidden files on, a newly created hidden file appeared; toggling the setting off hid it again. Both temporary files were removed.
 - This runtime check did not force a delayed callback from a retired watcher or a dropped event. Removable-volume and File Provider behavior still need separate validation.
+
+## macOS services stage 6: broken symbolic links in live updates (2026-10-27)
+
+- The full directory scanner lists a symbolic link even when its target is missing, but the FSEvents incremental path used `FileManager.fileExists` to classify the link as removed. A direct local check confirmed that `fileExists` returns false while URL resource values identify the link. The watcher now also checks whether the directory entry itself is a symbolic link before emitting a removal.
+- The Debug build and two focused FSEvents tests passed. In the running Debug app, a newly created broken symbolic link appeared as a link without a manual refresh and disappeared when removed. The temporary link was deleted.
+- This checks a local directory on the current host; File Provider and removable-volume behavior remain unverified.

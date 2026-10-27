@@ -245,7 +245,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         var added: [CustomFile] = []
         var removed: [String] = []
         for path in paths {
-            guard FileManager.default.fileExists(atPath: path) else {
+            guard Self.entryExists(at: path) else {
                 removed.append(path)
                 continue
             }
@@ -259,6 +259,12 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
             }
         }
         return (added, removed)
+    }
+
+    // MARK: - Entry Existence
+    static func entryExists(at path: String) -> Bool {
+        FileManager.default.fileExists(atPath: path)
+            || (try? FileManager.default.destinationOfSymbolicLink(atPath: path)) != nil
     }
 
     // MARK: - Make Custom File

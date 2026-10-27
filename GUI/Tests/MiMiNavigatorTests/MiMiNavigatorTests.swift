@@ -337,4 +337,17 @@ final class FSEventsContinuityTests: XCTestCase {
         XCTAssertTrue(FSEventsDirectoryWatcher.requiresFullRescan([ordinary, dropped]))
         XCTAssertTrue(FSEventsDirectoryWatcher.requiresFullRescan([rootChanged]))
     }
+
+    // MARK: - Broken Symbolic Link
+    func testBrokenSymbolicLinkIsExistingEntry() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let link = root.appendingPathComponent("broken-link")
+        try FileManager.default.createSymbolicLink(atPath: link.path, withDestinationPath: "missing-target")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: link.path))
+        XCTAssertTrue(FSEventsDirectoryWatcher.entryExists(at: link.path))
+        try FileManager.default.removeItem(at: link)
+        XCTAssertFalse(FSEventsDirectoryWatcher.entryExists(at: link.path))
+    }
 }
