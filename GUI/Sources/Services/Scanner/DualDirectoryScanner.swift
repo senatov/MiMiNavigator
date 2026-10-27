@@ -26,6 +26,8 @@ actor DualDirectoryScanner {
     var leftWatchedPath: String?
     var rightWatchedPath: String?
     var requestedWatchedPath: [FavPanelSide: String] = [:]
+    var watcherRequestID: [FavPanelSide: UUID] = [:]
+    var activeWatcherID: [FavPanelSide: UUID] = [:]
 
     // MARK: - Debounce / scan state
 

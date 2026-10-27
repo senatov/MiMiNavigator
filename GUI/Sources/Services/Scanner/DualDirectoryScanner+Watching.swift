@@ -39,28 +39,30 @@ extension DualDirectoryScanner {
             stopFSEvents(for: side)
             return
         }
+        if hasActiveFSEventsWatcher(for: side, path: url.path) {
+            requestedWatchedPath[side] = url.path
+            return
+        }
+        let requestID = UUID()
         requestedWatchedPath[side] = url.path
+        watcherRequestID[side] = requestID
         Task {
             let showHidden = await appState.showHiddenFilesSnapshot()
-            guard requestedWatchedPath[side] == url.path else {
+            guard requestedWatchedPath[side] == url.path,
+                watcherRequestID[side] == requestID
+            else {
                 log.debug("[FSEvents] stale watcher start ignored: '\(url.path)' side=\(side)")
                 return
             }
-            launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden)
+            launchFSEventsWatcher(for: side, path: url.path, showHiddenFiles: showHidden, requestID: requestID)
         }
     }
 
-    func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool) {
-        switch side {
-            case .left:
-                if leftWatchedPath == path { return }
-            case .right:
-                if rightWatchedPath == path { return }
-        }
+    func launchFSEventsWatcher(for side: FavPanelSide, path: String, showHiddenFiles: Bool, requestID: UUID) {
         let watcher = FSEventsDirectoryWatcher { [weak self] patch in
             guard let self else { return }
             Task {
-                await self.applyPatch(patch, for: side)
+                await self.applyPatch(patch, for: side, watcherID: requestID)
             }
         }
 
@@ -75,10 +77,12 @@ extension DualDirectoryScanner {
                 leftFSEvents?.stop()
                 leftFSEvents = watcher
                 leftWatchedPath = path
+                activeWatcherID[side] = requestID
             case .right:
                 rightFSEvents?.stop()
                 rightFSEvents = watcher
                 rightWatchedPath = path
+                activeWatcherID[side] = requestID
         }
 
         log.info("[FSEvents] started for \(side) panel: '\(path)'")
@@ -86,6 +90,8 @@ extension DualDirectoryScanner {
 
     func stopFSEvents(for side: FavPanelSide) {
         requestedWatchedPath[side] = nil
+        watcherRequestID[side] = nil
+        activeWatcherID[side] = nil
         switch side {
             case .left:
                 leftFSEvents?.stop()
@@ -100,11 +106,8 @@ extension DualDirectoryScanner {
 
     // MARK: - Incremental patch application
 
-    func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide) async {
-        let activePath = side == .left ? leftWatchedPath : rightWatchedPath
-        guard activePath == patch.watchedPath,
-            requestedWatchedPath[side] == patch.watchedPath
-        else {
+    func applyPatch(_ patch: FSEventsDirectoryWatcher.DirectoryPatch, for side: FavPanelSide, watcherID: UUID) async {
+        guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else {
             log.debug("[FSEvents] stale patch ignored for \(side): '\(patch.watchedPath)'")
             return
         }
@@ -121,30 +124,47 @@ extension DualDirectoryScanner {
         if patch.needsFullRescan {
             log.info("[FSEvents] needsFullRescan for \(side) panel")
             await DirectoryContentCache.shared.invalidate(patch.watchedPath)
+            guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
             await refreshFiles(currSide: side, force: true)
             return
         }
-        await applyIncrementalPatch(patch, for: side)
+        await applyIncrementalPatch(patch, for: side, watcherID: watcherID)
+    }
+
+    // MARK: - Current Watcher Patch
+    private func isCurrentWatcherPatch(
+        _ patch: FSEventsDirectoryWatcher.DirectoryPatch,
+        for side: FavPanelSide,
+        watcherID: UUID
+    ) -> Bool {
+        let activePath = side == .left ? leftWatchedPath : rightWatchedPath
+        return activePath == patch.watchedPath
+            && requestedWatchedPath[side] == patch.watchedPath
+            && activeWatcherID[side] == watcherID
     }
 
     // MARK: - Apply Incremental Patch
     private func applyIncrementalPatch(
         _ patch: FSEventsDirectoryWatcher.DirectoryPatch,
-        for side: FavPanelSide
+        for side: FavPanelSide,
+        watcherID: UUID
     ) async {
         let childUpdates = patch.childCountUpdates
         let removedPaths = patch.removedPaths
         let addedOrModified = patch.addedOrModified
         let state = await currentPatchState(for: side)
-        guard requestedWatchedPath[side] == patch.watchedPath else { return }
+        guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
         let totalChanges = addedOrModified.count + removedPaths.count
         if totalChanges == 0 {
             applyChildCountUpdates(childUpdates, to: state.files)
+            guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
             guard await publishPatchFiles(state.files, for: side, watchedPath: patch.watchedPath) else { return }
+            let showHidden = await appState.showHiddenFilesSnapshot()
+            guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
             await DirectoryContentCache.shared.store(
                 path: patch.watchedPath,
                 files: state.files,
-                showHidden: await appState.showHiddenFilesSnapshot()
+                showHidden: showHidden
             )
             return
         }
@@ -165,11 +185,14 @@ extension DualDirectoryScanner {
         if !useIncremental {
             merged = FileSortingService.sort(merged, by: state.sortKey, bDirection: state.sortAsc)
         }
+        guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
         guard await publishPatchFiles(merged, for: side, watchedPath: patch.watchedPath) else { return }
+        let showHidden = await appState.showHiddenFilesSnapshot()
+        guard isCurrentWatcherPatch(patch, for: side, watcherID: watcherID) else { return }
         await DirectoryContentCache.shared.store(
             path: patch.watchedPath,
             files: merged,
-            showHidden: await appState.showHiddenFilesSnapshot()
+            showHidden: showHidden
         )
     }
 
@@ -327,11 +350,8 @@ extension DualDirectoryScanner {
 
     func restartFSEventsWatchers() async {
         let panelURLs = await currentPanelURLs()
-
-        leftWatchedPath = nil
-        rightWatchedPath = nil
-        requestedWatchedPath.removeAll()
-
+        stopFSEvents(for: .left)
+        stopFSEvents(for: .right)
         startFSEvents(for: .left, url: panelURLs.left)
         startFSEvents(for: .right, url: panelURLs.right)
 
