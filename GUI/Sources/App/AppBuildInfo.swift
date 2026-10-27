@@ -14,14 +14,10 @@ import SwiftUI
 /// Used by MiMiNavigatorApp to avoid polluting the @main App struct.
 enum AppBuildInfo {
 
-    // MARK: - toolBarItem
-    /// ToolbarItem with Pre-Release badge and optional resource graphs.
+    // MARK: - Toolbar Badge
     @MainActor
-    static func toolBarItem(dividerOffset: CGFloat) -> ToolbarItem<(), some View> {
-        ToolbarItem(placement: .principal) {
-            BuildInfoToolbarCluster(buildStamp: versionString(), displayDate: releaseDateString())
-                .offset(x: dividerOffset)
-        }
+    static func toolbarBadge() -> some View {
+        DevBuildBadge(buildStamp: versionString(), displayDate: releaseDateString())
     }
 
     // MARK: - versionText
@@ -59,42 +55,6 @@ enum AppBuildInfo {
             if !date.isEmpty { return date }
         }
         return String(versionString().prefix(10))
-    }
-}
-
-// MARK: - Build Info Toolbar Cluster
-private struct BuildInfoToolbarCluster: View {
-    let buildStamp: String
-    let displayDate: String
-    @State private var prefs = UserPreferences.shared
-    @State private var monitorWidth: CGFloat = 0
-
-    private var showMemory: Bool { prefs.snapshot.toolbarShowMemoryGraph ?? true }
-    private var showThreads: Bool { prefs.snapshot.toolbarShowThreadsGraph ?? true }
-    private var memoryInterval: TimeInterval { prefs.snapshot.toolbarMemoryGraphInterval ?? 5 }
-    private var threadsInterval: TimeInterval { prefs.snapshot.toolbarThreadsGraphInterval ?? 10 }
-
-    // MARK: - Body
-    var body: some View {
-        DevBuildBadge(buildStamp: buildStamp, displayDate: displayDate)
-            .overlay(alignment: .leading) {
-                if showMemory || showThreads {
-                    ResourceMonitorToolbarItem(
-                        showMemory: showMemory,
-                        showThreads: showThreads,
-                        memoryInterval: memoryInterval,
-                        threadsInterval: threadsInterval
-                    )
-                    .background {
-                        GeometryReader { geometry in
-                            Color.clear
-                                .onAppear { monitorWidth = geometry.size.width }
-                                .onChange(of: geometry.size.width) { _, width in monitorWidth = width }
-                        }
-                    }
-                    .offset(x: -monitorWidth - 7)
-                }
-            }
     }
 }
 

@@ -20,11 +20,11 @@ final class ToolbarCustomizeCoordinator {
     private var window: NSPanel?
     private var isClosing = false
 
-    private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize"
-    private let toolbarHeight: CGFloat = 52
+    private let sizeDefaultsKey = "MiMiNavigator.ToolbarCustomizePanelSize.v3"
+    private let toolbarHeight: CGFloat = 70
     private let panelMargin: CGFloat = 12
-    private let defaultWidth: CGFloat = 760
-    private let defaultHeight: CGFloat = 500
+    private let defaultWidth: CGFloat = 1400
+    private let defaultHeight: CGFloat = 550
 
     private init() {}
 
@@ -40,7 +40,7 @@ final class ToolbarCustomizeCoordinator {
         let sourceMainWindow = WindowContextResolver.presentationHost(excluding: window, preferMain: true)
         close()
         let contentView = ToolbarCustomizeRootView(onDismiss: { [weak self] in self?.close() })
-            .frame(minWidth: 620, minHeight: 420)
+            .frame(minWidth: 1000, minHeight: 520)
         let initialFrame = frame(near: anchorScreenPoint, relativeTo: sourceMainWindow, requestedSize: restoredSize())
         let panel = ToolbarCustomizePanel(
             contentRect: initialFrame,
@@ -50,7 +50,7 @@ final class ToolbarCustomizeCoordinator {
         )
         panel.contentView = ToolbarCustomizeHostingView(rootView: contentView)
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 620, height: 420)
+        panel.minSize = NSSize(width: 1000, height: 550)
         panel.titlebarAppearsTransparent = false
         panel.titleVisibility = .visible
         panel.title = "Customize Toolbar"
@@ -124,11 +124,11 @@ final class ToolbarCustomizeCoordinator {
 
     private func frame(near anchorScreenPoint: NSPoint?, relativeTo window: NSWindow?, requestedSize: NSSize) -> NSRect {
         let bounds = constrainedMainWindowFrame(relativeTo: window)
-        let availableWidth = max(440, bounds.width - 2 * panelMargin)
-        let availableHeight = max(460, bounds.height - toolbarHeight - 2 * panelMargin)
+        let availableWidth = max(1000, bounds.width - 2 * panelMargin)
+        let availableHeight = max(550, bounds.height - toolbarHeight - 2 * panelMargin)
         let size = NSSize(
-            width: min(max(440, requestedSize.width), availableWidth),
-            height: min(max(460, requestedSize.height), availableHeight)
+            width: min(max(1000, requestedSize.width), availableWidth),
+            height: min(max(550, requestedSize.height), availableHeight)
         )
         let fallbackAnchor = NSPoint(x: bounds.midX, y: bounds.maxY - toolbarHeight)
         let anchor = anchorScreenPoint ?? fallbackAnchor
@@ -168,12 +168,12 @@ final class ToolbarCustomizeCoordinator {
         guard parts.count == 2 else {
             return NSSize(width: defaultWidth, height: defaultHeight)
         }
-        return NSSize(width: min(max(620, parts[0]), 900), height: min(max(420, parts[1]), 620))
+        return NSSize(width: min(max(1000, parts[0]), 1400), height: min(max(550, parts[1]), 800))
     }
 
     private func saveSize(_ size: NSSize) {
-        let width = Int(max(620, size.width).rounded())
-        let height = Int(max(420, size.height).rounded())
+        let width = Int(max(1000, size.width).rounded())
+        let height = Int(max(550, size.height).rounded())
         UserDefaults.standard.set("\(width)x\(height)", forKey: sizeDefaultsKey)
         log.debug("[ToolbarCustomize] size saved \(width)x\(height)")
     }

@@ -18,21 +18,11 @@ struct ToolbarCustomizeRootView: View {
     @State private var dragItem: ToolbarItemID? = nil
     @State private var activeInsertionIndex: Int? = nil
 
-    private var visibleCountText: String {
-        "\(store.customizableVisibleItems.count) of \(store.customizableItems.count) shown"
-    }
-
-    private var helperText: String {
-        dragItem == nil
-            ? "Drag to reorder. Drop into Available Items to remove."
-            : "Drop between items to insert. Drop below to hide."
-    }
-
     var body: some View {
         VStack(spacing: 0) {
+            availableItemsSection
             currentToolbarSection
             menuBarToggleRow
-            availableItemsSection
             footerButtons
         }
         .background(DialogColors.base)
@@ -46,15 +36,11 @@ struct ToolbarCustomizeRootView: View {
 
     // MARK: - Current Toolbar (D-n-D reorder zone)
     private var currentToolbarSection: some View {
-        sectionCard(
-            title: "Current Toolbar",
-            caption: helperText
-        ) {
+        sectionCard(title: "Current toolbar", caption: "Drag to reorder; drag an item above to remove it.") {
             currentToolbarStrip
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 22)
+        .padding(.bottom, 14)
     }
 
     private var currentToolbarStrip: some View {
@@ -73,7 +59,7 @@ struct ToolbarCustomizeRootView: View {
             }
             .padding(.horizontal, 8)
         }
-        .frame(height: 62)
+        .frame(height: 76)
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -137,20 +123,17 @@ struct ToolbarCustomizeRootView: View {
                 .labelsHidden()
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 22)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Available Items (palette)
     private var availableItemsSection: some View {
-        sectionCard(
-            title: "Available Items",
-            caption: "Click to show or hide"
-        ) {
+        sectionCard(title: "Drag your favorite items into the toolbar…", caption: "Click an item to show or hide it") {
             ScrollView {
                 LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 210, maximum: 280), spacing: 6)],
-                    spacing: 6
+                    columns: [GridItem(.adaptive(minimum: 88, maximum: 112), spacing: 12)],
+                    spacing: 16
                 ) {
                     ForEach(store.customizableItems) { item in
                         let isVisible = store.visibleIDs.contains(item)
@@ -167,35 +150,43 @@ struct ToolbarCustomizeRootView: View {
                 }
                 .padding(1)
             }
-            .frame(minHeight: 150, maxHeight: .infinity)
+            .frame(height: 155)
             .onDrop(
                 of: [.text],
                 delegate: ToolbarCustPaletteDropDelegate(store: store, dragItem: $dragItem)
             )
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 22)
+        .padding(.top, 18)
+        .padding(.bottom, 14)
     }
 
     // MARK: - Footer
     private var footerButtons: some View {
         HStack(spacing: 12) {
-            DownToolbarButtonView(title: "Reset", systemImage: "arrow.counterclockwise") {
-                showResetConfirm = true
+            Text("Show")
+                .font(.system(size: 12))
+            Picker("Show", selection: $store.labelStyle) {
+                ForEach(ToolbarLabelStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
             }
-            Spacer()
-            Text(visibleCountText)
+            .labelsHidden()
+            .frame(width: 130)
+            Button("Use Default Set") { showResetConfirm = true }
+                .buttonStyle(.plain)
                 .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
             Spacer()
-            ToolbarCustomizeDoneButton(title: "Done", systemImage: "checkmark") {
+            Button("Done") {
                 log.debug("[ToolbarCustomize] Done action invoked")
                 onDismiss()
             }
+            .buttonStyle(.borderedProminent)
+            .frame(width: 82)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(DialogColors.stripe)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 14)
+        .background(.regularMaterial)
     }
 
     @ViewBuilder
@@ -204,10 +195,10 @@ struct ToolbarCustomizeRootView: View {
         caption: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 13, weight: .medium))
                 Text(caption)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
@@ -215,63 +206,6 @@ struct ToolbarCustomizeRootView: View {
             }
             content()
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(DialogColors.light.opacity(0.68))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(0.55), lineWidth: 0.75)
-        )
-    }
-}
-
-// MARK: - Toolbar Customize Done Button
-private struct ToolbarCustomizeDoneButton: NSViewRepresentable {
-    let title: String
-    let systemImage: String
-    let action: () -> Void
-
-    func makeNSView(context: Context) -> ToolbarCustomizeDoneNSButton {
-        let button = ToolbarCustomizeDoneNSButton(title: title, target: context.coordinator, action: #selector(Coordinator.performAction))
-        button.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: title)
-        button.imagePosition = .imageLeading
-        button.bezelStyle = .rounded
-        button.controlSize = .regular
-        button.font = .systemFont(ofSize: 13, weight: .medium)
-        button.setButtonType(.momentaryPushIn)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.widthAnchor.constraint(greaterThanOrEqualToConstant: 90).isActive = true
-        return button
-    }
-
-    func updateNSView(_ nsView: ToolbarCustomizeDoneNSButton, context: Context) {
-        nsView.title = title
-        nsView.image = NSImage(systemSymbolName: systemImage, accessibilityDescription: title)
-        context.coordinator.action = action
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(action: action)
-    }
-
-    final class Coordinator: NSObject {
-        var action: () -> Void
-
-        init(action: @escaping () -> Void) {
-            self.action = action
-        }
-
-        @objc func performAction() {
-            action()
-        }
-    }
-}
-
-// MARK: - Toolbar Customize Done NSButton
-private final class ToolbarCustomizeDoneNSButton: NSButton {
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        true
+        .padding(6)
     }
 }

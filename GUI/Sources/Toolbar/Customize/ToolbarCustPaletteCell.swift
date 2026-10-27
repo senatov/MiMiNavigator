@@ -15,36 +15,23 @@ struct ToolbarCustPaletteCell: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(spacing: 9) {
+            VStack(spacing: 5) {
                 Image(systemName: item.systemImage)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 19, weight: .regular))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(isVisible ? DialogColors.accent : Color.secondary)
-                    .frame(width: 26, height: 26)
-                    .background(DialogColors.accent.opacity(isVisible ? 0.10 : 0), in: RoundedRectangle(cornerRadius: 6))
-                Text(item.label)
-                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(isVisible ? Color.primary : Color.secondary)
+                    .frame(width: 42, height: 38)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                    .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Color.primary.opacity(0.12)))
+                Text(item.label)
+                    .font(.system(size: 10))
+                    .foregroundStyle(isVisible ? Color.primary : Color.secondary.opacity(0.8))
                     .lineLimit(1)
-                Spacer(minLength: 4)
-                Image(systemName: isVisible ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(isVisible ? DialogColors.accent : Color.secondary.opacity(0.5))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor).opacity(isVisible ? 0.62 : 0.28))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(DialogColors.border.opacity(isVisible ? 0.48 : 0.28), lineWidth: 0.75)
-            )
+            .frame(width: 100, height: 62)
         }
         .buttonStyle(.plain)
-        .opacity(isVisible ? 1.0 : 0.72)
+        .opacity(isVisible ? 0.58 : 1.0)
         .help(item.helpText)
         .animation(.easeInOut(duration: 0.15), value: isVisible)
     }

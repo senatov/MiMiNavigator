@@ -101,6 +101,7 @@ struct ResourceMonitorToolbarItem: View {
     let memoryInterval: TimeInterval
     let threadsInterval: TimeInterval
     @State private var model = ResourceMonitorModel.shared
+    @State private var store = ToolbarStore.shared
 
     // MARK: - Body
     var body: some View {
@@ -129,7 +130,8 @@ struct ResourceMonitorToolbarItem: View {
         .onChange(of: showThreads) { _, _ in configureSamplers() }
         .onChange(of: memoryInterval) { _, _ in configureSamplers() }
         .onChange(of: threadsInterval) { _, _ in configureSamplers() }
-        .onDisappear { model.stop() }
+        .onChange(of: store.visibleIDs) { _, _ in configureSamplers() }
+        .onDisappear { configureSamplers() }
     }
 
     private var helpText: String {
@@ -165,8 +167,8 @@ struct ResourceMonitorToolbarItem: View {
     // MARK: - Configure Samplers
     private func configureSamplers() {
         model.configure(
-            memoryInterval: showMemory ? memoryInterval : nil,
-            threadInterval: showThreads ? threadsInterval : nil
+            memoryInterval: store.visibleIDs.contains(.memory) ? memoryInterval : nil,
+            threadInterval: store.visibleIDs.contains(.threads) ? threadsInterval : nil
         )
     }
 }

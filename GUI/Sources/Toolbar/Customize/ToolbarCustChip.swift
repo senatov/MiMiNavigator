@@ -16,31 +16,23 @@ struct ToolbarCustChip: View {
     var body: some View {
         VStack(spacing: 3) {
             Image(systemName: item.systemImage)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 18, weight: .regular))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(DialogColors.accent)
-                .frame(width: 28, height: 24)
+                .foregroundStyle(.primary)
+                .frame(width: 42, height: 36)
                 .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(DialogColors.accent.opacity(isInToolbar ? 0.10 : 0.06))
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.regularMaterial)
                 )
             Text(item.label)
-                .font(.system(size: 9, weight: .medium))
+                .font(.system(size: 10))
                 .foregroundStyle(.primary.opacity(0.92))
                 .lineLimit(1)
                 .multilineTextAlignment(.center)
-                .frame(width: 64)
+                .frame(width: 74)
         }
-        .padding(.horizontal, 5)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(isDragging ? 0.18 : 0.55))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(DialogColors.border.opacity(isDragging ? 0.3 : 0.45), lineWidth: 0.75)
-        )
+        .padding(.horizontal, 2)
+        .padding(.vertical, 3)
         .opacity(isDragging ? 0.35 : 1.0)
         .help(item.helpText)
     }

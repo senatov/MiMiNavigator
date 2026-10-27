@@ -24,10 +24,10 @@ struct AppToolbarContent: ToolbarContent {
         }
         ToolbarItemGroup(placement: .primaryAction) {
             ForEach(store.visibleItems) { item in
-                ToolbarActionButton(app: app, appState: appState, item: item)
+                ToolbarContentItem(app: app, appState: appState, item: item)
             }
         }
-        .sharedBackgroundVisibility(.visible)
+        .sharedBackgroundVisibility(.hidden)
         // View modes — separate group before the rightmost menu toggle
         ToolbarItem(placement: .primaryAction) {
             ToolbarButtonGroup {
@@ -45,11 +45,33 @@ struct AppToolbarContent: ToolbarContent {
     }
 }
 
+// MARK: - Toolbar Content Item
+private struct ToolbarContentItem: View {
+    let app: MiMiNavigatorApp
+    let appState: AppState
+    let item: ToolbarItemID
+    @State private var prefs = UserPreferences.shared
+    var body: some View {
+        switch item {
+        case .memory:
+            ResourceMonitorToolbarItem(showMemory: true, showThreads: false, memoryInterval: prefs.snapshot.toolbarMemoryGraphInterval ?? 5, threadsInterval: prefs.snapshot.toolbarThreadsGraphInterval ?? 10)
+        case .threads:
+            ResourceMonitorToolbarItem(showMemory: false, showThreads: true, memoryInterval: prefs.snapshot.toolbarMemoryGraphInterval ?? 5, threadsInterval: prefs.snapshot.toolbarThreadsGraphInterval ?? 10)
+        case .buildInfo:
+            AppBuildInfo.toolbarBadge()
+        default:
+            ToolbarActionButton(app: app, appState: appState, item: item)
+        }
+    }
+}
+
 // MARK: - Toolbar Action Button
 private struct ToolbarActionButton: View {
     let app: MiMiNavigatorApp
     let appState: AppState
     let item: ToolbarItemID
+    @State private var store = ToolbarStore.shared
+    @State private var isHovered = false
 
     var body: some View {
         let isActive = switch item {
@@ -57,10 +79,25 @@ private struct ToolbarActionButton: View {
         case .preview: PreviewPaneStore.shared.isVisible
         default: false
         }
-        Button(item.label, systemImage: item == .hiddenFiles && isActive ? "eye.fill" : item.systemImage) {
+        Button {
             performAction()
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: item == .hiddenFiles && isActive ? "eye.fill" : item.systemImage)
+                    .font(.system(size: 17, weight: .regular))
+                    .frame(height: 20)
+                if store.labelStyle == .iconAndText {
+                    Text(item.label)
+                        .font(.system(size: 9))
+                        .lineLimit(1)
+                }
+            }
+            .frame(minWidth: 42, minHeight: TopToolbarMetrics.height)
+            .padding(.horizontal, 4)
+            .contentShape(RoundedRectangle(cornerRadius: 8))
         }
-        .labelStyle(.iconOnly)
+        .buttonStyle(MailToolbarButtonStyle(isHovered: isHovered))
+        .onHover { isHovered = $0 }
         .accessibilityLabel(item.label)
         .foregroundStyle(isActive ? Color.accentColor : Color.primary)
         .help(item.helpText)
@@ -94,7 +131,24 @@ private struct ToolbarActionButton: View {
             PreviewPaneStore.shared.toggle(sourceSide: appState.focusedPanel)
         case .menuBarToggle:
             ToolbarStore.shared.menuBarVisible.toggle()
+        case .memory, .threads, .buildInfo:
+            break
         }
+    }
+}
+
+// MARK: - Toolbar Button Feedback
+private struct MailToolbarButtonStyle: ButtonStyle {
+    let isHovered: Bool
+    // MARK: - Button Body
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background {
+                RoundedRectangle(cornerRadius: 9)
+                    .fill(Color.primary.opacity(configuration.isPressed ? 0.16 : isHovered ? 0.08 : 0))
+            }
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
     }
 }
 
@@ -126,8 +180,8 @@ private struct AppWindowTitle: View {
 
 // MARK: - Toolbar Button Group
 enum TopToolbarMetrics {
-    static let height: CGFloat = 38
-    static let cornerRadius: CGFloat = 19
+    static let height: CGFloat = 46
+    static let cornerRadius: CGFloat = 14
     static let borderWidth: CGFloat = 0.75
 }
 

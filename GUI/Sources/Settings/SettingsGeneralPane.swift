@@ -71,13 +71,6 @@ struct SettingsGeneralPane: View {
         )
     }
 
-    private func optionalBoolBinding(_ keyPath: WritableKeyPath<PreferencesSnapshot, Bool?>) -> Binding<Bool> {
-        Binding(
-            get: { prefs.snapshot[keyPath: keyPath] ?? true },
-            set: { prefs.snapshot[keyPath: keyPath] = $0 }
-        )
-    }
-
     private func optionalDoubleBinding(_ keyPath: WritableKeyPath<PreferencesSnapshot, Double?>, default defaultValue: Double) -> Binding<Double> {
         Binding(
             get: { prefs.snapshot[keyPath: keyPath] ?? defaultValue },
@@ -102,13 +95,8 @@ struct SettingsGeneralPane: View {
                         .frame(maxWidth: 260)
                     }
                     Divider()
-                    SettingsRow(label: "Toolbar graphs:", help: "Choose which live application resource graphs appear beside Pre-Release") {
-                        HStack(spacing: 16) {
-                            Toggle("Memory", isOn: optionalBoolBinding(\.toolbarShowMemoryGraph))
-                                .toggleStyle(.checkbox)
-                            Toggle("Threads", isOn: optionalBoolBinding(\.toolbarShowThreadsGraph))
-                                .toggleStyle(.checkbox)
-                        }
+                    SettingsRow(label: "Toolbar items:", help: "Choose and arrange toolbar buttons, memory, threads, and build information") {
+                        Button("Customize Toolbar…") { ToolbarCustomizeCoordinator.shared.show() }
                     }
                     Divider()
                     SettingsRow(label: "Graph intervals:", help: "Set independent refresh intervals for memory and thread measurements") {

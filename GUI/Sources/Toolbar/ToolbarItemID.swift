@@ -25,6 +25,9 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
     case settings       = "settings"
     case feedback       = "feedback"
     case preview        = "preview"
+    case memory         = "memory"
+    case threads        = "threads"
+    case buildInfo      = "buildInfo"
     case menuBarToggle  = "menuBarToggle"  // fixed — cannot be removed from toolbar
 
     var id: String { rawValue }
@@ -48,6 +51,9 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .settings:       return "Settings"
         case .feedback:       return "Feedback"
         case .preview:        return "Preview"
+        case .memory:         return "Memory"
+        case .threads:        return "Threads"
+        case .buildInfo:      return "Build Info"
         case .menuBarToggle:  return "Menu Bar"
         }
     }
@@ -70,6 +76,9 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .settings:       return "gearshape"
         case .feedback:       return "bubble.left.and.text.bubble.right"
         case .preview:        return "rectangle.trailinghalf.inset.filled"
+        case .memory:         return "memorychip"
+        case .threads:        return "cpu"
+        case .buildInfo:      return "info.circle"
         case .menuBarToggle:  return "menubar.rectangle"
         }
     }
@@ -88,6 +97,9 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         case .settings:       return "Settings (⌘,)"
         case .feedback:       return "Open MiMiNavigator feedback options"
         case .preview:        return "Show / hide Preview pane (⇧⌘P)"
+        case .memory:         return "Show live application memory use"
+        case .threads:        return "Show live application thread count"
+        case .buildInfo:      return "Show build and release information"
         case .menuBarToggle:  return "Toggle menu bar visibility"
         }
     }
@@ -106,5 +118,8 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .multiRename,
         .settings,
         .feedback,
+        .memory,
+        .threads,
+        .buildInfo,
     ]
 }

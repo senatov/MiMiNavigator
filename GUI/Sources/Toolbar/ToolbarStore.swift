@@ -8,6 +8,14 @@
 
 import Foundation
 
+// MARK: - Toolbar Label Style
+enum ToolbarLabelStyle: String, CaseIterable, Identifiable {
+    case iconAndText
+    case iconOnly
+    var id: String { rawValue }
+    var title: String { self == .iconAndText ? "Icon and Text" : "Icon Only" }
+}
+
 // MARK: - Toolbar Store
 /// Holds the ordered list of all toolbar items and which are visible.
 /// Observable — SwiftUI toolbar re-renders automatically on any change.
@@ -24,6 +32,7 @@ final class ToolbarStore {
 
     /// Set of currently visible item IDs.
     private(set) var visibleIDs: Set<ToolbarItemID>
+    var labelStyle: ToolbarLabelStyle = .iconAndText { didSet { MiMiDefaults.shared.set(labelStyle.rawValue, forKey: labelStyleKey) } }
 
     /// Whether the top menu bar (Files, Mark, Commands…) is visible.
     /// Default: true. Persisted in UserDefaults.
@@ -35,6 +44,7 @@ final class ToolbarStore {
     private let orderKey      = "com.senatov.MiMiNavigator.toolbar.order"
     private let visibilityKey  = "com.senatov.MiMiNavigator.toolbar.visible"
     private let menuBarKey     = "com.senatov.MiMiNavigator.toolbar.menuBarVisible"
+    private let labelStyleKey  = "com.senatov.MiMiNavigator.toolbar.labelStyle"
 
     // MARK: - Init
     private init() {
@@ -142,6 +152,7 @@ final class ToolbarStore {
         orderedIDs = ToolbarItemID.defaultOrder
         visibleIDs = Set(ToolbarItemID.defaultOrder)
         menuBarVisible = true
+        labelStyle = .iconAndText
         save()
         log.info("[Toolbar] reset to defaults")
     }
@@ -174,6 +185,9 @@ final class ToolbarStore {
         // Load menu bar visibility (default = true)
         if ud.object(forKey: menuBarKey) != nil {
             menuBarVisible = ud.bool(forKey: menuBarKey)
+        }
+        if let rawStyle = ud.string(forKey: labelStyleKey), let style = ToolbarLabelStyle(rawValue: rawStyle) {
+            labelStyle = style
         }
         log.info("[Toolbar] loaded — order: \(orderedIDs.map(\.rawValue)), visible: \(visibleIDs.map(\.rawValue).sorted()), menuBar=\(menuBarVisible)")
     }
