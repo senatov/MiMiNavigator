@@ -47,7 +47,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
     case addToFavorites
     // Cloud
     case cloudLinkReadOnly
-    case cloudLinkEdit
 
     var id: String { rawValue }
 
@@ -78,7 +77,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .mirrorPanel: return "Mirror Panel"
         case .addToFavorites: return "Add to Favorites"
         case .cloudLinkReadOnly: return "Share+Link (View)"
-        case .cloudLinkEdit: return "Share+Link (Edit)"
         }
     }
 
@@ -109,7 +107,6 @@ enum DirectoryAction: String, CaseIterable, Identifiable {
         case .mirrorPanel: return "arrow.left.arrow.right.square"
         case .addToFavorites: return "star.fill"
         case .cloudLinkReadOnly: return "link.badge.plus"
-        case .cloudLinkEdit: return "link.badge.plus"
         }
     }
     

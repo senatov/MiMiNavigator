@@ -13,7 +13,7 @@ The feature is intentionally narrow. MiMiNavigator remains a filesystem-first ap
 1. Authenticate with the configured Google Desktop OAuth client.
 2. Ensure the remote `Public` folder exists.
 3. Upload the selected file or directory.
-4. Apply view-only or editable public permission.
+4. Apply view-only public permission.
 5. Resolve the provider share URL.
 6. Shorten and copy the branded URL.
 

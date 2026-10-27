@@ -244,22 +244,15 @@ struct DirectoryContextMenu: View {
     @ViewBuilder
     private func cloudProviderActions(_ provider: CloudProvider) -> some View {
         Button {
-            SettingsCoordinator.shared.openOnSection(.cloudLink)
+            CloudLinkService.generateLink(for: file.urlValue, provider: provider)
         } label: {
-            Label("Cloud settings…", systemImage: "gearshape")
+            Label("Copy Link (view only)", systemImage: "eye")
         }
         Divider()
         Button {
-            CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .readOnly)
+            SettingsCoordinator.shared.openOnSection(.cloudLink)
         } label: {
-            Label("View only", systemImage: "eye")
-        }
-        if provider == .googleDrive {
-            Button {
-                CloudLinkService.generateLink(for: file.urlValue, provider: provider, permission: .allowEdit)
-            } label: {
-                Label("Allow editing", systemImage: "pencil")
-            }
+            Label("Cloud settings…", systemImage: "gearshape")
         }
     }
 }

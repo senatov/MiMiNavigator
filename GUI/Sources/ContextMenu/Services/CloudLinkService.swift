@@ -12,14 +12,6 @@ import Foundation
 import SwiftUI
 
 
-// MARK: - CloudLinkPermission
-
-enum CloudLinkPermission: String, Sendable {
-    case readOnly  = "view"
-    case allowEdit = "edit"
-}
-
-
 // MARK: - CloudLinkService
 
 @MainActor
@@ -29,18 +21,18 @@ enum CloudLinkService {
     /// Generate or open cloud link for the given URL.
     /// Returns true if a link was copied to clipboard, false if web UI was opened instead.
     @discardableResult
-    static func generateLink(for url: URL, provider: CloudProvider, permission: CloudLinkPermission) -> Bool {
-        log.info("[CloudLink] \(provider.rawValue) \(permission.rawValue) for \(url.lastPathComponent)")
+    static func generateLink(for url: URL, provider: CloudProvider) -> Bool {
+        log.info("[CloudLink] \(provider.rawValue) view for \(url.lastPathComponent)")
         guard CloudLinkSetupCoordinator.prepareShare(for: provider) else { return false }
         switch provider {
         case .dropbox:
-            return dropboxLink(url: url, permission: permission)
+            return dropboxLink(url: url)
         case .iCloud:
             return iCloudLink(url: url)
         case .oneDrive:
-            return oneDriveLink(url: url, permission: permission)
+            return oneDriveLink(url: url)
         case .googleDrive:
-            return googleDriveLink(url: url, permission: permission)
+            return googleDriveLink(url: url)
         }
     }
 
@@ -48,8 +40,7 @@ enum CloudLinkService {
 
     // MARK: - Dropbox
     /// Dropbox supports view-only links for copied Public items.
-    private static func dropboxLink(url: URL, permission: CloudLinkPermission) -> Bool {
-        guard permission == .readOnly else { return false }
+    private static func dropboxLink(url: URL) -> Bool {
         activeTask?.cancel()
         activeTask = Task {
             _ = await DropboxShareService.copyShareLink(for: url)
@@ -74,8 +65,8 @@ enum CloudLinkService {
 
     // MARK: - OneDrive
     /// OneDrive needs Microsoft Graph auth to create a real sharing URL.
-    private static func oneDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
-        log.info("[CloudLink] OneDrive Graph sharing is not configured for \(url.lastPathComponent), permission=\(permission.rawValue)")
+    private static func oneDriveLink(url: URL) -> Bool {
+        log.info("[CloudLink] OneDrive Graph sharing is not configured for \(url.lastPathComponent)")
         InAppNoticeCenter.shared.showBanner(title: "OneDrive Sign-In Required", message: "Connect a Microsoft account before creating a sharing link.")
         return false
     }
@@ -84,10 +75,10 @@ enum CloudLinkService {
 
     // MARK: - Google Drive
     /// Google Drive — open web UI
-    private static func googleDriveLink(url: URL, permission: CloudLinkPermission) -> Bool {
+    private static func googleDriveLink(url: URL) -> Bool {
         activeTask?.cancel()
         activeTask = Task {
-            _ = await GoogleDriveShareService.copyShareLink(for: url, permission: permission)
+            _ = await GoogleDriveShareService.copyShareLink(for: url)
             activeTask = nil
         }
         return true

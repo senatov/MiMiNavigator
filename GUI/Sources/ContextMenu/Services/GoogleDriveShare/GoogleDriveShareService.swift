@@ -14,7 +14,7 @@ enum GoogleDriveShareService {
 
     // MARK: - Copy Share Link
 
-    static func copyShareLink(for url: URL, permission: CloudLinkPermission) async -> Bool {
+    static func copyShareLink(for url: URL) async -> Bool {
         let panel = ProgressPanel.shared
         panel.show(
             icon: "link.badge.plus",
@@ -26,7 +26,7 @@ enum GoogleDriveShareService {
         panel.updateProgress(nil)
         panel.appendKeyValueLog("Source", value: url.path)
         do {
-            log.info("[CloudLink] Google Drive upload start file='\(url.lastPathComponent)' permission=\(permission.rawValue)")
+            log.info("[CloudLink] Google Drive upload start file='\(url.lastPathComponent)' permission=view")
             try Task.checkCancellation()
             panel.appendLog("Authenticating with Google Drive…")
             let token = try await GoogleDriveOAuthClient.accessToken()
@@ -36,8 +36,8 @@ enum GoogleDriveShareService {
             panel.appendLog("Uploading item…")
             let uploaded = try await client.uploadEntry(at: url, parentID: publicFolder.id)
             try Task.checkCancellation()
-            panel.appendLog("Applying public \(permission.rawValue) permission…")
-            try await client.applyPermission(fileID: uploaded.id, permission: permission)
+            panel.appendLog("Applying public view permission…")
+            try await client.applyViewPermission(fileID: uploaded.id)
             let metadata = try await client.fileMetadata(fileID: uploaded.id)
             let link = shareLink(from: metadata)
             panel.appendLog("Creating MiMiNavi short link…")

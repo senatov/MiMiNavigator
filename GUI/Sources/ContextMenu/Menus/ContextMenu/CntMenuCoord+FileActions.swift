@@ -73,9 +73,7 @@ extension CntMenuCoord {
             case .mirrorPanel:
                 mirrorPathToOtherPanel(panel, appState: appState)
             case .cloudLinkReadOnly:
-                handleCloudLink(for: file, permission: .readOnly)
-            case .cloudLinkEdit:
-                handleCloudLink(for: file, permission: .allowEdit)
+                handleCloudLink(for: file)
             case .newFolder:
                 let dir = getDestinationPath(for: panel, appState: appState)
                 performNewFolder(in: dir, appState: appState)
@@ -219,7 +217,7 @@ extension CntMenuCoord {
 
     // MARK: - Cloud Link
 
-    func handleCloudLink(for file: CustomFile, permission: CloudLinkPermission) {
-        CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive, permission: permission)
+    func handleCloudLink(for file: CustomFile) {
+        CloudLinkService.generateLink(for: file.urlValue, provider: .googleDrive)
     }
 }

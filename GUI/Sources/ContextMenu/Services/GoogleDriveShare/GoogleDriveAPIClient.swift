@@ -43,11 +43,10 @@ struct GoogleDriveAPIClient {
 
     // MARK: - Apply Permission
 
-    func applyPermission(fileID: String, permission: CloudLinkPermission) async throws {
-        let role = permission == .readOnly ? "reader" : "writer"
+    func applyViewPermission(fileID: String) async throws {
         let body: [String: Any] = [
             "type": "anyone",
-            "role": role,
+            "role": "reader",
             "allowFileDiscovery": false,
         ]
         let url = try endpoint("/files/\(fileID)/permissions", query: ["fields": "id"])

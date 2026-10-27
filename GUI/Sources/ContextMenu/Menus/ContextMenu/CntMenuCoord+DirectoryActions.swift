@@ -72,9 +72,7 @@ extension CntMenuCoord {
             case .addToFavorites:
                 addToFavorites(file)
             case .cloudLinkReadOnly:
-                handleCloudLink(for: file, permission: .readOnly)
-            case .cloudLinkEdit:
-                handleCloudLink(for: file, permission: .allowEdit)
+                handleCloudLink(for: file)
             case .newFolder:
                 let dir = getDestinationPath(for: panel, appState: appState)
                 performNewFolder(in: dir, appState: appState)
