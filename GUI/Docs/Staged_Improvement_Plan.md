@@ -142,3 +142,9 @@ Carry every version component after the major number from 0 through 9. For examp
 - The full directory scanner lists a symbolic link even when its target is missing, but the FSEvents incremental path used `FileManager.fileExists` to classify the link as removed. A direct local check confirmed that `fileExists` returns false while URL resource values identify the link. The watcher now also checks whether the directory entry itself is a symbolic link before emitting a removal.
 - The Debug build and two focused FSEvents tests passed. In the running Debug app, a newly created broken symbolic link appeared as a link without a manual refresh and disappeared when removed. The temporary link was deleted.
 - This checks a local directory on the current host; File Provider and removable-volume behavior remain unverified.
+
+## macOS services stage 7: live updates inside application directories (2026-10-27)
+
+- The FSEvents self-generated-event filter ignored every event below MiMiNavigator's cache, application-support, and container roots. When a user browsed one of those directories, its panel could remain stale until a full scan. The filter now passes events through when the watched directory is inside an ignored root, while retaining background-event filtering when the panel watches elsewhere.
+- The Debug build and three focused FSEvents tests passed. In the running Debug app, a temporary file appeared and disappeared without manual refresh while the right panel displayed `~/Library/Caches/MiMiNavigator`. The fixture was removed and the panel returned to its previous directory.
+- The runtime check covered the cache root on the current host. Application-support and sandbox-container roots were covered by the same path rule but not separately exercised in the UI.

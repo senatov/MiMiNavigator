@@ -189,11 +189,14 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     }
 
     // MARK: - Self-Generated Event Filtering
-    private func filteredEvents(
+    func filteredEvents(
         paths: [String],
         flags: [FSEventStreamEventFlags],
         watchedPath: String
     ) -> (paths: [String], flags: [FSEventStreamEventFlags]) {
+        if Self.isIgnoredApplicationPath(watchedPath) {
+            return (paths, flags)
+        }
         let pairs = zip(paths, flags)
         let containsIgnoredPath = pairs.contains { path, _ in Self.isIgnoredApplicationPath(path) }
         var relevantPaths: [String] = []

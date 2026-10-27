@@ -350,4 +350,18 @@ final class FSEventsContinuityTests: XCTestCase {
         try FileManager.default.removeItem(at: link)
         XCTAssertFalse(FSEventsDirectoryWatcher.entryExists(at: link.path))
     }
+
+    // MARK: - Watched Application Directory
+    func testApplicationEventsRemainVisibleWhenBrowsingTheirDirectory() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let watched = home.appendingPathComponent("Library/Caches/MiMiNavigator", isDirectory: true).path
+        let child = (watched as NSString).appendingPathComponent("new-file")
+        let flags = FSEventStreamEventFlags(kFSEventStreamEventFlagItemCreated)
+        let watcher = FSEventsDirectoryWatcher { _ in }
+        let inside = watcher.filteredEvents(paths: [child], flags: [flags], watchedPath: watched)
+        XCTAssertEqual(inside.paths, [child])
+        XCTAssertEqual(inside.flags, [flags])
+        let outside = watcher.filteredEvents(paths: [child], flags: [flags], watchedPath: home.path)
+        XCTAssertTrue(outside.paths.isEmpty)
+    }
 }
