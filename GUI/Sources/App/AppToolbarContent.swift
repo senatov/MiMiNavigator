@@ -51,19 +51,23 @@ private struct ToolbarActionPod: View {
     let app: MiMiNavigatorApp
     let appState: AppState
     let items: [ToolbarItemID]
+    @State private var store = ToolbarStore.shared
+
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(items) { item in
+        HStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.element) { index, item in
+                if index > 0 {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.16))
+                        .frame(width: 1, height: 18)
+                }
                 ToolbarActionButton(app: app, appState: appState, item: item)
             }
         }
-        .background(alignment: .top) {
-            Capsule().fill(Color(nsColor: .controlBackgroundColor))
-                .overlay { Capsule().strokeBorder(Color.primary.opacity(0.16), lineWidth: 0.75) }
-                .frame(height: TopToolbarMetrics.podHeight)
-        }
         .padding(.horizontal, 4)
-        .offset(y: 14)
+        .frame(height: store.labelStyle == .iconAndText ? TopToolbarMetrics.labeledActionHeight : TopToolbarMetrics.height)
+        .background { TopToolbarSurface() }
+        .padding(.horizontal, 4)
     }
 }
 
@@ -84,17 +88,18 @@ private struct ToolbarActionButton: View {
         Button {
             performAction()
         } label: {
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 Image(systemName: item == .hiddenFiles && isActive ? "eye.fill" : item.systemImage)
-                    .font(.system(size: 17, weight: .regular))
-                    .frame(height: TopToolbarMetrics.podHeight)
+                    .font(.system(size: 16, weight: .regular))
+                    .frame(height: store.labelStyle == .iconAndText ? 23 : TopToolbarMetrics.height)
                 if store.labelStyle == .iconAndText {
                     Text(toolbarTitle)
                         .font(.system(size: 9))
                         .lineLimit(1)
                 }
             }
-            .frame(width: 48, height: TopToolbarMetrics.toolbarHeight, alignment: .top)
+            .frame(width: store.labelStyle == .iconAndText ? 48 : 36,
+                   height: store.labelStyle == .iconAndText ? TopToolbarMetrics.labeledActionHeight : TopToolbarMetrics.height)
             .contentShape(Rectangle())
         }
         .buttonStyle(MailToolbarButtonStyle(isHovered: isHovered))
@@ -154,10 +159,9 @@ private struct MailToolbarButtonStyle: ButtonStyle {
     // MARK: - Button Body
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(alignment: .top) {
+            .background {
                 Capsule()
                     .fill(Color.primary.opacity(configuration.isPressed ? 0.16 : isHovered ? 0.08 : 0))
-                    .frame(height: TopToolbarMetrics.podHeight)
             }
             .animation(.easeOut(duration: 0.12), value: isHovered)
             .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
@@ -169,19 +173,18 @@ private struct AppWindowTitle: View {
     let version: String
 
     var body: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 6) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 28, height: 28)
-                .offset(y: -2.5)
+                .frame(width: 24, height: 24)
                 .accessibilityHidden(true)
             Text("MiMiNavigator")
-                .font(.custom("Academy Engraved LET", size: 16))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
             Text("V \(version)")
-                .font(.custom("Academy Engraved LET", size: 15))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
         .fixedSize()
@@ -192,10 +195,9 @@ private struct AppWindowTitle: View {
 
 // MARK: - Toolbar Button Group
 enum TopToolbarMetrics {
-    static let toolbarHeight: CGFloat = 65
-    static let podHeight: CGFloat = 36
     static let height: CGFloat = 38
-    static let cornerRadius: CGFloat = 14
+    static let labeledActionHeight: CGFloat = 50
+    static let cornerRadius: CGFloat = 19
     static let borderWidth: CGFloat = 0.75
 }
 
