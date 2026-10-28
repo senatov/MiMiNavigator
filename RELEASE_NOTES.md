@@ -1,24 +1,22 @@
-# MiMiNavigator v0.9.1.3
+# MiMiNavigator v0.9.1.4
 
-This is the first release that requires **macOS 27 or newer** on Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains available for macOS 26.
+This update refines the main-window titlebar on macOS 27 or newer.
 
 ## Highlights
 
-- Keep view modes and the menu toggle visible in narrower windows, with individual toolbar actions available through native overflow.
-- Open file and folder context menus without reading cloud tokens. Choosing unrelated actions such as Media & Convert no longer triggers a Dropbox Keychain password prompt.
-- Reduce work in large directories by bounding column-width sampling, skipping unnecessary flat-folder publication work, hashing large scan results away from the main actor, reusing sorted scan order, and collecting row metadata in one pass.
-- Check the downloaded application's minimum macOS version before an in-app update replaces an installed copy. Missing or malformed version metadata also cancels installation.
-- Validate the signed app version and macOS deployment target before DMG packaging. DMG styling targets the mounted Finder window on macOS 27; CI now propagates Xcode build failures correctly.
+- Bring the titlebar closer to Safari's compact proportions with a shorter native toolbar and smaller app title.
+- Group actions in consistent capsules with thin dividers and centered, accessible button hit areas.
+- Keep the optional icon-and-text toolbar presentation while tightening icon-only spacing.
 
 ## Compatibility and installation
 
-- Requires macOS 27 or newer and Apple silicon. The application bundle and executable declare the macOS 27 minimum.
-- The v0.9.1.2 updater cannot report the host OS. It continues to receive the final macOS 26 release, including when running on macOS 27. To move from v0.9.1.2 to this release, download the DMG manually. Later updates use the OS-aware feed.
-- Finder's drag-to-Applications installation does not run the in-app compatibility check. Check the macOS requirement before copying the app.
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Users of v0.9.1.2 must install a macOS 27 release manually before later updates can use the OS-aware feed.
+- Open the DMG and drag MiMiNavigator to Applications.
 
 ## Validation
 
-- Focused large-directory and update compatibility checks passed on macOS 27.0.1. The 19,367-file VS Code extension assets directory was used as a read-only fixture during development.
+- The Debug build passed on macOS 27. The titlebar was inspected in the running app, and the Hidden Files action was exercised and restored.
 - The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
 
-**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...v0.9.1.3
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...v0.9.1.4

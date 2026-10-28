@@ -11,9 +11,9 @@ The staged program covers the entire application. Keep each change small enough 
 
 The signed, notarized, stapled v0.9.1.2 DMG was published after these changes.
 
-## Current release: v0.9.1.3
+## Current release: v0.9.1.4
 
-The first macOS 27-only release is published. Its app and executable minimum-version checks, in-app replacement guard, macOS 27/Xcode 27 CI configuration, and native toolbar overflow are in place. The README documents the OS-aware update feed and Homebrew minimum-version check. Local titlebar changes after the release keep the notice button above the panel divider, put resource graphs to its left, group actions on a compact native surface, and show the documented release date without covering it. These changes are not part of v0.9.1.3.
+v0.9.1.4 refines the main-window titlebar with compact action capsules, dividers, and smaller title typography. It retains the macOS 27 minimum, native toolbar overflow, and OS-aware update routing introduced in v0.9.1.3.
 
 ## Later stages
 

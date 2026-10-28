@@ -7,13 +7,15 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
-### Fixed
-- Show the documented release date in the pre-release toolbar badge without placing text behind the notice button; keep the full build stamp for update identity and the badge tooltip.
-- Bring the staged improvement plan up to date with the published macOS 27 release and its remaining validation work.
+## [0.9.1.4] - 2026-10-28
+
+### Changed
+- Made the main-window titlebar more compact with icon-only native sizing, smaller title typography, and grouped action capsules with subtle dividers. Optional icon-and-text actions retain their labels and hit areas.
 
 ## [0.9.1.3] - 2026-10-25
 
 ### Changed
+- Updated the staged improvement plan after publishing the macOS 27 release.
 - Combined synthetic-parent detection with row indexing and metadata collection, removing one full scan when preparing sorted rows for flat directories.
 - Reused the scanner's ordering for already sorted large file tables, avoiding a second sort and its array allocation while retaining a fallback for changed sort settings.
 - Moved large-directory content hashing off the main actor and ignored stale scan results after concurrent refreshes or panel navigation.
@@ -25,6 +27,7 @@ and releases now use four numeric components; each component after the major ver
 - Kept view modes and the menu toggle visible longer in narrow windows, and made individual toolbar actions available through native overflow.
 
 ### Fixed
+- Showed the documented release date in the pre-release toolbar badge without covering it with the notice button; the full build stamp remains in the tooltip.
 - Selected the mounted DMG's Finder window for release styling and verified its target before changing the layout.
 - Prevented file and folder context menus from reading cloud tokens and triggering a Keychain password prompt while opening unrelated actions such as Media & Convert.
 - Prevented a downloaded app that requires a newer macOS release from replacing the installed application; a missing or malformed minimum-version declaration also cancels installation.
@@ -1399,7 +1402,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.4...HEAD
+[0.9.1.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...v0.9.1.4
 [0.9.1.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...v0.9.1.3
 [0.9.1.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.2
 [0.9.9.6.0]: https://github.com/senatov/MiMiNavigator/compare/v0.9.9.5.9...v0.9.9.6.0
