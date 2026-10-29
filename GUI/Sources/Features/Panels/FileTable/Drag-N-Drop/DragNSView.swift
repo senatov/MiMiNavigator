@@ -99,8 +99,10 @@ final class DragNSView: NSView, NSDraggingSource {
             // Finder-style: resolve file under cursor, not stale selection
             let panelFrame = panelFrameInWindowCoordinates()
             if let gridFrames {
+                // SwiftUI cell anchors use a top-left origin; NSView mouse points use the bottom-left origin.
+                let gridPoint = CGPoint(x: loc.x, y: bounds.height - loc.y)
                 let hitFile = displayedRows.first { file in
-                    gridFrames[file.id]?.contains(loc) == true
+                    gridFrames[file.id]?.contains(gridPoint) == true
                 }
                 cachedSelection = hitFile.map {
                     DragSelectionResolver.resolveForHitFile($0, from: appState, side: panelSide)
