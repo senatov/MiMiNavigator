@@ -419,7 +419,7 @@ tell application "Finder"
     set viewOptions to the icon view options of dmgWindow
     set arrangement of viewOptions to not arranged
     set icon size of viewOptions to 128
-    set background picture of viewOptions to file ".background:background.png" of dmgDisk
+    set background picture of viewOptions to (POSIX file "${MOUNT_PT}/.background/background.png" as alias)
     set position of item "MiMiNavigator.app" of dmgDisk to {${DMG_APP_X}, ${DMG_APP_Y}}
     set position of item "Applications" of dmgDisk to {${DMG_APPS_X}, ${DMG_APPS_Y}}
     set hiddenItemX to ${DMG_HIDDEN_X}
