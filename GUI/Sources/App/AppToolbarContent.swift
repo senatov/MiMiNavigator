@@ -251,7 +251,6 @@ private struct ViewModeToolbarItem: View {
                 .help("Tree view")
         }
         .pickerStyle(.segmented)
-        .frame(width: 96)
         .accessibilityLabel("File view mode")
     }
 }
