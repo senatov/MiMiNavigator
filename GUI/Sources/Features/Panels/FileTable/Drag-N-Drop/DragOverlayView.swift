@@ -16,6 +16,8 @@ struct DragOverlayView: NSViewRepresentable {
     @Environment(DragDropManager.self) var dragDropManager
     let panelSide: FavPanelSide
     let scrollView: NSScrollView?
+    let rows: [CustomFile]
+    var gridFrames: [CustomFile.ID: CGRect]? = nil
 
 
     func makeNSView(context: Context) -> DragNSView {
@@ -23,6 +25,8 @@ struct DragOverlayView: NSViewRepresentable {
         view.panelSide = panelSide
         view.dragDropManager = dragDropManager
         view.fileScrollView = scrollView
+        view.displayedRows = rows
+        view.gridFrames = gridFrames
         return view
     }
 
@@ -31,5 +35,7 @@ struct DragOverlayView: NSViewRepresentable {
         nsView.panelSide = panelSide
         nsView.dragDropManager = dragDropManager
         nsView.fileScrollView = scrollView
+        nsView.displayedRows = rows
+        nsView.gridFrames = gridFrames
     }
 }

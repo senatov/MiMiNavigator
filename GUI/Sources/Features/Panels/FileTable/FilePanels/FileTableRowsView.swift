@@ -171,11 +171,13 @@ struct FileTableRowsView: View {
     @ViewBuilder
     private func sizeAwareRow(index: Int, file: CustomFile) -> some View {
         let isSelected = file.id == currentSelectedID
+        let isMarked = appState.isMarked(file, on: panelSide)
 
         SizeAwareRow(
             id: file.id,
             index: index,
             isSelected: isSelected,
+            isMarked: isMarked,
             layoutVersion: layout.layoutVersion,
             sizeVersion: file.sizeVersion,
             byteSize: file.sizeInBytes,
@@ -188,6 +190,7 @@ struct FileTableRowsView: View {
                 index: index,
                 file: file,
                 isSelected: isSelected,
+                isMarked: isMarked,
                 panelSide: panelSide,
                 isActivePanel: isActivePanel,
                 themeVersion: themeVersion,
@@ -209,6 +212,7 @@ struct SizeAwareRow<Content: View>: View, Equatable {
     let id: CustomFile.ID
     let index: Int
     let isSelected: Bool
+    let isMarked: Bool
     let layoutVersion: Int
     let sizeVersion: Int
     let byteSize: Int64
@@ -221,6 +225,7 @@ struct SizeAwareRow<Content: View>: View, Equatable {
         lhs.id == rhs.id
             && lhs.index == rhs.index
             && lhs.isSelected == rhs.isSelected
+            && lhs.isMarked == rhs.isMarked
             && lhs.layoutVersion == rhs.layoutVersion
             && lhs.sizeVersion == rhs.sizeVersion
             && lhs.byteSize == rhs.byteSize

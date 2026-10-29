@@ -15,14 +15,12 @@ import FileModelKit
 import QuickLookThumbnailing
 import RenameKit
 import SwiftUI
-import UniformTypeIdentifiers
 
 // MARK: - ThumbnailGridView
 
 struct ThumbnailGridView: View {
 
     @Environment(AppState.self) var appState
-    @Environment(DragDropManager.self) var dragDropManager
 
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -42,17 +40,11 @@ struct ThumbnailGridView: View {
         appState.markedFiles(for: panelSide)
     }
 
-    private func handleSelection(for file: CustomFile, modifiers: NSEvent.ModifierFlags) {
+    private func handleSelection(for file: CustomFile, modifiers: ClickModifiers) {
         guard !ParentDirectoryEntry.isParentEntry(file) else { return }
         selectedID = file.id
         onSelect(file)
-        appState.handleClickWithModifiers(on: file, modifiers: clickModifiers(from: modifiers))
-    }
-
-    private func clickModifiers(from flags: NSEvent.ModifierFlags) -> ClickModifiers {
-        if flags.contains(.command) { return .command }
-        if flags.contains(.shift) { return .shift }
-        return .none
+        appState.handleClickWithModifiers(on: file, modifiers: modifiers)
     }
 
     // MARK: - Body
@@ -66,15 +58,25 @@ struct ThumbnailGridView: View {
                             cellSize: min(cellSize, max(1, geometry.size.width - horizontalPadding)),
                             isSelected: selectedID == file.id || markedIDs.contains(file.id),
                             panelSide: panelSide,
-                            dragFiles: dragFilesFor(file),
                             onSelect: { modifiers in
                                 handleSelection(for: file, modifiers: modifiers)
                             },
                             onDoubleClick: { onDoubleClick(file) }
                         )
+                        .anchorPreference(key: ThumbnailCellFramesKey.self, value: .bounds) { [file.id: $0] }
                     }
                 }
                 .padding(10)
+            }
+            .overlayPreferenceValue(ThumbnailCellFramesKey.self) { anchors in
+                GeometryReader { proxy in
+                    DragOverlayView(
+                        panelSide: panelSide,
+                        scrollView: nil,
+                        rows: files,
+                        gridFrames: anchors.mapValues { proxy[$0] }
+                    )
+                }
             }
         }
         // MARK: - Jump-to-edge buttons (matching file table style)
@@ -135,12 +137,13 @@ struct ThumbnailGridView: View {
         .contentShape(Rectangle())
     }
 
-    // MARK: - Drag helpers
-    private func dragFilesFor(_ file: CustomFile) -> [CustomFile] {
-        if markedIDs.contains(file.id) {
-            return files.filter { markedIDs.contains($0.id) }
-        }
-        return [file]
+}
+
+// MARK: - Thumbnail Cell Frames
+private struct ThumbnailCellFramesKey: PreferenceKey {
+    static let defaultValue: [CustomFile.ID: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [CustomFile.ID: Anchor<CGRect>], nextValue: () -> [CustomFile.ID: Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
@@ -158,8 +161,7 @@ private struct ThumbnailCellView: View {
     let cellSize: CGFloat
     let isSelected: Bool
     let panelSide: FavPanelSide
-    let dragFiles: [CustomFile]
-    let onSelect: (NSEvent.ModifierFlags) -> Void
+    let onSelect: (ClickModifiers) -> Void
     let onDoubleClick: () -> Void
 
     @State private var thumbnail: NSImage? = nil
@@ -167,7 +169,6 @@ private struct ThumbnailCellView: View {
     @State private var isHovered = false
 
     @Environment(AppState.self) private var appState
-    @Environment(DragDropManager.self) private var dragDropManager
 
     private var cellWidth: CGFloat {
         cellSize
@@ -231,22 +232,17 @@ private struct ThumbnailCellView: View {
         .frame(width: cellWidth)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .onTapGesture(count: 2) { onDoubleClick() }
-        .simultaneousGesture(
-            TapGesture(count: 1)
-                .onEnded {
-                    let modifiers = NSApp.currentEvent?.modifierFlags ?? []
-                    onSelect(modifiers)
+        .gesture(
+            ExclusiveGesture(TapGesture(count: 2), TapGesture(count: 1))
+                .onEnded { result in
+                    switch result {
+                        case .first: onDoubleClick()
+                        case .second: onSelect(PanelClickModifierCapture.modifiers(for: panelSide))
+                    }
                 }
         )
         .contextMenu {
             FileItemContextMenu(file: file, panelSide: panelSide)
-        }
-        .onDrag {
-            dragDropManager.startDrag(files: dragFiles, from: panelSide, appState: appState)
-            return makeDragProvider()
-        } preview: {
-            DragPreviewPopupView(files: dragFiles, panelSide: panelSide)
         }
         .task(id: ThumbnailLoadID(path: file.pathStr, width: Int(cellSize.rounded()))) { await loadThumbnail() }
     }
@@ -298,22 +294,6 @@ private struct ThumbnailCellView: View {
     // MARK: - Commit Inline Rename
     private func commitInlineRename() {
         InlineRenameCommitter.commit(file: file, panel: panelSide, appState: appState)
-    }
-
-    private func makeDragProvider() -> NSItemProvider {
-        let provider = NSItemProvider()
-        if let first = dragFiles.first {
-            provider.registerObject(first.urlValue as NSURL, visibility: .all)
-        }
-        let allDraggedPaths =
-            dragFiles
-            .map { $0.urlValue.absoluteString }
-            .joined(separator: "\n")
-        provider.registerDataRepresentation(forTypeIdentifier: UTType.utf8PlainText.identifier, visibility: .all) { completion in
-            completion(allDraggedPaths.data(using: .utf8), nil)
-            return nil
-        }
-        return provider
     }
 
     // MARK: - Fallback system file icon

@@ -16,6 +16,7 @@ struct FileRow: View, Equatable {
     let index: Int
     let file: CustomFile
     let isSelected: Bool
+    let isMarked: Bool
     let panelSide: FavPanelSide
     let isActivePanel: Bool
     let themeVersion: Int
@@ -53,6 +54,7 @@ struct FileRow: View, Equatable {
     nonisolated static func == (lhs: FileRow, rhs: FileRow) -> Bool {
         lhs.file.id == rhs.file.id && lhs.index == rhs.index
             && lhs.isSelected == rhs.isSelected && lhs.panelSide == rhs.panelSide
+            && lhs.isMarked == rhs.isMarked
             && lhs.isActivePanel == rhs.isActivePanel
             && lhs.themeVersion == rhs.themeVersion
             && lhs.layoutVersion == rhs.layoutVersion
@@ -68,10 +70,6 @@ struct FileRow: View, Equatable {
     var isParentEntry: Bool {
         if ParentDirectoryEntry.isParentEntry(file) { return true }
         return file.nameStr == ".."
-    }
-
-    private var isMarked: Bool {
-        appState.isMarked(file, on: panelSide)
     }
 
     private var isValidDropTarget: Bool {
@@ -121,10 +119,13 @@ struct FileRow: View, Equatable {
 
     // MARK: - Row Gestures
     private func rowGestures() -> some Gesture {
-        SimultaneousGesture(
-            TapGesture(count: 2).onEnded { handleDoubleClick() },
-            TapGesture(count: 1).onEnded { handleSingleClick() }
-        )
+        ExclusiveGesture(TapGesture(count: 2), TapGesture(count: 1))
+            .onEnded { result in
+                switch result {
+                    case .first: handleDoubleClick()
+                    case .second: handleSingleClick()
+                }
+            }
     }
 
     // MARK: - Extracted Views
@@ -175,20 +176,10 @@ struct FileRow: View, Equatable {
     // MARK: - Event Handlers
     private func handleSingleClick() {
         let _ = log.debug(#function)
-        let modifiers = Self.currentClickModifiers()
+        let modifiers = PanelClickModifierCapture.modifiers(for: panelSide)
         log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
         onSelect(file)
         appState.handleClickWithModifiers(on: file, modifiers: modifiers)
-    }
-
-    private static func currentClickModifiers() -> ClickModifiers {
-        guard let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) else {
-            return .none
-        }
-        let _ = log.debug(#function)
-        if flags.contains(.command) { return .command }
-        if flags.contains(.shift) { return .shift }
-        return .none
     }
 
     private func handleDoubleClick() {

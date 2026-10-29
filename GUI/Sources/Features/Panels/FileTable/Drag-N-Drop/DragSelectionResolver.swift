@@ -34,7 +34,8 @@ struct DragSelectionResolver {
         side: FavPanelSide,
         windowPoint: NSPoint,
         panelFrame: NSRect,
-        scrollView: NSScrollView?
+        scrollView: NSScrollView?,
+        rows: [CustomFile]
     ) -> [CustomFile] {
         guard isInsideNameColumn(windowPoint: windowPoint, side: side, panelFrame: panelFrame) else {
             log.debug("[DragResolver] drag ignored outside name column")
@@ -42,12 +43,16 @@ struct DragSelectionResolver {
         }
         guard let hitFile = fileUnderCursor(
             windowPoint: windowPoint,
-            panelSide: side,
-            appState: appState,
-            scrollView: scrollView
+            scrollView: scrollView,
+            rows: rows
         ) else {
             return resolve(from: appState, side: side)
         }
+        return resolveForHitFile(hitFile, from: appState, side: side)
+    }
+
+    @MainActor
+    static func resolveForHitFile(_ hitFile: CustomFile, from appState: AppState, side: FavPanelSide) -> [CustomFile] {
         if ParentDirectoryEntry.isParentEntry(hitFile) { return [] }
         let opFiles = appState.filesForOperation(on: side)
         if opFiles.contains(where: { $0.id == hitFile.id }) {
@@ -73,9 +78,8 @@ struct DragSelectionResolver {
     @MainActor
     private static func fileUnderCursor(
         windowPoint: NSPoint,
-        panelSide: FavPanelSide,
-        appState: AppState,
-        scrollView: NSScrollView?
+        scrollView: NSScrollView?,
+        rows: [CustomFile]
     ) -> CustomFile? {
         guard let scrollView,
               let documentView = scrollView.documentView
@@ -90,17 +94,16 @@ struct DragSelectionResolver {
         let rowY = documentPoint.y - tableHeaderHeight
         guard rowY >= 0 else { return nil }
         let rowIndex = Int(floor(rowY / rowHeight))
-        let files = appState.displayedFiles(for: panelSide)
-        guard rowIndex >= 0, rowIndex < files.count else {
+        guard rowIndex >= 0, rowIndex < rows.count else {
             log.debug(
-                "[DragResolver] hit-test miss: documentY=\(documentPoint.y) rowY=\(rowY) rowIdx=\(rowIndex) count=\(files.count)"
+                "[DragResolver] hit-test miss: documentY=\(documentPoint.y) rowY=\(rowY) rowIdx=\(rowIndex) count=\(rows.count)"
             )
             return nil
         }
         log.debug(
             "[DragResolver] hit-test: windowY=\(windowPoint.y) documentY=\(documentPoint.y) "
-                + "rowY=\(rowY) rowIdx=\(rowIndex) → '\(files[rowIndex].nameStr)'"
+                + "rowY=\(rowY) rowIdx=\(rowIndex) → '\(rows[rowIndex].nameStr)'"
         )
-        return files[rowIndex]
+        return rows[rowIndex]
     }
 }

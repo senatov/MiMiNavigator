@@ -11,6 +11,8 @@ final class DragNSView: NSView, NSDraggingSource {
     weak var dragDropManager: DragDropManager?
     weak var appState: AppState?
     weak var fileScrollView: NSScrollView?
+    var displayedRows: [CustomFile] = []
+    var gridFrames: [CustomFile.ID: CGRect]?
     var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
     var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
@@ -87,19 +89,30 @@ final class DragNSView: NSView, NSDraggingSource {
         let locWindow = event.locationInWindow
         let loc = convert(locWindow, from: nil)
         guard bounds.contains(loc) else { return }
+        if let panelSide { PanelClickModifierCapture.record(event.modifierFlags, for: panelSide) }
         dragState.startPoint = locWindow
         dragState.didStart = false
         dragState.isResize = isResizeCursor
         if let panelSide, let appState {
             // Finder-style: resolve file under cursor, not stale selection
             let panelFrame = panelFrameInWindowCoordinates()
-            cachedSelection = DragSelectionResolver.resolveForDrag(
-                from: appState,
-                side: panelSide,
-                windowPoint: locWindow,
-                panelFrame: panelFrame,
-                scrollView: fileScrollView
-            )
+            if let gridFrames {
+                let hitFile = displayedRows.first { file in
+                    gridFrames[file.id]?.contains(loc) == true
+                }
+                cachedSelection = hitFile.map {
+                    DragSelectionResolver.resolveForHitFile($0, from: appState, side: panelSide)
+                } ?? []
+            } else {
+                cachedSelection = DragSelectionResolver.resolveForDrag(
+                    from: appState,
+                    side: panelSide,
+                    windowPoint: locWindow,
+                    panelFrame: panelFrame,
+                    scrollView: fileScrollView,
+                    rows: displayedRows
+                )
+            }
         } else {
             cachedSelection = []
         }
