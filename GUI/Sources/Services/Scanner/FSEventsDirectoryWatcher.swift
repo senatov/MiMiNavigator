@@ -8,6 +8,7 @@
 import CoreServices
 import FileModelKit
 import Foundation
+import ScannerKit
 
 // MARK: - FSEvents Directory Watcher
 final class FSEventsDirectoryWatcher: @unchecked Sendable {
@@ -32,7 +33,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
     private var stream: FSEventStreamRef?
     private let callbackQueue = DispatchQueue(label: "mimi.fsevents", qos: .utility)
     private let onPatch: @Sendable (DirectoryPatch) -> Void
-    private var showHiddenFiles = false
+    private var visibilityPolicy = FileScannerVisibilityPolicy(directoryURL: URL(fileURLWithPath: "/"), showHiddenFiles: false)
     private let pendingLock = NSLock()
     private var isStopped = true
     private var pendingGeneration: UInt64 = 0
@@ -73,7 +74,7 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
         stop()
         guard !path.isEmpty else { return false }
         watchedPath = path
-        self.showHiddenFiles = showHiddenFiles
+        visibilityPolicy = FileScannerVisibilityPolicy(directoryURL: URL(fileURLWithPath: path), showHiddenFiles: showHiddenFiles)
         var context = FSEventStreamContext(
             version: 0,
             info: Unmanaged.passUnretained(self).toOpaque(),
@@ -273,7 +274,10 @@ final class FSEventsDirectoryWatcher: @unchecked Sendable {
                 continue
             }
             let url = URL(fileURLWithPath: path)
-            if !showHiddenFiles && url.lastPathComponent.hasPrefix(".") { continue }
+            if !visibilityPolicy.includes(url) {
+                removed.append(path)
+                continue
+            }
             if isDirectory(path), let count = directoryEntryCount(at: path) {
                 childCounts[path] = count
             }
