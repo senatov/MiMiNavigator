@@ -1,0 +1,32 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.4.2 (swiftlang-6.4.2.1.9 clang-2100.4.1.1)
+// swift-module-flags: -target arm64-apple-macosx27.0 -enable-objc-interop -enable-library-evolution -language-mode 6 -O -module-name ScannerKit -package-name work
+// swift-module-flags-ignorable:  -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4.2
+@_exported import FileModelKit
+import Foundation
+import ImageIO
+@_exported import LogKit
+import Swift
+import UniformTypeIdentifiers
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+public enum FileScanner {
+  public static func scan(url: Foundation::URL, showHiddenFiles: Swift::Bool = false, includeFinderMetadata: Swift::Bool = false) throws -> [FileModelKit::CustomFile]
+  public static func scanIncremental(url: Foundation::URL, showHiddenFiles: Swift::Bool = false, batchSize: Swift::Int = 200, onBatch: ([FileModelKit::CustomFile]) -> Swift::Void) throws
+  public static func directoryChildCount(at url: Foundation::URL, showHiddenFiles: Swift::Bool = false) -> Swift::Int
+  public static func directorySize(at url: Foundation::URL) -> Swift::Int64
+}
+public struct FileScannerVisibilityPolicy : Swift::Sendable {
+  public init(directoryURL: Foundation::URL, showHiddenFiles: Swift::Bool)
+  public var skipsHiddenFilesDuringEnumeration: Swift::Bool {
+    get
+  }
+  public func includes(_ entryURL: Foundation::URL) -> Swift::Bool
+}
+public enum GeoTagScanner {
+  public static func isGeoCapable(_ ext: Swift::String) -> Swift::Bool
+  public static func hasGPS(at url: Foundation::URL) -> Swift::Bool
+  public static func detectGeoTaggedPaths(_ files: [FileModelKit::CustomFile]) -> Swift::Set<Swift::String>
+  @_Concurrency::MainActor public static func applyGeoTags(_ paths: Swift::Set<Swift::String>, to files: [FileModelKit::CustomFile])
+}
