@@ -24,7 +24,7 @@ extension DragNSView {
     }
 
     func shouldHandlePrimaryDrag(_ event: NSEvent) -> Bool {
-        event.type == .leftMouseDragged && isPrimaryMouseDown && !event.modifierFlags.contains(.control)
+        event.type == .leftMouseDragged && !event.modifierFlags.contains(.control)
     }
 
     func expandedBounds(tolerance: CGFloat) -> NSRect {

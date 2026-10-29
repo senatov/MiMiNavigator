@@ -58,9 +58,6 @@ struct ThumbnailGridView: View {
                             cellSize: min(cellSize, max(1, geometry.size.width - horizontalPadding)),
                             isSelected: selectedID == file.id || markedIDs.contains(file.id),
                             panelSide: panelSide,
-                            onSelect: { modifiers in
-                                handleSelection(for: file, modifiers: modifiers)
-                            },
                             onDoubleClick: { onDoubleClick(file) }
                         )
                         .anchorPreference(key: ThumbnailCellFramesKey.self, value: .bounds) { [file.id: $0] }
@@ -74,7 +71,10 @@ struct ThumbnailGridView: View {
                         panelSide: panelSide,
                         scrollView: nil,
                         rows: files,
-                        gridFrames: anchors.mapValues { proxy[$0] }
+                        gridFrames: anchors.mapValues { proxy[$0] },
+                        onMouseDownFile: { file, modifiers in
+                            handleSelection(for: file, modifiers: modifiers)
+                        }
                     )
                 }
             }
@@ -161,7 +161,6 @@ private struct ThumbnailCellView: View {
     let cellSize: CGFloat
     let isSelected: Bool
     let panelSide: FavPanelSide
-    let onSelect: (ClickModifiers) -> Void
     let onDoubleClick: () -> Void
 
     @State private var thumbnail: NSImage? = nil
@@ -232,15 +231,7 @@ private struct ThumbnailCellView: View {
         .frame(width: cellWidth)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .gesture(
-            ExclusiveGesture(TapGesture(count: 2), TapGesture(count: 1))
-                .onEnded { result in
-                    switch result {
-                        case .first: onDoubleClick()
-                        case .second: onSelect(PanelClickModifierCapture.modifiers(for: panelSide))
-                    }
-                }
-        )
+        .onTapGesture(count: 2) { onDoubleClick() }
         .contextMenu {
             FileItemContextMenu(file: file, panelSide: panelSide)
         }

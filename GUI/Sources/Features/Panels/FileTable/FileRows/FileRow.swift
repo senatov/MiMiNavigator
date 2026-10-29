@@ -117,17 +117,6 @@ struct FileRow: View, Equatable {
         }
     }
 
-    // MARK: - Row Gestures
-    private func rowGestures() -> some Gesture {
-        ExclusiveGesture(TapGesture(count: 2), TapGesture(count: 1))
-            .onEnded { result in
-                switch result {
-                    case .first: handleDoubleClick()
-                    case .second: handleSingleClick()
-                }
-            }
-    }
-
     // MARK: - Extracted Views
     @ViewBuilder
     private var zebraBackground: some View {
@@ -174,14 +163,6 @@ struct FileRow: View, Equatable {
     }
 
     // MARK: - Event Handlers
-    private func handleSingleClick() {
-        let _ = log.debug(#function)
-        let modifiers = PanelClickModifierCapture.modifiers(for: panelSide)
-        log.debug("[FileRow] single-click on '\(file.nameStr)' panel=\(panelSide) modifiers=\(modifiers)")
-        onSelect(file)
-        appState.handleClickWithModifiers(on: file, modifiers: modifiers)
-    }
-
     private func handleDoubleClick() {
         log.debug("[FileRow] double-click on '\(file.nameStr)' isDir=\(file.isDirectory)")
         onDoubleClick(file)
@@ -301,7 +282,7 @@ struct FileRow: View, Equatable {
             .frame(height: FilePanelStyle.rowHeight)
             .contentShape(Rectangle())
             .onHover(perform: handleParentHover)
-            .gesture(rowGestures())
+            .onTapGesture(count: 2) { handleDoubleClick() }
             .animation(.spring(response: 0.35, dampingFraction: 0.70), value: isHoveringParentRow)
             .animation(nil, value: isSelected)
     }
@@ -327,7 +308,7 @@ struct FileRow: View, Equatable {
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: FilePanelStyle.rowHeight)
             .contentShape(Rectangle())
-            .gesture(rowGestures())
+            .onTapGesture(count: 2) { handleDoubleClick() }
             .animation(nil, value: isSelected)
             .contextMenu {
                 FileItemContextMenu(file: file, panelSide: panelSide)

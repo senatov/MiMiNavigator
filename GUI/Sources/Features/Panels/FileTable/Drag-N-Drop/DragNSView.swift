@@ -13,6 +13,7 @@ final class DragNSView: NSView, NSDraggingSource {
     weak var fileScrollView: NSScrollView?
     var displayedRows: [CustomFile] = []
     var gridFrames: [CustomFile.ID: CGRect]?
+    var onMouseDownFile: ((CustomFile, ClickModifiers) -> Void)?
     var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
     var cachedSelection: [CustomFile] = []
     private var mouseMonitor: Any?
@@ -83,17 +84,18 @@ final class DragNSView: NSView, NSDraggingSource {
         latestRemoteDragEvent = nil
         guard canStartPanelDrag else { return }
         guard hasWindowContext(for: event) else { return }
-        guard event.type == .leftMouseDown, isPrimaryMouseDown,
+        guard event.type == .leftMouseDown,
             !event.modifierFlags.contains(.control)
         else { return }
         let locWindow = event.locationInWindow
         let loc = convert(locWindow, from: nil)
         guard bounds.contains(loc) else { return }
-        if let panelSide { PanelClickModifierCapture.record(event.modifierFlags, for: panelSide) }
+        guard let panelSide else { return }
+        let modifiers = ClickModifiers.from(event.modifierFlags)
         dragState.startPoint = locWindow
         dragState.didStart = false
         dragState.isResize = isResizeCursor
-        if let panelSide, let appState {
+        if let appState {
             // Finder-style: resolve file under cursor, not stale selection
             let panelFrame = panelFrameInWindowCoordinates()
             if let gridFrames {
@@ -103,6 +105,7 @@ final class DragNSView: NSView, NSDraggingSource {
                 cachedSelection = hitFile.map {
                     DragSelectionResolver.resolveForHitFile($0, from: appState, side: panelSide)
                 } ?? []
+                if let hitFile { onMouseDownFile?(hitFile, modifiers) }
             } else {
                 cachedSelection = DragSelectionResolver.resolveForDrag(
                     from: appState,
@@ -112,6 +115,13 @@ final class DragNSView: NSView, NSDraggingSource {
                     scrollView: fileScrollView,
                     rows: displayedRows
                 )
+                if let hitFile = DragSelectionResolver.fileUnderCursor(
+                    windowPoint: locWindow,
+                    scrollView: fileScrollView,
+                    rows: displayedRows
+                ) {
+                    onMouseDownFile?(hitFile, modifiers)
+                }
             }
         } else {
             cachedSelection = []

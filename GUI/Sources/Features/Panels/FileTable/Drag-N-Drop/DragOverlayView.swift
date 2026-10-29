@@ -18,6 +18,7 @@ struct DragOverlayView: NSViewRepresentable {
     let scrollView: NSScrollView?
     let rows: [CustomFile]
     var gridFrames: [CustomFile.ID: CGRect]? = nil
+    var onMouseDownFile: ((CustomFile, ClickModifiers) -> Void)? = nil
 
 
     func makeNSView(context: Context) -> DragNSView {
@@ -27,6 +28,7 @@ struct DragOverlayView: NSViewRepresentable {
         view.fileScrollView = scrollView
         view.displayedRows = rows
         view.gridFrames = gridFrames
+        view.onMouseDownFile = onMouseDownFile
         return view
     }
 
@@ -37,5 +39,6 @@ struct DragOverlayView: NSViewRepresentable {
         nsView.fileScrollView = scrollView
         nsView.displayedRows = rows
         nsView.gridFrames = gridFrames
+        nsView.onMouseDownFile = onMouseDownFile
     }
 }

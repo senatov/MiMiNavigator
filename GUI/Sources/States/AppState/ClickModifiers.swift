@@ -6,7 +6,6 @@
 // Description: Click modifier keys for Finder-style multi-selection
 
 import AppKit
-import FileModelKit
 import Foundation
 
 // MARK: - Click Modifiers
@@ -20,25 +19,15 @@ enum ClickModifiers: Sendable {
     case shift
 }
 
-// MARK: - Panel Click Modifier Capture
-@MainActor
-enum PanelClickModifierCapture {
-    private static var lastClick: [FavPanelSide: (modifiers: ClickModifiers, time: Date)] = [:]
-
-    static func record(_ flags: NSEvent.ModifierFlags, for panel: FavPanelSide) {
-        let modifiers: ClickModifiers
+extension ClickModifiers {
+    // MARK: - Mouse Event Modifiers
+    static func from(_ flags: NSEvent.ModifierFlags) -> Self {
         if flags.contains(.command) {
-            modifiers = .command
+            return .command
         } else if flags.contains(.shift) {
-            modifiers = .shift
+            return .shift
         } else {
-            modifiers = .none
+            return .none
         }
-        lastClick[panel] = (modifiers, Date())
-    }
-
-    static func modifiers(for panel: FavPanelSide) -> ClickModifiers {
-        guard let click = lastClick[panel], Date().timeIntervalSince(click.time) < 1 else { return .none }
-        return click.modifiers
     }
 }

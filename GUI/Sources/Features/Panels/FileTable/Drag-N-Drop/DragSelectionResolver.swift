@@ -76,7 +76,7 @@ struct DragSelectionResolver {
     /// panelFrame = DragNSView bounds in window coords.
     /// headerHeight accounts for the column header row above the file list.
     @MainActor
-    private static func fileUnderCursor(
+    static func fileUnderCursor(
         windowPoint: NSPoint,
         scrollView: NSScrollView?,
         rows: [CustomFile]
