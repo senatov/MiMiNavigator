@@ -14,12 +14,13 @@ struct SearchHistoryComboBox: NSViewRepresentable {
     @Binding var text: String
     let historyKey: SearchHistoryManager.HistoryKey
     let placeholder: String
+    var completes = true
     var onSubmit: (() -> Void)?
 
     func makeNSView(context: Context) -> NSComboBox {
         let comboBox = NSComboBox()
         comboBox.isEditable = true
-        comboBox.completes = true
+        comboBox.completes = completes
         comboBox.hasVerticalScroller = true
         comboBox.numberOfVisibleItems = 12
         comboBox.placeholderString = placeholder
@@ -47,6 +48,7 @@ struct SearchHistoryComboBox: NSViewRepresentable {
 
     func updateNSView(_ comboBox: NSComboBox, context: Context) {
         context.coordinator.parent = self
+        comboBox.completes = completes
         if comboBox.currentEditor() == nil, comboBox.stringValue != text {
             comboBox.stringValue = text
         }

@@ -69,6 +69,7 @@ enum FindFilesPreset: String, Codable {
 enum FindFilesTab: String, Codable, Identifiable {
     case general
     case advanced
+    case cleanup
     var id: String { rawValue }
 }
 

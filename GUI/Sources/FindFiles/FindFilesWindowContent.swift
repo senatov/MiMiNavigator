@@ -29,22 +29,35 @@ struct FindFilesWindowContent: View {
             ZStack {
                 dialogBgColor.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    criteriaPane
-                        .frame(height: clampedCriteriaHeight(totalHeight: geometry.size.height))
-                    FindFilesSplitDivider(
-                        criteriaHeight: $criteriaHeight,
-                        totalHeight: geometry.size.height,
-                        persistenceKey: criteriaHeightKey(for: selectedTab),
-                        minimumHeight: minimumCriteriaHeight
-                    )
-                    FindFilesResultsView(viewModel: viewModel, appState: appState)
-                        .frame(maxHeight: .infinity)
+                    if selectedTab == .cleanup {
+                        FindFilesSearchLocation(viewModel: viewModel, onSubmit: {
+                            JunkFinderModel.shared.start(path: viewModel.searchDirectory)
+                        })
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        moduleHeader
+                        JunkFinderView(searchDirectory: viewModel.searchDirectory)
+                            .frame(maxHeight: .infinity)
+                    } else {
+                        criteriaPane
+                            .frame(height: clampedCriteriaHeight(totalHeight: geometry.size.height))
+                        FindFilesSplitDivider(
+                            criteriaHeight: $criteriaHeight,
+                            totalHeight: geometry.size.height,
+                            persistenceKey: criteriaHeightKey(for: selectedTab),
+                            minimumHeight: minimumCriteriaHeight
+                        )
+                        FindFilesResultsView(viewModel: viewModel, appState: appState)
+                            .frame(maxHeight: .infinity)
+                    }
                     Rectangle()
                         .fill(Color(nsColor: .separatorColor))
                         .frame(height: 1)
-                    statusBar
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 5)
+                    if selectedTab != .cleanup {
+                        statusBar
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 5)
+                    }
                 }
                 .font(DesignTokens.Typography.body)
                 .keyboardFocusSection()
@@ -58,13 +71,19 @@ struct FindFilesWindowContent: View {
             {
                 selectedTab = restoredTab
             }
+            if selectedTab == .cleanup, let scope = JunkFinderModel.shared.preferredScope {
+                viewModel.searchDirectory = scope
+            }
             criteriaHeight = restoredCriteriaHeight(for: selectedTab)
             viewModel.activeModule = selectedTab
         }
         .onChange(of: selectedTab) { oldTab, newTab in
             guard viewModel.activeModule != newTab else { return }
-            MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: oldTab))
-            criteriaHeight = restoredCriteriaHeight(for: newTab)
+            if oldTab != .cleanup { MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: oldTab)) }
+            if newTab != .cleanup { criteriaHeight = restoredCriteriaHeight(for: newTab) }
+            if newTab == .cleanup, let scope = JunkFinderModel.shared.preferredScope {
+                viewModel.searchDirectory = scope
+            }
             viewModel.activeModule = newTab
             MiMiDefaults.shared.set(newTab.rawValue, forKey: "findFiles.selectedTab")
         }
@@ -93,7 +112,7 @@ struct FindFilesWindowContent: View {
             viewModel.errorMessage = nil
         }
         .onDisappear {
-            MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: selectedTab))
+            if selectedTab != .cleanup { MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: selectedTab)) }
             viewModel.savePreferences()
         }
     }
@@ -105,34 +124,7 @@ struct FindFilesWindowContent: View {
             FindFilesSearchLocation(viewModel: viewModel)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("File Search")
-                        .font(.headline)
-                    Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
-                        .font(DesignTokens.Typography.path)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                Spacer(minLength: 16)
-                HStack(spacing: 4) {
-                    FindFilesTabButton(title: "Search", icon: "magnifyingglass", isSelected: selectedTab == .general) { selectedTab = .general }
-                    FindFilesTabButton(title: "Advanced", icon: "slider.horizontal.3", isSelected: selectedTab == .advanced) { selectedTab = .advanced }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .bottom) {
-                Rectangle().fill(DialogColors.border.opacity(0.55)).frame(height: 0.5)
-            }
+            moduleHeader
             ZStack {
                 inputAreaWithBorder
                 if viewModel.searchState == .searching {
@@ -155,6 +147,39 @@ struct FindFilesWindowContent: View {
         }
     }
 
+    // MARK: - Module Header
+    private var moduleHeader: some View {
+        HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .shadow(color: Color.accentColor.opacity(0.22), radius: 3, y: 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selectedTab == .cleanup ? "Cleanup" : "File Search")
+                        .font(.headline)
+                    Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
+                        .font(DesignTokens.Typography.path)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: 16)
+                HStack(spacing: 4) {
+                    FindFilesTabButton(title: "Search", icon: "magnifyingglass", isSelected: selectedTab == .general) { selectedTab = .general }
+                    FindFilesTabButton(title: "Advanced", icon: "slider.horizontal.3", isSelected: selectedTab == .advanced) { selectedTab = .advanced }
+                    FindFilesTabButton(title: "Cleanup", icon: "sparkles", isSelected: selectedTab == .cleanup) { selectedTab = .cleanup }
+                }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(DialogColors.border.opacity(0.55)).frame(height: 0.5)
+        }
+    }
+
     // MARK: - Input Area with Border
 
     private var inputAreaWithBorder: some View {
@@ -164,6 +189,8 @@ struct FindFilesWindowContent: View {
                 FindFilesGeneralTab(viewModel: viewModel)
             case .advanced:
                 FindFilesAdvancedTab(viewModel: viewModel)
+            case .cleanup:
+                EmptyView()
             }
         }
         .frame(maxHeight: .infinity)

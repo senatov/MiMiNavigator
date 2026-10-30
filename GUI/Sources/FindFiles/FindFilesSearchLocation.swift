@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Shared Search Location
 struct FindFilesSearchLocation: View {
     @Bindable var viewModel: FindFilesViewModel
+    var onSubmit: (() -> Void)? = nil
     var body: some View {
         HStack(spacing: 8) {
             Label("Search in", systemImage: "folder")
@@ -11,7 +12,11 @@ struct FindFilesSearchLocation: View {
                 text: $viewModel.searchDirectory,
                 historyKey: .searchDirectory,
                 placeholder: "Directory path",
-                onSubmit: { viewModel.startSearch() }
+                completes: onSubmit == nil,
+                onSubmit: {
+                    if let onSubmit { onSubmit() }
+                    else { viewModel.startSearch() }
+                }
             )
             .frame(height: 24)
             Button(action: browseDirectory) {
@@ -31,6 +36,7 @@ struct FindFilesSearchLocation: View {
                 initialURL: path.isEmpty ? nil : URL(fileURLWithPath: path),
                 canChooseFiles: false
             ) else { return }
+            FindFilesCoordinator.shared.sheetWindow?.makeFirstResponder(nil)
             viewModel.searchDirectory = url.path
         }
     }
