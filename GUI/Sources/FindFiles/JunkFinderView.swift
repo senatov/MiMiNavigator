@@ -13,7 +13,7 @@ struct JunkFinderView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Cleanup candidates").font(.headline)
-                    Text("Exact duplicates, empty folders, old installers, temporary files and reviewed app leftovers.")
+                    Text("Exact duplicates, empty folders, old installers, temporary files, stale PID files and reviewed app leftovers.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -46,12 +46,10 @@ struct JunkFinderView: View {
                 Text("Review each item. Duplicate groups always retain one copy.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("Select Duplicate Copies") { selectDuplicateCopies() }
-                    .disabled(!model.candidates.contains { $0.group != nil })
                 Button("Clear Selection") { model.selectedIDs = [] }
                     .disabled(model.selectedIDs.isEmpty)
                 Button("Move \(model.selectedIDs.count) to Trash", systemImage: "trash") { model.trashSelection() }
-                    .disabled(model.selectedIDs.isEmpty)
+                    .disabled(model.selectedIDs.isEmpty || model.isTrashing)
             }
             .padding(12)
         }
@@ -92,10 +90,4 @@ struct JunkFinderView: View {
         .padding(.vertical, 3)
     }
 
-    // MARK: - Duplicate Group Selection
-    private func selectDuplicateCopies() {
-        model.selectedIDs = []
-        let groups = Set(model.candidates.compactMap(\.group))
-        for group in groups { model.selectGroup(group) }
-    }
 }

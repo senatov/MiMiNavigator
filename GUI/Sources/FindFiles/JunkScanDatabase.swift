@@ -9,16 +9,16 @@ import SQLite3
 // MARK: - Cleanup SQLite Cache
 actor JunkScanDatabase {
     static let shared = JunkScanDatabase()
-    private var database: OpaquePointer?
+    var database: OpaquePointer?
     private var lastPrune = Date.distantPast
-    private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+    let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
     // MARK: - Open Database
-    private init() {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    init(databaseURL: URL? = nil) {
+        let directory = databaseURL?.deletingLastPathComponent() ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MiMiNavigator", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let path = directory.appendingPathComponent("Cleanup.sqlite").path
+        let path = (databaseURL ?? directory.appendingPathComponent("Cleanup.sqlite")).path
         guard sqlite3_open(path, &database) == SQLITE_OK else {
             log.error("[Cleanup] Cannot open SQLite cache")
             return
@@ -27,6 +27,14 @@ actor JunkScanDatabase {
         sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS hashes (path TEXT PRIMARY KEY, size INTEGER NOT NULL, modified REAL NOT NULL, digest TEXT NOT NULL, seen REAL NOT NULL)", nil, nil, nil)
         sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS snapshots (root TEXT PRIMARY KEY, payload BLOB NOT NULL, saved REAL NOT NULL)", nil, nil, nil)
         sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS ai_reviews (path TEXT PRIMARY KEY, modified REAL NOT NULL, recommend INTEGER NOT NULL)", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS scan_state (root TEXT PRIMARY KEY, active INTEGER NOT NULL, visited INTEGER NOT NULL)", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS scan_queue (root TEXT NOT NULL, path TEXT NOT NULL, PRIMARY KEY(root, path))", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS scan_files (root TEXT NOT NULL, path TEXT NOT NULL, size INTEGER NOT NULL, modified REAL NOT NULL, PRIMARY KEY(root, path))", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS scan_directories (root TEXT NOT NULL, path TEXT NOT NULL, PRIMARY KEY(root, path))", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS scan_candidates (root TEXT NOT NULL, path TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(root, path))", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS file_index (path TEXT PRIMARY KEY, root TEXT NOT NULL, size INTEGER NOT NULL, modified REAL NOT NULL)", nil, nil, nil)
+        sqlite3_exec(database, "CREATE INDEX IF NOT EXISTS file_index_size ON file_index(size)", nil, nil, nil)
+        sqlite3_exec(database, "CREATE TABLE IF NOT EXISTS global_candidates (id INTEGER PRIMARY KEY CHECK(id = 1), payload BLOB NOT NULL)", nil, nil, nil)
     }
 
     // MARK: - Cached Digest
@@ -113,13 +121,15 @@ actor JunkScanDatabase {
             let leftover = candidate.kind == .appLeftover && FindFilesLeftoverSafety.searchDirectories.contains {
                 path == $0.appendingPathComponent(candidate.url.lastPathComponent).path
             }
-            return (leftover || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
+            let processFile = candidate.kind == .processArtifact && candidate.url.deletingLastPathComponent().standardizedFileURL ==
+                FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true).standardizedFileURL
+            return (leftover || processFile || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
                 && FileManager.default.fileExists(atPath: path)
         }
     }
 
     // MARK: - Bind Text
-    private func bind(_ value: String, to statement: OpaquePointer?, at index: Int32) {
+    func bind(_ value: String, to statement: OpaquePointer?, at index: Int32) {
         _ = value.withCString { sqlite3_bind_text(statement, index, $0, -1, transient) }
     }
 }
