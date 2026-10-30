@@ -5,15 +5,21 @@
 The distribution pipeline builds private MiMiKits modules as individual static
 XCFrameworks. On 2026-09-12 the application built successfully from an isolated
 copy with no private Packages directory, using the extracted ZIP artifacts.
+On 2026-10-30, a separate clean clone without `Packages` resolved its dependencies
+into a fresh package directory and built the Debug app with Xcode 27.2 on macOS
+27.2. That run used the checked-in local `ScannerKit.xcframework` and downloaded
+the other binary targets. All ten release-archive URLs also returned HTTP 200
+to unauthenticated HEAD requests from this host. The run did not rebuild the
+private libraries from source or test access from another network.
 The grouped sorting regression test also passed. The v0.9.1.2 public wrappers reference binary release
 `kits-3f53511a20cf81ff`, built from MiMiKits commit `d43e581`. Its assets must
-be published before a clean public checkout can resolve them. Runtime and UI
+be reachable before a clean public checkout can resolve them. Runtime and UI
 behavior remain separate from build verification.
 
 Current development builds and newly generated XCFrameworks target macOS 27 or newer. Their SwiftPM manifests require Swift tools 6.4 (Xcode 27). The v0.9.1.2 binaries above remain the final macOS 26-compatible release artifacts; changing wrapper manifests does not change those published binaries.
 
-The first artifact set targets Apple Silicon (arm64), macOS 26 or newer for both
-the libraries and the application. It is built with Xcode 27 beta
+The first artifact set targeted Apple Silicon (arm64), macOS 26 or newer for both
+the libraries and the application. It was built with Xcode 27 beta
 (27A5252f), Swift 6.4. Earlier Xcode versions are not verified. Build future public
 artifacts with the oldest supported compiler and test that compiler explicitly.
 SwiftyBeaver 2.1.1 and GRDB 7.11.1 remain source dependencies, pinned exactly: they
@@ -63,8 +69,12 @@ running application intact. Run-time and UI testing are additional checks.
 
 The public wrappers live in `BinaryPackages/<module>/Package.swift`. Each has an
 explicit dependency target so SwiftPM links its binary with the required modules
-and open-source products without duplicating their implementation. Archives are
-hosted as release assets of MiMiNavigator; no additional public repository is needed.
+and open-source products without duplicating their implementation. Most current
+wrappers download checksum-pinned archives hosted as MiMiNavigator release assets.
+`ScannerKit` currently uses a checked-in local XCFramework to include a package
+fix that has not yet been published in the archive set. A clean checkout therefore
+does not need the private source repository, but future releases should publish
+that binary in the same immutable archive set as the other modules.
 
 To publish a replacement artifact set:
 

@@ -21,7 +21,7 @@ The release pipeline checks the signed app's version and macOS minimum in both `
 
 1. The macOS 27 transition works in daily use on the current host. Compatibility validation on an actual macOS 26 host is still open: check the OS-aware feed, Homebrew rejection, and the in-app installer against a current signed release. Finder drag-to-install from a DMG cannot run a pre-copy check; decide whether a future release needs a signed installer package with an OS-version installation check. Existing v0.9.1.2 users on macOS 27 must install a newer release manually because that client does not report its host OS.
 2. Performance baseline is in progress: stages 1–10 and the v0.9.1.5 observation below cover startup, large local folders, scrolling, and memory. Next capture a controlled open/scroll/leave cycle and an Allocations trace on macOS 27. Measure remote-operation latency when a disposable remote fixture is available. Use those measurements to select the next performance change.
-3. Review project structure, package boundaries, clean-clone builds, compiler settings, and dependency reproducibility. Make one build or dependency change at a time.
+3. The first build and dependency audit passed on macOS 27.2; see the result below. Keep checking package ownership as features change, and make one build or dependency change at a time when a measured problem warrants it.
 4. Review file operations, archive formats, remote navigation, recovery paths, and user-facing error messages with real files and focused tests.
 5. Review SwiftUI state ownership, view identity, keyboard and pointer actions, accessibility, window layout, and visual consistency in the running Debug app.
 6. Profile concurrency, cancellation, I/O, caches, and large-directory behavior before changing task structure or buffers.
@@ -38,6 +38,13 @@ The release pipeline checks the signed app's version and macOS minimum in both `
 These are candidates, not shipped features or assumed performance gains. See [Apple's SwiftUI 2027 overview](https://developer.apple.com/swiftui/whats-new/).
 
 Carry every version component after the major number from 0 through 9. For example, `0.9.1.9` is followed by `0.9.2.0`.
+
+## Build and dependency stage 1: clean checkout (2026-10-30)
+
+- A shallow clone of the current committed tree was made in a separate temporary directory without initializing the private `Packages` submodule. Xcode 27.2 resolved packages into a new package directory and built the Debug app with separate DerivedData on macOS 27.2. The cloned tree, including `Package.resolved`, stayed clean. This verifies the build path on this host, not other compiler versions or networks.
+- The app project references eleven local `BinaryPackages` wrappers and three direct remote packages. The resolved graph includes pinned remote revisions; the wrappers use Swift tools 6.4 and macOS 27, while the app uses Swift language mode 6 and a macOS 27 deployment target. The two test targets retain Swift language mode 5. No setting change is justified by this build result alone.
+- Ten binary wrappers download checksum-pinned release archives. `ScannerKit` is the exception: its XCFramework is checked into the repository pending publication of its updated binary. The private source submodule is not needed for a public build. The package documentation now states this exception explicitly.
+- All ten release-archive URLs returned HTTP 200 to unauthenticated HEAD requests from this host. Access from a separate network remains untested. The next package-boundary change should follow a concrete ownership or build failure; no source move was made in this audit.
 
 ## Performance stage 1: local baseline (2026-10-23)
 
