@@ -92,6 +92,9 @@ import LogKit
         UpdateCoordinator.shared.startAutomaticChecks()
         logStartupStep("automatic update checks scheduled")
 
+        JunkFinderModel.shared.startAutomatic()
+        logStartupStep("automatic cleanup scan scheduled")
+
         scheduleAutoConnectServers()
         logStartupStep("auto-connect scheduled")
 

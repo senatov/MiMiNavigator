@@ -30,13 +30,8 @@ struct FindFilesWindowContent: View {
                 dialogBgColor.ignoresSafeArea()
                 VStack(spacing: 0) {
                     if selectedTab == .cleanup {
-                        FindFilesSearchLocation(viewModel: viewModel, onSubmit: {
-                            JunkFinderModel.shared.start(path: viewModel.searchDirectory)
-                        })
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
                         moduleHeader
-                        JunkFinderView(searchDirectory: viewModel.searchDirectory)
+                        JunkFinderView()
                             .frame(maxHeight: .infinity)
                     } else {
                         criteriaPane
@@ -71,9 +66,6 @@ struct FindFilesWindowContent: View {
             {
                 selectedTab = restoredTab
             }
-            if selectedTab == .cleanup, let scope = JunkFinderModel.shared.preferredScope {
-                viewModel.searchDirectory = scope
-            }
             criteriaHeight = restoredCriteriaHeight(for: selectedTab)
             viewModel.activeModule = selectedTab
         }
@@ -81,9 +73,6 @@ struct FindFilesWindowContent: View {
             guard viewModel.activeModule != newTab else { return }
             if oldTab != .cleanup { MiMiDefaults.shared.set(Double(criteriaHeight), forKey: criteriaHeightKey(for: oldTab)) }
             if newTab != .cleanup { criteriaHeight = restoredCriteriaHeight(for: newTab) }
-            if newTab == .cleanup, let scope = JunkFinderModel.shared.preferredScope {
-                viewModel.searchDirectory = scope
-            }
             viewModel.activeModule = newTab
             MiMiDefaults.shared.set(newTab.rawValue, forKey: "findFiles.selectedTab")
         }
@@ -159,7 +148,7 @@ struct FindFilesWindowContent: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedTab == .cleanup ? "Cleanup" : "File Search")
                         .font(.headline)
-                    Text(viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
+                    Text(selectedTab == .cleanup ? "Automatic review of accessible local files" : viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
                         .font(DesignTokens.Typography.path)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

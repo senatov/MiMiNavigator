@@ -6,6 +6,7 @@ import AppKit
 import CryptoKit
 import Darwin
 import Foundation
+import FindFilesKit
 
 // MARK: - Cleanup Candidate
 struct JunkCandidate: Identifiable, Sendable, Codable {
@@ -15,6 +16,7 @@ struct JunkCandidate: Identifiable, Sendable, Codable {
         case emptyFolder = "Empty folder"
         case oldInstaller = "Old installer"
         case temporary = "Temporary file"
+        case appLeftover = "App leftover"
     }
     let url: URL
     let kind: Kind
@@ -51,10 +53,10 @@ enum JunkScanEngine {
             log.warning("[Cleanup] Cannot inspect \(url.path): \(error.localizedDescription)")
             return true
         }) else { throw JunkScanError.unreadableLocation }
-        await waitForIdle()
+        try await waitForIdle()
         while let url = enumerator.nextObject() as? URL {
             try Task.checkCancellation()
-            if visited % 64 == 0 { await waitForIdle() }
+            if visited % 64 == 0 { try await waitForIdle() }
             let path = url.standardizedFileURL.path
             if shouldExclude(path) { enumerator.skipDescendants(); continue }
             guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
@@ -74,19 +76,20 @@ enum JunkScanEngine {
                 }
             }
             if visited % 256 == 0 { await update(JunkScanProgress(visited: visited, candidates: candidates)) }
+            if visited % 4096 == 0 { await JunkScanDatabase.shared.saveSnapshot(candidates, root: root) }
         }
         let sameSize = Dictionary(grouping: files.filter { $0.size > 0 }, by: \.size).values.filter { $0.count > 1 }
         var hashes: [String: [FileRecord]] = [:]
         for group in sameSize {
             for file in group {
                 try Task.checkCancellation()
-                await waitForIdle()
+                try await waitForIdle()
                 guard isUnchanged(file.url, size: file.size, modified: file.modified) else { continue }
                 let digest: String
                 if let cached = await JunkScanDatabase.shared.digest(for: file.url, size: file.size, modified: file.modified) {
                     digest = cached
                 } else {
-                    guard let computed = try? hash(file.url) else { continue }
+                    guard let computed = try? await hash(file.url) else { continue }
                     digest = computed
                     await JunkScanDatabase.shared.saveDigest(digest, for: file.url, size: file.size, modified: file.modified)
                 }
@@ -104,7 +107,7 @@ enum JunkScanEngine {
         var folderGroups: [String: [(URL, Int64)]] = [:]
         for directory in directories {
             try Task.checkCancellation()
-            await waitForIdle()
+            try await waitForIdle()
             guard let signature = await leafFolderSignature(directory) else { continue }
             folderGroups[signature.0, default: []].append((directory, signature.1))
         }
@@ -113,12 +116,15 @@ enum JunkScanEngine {
                 candidates.append(JunkCandidate(url: url, kind: .duplicateFolder, reason: "Exact names and contents match in \(folders.count) folders; keep at least one", size: size, group: "folder:\(signature)"))
             }
         }
+        if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
+            try await inspectApplicationLeftovers(into: &candidates)
+        }
         await JunkScanDatabase.shared.saveSnapshot(candidates, root: root)
         await update(JunkScanProgress(visited: visited, candidates: candidates))
     }
 
     // MARK: - Idle Gate
-    private static func waitForIdle() async {
+    static func waitForIdle() async throws {
         var attempts = 0
         while !Task.isCancelled {
             let inactive = await MainActor.run {
@@ -135,20 +141,61 @@ enum JunkScanEngine {
             attempts += 1
             try? await Task.sleep(for: .seconds(5))
         }
+        throw CancellationError()
     }
 
     // MARK: - Safety Rules
     static func isSafeRoot(_ path: String) -> Bool {
         let resolved = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
-        return (resolved == home || resolved.hasPrefix(home + "/")) && !shouldExclude(resolved)
+        if (resolved == home || resolved.hasPrefix(home + "/")) && !shouldExclude(resolved) { return true }
+        return JunkScanScope.localVolumes().contains { resolved == $0.path } && !shouldExclude(resolved)
     }
 
     static func shouldExclude(_ path: String) -> Bool {
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
-        let excluded = ["/Library", "/.Trash", "/.git", "/.build", "/node_modules", "/.swiftpm", "/Applications", "/System", "/Volumes"]
+        let excluded = ["/Library", "/.Trash", "/.git", "/.build", "/node_modules", "/.swiftpm", "/Applications", "/System"]
         if path.contains("/Library/CloudStorage/") || path.hasSuffix("/Library/CloudStorage") { return true }
         return excluded.contains { suffix in path == home + suffix || path.hasPrefix(home + suffix + "/") || path.contains(suffix + "/") }
+    }
+
+    // MARK: - Possible Application Leftovers
+    private static func inspectApplicationLeftovers(into candidates: inout [JunkCandidate]) async throws {
+        guard JunkAIReviewer.isAvailable else { return }
+        let installed = FindFilesLeftoverSafety.installedApplicationIdentities()
+        let running = await MainActor.run {
+            Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
+        }
+        var newReviews = 0
+        for directory in FindFilesLeftoverSafety.searchDirectories {
+            guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey, .contentModificationDateKey]) else { continue }
+            for child in children {
+                try Task.checkCancellation()
+                let name = child.lastPathComponent.lowercased()
+                guard !name.hasPrefix("."), name.contains("."),
+                      !name.hasPrefix("com.apple."), !name.hasPrefix("group.com.apple."),
+                      FindFilesLeftoverSafety.isCandidate(child, installedIdentities: installed),
+                      !running.contains(where: { name.contains($0) }),
+                      let values = try? child.resourceValues(forKeys: [.isSymbolicLinkKey, .contentModificationDateKey]),
+                      values.isSymbolicLink != true,
+                      let modified = values.contentModificationDate,
+                      Date().timeIntervalSince(modified) > 180 * 86400 else { continue }
+                let recommended: Bool
+                if let cached = await JunkScanDatabase.shared.aiReview(for: child, modified: modified) {
+                    recommended = cached
+                } else {
+                    guard newReviews < 40 else { continue }
+                    try await waitForIdle()
+                    guard let review = await JunkAIReviewer.review(child, category: directory.lastPathComponent) else { continue }
+                    recommended = review
+                    await JunkScanDatabase.shared.saveAIReview(review, for: child, modified: modified)
+                    newReviews += 1
+                }
+                guard recommended else { continue }
+                let reason = "Possible leftover from an uninstalled app; on-device AI recommends review"
+                candidates.append(JunkCandidate(url: child, kind: .appLeftover, reason: reason, size: 0, group: nil))
+            }
+        }
     }
 
     private static func isEmptyDirectory(_ url: URL) -> Bool {
@@ -181,7 +228,7 @@ enum JunkScanEngine {
             if let cached = await JunkScanDatabase.shared.digest(for: child, size: size, modified: modified) {
                 digest = cached
             } else {
-                guard let computed = try? hash(child) else { return nil }
+                guard let computed = try? await hash(child) else { return nil }
                 digest = computed
                 await JunkScanDatabase.shared.saveDigest(digest, for: child, size: size, modified: modified)
             }
@@ -198,15 +245,18 @@ enum JunkScanEngine {
         return Int64(values.fileSize ?? -1) == size && values.contentModificationDate == modified
     }
 
-    private static func hash(_ url: URL) throws -> String {
+    private static func hash(_ url: URL) async throws -> String {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         var hasher = SHA256()
+        var chunks = 0
         while true {
+            if chunks.isMultiple(of: 8) { try await waitForIdle() }
             let chunk = try handle.read(upToCount: 1_048_576) ?? Data()
             if chunk.isEmpty { break }
             hasher.update(data: chunk)
-            if Task.isCancelled { throw CancellationError() }
+            chunks += 1
+            try Task.checkCancellation()
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }

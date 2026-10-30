@@ -7,22 +7,18 @@ import SwiftUI
 
 // MARK: - Cleanup Tab
 struct JunkFinderView: View {
-    let searchDirectory: String
     @State private var model = JunkFinderModel.shared
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Cleanup candidates").font(.headline)
-                    Text("Exact duplicates, empty folders, old installers and temporary files in the selected folder.")
+                    Text("Exact duplicates, empty folders, old installers, temporary files and reviewed app leftovers.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Scan Again", systemImage: "arrow.clockwise") { model.start(path: searchDirectory) }
-                    .disabled(model.isScanning)
-                if model.isScanning {
-                    Button("Stop", systemImage: "stop.fill") { model.stop() }
-                }
+                Text(JunkAIReviewer.statusText)
+                    .font(.caption).foregroundStyle(.secondary)
             }
             .padding(14)
             HStack(spacing: 8) {
@@ -50,16 +46,15 @@ struct JunkFinderView: View {
                 Text("Review each item. Duplicate groups always retain one copy.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("Select All Except One per Group") { selectSafeCandidates() }
-                    .disabled(model.candidates.isEmpty)
+                Button("Select Duplicate Copies") { selectDuplicateCopies() }
+                    .disabled(!model.candidates.contains { $0.group != nil })
                 Button("Clear Selection") { model.selectedIDs = [] }
                     .disabled(model.selectedIDs.isEmpty)
                 Button("Move \(model.selectedIDs.count) to Trash", systemImage: "trash") { model.trashSelection() }
-                    .disabled(model.selectedIDs.isEmpty || !model.scanSucceeded)
+                    .disabled(model.selectedIDs.isEmpty)
             }
             .padding(12)
         }
-        .onAppear { model.start(path: model.preferredScope ?? searchDirectory, automatic: true) }
     }
 
     // MARK: - Candidate Row
@@ -97,12 +92,9 @@ struct JunkFinderView: View {
         .padding(.vertical, 3)
     }
 
-    // MARK: - Safe Group Selection
-    private func selectSafeCandidates() {
-        let duplicateFolders = model.candidates.filter { $0.kind == .duplicateFolder }.map(\.id)
-        model.selectedIDs = Set(model.candidates.filter { candidate in
-            candidate.group == nil && !duplicateFolders.contains { candidate.id.hasPrefix($0 + "/") }
-        }.map(\.id))
+    // MARK: - Duplicate Group Selection
+    private func selectDuplicateCopies() {
+        model.selectedIDs = []
         let groups = Set(model.candidates.compactMap(\.group))
         for group in groups { model.selectGroup(group) }
     }

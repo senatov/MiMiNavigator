@@ -4,6 +4,7 @@
 
 import AppKit
 import Foundation
+import FindFilesKit
 
 // MARK: - Cleanup Model
 @MainActor
@@ -13,70 +14,51 @@ final class JunkFinderModel {
     private(set) var candidates: [JunkCandidate] = []
     private(set) var visited = 0
     private(set) var isScanning = false
-    private(set) var scanSucceeded = false
-    private(set) var status = "Choose a folder to inspect. Scanning starts when MiMiNavigator is in the background."
+    private(set) var status = "Automatic scan starts when MiMiNavigator is in the background and the Mac is idle."
     var selectedIDs: Set<String> = []
     private var scanTask: Task<Void, Never>?
-    private var scanRoot: URL?
+    private var rootCandidates: [String: [JunkCandidate]] = [:]
     private var generation = 0
     private init() {}
 
-    // MARK: - Preferred Scope
-    var preferredScope: String? {
-        if let scanRoot { return scanRoot.path }
-        guard let saved = MiMiDefaults.shared.string(forKey: "findFiles.cleanup.lastRoot"),
-              JunkScanEngine.isSafeRoot(saved),
-              FileManager.default.fileExists(atPath: saved) else { return nil }
-        return saved
-    }
-
-    // MARK: - Start
-    func start(path: String, automatic: Bool = false) {
-        let expanded = (path as NSString).expandingTildeInPath
-        let root = URL(fileURLWithPath: expanded, isDirectory: true).standardizedFileURL.resolvingSymlinksInPath()
-        if automatic && scanRoot?.path == root.path { return }
-        guard JunkScanEngine.isSafeRoot(root.path) else {
-            status = JunkScanError.unsafeLocation.localizedDescription
-            return
-        }
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            status = JunkScanError.unreadableLocation.localizedDescription
-            return
-        }
-        stop()
+    // MARK: - Start Automatic Scan
+    func startAutomatic() {
+        guard scanTask == nil else { return }
         generation += 1
         let currentGeneration = generation
-        scanRoot = root
-        MiMiDefaults.shared.set(root.path, forKey: "findFiles.cleanup.lastRoot")
-        candidates = []
-        selectedIDs = []
-        visited = 0
         isScanning = true
-        scanSucceeded = false
         status = "Waiting for low system load and for MiMiNavigator to leave the foreground…"
         let receiver = self
         scanTask = Task.detached(priority: .background) {
-            do {
+            let roots = JunkScanScope.roots().filter { JunkScanEngine.isSafeRoot($0.path) }
+            for root in roots {
                 let saved = await JunkScanDatabase.shared.loadSnapshot(root: root)
-                await receiver.restore(saved, generation: currentGeneration)
-                try await JunkScanEngine.scan(root: root) { progress in
-                    await receiver.receive(progress, generation: currentGeneration)
+                await receiver.restore(saved, root: root, generation: currentGeneration)
+            }
+            while !Task.isCancelled {
+                for root in JunkScanScope.roots() where JunkScanEngine.isSafeRoot(root.path) {
+                    do {
+                        try await JunkScanEngine.scan(root: root) { progress in
+                            await receiver.receive(progress, root: root, generation: currentGeneration)
+                        }
+                        await receiver.completed(root: root, generation: currentGeneration)
+                    } catch is CancellationError {
+                        return
+                    } catch {
+                        await receiver.scanError(error.localizedDescription, root: root, generation: currentGeneration)
+                    }
                 }
-                await receiver.finish(generation: currentGeneration, error: nil)
-            } catch is CancellationError {
-                await receiver.finish(generation: currentGeneration, error: nil)
-            } catch {
-                await receiver.finish(generation: currentGeneration, error: error.localizedDescription)
+                try? await Task.sleep(for: .seconds(21_600))
             }
         }
-        log.info("[Cleanup] Queued background scan: \(root.path)")
+        log.info("[Cleanup] Automatic background scan queued")
     }
 
     // MARK: - Restore Snapshot
-    private func restore(_ saved: [JunkCandidate], generation: Int) {
+    private func restore(_ saved: [JunkCandidate], root: URL, generation: Int) {
         guard self.generation == generation, !saved.isEmpty else { return }
-        candidates = prune(saved)
+        rootCandidates[root.path] = prune(saved)
+        rebuildCandidates()
         status = "Showing \(candidates.count) saved candidates while the next idle scan is pending."
     }
 
@@ -84,31 +66,40 @@ final class JunkFinderModel {
     func stop() {
         scanTask?.cancel()
         scanTask = nil
-        if isScanning { status = "Scan stopped after \(visited) items." }
+        if isScanning { status = "Automatic scan paused after \(visited) items." }
         isScanning = false
-        scanSucceeded = false
         generation += 1
     }
 
     // MARK: - Receive
-    private func receive(_ progress: JunkScanProgress, generation: Int) {
+    private func receive(_ progress: JunkScanProgress, root: URL, generation: Int) {
         guard self.generation == generation else { return }
         visited = progress.visited
-        candidates = progress.candidates.sorted { lhs, rhs in
+        rootCandidates[root.path] = progress.candidates
+        rebuildCandidates()
+        status = "Inspected \(visited) items in \(root.lastPathComponent). Pauses while the app is active or the system is busy."
+    }
+
+    // MARK: - Rebuild Candidate List
+    private func rebuildCandidates() {
+        candidates = rootCandidates.values.flatMap { $0 }.sorted { lhs, rhs in
             if lhs.kind.rawValue != rhs.kind.rawValue { return lhs.kind.rawValue < rhs.kind.rawValue }
             return lhs.url.path < rhs.url.path
         }
-        status = "Inspected \(visited) items. Pauses while MiMiNavigator is active or the system is busy."
     }
 
-    // MARK: - Finish
-    private func finish(generation: Int, error: String?) {
+    // MARK: - Completed Root
+    private func completed(root: URL, generation: Int) {
         guard self.generation == generation else { return }
-        scanTask = nil
-        isScanning = false
-        scanSucceeded = error == nil
-        status = error ?? "Scan complete: \(candidates.count) candidates in \(visited) items. Review before deleting."
+        status = "Scanned \(root.lastPathComponent): \(candidates.count) accumulated candidates. Automatic review continues in the background."
         log.info("[Cleanup] \(status)")
+    }
+
+    // MARK: - Scan Error
+    private func scanError(_ error: String, root: URL, generation: Int) {
+        guard self.generation == generation else { return }
+        status = "Could not inspect \(root.path): \(error)"
+        log.warning("[Cleanup] \(status)")
     }
 
     // MARK: - Prune Removed Candidates
@@ -130,7 +121,7 @@ final class JunkFinderModel {
     // MARK: - Trash Selection
     func trashSelection() {
         let chosen = candidates.filter { selectedIDs.contains($0.id) }
-        guard !chosen.isEmpty, scanSucceeded, let root = scanRoot else { return }
+        guard !chosen.isEmpty else { return }
         let groups = Dictionary(grouping: candidates.compactMap { candidate -> JunkCandidate? in
             candidate.group == nil ? nil : candidate
         }, by: { $0.group! })
@@ -155,11 +146,9 @@ final class JunkFinderModel {
         alert.addButton(withTitle: "Move to Trash")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let urls = topLevel.map(\.url).filter { url in
-            let path = url.standardizedFileURL.path
-            guard path.hasPrefix(root.path + "/"), !JunkScanEngine.shouldExclude(path) else { return false }
+        let urls = topLevel.filter { isAllowed(candidate: $0) }.map(\.url).filter { url in
             guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey]), values.isSymbolicLink != true else { return false }
-            return FileManager.default.fileExists(atPath: path)
+            return FileManager.default.fileExists(atPath: url.path)
         }
         guard urls.count == topLevel.count else {
             status = "Some items changed since the scan. Scan again before moving them to Trash."
@@ -171,11 +160,28 @@ final class JunkFinderModel {
                 candidates = prune(candidates)
                 selectedIDs = selectedIDs.intersection(Set(candidates.map(\.id)))
                 status = "Moved \(urls.count) items to Trash."
-                await JunkScanDatabase.shared.saveSnapshot(candidates, root: root)
+                for root in JunkScanScope.roots() {
+                    rootCandidates[root.path] = prune(rootCandidates[root.path] ?? [])
+                    await JunkScanDatabase.shared.saveSnapshot(rootCandidates[root.path] ?? [], root: root)
+                }
+                rebuildCandidates()
             } catch {
                 status = "Could not move the selection to Trash: \(error.localizedDescription)"
                 log.error("[Cleanup] Trash failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: - Candidate Safety
+    private func isAllowed(candidate: JunkCandidate) -> Bool {
+        let path = candidate.url.standardizedFileURL.path
+        if candidate.kind == .appLeftover {
+            let directChild = FindFilesLeftoverSafety.searchDirectories.contains {
+                path == $0.appendingPathComponent(candidate.url.lastPathComponent).path
+            }
+            let installed = FindFilesLeftoverSafety.installedApplicationIdentities()
+            return directChild && FindFilesLeftoverSafety.isCandidate(candidate.url, installedIdentities: installed)
+        }
+        return JunkScanScope.roots().contains { path.hasPrefix($0.path + "/") } && !JunkScanEngine.shouldExclude(path)
     }
 }
