@@ -43,7 +43,7 @@ extension JunkScanEngine {
                 }
                 guard recommended else { continue }
                 let reason = "Possible leftover from an uninstalled app; on-device AI recommends review"
-                candidates.append(JunkCandidate(url: child, kind: .appLeftover, reason: reason, size: 0, group: nil))
+                candidates.append(JunkCandidate(url: child, kind: .appLeftover, reason: reason, size: 0, group: nil, modified: modified))
             }
         }
     }
@@ -60,7 +60,7 @@ extension JunkScanEngine {
                   let modified = values.contentModificationDate,
                   Date().timeIntervalSince(modified) > 30 * 86400,
                   let pid = processID(in: url), !isProcessRunning(pid) else { continue }
-            candidates.append(JunkCandidate(url: url, kind: .processArtifact, reason: "PID \(pid) is absent and this process file is older than 30 days", size: Int64(values.fileSize ?? 0), group: nil))
+            candidates.append(JunkCandidate(url: url, kind: .processArtifact, reason: "PID \(pid) is absent and this process file is older than 30 days", size: Int64(values.fileSize ?? 0), group: nil, modified: modified))
         }
     }
 

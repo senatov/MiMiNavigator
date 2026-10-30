@@ -110,6 +110,7 @@ final class JunkFinderModel {
             if lhs.kind.rawValue != rhs.kind.rawValue { return lhs.kind.rawValue < rhs.kind.rawValue }
             return lhs.url.path < rhs.url.path
         }
+        selectedIDs.formIntersection(Set(candidates.map(\.id)))
     }
 
     // MARK: - Completed Root
@@ -136,7 +137,13 @@ final class JunkFinderModel {
                 ($0.kind != .emptyFolder || JunkScanEngine.isEligibleEmptyFolder($0.url))
         }.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values
         let groupCounts = Dictionary(grouping: existing.compactMap(\.group), by: { $0 }).mapValues(\.count)
-        return existing.filter { $0.group == nil || (groupCounts[$0.group!] ?? 0) > 1 }
+        return existing.filter { $0.group == nil || (groupCounts[$0.group!] ?? 0) > 1 }.map { item in
+            var candidate = item
+            if candidate.modified == nil {
+                candidate.modified = (try? item.url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+            }
+            return candidate
+        }
     }
 
     // MARK: - Group Selection

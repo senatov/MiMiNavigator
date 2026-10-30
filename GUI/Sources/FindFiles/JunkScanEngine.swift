@@ -23,7 +23,11 @@ struct JunkCandidate: Identifiable, Sendable, Codable {
     let reason: String
     let size: Int64
     let group: String?
+    var modified: Date? = nil
     var id: String { url.path }
+    var name: String { url.lastPathComponent }
+    var location: String { url.deletingLastPathComponent().path }
+    var sortableDate: Date { modified ?? .distantPast }
 }
 
 // MARK: - Scan Progress
@@ -100,7 +104,7 @@ enum JunkScanEngine {
             let paths = Set(records.map { $0.url.path })
             candidates.removeAll { paths.contains($0.url.path) }
             for file in records.sorted(by: { $0.url.path < $1.url.path }) {
-                candidates.append(JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(records.count) files; keep at least one copy", size: file.size, group: group))
+                candidates.append(JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(records.count) files; keep at least one copy", size: file.size, group: group, modified: file.modified))
             }
         }
         var folderGroups: [String: [(URL, Int64)]] = [:]
@@ -112,7 +116,7 @@ enum JunkScanEngine {
         }
         for (signature, folders) in folderGroups where folders.count > 1 {
             for (url, size) in folders {
-                candidates.append(JunkCandidate(url: url, kind: .duplicateFolder, reason: "Exact names and contents match in \(folders.count) folders; keep at least one", size: size, group: "folder:\(signature)"))
+                candidates.append(JunkCandidate(url: url, kind: .duplicateFolder, reason: "Exact names and contents match in \(folders.count) folders; keep at least one", size: size, group: "folder:\(signature)", modified: (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate))
             }
         }
         if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
@@ -149,7 +153,7 @@ enum JunkScanEngine {
             if values.isDirectory == true {
                 guard values.isPackage != true else { continue }
                 if isEligibleEmptyFolder(url) {
-                    candidates.append(JunkCandidate(url: url, kind: .emptyFolder, reason: "Directory has been empty for over 90 days", size: 0, group: nil))
+                    candidates.append(JunkCandidate(url: url, kind: .emptyFolder, reason: "Directory has been empty for over 90 days", size: 0, group: nil, modified: values.contentModificationDate))
                 } else {
                     childDirectories.append(url)
                 }
@@ -158,7 +162,7 @@ enum JunkScanEngine {
                 let modified = values.contentModificationDate ?? .now
                 files.append(JunkFileRecord(url: url, size: size, modified: modified))
                 if let kind = staleFileKind(url: url, modified: modified) {
-                    candidates.append(JunkCandidate(url: url, kind: kind, reason: kind == .oldInstaller ? "Installer older than 90 days" : "Temporary file older than 30 days", size: size, group: nil))
+                    candidates.append(JunkCandidate(url: url, kind: kind, reason: kind == .oldInstaller ? "Installer older than 90 days" : "Temporary file older than 30 days", size: size, group: nil, modified: modified))
                 }
             }
         }
@@ -188,7 +192,7 @@ enum JunkScanEngine {
         let candidates = grouped.flatMap { group, files -> [JunkCandidate] in
             guard files.count > 1 else { return [] }
             return files.map { file in
-                JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(files.count) files across local volumes; keep at least one copy", size: file.size, group: group)
+                JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(files.count) files across local volumes; keep at least one copy", size: file.size, group: group, modified: file.modified)
             }
         }
         await JunkScanDatabase.shared.saveGlobalCandidates(candidates)

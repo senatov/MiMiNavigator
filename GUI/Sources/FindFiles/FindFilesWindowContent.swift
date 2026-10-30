@@ -31,7 +31,7 @@ struct FindFilesWindowContent: View {
                 VStack(spacing: 0) {
                     if selectedTab == .cleanup {
                         moduleHeader
-                        JunkFinderView()
+                        JunkFinderView(appState: appState)
                             .frame(maxHeight: .infinity)
                     } else {
                         criteriaPane

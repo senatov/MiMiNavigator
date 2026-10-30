@@ -73,6 +73,18 @@ struct IconContentInspectionTests {
 }
 // MARK: - Cleanup Scan Safety Tests
 struct JunkScanSafetyTests {
+    @Test func restoresOlderCleanupCandidatesWithoutModificationDates() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("older-cleanup-item.tmp")
+        let candidate = JunkCandidate(url: url, kind: .temporary, reason: "old item", size: 12, group: nil)
+        let encoded = try JSONEncoder().encode(candidate)
+        var payload = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        payload.removeValue(forKey: "modified")
+        let restored = try JSONDecoder().decode(JunkCandidate.self, from: JSONSerialization.data(withJSONObject: payload))
+        #expect(restored.id == candidate.id)
+        #expect(restored.modified == nil)
+        #expect(restored.sortableDate == .distantPast)
+    }
+
     @Test func resumesAfterTheLastCommittedDirectory() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("JunkScanCheckpoint-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
