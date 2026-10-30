@@ -7,6 +7,21 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.5] - 2026-10-30
+
+### Added
+- Added an automatic Cleanup tab that scans eligible locations while the app is unfocused and the system is lightly loaded.
+- Added SQLite scan checkpoints and a cross-volume index for exact duplicate files and folders, old installers, temporary files, stale process files, and old empty folders.
+- Added on-device Apple Intelligence review of possible remnants from uninstalled apps when the model is available.
+
+### Changed
+- Kept cleanup review and Trash actions manual, with individual and duplicate-group selection.
+- Excluded cloud storage, development trees, Time Machine destinations, and protected system locations from cleanup suggestions.
+
+### Fixed
+- Rechecked duplicate contents and candidate conditions immediately before moving selected items to Trash.
+- Resumed background scans from committed directory checkpoints after app restart.
+
 ## [0.9.1.4] - 2026-10-28
 
 ### Changed
