@@ -40,6 +40,7 @@ final class JunkFinderModel {
             let global = await JunkScanDatabase.shared.loadGlobalCandidates()
             await receiver.restoreGlobal(global, generation: currentGeneration)
             while !Task.isCancelled {
+                await receiver.beginPass(generation: currentGeneration)
                 for root in JunkScanScope.roots() where JunkScanEngine.isSafeRoot(root.path) {
                     do {
                         try await JunkScanEngine.scan(root: root) { progress in
@@ -61,7 +62,12 @@ final class JunkFinderModel {
                 } catch {
                     await receiver.scanError(error.localizedDescription, root: URL(fileURLWithPath: "/Volumes"), generation: currentGeneration)
                 }
-                try? await Task.sleep(for: .seconds(21_600))
+                await receiver.finishPass(generation: currentGeneration)
+                do {
+                    try await Task.sleep(for: .seconds(21_600))
+                } catch {
+                    return
+                }
             }
         }
         log.info("[Cleanup] Automatic background scan queued")
@@ -73,6 +79,21 @@ final class JunkFinderModel {
         rootCandidates[root.path] = prune(Array(Dictionary(saved.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values))
         rebuildCandidates()
         status = "Showing \(candidates.count) saved candidates while the next idle scan is pending."
+    }
+
+    // MARK: - Scan Pass State
+    private func beginPass(generation: Int) {
+        guard self.generation == generation else { return }
+        isScanning = true
+        visited = 0
+        status = "Waiting for low system load and for MiMiNavigator to leave the foreground…"
+    }
+
+    private func finishPass(generation: Int) {
+        guard self.generation == generation else { return }
+        isScanning = false
+        status = "Scan complete: \(candidates.count) candidates. Next automatic pass in about six hours."
+        log.info("[Cleanup] \(status)")
     }
 
     // MARK: - Restore Cross-Volume Groups
@@ -118,7 +139,7 @@ final class JunkFinderModel {
         guard self.generation == generation else { return }
         rootCandidates[root.path] = prune(latest)
         rebuildCandidates()
-        status = "Scanned \(root.lastPathComponent): \(candidates.count) accumulated candidates. Automatic review continues in the background."
+        status = "Scanned \(root.lastPathComponent): \(candidates.count) accumulated candidates. Checking other eligible locations."
         log.info("[Cleanup] \(status)")
     }
 
