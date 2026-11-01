@@ -11,12 +11,14 @@ import Foundation
 extension JunkScanEngine {
     // MARK: - Possible Application Leftovers
     static func inspectApplicationLeftovers(into candidates: inout [JunkCandidate]) async throws {
-        guard JunkAIReviewer.isAvailable else { return }
         let installed = FindFilesLeftoverSafety.installedApplicationIdentities()
         let running = await MainActor.run {
             Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
         }
         var newReviews = 0
+        // Resolved lazily on the first cache miss: cached verdicts do not need the model,
+        // and a model that is still downloading gets a short grace period instead of an instant skip
+        var modelReady: Bool?
         for directory in FindFilesLeftoverSafety.searchDirectories {
             guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey, .contentModificationDateKey]) else { continue }
             for child in children {
@@ -35,6 +37,11 @@ extension JunkScanEngine {
                     recommended = cached
                 } else {
                     guard newReviews < 40 else { continue }
+                    if modelReady == nil {
+                        // Logs diagnostics, waits while the model is downloading, prewarms when ready
+                        modelReady = await JunkAIReviewer.prepare(timeout: .seconds(20))
+                    }
+                    guard modelReady == true else { continue }
                     try await waitForIdle()
                     guard let review = await JunkAIReviewer.review(child, category: directory.lastPathComponent) else { continue }
                     recommended = review

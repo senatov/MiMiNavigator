@@ -23,20 +23,24 @@ struct JunkFinderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
+            HStack(spacing: 13) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Cleanup candidates").font(.headline)
-                    Text("Automatic review of eligible local storage. Scans pause when the app is active or the Mac is busy, and resume from saved progress.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text(
+                        "Automatic review of eligible local storage. Scans pause when the app is active or the Mac is busy, and resume from saved progress."
+                    )
+                    .font(.default)
+                    .foregroundStyle(Color(#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)))
                 }
                 Spacer()
                 Text(JunkAIReviewer.statusText)
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.default)
+                    .foregroundStyle(Color(#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)))
             }
             .padding(14)
             HStack(spacing: 8) {
                 if model.isScanning { ProgressView().controlSize(.small) }
-                Text(model.status).font(.caption).foregroundStyle(.secondary)
+                Text(model.status).font(.default).foregroundStyle(Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)))
                 Spacer()
                 Text("\(model.candidates.count) candidates").font(.caption.monospacedDigit())
             }
@@ -44,8 +48,13 @@ struct JunkFinderView: View {
             .padding(.bottom, 8)
             Divider()
             if model.candidates.isEmpty {
-                ContentUnavailableView("No candidates yet", systemImage: "sparkle.magnifyingglass", description: Text("Scanning starts automatically and waits for spare capacity. System, cloud, backup and development locations are excluded."))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ContentUnavailableView(
+                    "No candidates yet", systemImage: "sparkle.magnifyingglass",
+                    description: Text(
+                        "Scanning starts automatically and waits for spare capacity. System, cloud, backup and development locations are excluded."
+                    )
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 candidatesTable
             }
@@ -67,13 +76,15 @@ struct JunkFinderView: View {
     private var candidatesTable: some View {
         Table(sortedCandidates, selection: $highlightedIDs, sortOrder: $sortOrder) {
             TableColumn("Review") { candidate in
-                Toggle("Review \(candidate.name)", isOn: Binding(
-                    get: { model.selectedIDs.contains(candidate.id) },
-                    set: { selected in
-                        if selected { model.selectedIDs.insert(candidate.id) }
-                        else { model.selectedIDs.remove(candidate.id) }
-                    }
-                ))
+                Toggle(
+                    "Review \(candidate.name)",
+                    isOn: Binding(
+                        get: { model.selectedIDs.contains(candidate.id) },
+                        set: { selected in
+                            if selected { model.selectedIDs.insert(candidate.id) } else { model.selectedIDs.remove(candidate.id) }
+                        }
+                    )
+                )
                 .labelsHidden()
             }
             .width(min: 55, ideal: 65, max: 80)
