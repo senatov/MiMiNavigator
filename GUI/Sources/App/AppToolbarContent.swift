@@ -173,18 +173,19 @@ private struct AppWindowTitle: View {
     let version: String
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 24, height: 24)
+                .frame(width: 28, height: 28)
+                .offset(y: -2.5)
                 .accessibilityHidden(true)
             Text("MiMiNavigator")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.custom("Academy Engraved LET", size: 16))
                 .foregroundStyle(.primary)
             Text("V \(version)")
-                .font(.system(size: 11))
+                .font(.custom("Academy Engraved LET", size: 15))
                 .foregroundStyle(.secondary)
         }
         .fixedSize()
