@@ -66,6 +66,11 @@ final class DuoFilePanelKeyboardHandler {
             return event
         }
 
+        if event.keyCode == 0x35 && appState.inlineRename.isActive {
+            appState.inlineRename.cancel()
+            return nil
+        }
+
         // When text field is focused, let it handle the event
         // (fixes Backspace/Delete not working in text fields)
         if let responder = NSApp.keyWindow?.firstResponder,
