@@ -365,3 +365,31 @@ final class FSEventsContinuityTests: XCTestCase {
         XCTAssertTrue(outside.paths.isEmpty)
     }
 }
+
+// MARK: - Thumbnail Grid Metrics Tests
+final class ThumbnailGridMetricsTests: XCTestCase {
+    // MARK: - Geometry Within Panel
+    func testColumnsAndImagesStayInsidePanelAtCommonWidths() {
+        for panelWidth: CGFloat in [240, 740, 1000] {
+            let metrics = ThumbnailGridMetrics(
+                panelWidth: panelWidth,
+                preferredSize: 300,
+                horizontalPadding: 20,
+                columnSpacing: 8
+            )
+            let occupied = CGFloat(metrics.columnCount) * metrics.columnWidth
+                + CGFloat(metrics.columnCount - 1) * 8
+            XCTAssertEqual(occupied, metrics.contentWidth, accuracy: 0.01)
+            XCTAssertLessThanOrEqual(metrics.contentWidth + 20, panelWidth)
+            XCTAssertLessThanOrEqual(metrics.thumbnailSize + 16, metrics.columnWidth)
+        }
+    }
+
+    // MARK: - Responsive Columns
+    func testPanelWidthChangesColumnCount() {
+        let narrow = ThumbnailGridMetrics(panelWidth: 240, preferredSize: 300, horizontalPadding: 20, columnSpacing: 8)
+        let medium = ThumbnailGridMetrics(panelWidth: 740, preferredSize: 300, horizontalPadding: 20, columnSpacing: 8)
+        let wide = ThumbnailGridMetrics(panelWidth: 1000, preferredSize: 300, horizontalPadding: 20, columnSpacing: 8)
+        XCTAssertEqual([narrow.columnCount, medium.columnCount, wide.columnCount], [1, 2, 3])
+    }
+}

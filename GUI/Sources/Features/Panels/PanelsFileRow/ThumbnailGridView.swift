@@ -50,12 +50,19 @@ struct ThumbnailGridView: View {
     // MARK: - Body
     var body: some View {
         GeometryReader { geometry in
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: min(cellSize, max(1, geometry.size.width - horizontalPadding))), spacing: columnSpacing, alignment: .top)], alignment: .leading, spacing: 10) {
+            let metrics = ThumbnailGridMetrics(
+                panelWidth: geometry.size.width,
+                preferredSize: cellSize,
+                horizontalPadding: horizontalPadding,
+                columnSpacing: columnSpacing
+            )
+            ScrollView(.vertical) {
+                LazyVGrid(columns: Array(repeating: GridItem(.fixed(metrics.columnWidth), spacing: columnSpacing, alignment: .top), count: metrics.columnCount), alignment: .leading, spacing: 10) {
                     ForEach(files, id: \.id) { file in
                         ThumbnailCellView(
                             file: file,
-                            cellSize: min(cellSize, max(1, geometry.size.width - horizontalPadding)),
+                            cellSize: metrics.thumbnailSize,
+                            cellWidth: metrics.columnWidth,
                             isSelected: selectedID == file.id || markedIDs.contains(file.id),
                             panelSide: panelSide,
                             onDoubleClick: { onDoubleClick(file) }
@@ -63,7 +70,9 @@ struct ThumbnailGridView: View {
                         .anchorPreference(key: ThumbnailCellFramesKey.self, value: .bounds) { [file.id: $0] }
                     }
                 }
-                .padding(10)
+                .frame(width: metrics.contentWidth, alignment: .leading)
+                .padding(.horizontal, horizontalPadding / 2)
+                .padding(.vertical, 10)
             }
             .overlayPreferenceValue(ThumbnailCellFramesKey.self) { anchors in
                 GeometryReader { proxy in
@@ -159,6 +168,7 @@ private struct ThumbnailCellView: View {
 
     let file: CustomFile
     let cellSize: CGFloat
+    let cellWidth: CGFloat
     let isSelected: Bool
     let panelSide: FavPanelSide
     let onDoubleClick: () -> Void
@@ -168,10 +178,6 @@ private struct ThumbnailCellView: View {
     @State private var isHovered = false
 
     @Environment(AppState.self) private var appState
-
-    private var cellWidth: CGFloat {
-        cellSize
-    }
 
     private var imageSize: CGSize {
         let edge = max(1, cellSize - 8)
