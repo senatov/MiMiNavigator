@@ -4,9 +4,9 @@
 // Created by Iakov Senatov on 06.08.2024.
 // Copyright © 2024-2026 Senatov. All rights reserved.
 // Description: App entry point. Wires toolbar, panels, drag-drop, network mount callbacks.
-//   Build badge → App/AppBuildInfo.swift
-//   Diff/compare → Services/DiffTool/DiffToolLauncher.swift
-//   SettingsCommands → App/AppCommands.swift
+// Build badge → App/AppBuildInfo.swift
+// Diff/compare → Services/DiffTool/DiffToolLauncher.swift
+// SettingsCommands → App/AppCommands.swift
 
 import AppKit
 import FileModelKit
