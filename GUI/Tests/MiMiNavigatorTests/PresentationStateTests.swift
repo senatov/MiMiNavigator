@@ -323,6 +323,23 @@ final class FindFilesTemplateTests: XCTestCase {
         XCTAssertLessThanOrEqual(table.tableColumns.reduce(0) { $0 + $1.width }, 1000)
     }
 
+    func testResultAutofitUsesColumnTitlesAfterReordering() {
+        let table = NSTableView(frame: NSRect(x: 0, y: 0, width: 800, height: 300))
+        for title in ["#", "Name", "Location", "Size"] {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(title))
+            column.title = title
+            column.minWidth = 30
+            column.maxWidth = 800
+            table.addTableColumn(column)
+        }
+        table.moveColumn(3, toColumn: 1)
+        FindFilesResultsColumnFit.apply(to: table, widths: ["#": 36, "Name": 300, "Location": 400, "Size": 80])
+        XCTAssertEqual(table.tableColumns.map(\.title), ["#", "Size", "Name", "Location"])
+        XCTAssertEqual(table.tableColumns[0].width, 36, accuracy: 1)
+        XCTAssertEqual(table.tableColumns[1].width, 80, accuracy: 1)
+        XCTAssertGreaterThan(table.tableColumns[3].width, table.tableColumns[2].width)
+    }
+
     // MARK: - Independent Leftover Criterion
     func testDisabledLeftoverCriterionSurvivesPersistence() throws {
         let viewModel = FindFilesViewModel()

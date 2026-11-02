@@ -10,7 +10,9 @@ struct JunkFinderView: View {
     @State private var model = JunkFinderModel.shared
     @State private var sortOrder = [KeyPathComparator(\JunkCandidate.name)]
     @State private var highlightedIDs: Set<JunkCandidate.ID> = []
+    @State private var columnCustomization: TableColumnCustomization<JunkCandidate>
     var appState: AppState?
+    private static let columnsKey = "junkFinder.columns.v1"
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy HH:mm"
@@ -19,6 +21,17 @@ struct JunkFinderView: View {
 
     private var sortedCandidates: [JunkCandidate] {
         model.candidates.sorted(using: sortOrder)
+    }
+
+    init(appState: AppState? = nil) {
+        self.appState = appState
+        let stored = MiMiDefaults.shared.data(forKey: Self.columnsKey)
+        let decoded = stored.flatMap {
+            try? JSONDecoder().decode(TableColumnCustomization<JunkCandidate>.self, from: $0)
+        }
+        var customization = decoded ?? TableColumnCustomization()
+        customization[visibility: "number"] = .visible
+        _columnCustomization = State(initialValue: customization)
     }
 
     var body: some View {
@@ -70,11 +83,25 @@ struct JunkFinderView: View {
             }
             .padding(12)
         }
+        .onChange(of: columnCustomization) {
+            guard let data = try? JSONEncoder().encode(columnCustomization) else { return }
+            MiMiDefaults.shared.set(data, forKey: Self.columnsKey)
+        }
     }
 
     // MARK: - Candidates Table
     private var candidatesTable: some View {
-        Table(sortedCandidates, selection: $highlightedIDs, sortOrder: $sortOrder) {
+        let candidates = sortedCandidates
+        let rowNumbers = Dictionary(uniqueKeysWithValues: candidates.enumerated().map { ($0.element.id, $0.offset + 1) })
+        return Table(candidates, selection: $highlightedIDs, sortOrder: $sortOrder, columnCustomization: $columnCustomization) {
+            TableColumn("#") { candidate in
+                Text("\(rowNumbers[candidate.id] ?? 0)")
+                    .font(.body.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            .width(min: 30, ideal: 36, max: 50)
+            .customizationID("number")
+            .disabledCustomizationBehavior([.reorder, .visibility])
             TableColumn("Review") { candidate in
                 Toggle(
                     "Review \(candidate.name)",
@@ -88,6 +115,7 @@ struct JunkFinderView: View {
                 .labelsHidden()
             }
             .width(min: 55, ideal: 65, max: 80)
+            .customizationID("review")
             TableColumn("Name", value: \.name) { candidate in
                 HStack(spacing: 6) {
                     Image(nsImage: FileRowView.getSmartIcon(for: candidate.url))
@@ -110,6 +138,7 @@ struct JunkFinderView: View {
                 .help(candidate.url.path)
             }
             .width(min: 140, ideal: 220)
+            .customizationID("name")
             TableColumn("Location", value: \.location) { candidate in
                 Button {
                     navigate(to: candidate.url.deletingLastPathComponent())
@@ -128,25 +157,30 @@ struct JunkFinderView: View {
                 .accessibilityLabel("Open directory \(candidate.location) in the active panel")
             }
             .width(min: 160, ideal: 320)
+            .customizationID("location")
             TableColumn("Date Mod.", value: \.sortableDate) { candidate in
                 Text(candidate.modified.map { Self.dateFormatter.string(from: $0) } ?? "–")
                     .font(.body.monospacedDigit())
             }
             .width(min: 110, ideal: 150)
+            .customizationID("date")
             TableColumn("Size", value: \.size) { candidate in
                 Text(ByteCountFormatter.string(fromByteCount: candidate.size, countStyle: .file))
                     .font(.body.monospacedDigit())
             }
             .width(min: 65, ideal: 90)
+            .customizationID("size")
             TableColumn("Kind", value: \.kind.rawValue) { candidate in
                 Text(candidate.kind.rawValue).font(.body).lineLimit(1)
             }
             .width(min: 100, ideal: 130)
+            .customizationID("kind")
             TableColumn("Reason") { candidate in
                 Text(candidate.reason).font(.body).lineLimit(1).truncationMode(.tail)
                     .help(candidate.reason)
             }
             .width(min: 140, ideal: 300)
+            .customizationID("reason")
         }
         .contextMenu(forSelectionType: JunkCandidate.ID.self) { selection in
             if let id = selection.first, let candidate = model.candidates.first(where: { $0.id == id }) {

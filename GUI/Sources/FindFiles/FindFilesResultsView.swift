@@ -25,16 +25,21 @@ struct FindFilesResultsView: View {
     @State private var userHasSelected: Bool = false // stops auto-scroll when user clicks
     @State private var sortTask: Task<Void, Never>?
     @State private var columnCustomization: TableColumnCustomization<FindFilesResult>
-    private static let columnsKey = "findFiles.columns.v1"
+    private static let columnsKey = "findFiles.columns.v2"
+    private static let legacyColumnsKey = "findFiles.columns.v1"
 
     init(viewModel: FindFilesViewModel, appState: AppState? = nil) {
         self.viewModel = viewModel
         self.appState = appState
         let stored = MiMiDefaults.shared.data(forKey: Self.columnsKey)
-        let decoded = stored.flatMap {
+        let legacy = stored == nil ? MiMiDefaults.shared.data(forKey: Self.legacyColumnsKey) : nil
+        let decoded = (stored ?? legacy).flatMap {
             try? JSONDecoder().decode(TableColumnCustomization<FindFilesResult>.self, from: $0)
         }
-        _columnCustomization = State(initialValue: decoded ?? TableColumnCustomization())
+        var customization = decoded ?? TableColumnCustomization()
+        if legacy != nil { customization.resetOrder() }
+        customization[visibility: "number"] = .visible
+        _columnCustomization = State(initialValue: customization)
     }
 
     // MARK: - Fonts (static - same as FileRow)
@@ -163,7 +168,6 @@ struct FindFilesResultsView: View {
             Spacer()
             DownToolbarButtonView(title: "Autofit", systemImage: "arrow.left.and.right.righttriangle.left.righttriangle.right", iconTint: .blue) { fitRevision += 1 }
             Menu {
-                columnToggle("Number", id: "number")
                 columnToggle("Name", id: "name")
                 columnToggle("Location", id: "path")
                 columnToggle("Date Modified", id: "date")
@@ -185,7 +189,8 @@ struct FindFilesResultsView: View {
     }
 
     private var resultsList: some View {
-        Table(
+        let rowNumbers = Dictionary(uniqueKeysWithValues: cachedSorted.enumerated().map { ($0.element.id, $0.offset + 1) })
+        return Table(
             cachedSorted,
             selection: $viewModel.selectedResultIDs,
             sortOrder: $sortOrder,
@@ -193,8 +198,8 @@ struct FindFilesResultsView: View {
         ) {
             TableColumn("#") { result in
                 rowCell(result) {
-                    if let idx = cachedSorted.firstIndex(where: { $0.id == result.id }) {
-                        Text("\(idx + 1)")
+                    if let number = rowNumbers[result.id] {
+                        Text("\(number)")
                             .font(Self.monoFont)
                             .foregroundStyle(result.isPasswordProtected ? .red : .secondary)
                     }
@@ -202,6 +207,7 @@ struct FindFilesResultsView: View {
             }
             .width(min: 30, ideal: 36, max: 50)
             .customizationID("number")
+            .disabledCustomizationBehavior([.reorder, .visibility])
 
             TableColumn("Name", value: \.fileName) { result in
                 resultNameCell(result)
