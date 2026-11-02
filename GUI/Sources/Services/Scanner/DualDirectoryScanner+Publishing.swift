@@ -349,12 +349,18 @@ extension DualDirectoryScanner {
             log.info("[Scan] publish skipped stale path side=\(side) scanned='\(scannedPath)' current='\(currentPath)'")
             return
         }
+        let publishStart = ProcessInfo.processInfo.systemUptime
         guard let didPublish = await updateScannedFiles(files, for: side, expectedPath: scannedPath) else { return }
+        let displayElapsed = ProcessInfo.processInfo.systemUptime - publishStart
         if didPublish {
             await MainActor.run {
                 AutoFitScheduler.shared.scheduleNavigationFit(panel: side, appState: appState)
             }
         }
+        let cacheStart = ProcessInfo.processInfo.systemUptime
         await updateFileList(panelSide: side, with: files)
+        if files.count >= 2_000 {
+            log.debug("[Scan] publish breakdown side=\(side) items=\(files.count) display=\(String(format: "%.3f", displayElapsed))s cache=\(String(format: "%.3f", ProcessInfo.processInfo.systemUptime - cacheStart))s")
+        }
     }
 }
