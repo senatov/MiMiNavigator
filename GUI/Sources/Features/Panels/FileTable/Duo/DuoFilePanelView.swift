@@ -30,6 +30,7 @@ struct DuoFilePanelView: View {
         static let finderSidebarHiddenOffset: CGFloat = -18
         static let finderSidebarAnimation = Animation.interactiveSpring(response: 0.28, dampingFraction: 0.92, blendDuration: 0)
         static let previewAnimation = Animation.easeInOut(duration: 0.16)
+        static let previewDividerGap: CGFloat = 6
     }
     // MARK: - Body
     var body: some View {
@@ -376,10 +377,14 @@ extension DuoFilePanelView {
     private func previewOverlay(containerWidth: CGFloat, height: CGFloat) -> some View {
         let side = previewStore.previewSide
         let width = side == .left
-            ? leftPanelWidth
-            : max(containerWidth - leftPanelWidth - PanelDividerMetrics.hitAreaWidth, 0)
+            ? max(leftPanelWidth - Layout.previewDividerGap, 0)
+            : max(containerWidth - leftPanelWidth - PanelDividerMetrics.hitAreaWidth - Layout.previewDividerGap, 0)
         return HStack(spacing: 0) {
-            if side == .right { Spacer().frame(width: leftPanelWidth + PanelDividerMetrics.hitAreaWidth) }
+            if side == .right {
+                Spacer()
+                    .frame(width: leftPanelWidth + PanelDividerMetrics.hitAreaWidth + Layout.previewDividerGap)
+                    .allowsHitTesting(false)
+            }
             WorkspacePreviewPane(
                 sourceSide: side.opposite,
                 previewSide: side,
@@ -391,7 +396,11 @@ extension DuoFilePanelView {
             )
             .frame(width: width, height: height)
             .transition(.opacity)
-            if side == .left { Spacer().frame(width: containerWidth - width) }
+            if side == .left {
+                Spacer()
+                    .frame(width: containerWidth - width)
+                    .allowsHitTesting(false)
+            }
         }
         .frame(width: containerWidth, height: height, alignment: .leading)
         .offset(x: isFinderSidebarVisible ? Layout.finderSidebarWidth : 0)
