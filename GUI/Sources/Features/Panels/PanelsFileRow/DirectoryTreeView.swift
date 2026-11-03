@@ -24,6 +24,7 @@ struct DirectoryTreeView: View {
     @State private var loadingSubtreePaths: Set<String> = []
     @State private var autoFitTask: Task<Void, Never>?
     @State private var autoExpandedPath = ""
+    @State private var hasScrollableContent = false
 
     private enum TreeMetrics {
         static let depthIndent: CGFloat = 16
@@ -65,14 +66,15 @@ struct DirectoryTreeView: View {
 
     // MARK: - Body
     var body: some View {
-        ScrollView {
+        PanelScrollView(hasScrollableContent: hasScrollableContent) {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(visibleRows) { item in
-                    treeRow(item)
-                }
+                ForEach(visibleRows) { item in treeRow(item) }
             }
             .padding(.vertical, 1)
             .animation(.easeInOut(duration: 0.18), value: treeAnimationID)
+        }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentSize.height > $0.containerSize.height + 1 } action: { _, scrollable in
+            hasScrollableContent = scrollable
         }
         .background(treeBackground)
         .clipped()

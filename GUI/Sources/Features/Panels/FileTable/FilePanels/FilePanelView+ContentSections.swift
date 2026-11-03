@@ -42,6 +42,8 @@ extension FilePanelView {
             )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.leading, 3)
+        .padding(.trailing, ScrollBarConfig.trailingPadding + ScrollBarConfig.thumbnailAlignmentInset)
         .modifier(panelDropTargetModifier)
         .onAppear(perform: registerNonListKeyboardCallbacks)
     }
@@ -71,6 +73,8 @@ extension FilePanelView {
             .clipped()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.leading, 3)
+        .padding(.trailing, ScrollBarConfig.trailingPadding)
         .clipped()
         .modifier(panelDropTargetModifier)
         .onAppear(perform: registerNonListKeyboardCallbacks)

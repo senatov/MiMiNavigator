@@ -18,48 +18,38 @@ extension FileTableView {
 
     var mainScrollView: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                VStack(spacing: 0) {
-                    FileTableScrollViewCapture(hasScrollableContent: hasScrollableRows) { scrollView in
-                        nativeScrollView = scrollView
-                        if let scrollView {
-                            ScrollBarSetup.apply(to: scrollView, hasScrollableContent: hasScrollableRows)
-                        }
+            PanelScrollView(hasScrollableContent: hasScrollableRows, onCapture: { nativeScrollView = $0 }) {
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        FileTableRowsView(
+                            rows: sortedRows,
+                            visibleWindow: visibleWindow,
+                            indexByID: cachedIndexByID,
+                            selectedID: $selectedID,
+                            panelSide: panelSide,
+                            layout: layout,
+                            onSelect: onSelect,
+                            onDoubleClick: onDoubleClick
+                        )
+                    } header: {
+                        TableHeaderView(
+                            panelSide: panelSide,
+                            layout: layout,
+                            isFocused: isFocused
+                        )
                     }
-                    .frame(width: 0, height: 0)
-
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                        Section {
-                            FileTableRowsView(
-                                rows: sortedRows,
-                                visibleWindow: visibleWindow,
-                                indexByID: cachedIndexByID,
-                                selectedID: $selectedID,
-                                panelSide: panelSide,
-                                layout: layout,
-                                onSelect: onSelect,
-                                onDoubleClick: onDoubleClick
-                            )
-                        } header: {
-                            TableHeaderView(
-                                panelSide: panelSide,
-                                layout: layout,
-                                isFocused: isFocused
-                            )
-                        }
-                    }
-                    .scrollTargetLayout()
-
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                        .frame(height: emptyAreaHeight)
-                        .contentShape(Rectangle())
-                        .onTapGesture(perform: clearSelectionFromEmptyArea)
-
-                    // 1px breathing room inside scroll content so the bottom selection border isn't clipped.
-                    Color.clear
-                        .frame(height: onePixel)
                 }
+                .scrollTargetLayout()
+
+                Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: emptyAreaHeight)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: clearSelectionFromEmptyArea)
+
+                // 1px breathing room inside scroll content so the bottom selection border isn't clipped.
+                Color.clear
+                    .frame(height: onePixel)
             }
             .background(scrollBackgroundLayer)
             .scrollDisabled(!hasScrollableRows)

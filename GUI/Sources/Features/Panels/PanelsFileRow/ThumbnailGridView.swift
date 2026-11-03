@@ -21,6 +21,8 @@ import SwiftUI
 struct ThumbnailGridView: View {
 
     @Environment(AppState.self) var appState
+    @State private var hasScrollableContent = false
+    @State private var nativeScrollView: NSScrollView?
 
     let files: [CustomFile]
     @Binding var selectedID: CustomFile.ID?
@@ -29,14 +31,9 @@ struct ThumbnailGridView: View {
     let onSelect: (CustomFile) -> Void
     let onDoubleClick: (CustomFile) -> Void
 
-    /// Width matching the native scrollbar track — driven by ScrollBarConfig
-    private static let scrollbarWidth: CGFloat = ScrollBarConfig.trackWidth
-
     private let columnSpacing: CGFloat = 8
 
     private let horizontalPadding: CGFloat = 20
-
-    private var dividerGap: CGFloat { panelSide == .left ? 6 : 0 }
 
     private var markedIDs: Set<String> {
         appState.markedFiles(for: panelSide)
@@ -53,12 +50,12 @@ struct ThumbnailGridView: View {
     var body: some View {
         GeometryReader { geometry in
             let metrics = ThumbnailGridMetrics(
-                panelWidth: geometry.size.width - dividerGap,
+                panelWidth: geometry.size.width,
                 preferredSize: cellSize,
                 horizontalPadding: horizontalPadding,
                 columnSpacing: columnSpacing
             )
-            ScrollView(.vertical) {
+            PanelScrollView(hasScrollableContent: hasScrollableContent, onCapture: { nativeScrollView = $0 }) {
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(metrics.columnWidth), spacing: columnSpacing, alignment: .top), count: metrics.columnCount), alignment: .leading, spacing: 10) {
                     ForEach(files, id: \.id) { file in
                         ThumbnailCellView(
@@ -76,6 +73,9 @@ struct ThumbnailGridView: View {
                 .padding(.horizontal, horizontalPadding / 2)
                 .padding(.vertical, 10)
             }
+            .onScrollGeometryChange(for: Bool.self) { $0.contentSize.height > $0.containerSize.height + 1 } action: { _, scrollable in
+                hasScrollableContent = scrollable
+            }
             .overlayPreferenceValue(ThumbnailCellFramesKey.self) { anchors in
                 GeometryReader { proxy in
                     DragOverlayView(
@@ -89,65 +89,27 @@ struct ThumbnailGridView: View {
                     )
                 }
             }
-            .padding(.trailing, dividerGap)
         }
-        // MARK: - Jump-to-edge buttons (matching file table style)
         .overlay(alignment: .trailing) {
-            if files.count > 50 {
-                VStack(spacing: 0) {
-                    scrollEdgeButton(icon: "chevron.up.2") {
-                        NotificationCenter.default.post(
-                            name: .jumpToFirst,
-                            object: panelSide
-                        )
-                    }
-                    .help("Jump to top (Home)")
-
-                    Spacer()
-
-                    scrollEdgeButton(icon: "chevron.down.2") {
-                        NotificationCenter.default.post(
-                            name: .jumpToLast,
-                            object: panelSide
-                        )
-                    }
-                    .help("Jump to bottom (End)")
-                }
-                .frame(width: Self.scrollbarWidth)
-                .padding(.trailing, dividerGap)
-            }
+            ScrollBarJumpButtons(panelSide: panelSide, rowCount: files.count)
+                .offset(x: ScrollBarConfig.thumbnailAlignmentInset)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .jumpToFirst)) { notification in
+            if notification.object as? FavPanelSide == panelSide { scrollToEdge(top: true) }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .jumpToLast)) { notification in
+            if notification.object as? FavPanelSide == panelSide { scrollToEdge(top: false) }
         }
     }
 
-    // MARK: - Scroll Edge Button (3D square, matches scrollbar width)
-    private func scrollEdgeButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .heavy))
-                .foregroundStyle(.secondary)
-                .frame(width: Self.scrollbarWidth, height: Self.scrollbarWidth)
-                .background(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(nsColor: .controlBackgroundColor).opacity(0.95),
-                                    Color(nsColor: .controlBackgroundColor).opacity(0.75),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .strokeBorder(Color(nsColor: .separatorColor).opacity(0.72), lineWidth: 0.75)
-                )
-                .compositingGroup()
-                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
+    // MARK: - Jump to Edge
+    private func scrollToEdge(top: Bool) {
+        guard let scrollView = nativeScrollView else { return }
+        let clipView = scrollView.contentView
+        let documentHeight = scrollView.documentView?.bounds.height ?? 0
+        let targetY = top ? 0 : max(0, documentHeight - clipView.bounds.height)
+        clipView.scroll(to: NSPoint(x: clipView.bounds.minX, y: targetY))
+        scrollView.reflectScrolledClipView(clipView)
     }
 
 }

@@ -16,6 +16,9 @@ enum ScrollBarConfig {
     /// Compact scrollbar track width, also used to align the jump button column.
     static let trackWidth: CGFloat = 15
 
+    /// Aligns the thumbnail scroll track and jump buttons with the table track.
+    static let thumbnailAlignmentInset: CGFloat = trackWidth + 2
+
     static let jumpButtonHeight: CGFloat = 14
     static let jumpButtonOuterPadding: CGFloat = 2
     static let jumpButtonTrackGap: CGFloat = 1
