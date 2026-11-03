@@ -36,6 +36,8 @@ struct ThumbnailGridView: View {
 
     private let horizontalPadding: CGFloat = 20
 
+    private var dividerGap: CGFloat { panelSide == .left ? 6 : 0 }
+
     private var markedIDs: Set<String> {
         appState.markedFiles(for: panelSide)
     }
@@ -51,7 +53,7 @@ struct ThumbnailGridView: View {
     var body: some View {
         GeometryReader { geometry in
             let metrics = ThumbnailGridMetrics(
-                panelWidth: geometry.size.width,
+                panelWidth: geometry.size.width - dividerGap,
                 preferredSize: cellSize,
                 horizontalPadding: horizontalPadding,
                 columnSpacing: columnSpacing
@@ -87,6 +89,7 @@ struct ThumbnailGridView: View {
                     )
                 }
             }
+            .padding(.trailing, dividerGap)
         }
         // MARK: - Jump-to-edge buttons (matching file table style)
         .overlay(alignment: .trailing) {
@@ -111,6 +114,7 @@ struct ThumbnailGridView: View {
                     .help("Jump to bottom (End)")
                 }
                 .frame(width: Self.scrollbarWidth)
+                .padding(.trailing, dividerGap)
             }
         }
     }
