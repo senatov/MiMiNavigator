@@ -21,10 +21,13 @@ extension FileOpsEngine {
         let plan = await buildPlan(items: items, destination: destination)
         if progress.isCancelled { return progress }
         progress.setTotals(files: plan.fileCount, bytes: plan.totalBytes)
-        if let freeBytes = await availableSpace(at: destination), plan.totalBytes > freeBytes,
-           !items.contains(where: { fm.fileExists(atPath: destination.appendingPathComponent($0.lastPathComponent).path) })
-        {
-            let required = ByteCountFormatter.string(fromByteCount: plan.totalBytes, countStyle: .file)
+        let missingBytes = plan.flatList.reduce(Int64(0)) { total, entry in
+            guard !entry.isDirectory,
+                  !fm.fileExists(atPath: destination.appendingPathComponent(entry.relativePath).path) else { return total }
+            return total + entry.size
+        }
+        if let freeBytes = await availableSpace(at: destination), missingBytes > freeBytes {
+            let required = ByteCountFormatter.string(fromByteCount: missingBytes, countStyle: .file)
             let available = ByteCountFormatter.string(fromByteCount: freeBytes, countStyle: .file)
             progress.fileCompleted(
                 name: "Destination",
