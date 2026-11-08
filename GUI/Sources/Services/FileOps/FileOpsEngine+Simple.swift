@@ -12,7 +12,7 @@ import Foundation
 extension FileOpsEngine {
 
     func executeSimple(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        createDirectoryStructure(plan: plan)
+        await createDirectoryStructure(plan: plan)
         var memorized: ConflictResolution? = nil
         for (index, item) in plan.items.enumerated() {
             guard !progress.isCancelled else { break }
@@ -31,9 +31,6 @@ extension FileOpsEngine {
             }.value
             if result.succeeded {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
-                if progress.usesProgressPanel {
-                    panel.appendLog("Source: \(item.path) → Destination: \(target.path)")
-                }
                 progress.add(bytes: result.bytes)
             } else if let diagnostic = result.diagnostic {
                 recordFailure(diagnostic, progress: progress)

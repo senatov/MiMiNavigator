@@ -20,6 +20,20 @@ extension FileOpsEngine {
         panel.updateProgress(nil)
         let plan = await buildPlan(items: items, destination: destination)
         if progress.isCancelled { return progress }
+        progress.setTotals(files: plan.fileCount, bytes: plan.totalBytes)
+        if let freeBytes = await availableSpace(at: destination), plan.totalBytes > freeBytes,
+           !items.contains(where: { fm.fileExists(atPath: destination.appendingPathComponent($0.lastPathComponent).path) })
+        {
+            let required = ByteCountFormatter.string(fromByteCount: plan.totalBytes, countStyle: .file)
+            let available = ByteCountFormatter.string(fromByteCount: freeBytes, countStyle: .file)
+            progress.fileCompleted(
+                name: "Destination",
+                success: false,
+                error: "Insufficient free space. Required: \(required); available: \(available). No files were copied."
+            )
+            progress.complete()
+            return progress
+        }
         return try await executeWithPanel(plan: plan, operation: .copy, existingProgress: progress)
     }
 }

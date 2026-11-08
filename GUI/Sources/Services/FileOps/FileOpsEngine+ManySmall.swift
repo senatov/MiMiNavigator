@@ -21,7 +21,7 @@ struct ResolvedEntry: Sendable {
 extension FileOpsEngine {
 
     func executeManySmall(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        createDirectoryStructure(plan: plan)
+        await createDirectoryStructure(plan: plan)
         var memorized: ConflictResolution? = nil
         let fileEntries = plan.flatList.filter { !$0.isDirectory }
         var smallBatch: [ResolvedEntry] = []
@@ -75,9 +75,6 @@ extension FileOpsEngine {
                     let result = Self.performIO(from: entry.source, to: entry.target, operation: operation)
                     await MainActor.run {
                         if result.succeeded {
-                            if progress.usesProgressPanel {
-                                ProgressPanel.shared.appendLog("Source: \(entry.source.path) → Destination: \(entry.target.path)")
-                            }
                             progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
                             progress.add(bytes: result.bytes)
                         } else if let diagnostic = result.diagnostic {
@@ -119,9 +116,6 @@ extension FileOpsEngine {
                 }
                 try await streamCopy(from: entry.source, to: entry.target, progress: progress)
                 if operation == .move { try fm.removeItem(at: entry.source) }
-                if progress.usesProgressPanel {
-                    panel.appendLog("Source: \(entry.source.path) → Destination: \(entry.target.path)")
-                }
                 progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
             } catch {
                 recordFailure(
@@ -133,10 +127,19 @@ extension FileOpsEngine {
 
 
 
-    func createDirectoryStructure(plan: FileOpPlan) {
-        for entry in plan.flatList where entry.isDirectory {
-            let targetDir = plan.destination.appendingPathComponent(entry.relativePath)
-            try? fm.createDirectory(at: targetDir, withIntermediateDirectories: true)
-        }
+    func createDirectoryStructure(plan: FileOpPlan) async {
+        await Task.detached(priority: .userInitiated) {
+            let directories = plan.flatList.filter(\.isDirectory).sorted {
+                $0.relativePath.split(separator: "/").count < $1.relativePath.split(separator: "/").count
+            }
+            for entry in directories {
+                let targetDir = plan.destination.appendingPathComponent(entry.relativePath)
+                do {
+                    try FileManager.default.createDirectory(at: targetDir, withIntermediateDirectories: true)
+                } catch {
+                    log.error("[FileOpsEngine] create directory failed: \(targetDir.path) — \(error.localizedDescription)")
+                }
+            }
+        }.value
     }
 }

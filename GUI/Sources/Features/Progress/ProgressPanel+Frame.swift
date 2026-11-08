@@ -151,7 +151,7 @@ extension ProgressPanel {
         let mainFrame = hostWindowFrame() ?? NSScreen.main?.visibleFrame
         let availableWidth = max(ProgressPanelAppearance.defaultMinWidth, (mainFrame?.width ?? 760) - 48)
         let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
-        let targetWidth = min(panel.frame.width, min(availableWidth, 760))
+        let targetWidth = min(panel.frame.width, min(availableWidth, 600))
         let targetHeight = min(panel.frame.height, min(availableHeight, 520))
         let current = panel.frame
         let minX = mainFrame?.minX ?? current.minX

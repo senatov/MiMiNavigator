@@ -99,9 +99,6 @@ extension FileOpsEngine {
             : await recycleItem(url)
         switch result {
         case .success(let trashedURL):
-            if progress.usesProgressPanel, let trashedURL {
-                panel.appendLog("Source: \(url.path) → Trash: \(trashedURL.path)")
-            }
             progress.fileCompleted(name: url.lastPathComponent, success: true)
             if let trashedURL {
                 progress.recordCompletedTransfer(from: url, to: trashedURL)

@@ -12,7 +12,7 @@ import Foundation
 extension FileOpsEngine {
 
     func executeFewLarge(plan: FileOpPlan, operation: FileOpType, progress: FileOpProgress) async throws {
-        createDirectoryStructure(plan: plan)
+        await createDirectoryStructure(plan: plan)
         var memorized: ConflictResolution? = nil
         let fileEntries = plan.flatList.filter { !$0.isDirectory }
         for (index, entry) in fileEntries.enumerated() {
@@ -50,9 +50,6 @@ extension FileOpsEngine {
                 }
                 try await streamCopy(from: entry.url, to: finalTarget, progress: progress)
                 if operation == .move { try fm.removeItem(at: entry.url) }
-                if progress.usesProgressPanel {
-                    panel.appendLog("Source: \(entry.url.path) → Destination: \(finalTarget.path)")
-                }
                 progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
             } catch {
                 recordFailure(

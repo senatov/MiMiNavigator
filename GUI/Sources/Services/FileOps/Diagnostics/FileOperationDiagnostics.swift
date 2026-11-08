@@ -141,6 +141,9 @@ enum FileOperationDiagnostics {
     }
 
     private static func hintText(for error: NSError) -> String? {
+        if error.localizedDescription.localizedCaseInsensitiveContains("disk is full") {
+            return "Empty the Trash on this volume or free space on it, then retry. MiMiNavigator keeps deleted items recoverable in Trash."
+        }
         if isBusyOrLocked(error) {
             return "Close the app using this file and try again."
         }

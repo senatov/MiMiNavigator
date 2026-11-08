@@ -55,6 +55,14 @@ extension FileOpsEngine {
         items.reduce(0) { $0 + fileSize(url: $1) }
     }
 
+    func availableSpace(at destination: URL) async -> Int64? {
+        await Task.detached(priority: .utility) {
+            guard let attributes = try? FileManager.default.attributesOfFileSystem(forPath: destination.path),
+                  let freeBytes = attributes[.systemFreeSize] as? NSNumber else { return nil }
+            return freeBytes.int64Value
+        }.value
+    }
+
 
 
     func executeOpaqueDirectory(
