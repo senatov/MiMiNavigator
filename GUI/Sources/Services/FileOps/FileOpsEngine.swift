@@ -105,11 +105,17 @@ extension FileOpsEngine {
 
 
 
-    func executeWithPanel(plan: FileOpPlan, operation: FileOpType) async throws -> FileOpProgress {
-        let progress = FileOpProgress(
+    func executeWithPanel(plan: FileOpPlan, operation: FileOpType, existingProgress: FileOpProgress? = nil) async throws -> FileOpProgress {
+        let progress = existingProgress ?? FileOpProgress(
             totalFiles: plan.fileCount, totalBytes: plan.totalBytes,
             type: operation, destination: plan.destination)
-        showPanel(progress: progress, itemCount: plan.fileCount, operation: String(describing: operation))
+        progress.setTotals(files: plan.fileCount, bytes: plan.totalBytes)
+        if existingProgress == nil {
+            showPanel(progress: progress, itemCount: plan.fileCount, operation: String(describing: operation))
+        } else {
+            panel.updateStatus("\(plan.fileCount) file(s) → \(panel.abbreviatePath(plan.destination.path))")
+            progress.updateStatusOnly("Preparing copy…")
+        }
         defer { progress.complete() }
         try await executeStrategy(plan: plan, operation: operation, progress: progress)
         return progress

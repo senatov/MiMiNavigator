@@ -15,8 +15,8 @@ import Foundation
 final class FileOpProgress {
 
     // MARK: - Configured at init
-    let totalFiles: Int
-    let totalBytes: Int64
+    private(set) var totalFiles: Int
+    private(set) var totalBytes: Int64
     let operationType: FileOpType
     let destinationURL: URL?
 
@@ -100,6 +100,12 @@ final class FileOpProgress {
         self.destinationURL = destination
     }
 
+    func setTotals(files: Int, bytes: Int64) {
+        totalFiles = files
+        totalBytes = bytes
+        updateProgressDisplay()
+    }
+
     // MARK: - Updates (call from workers via MainActor hop)
 
     func setCurrentFile(_ name: String) {
@@ -177,7 +183,11 @@ final class FileOpProgress {
         endTime = Date()
         let succeededFiles = processedFiles - errors.count
         if usesProgressPanel {
-            ProgressPanel.shared.finish(success: errors.isEmpty, message: completionSummary)
+            ProgressPanel.shared.finish(
+                success: errors.isEmpty,
+                message: errors.isEmpty ? completionSummary : failureSummary,
+                autoClose: errors.isEmpty
+            )
         }
         log.info("[FileOpProgress] done: \(succeededFiles) ok, \(skippedFiles) skipped, \(errors.count) errs, \(String(format: "%.1f", elapsed))s")
     }

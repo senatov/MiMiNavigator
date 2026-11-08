@@ -17,11 +17,9 @@ extension FileOpsEngine {
         let isBulkDelete = items.count >= Self.bulkDeleteThreshold
         let totalSize = isBulkDelete ? 0 : calculateTotalSize(items: items)
         let progress = FileOpProgress(totalFiles: items.count, totalBytes: totalSize, type: .delete, destination: nil)
-        if isBulkDelete {
-            showPanel(progress: progress, itemCount: items.count, operation: "items to Trash")
-            progress.updateStatusOnly("Preparing batches for Trash…")
-            await Task.yield()
-        }
+        showPanel(progress: progress, itemCount: items.count, operation: "items to Trash")
+        progress.updateStatusOnly(isBulkDelete ? "Preparing batches for Trash…" : "Preparing to move items to Trash…")
+        await Task.yield()
         defer { progress.complete() }
         if isBulkDelete && items.allSatisfy({ canRecycleInBatch($0) }) {
             await recycleBatches(items, progress: progress)
@@ -71,7 +69,7 @@ extension FileOpsEngine {
     }
 
     func trashItem(url: URL, progress: FileOpProgress) async {
-        progress.setCurrentFile(url.lastPathComponent)
+        progress.setCurrentFile(url.path)
         if AppLogger.isProtectedLogFile(url) {
             recordFailure(
                 FileOperationDiagnostics.makeProtectedDelete(source: url),
@@ -101,6 +99,9 @@ extension FileOpsEngine {
             : await recycleItem(url)
         switch result {
         case .success(let trashedURL):
+            if progress.usesProgressPanel, let trashedURL {
+                panel.appendLog("Source: \(url.path) → Trash: \(trashedURL.path)")
+            }
             progress.fileCompleted(name: url.lastPathComponent, success: true)
             if let trashedURL {
                 progress.recordCompletedTransfer(from: url, to: trashedURL)

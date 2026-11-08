@@ -32,7 +32,7 @@ extension FileOpsEngine {
             } else {
                 finalTarget = targetURL
             }
-            progress.setCurrentFile(entry.url.lastPathComponent)
+            progress.setCurrentFile(entry.url.path)
             do {
                 let didAtomicMove = operation == .move
                     ? await tryAtomicMove(from: entry.url, to: finalTarget)
@@ -50,6 +50,9 @@ extension FileOpsEngine {
                 }
                 try await streamCopy(from: entry.url, to: finalTarget, progress: progress)
                 if operation == .move { try fm.removeItem(at: entry.url) }
+                if progress.usesProgressPanel {
+                    panel.appendLog("Source: \(entry.url.path) → Destination: \(finalTarget.path)")
+                }
                 progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
             } catch {
                 recordFailure(

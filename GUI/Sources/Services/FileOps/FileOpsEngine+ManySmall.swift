@@ -70,11 +70,14 @@ extension FileOpsEngine {
                     try await group.next()
                     running -= 1
                 }
-                progress.setCurrentFile(entry.source.lastPathComponent)
+                progress.setCurrentFile(entry.source.path)
                 group.addTask(priority: .userInitiated) {
                     let result = Self.performIO(from: entry.source, to: entry.target, operation: operation)
                     await MainActor.run {
                         if result.succeeded {
+                            if progress.usesProgressPanel {
+                                ProgressPanel.shared.appendLog("Source: \(entry.source.path) → Destination: \(entry.target.path)")
+                            }
                             progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
                             progress.add(bytes: result.bytes)
                         } else if let diagnostic = result.diagnostic {
@@ -98,7 +101,7 @@ extension FileOpsEngine {
     ) async throws {
         for entry in batch {
             guard !progress.isCancelled else { break }
-            progress.setCurrentFile(entry.source.lastPathComponent)
+            progress.setCurrentFile(entry.source.path)
             do {
                 let didAtomicMove = operation == .move
                     ? await tryAtomicMove(from: entry.source, to: entry.target)
@@ -116,6 +119,9 @@ extension FileOpsEngine {
                 }
                 try await streamCopy(from: entry.source, to: entry.target, progress: progress)
                 if operation == .move { try fm.removeItem(at: entry.source) }
+                if progress.usesProgressPanel {
+                    panel.appendLog("Source: \(entry.source.path) → Destination: \(entry.target.path)")
+                }
                 progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
             } catch {
                 recordFailure(

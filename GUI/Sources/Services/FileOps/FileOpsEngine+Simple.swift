@@ -25,12 +25,15 @@ extension FileOpsEngine {
                 progress.fileSkipped(name: item.lastPathComponent)
                 continue
             }
-            progress.setCurrentFile(item.lastPathComponent)
+            progress.setCurrentFile(item.path)
             let result = await Task.detached(priority: .userInitiated) {
                 Self.performIO(from: item, to: target, operation: operation)
             }.value
             if result.succeeded {
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
+                if progress.usesProgressPanel {
+                    panel.appendLog("Source: \(item.path) → Destination: \(target.path)")
+                }
                 progress.add(bytes: result.bytes)
             } else if let diagnostic = result.diagnostic {
                 recordFailure(diagnostic, progress: progress)

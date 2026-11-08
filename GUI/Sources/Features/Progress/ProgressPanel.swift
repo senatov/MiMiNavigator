@@ -122,6 +122,7 @@ final class ProgressPanel: NSObject {
         guard let panel else { return }
         resetContent(icon: icon, title: title, status: status)
         restoreFrameForCurrentOperation()
+        centerInMainWindow()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
         log.debug("[ProgressPanel] \(#function) title='\(title)'")

@@ -23,7 +23,7 @@ extension FileOpsEngine {
         panel.show(
             icon: progress.operationType.systemImage,
             title: progress.operationType.title,
-            status: "\(itemCount) item(s)",
+            status: "\(itemCount) item(s) → \(panel.abbreviatePath(progress.destinationURL?.path ?? ""))",
             cancelHandler: { progress.cancel() }
         )
         if progress.showsProgressBar {
@@ -86,7 +86,8 @@ extension FileOpsEngine {
 
     func recordFailure(_ diagnostic: FileOperationDiagnosticInfo, progress: FileOpProgress) {
         let fileName = URL(fileURLWithPath: diagnostic.path).lastPathComponent
-        progress.fileCompleted(name: fileName, success: false, error: diagnostic.progressMessage)
+        let details = diagnostic.details.replacingOccurrences(of: "\n", with: " | ")
+        progress.fileCompleted(name: fileName, success: false, error: "\(diagnostic.progressMessage) — \(details)")
         log.error("[FileOpsEngine] \(diagnostic.details.replacingOccurrences(of: "\n", with: " | "))")
     }
 
