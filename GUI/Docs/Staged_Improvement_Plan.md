@@ -11,9 +11,9 @@ The staged program covers the entire application. Keep each change small enough 
 
 The signed, notarized, stapled v0.9.1.2 DMG was published after these changes.
 
-## Current release: v0.9.1.5
+## Current release: v0.9.1.6
 
-v0.9.1.5 adds automatic, resumable Cleanup scanning and on-device review of possible leftovers. It retains the compact titlebar from v0.9.1.4 and the macOS 27 minimum, native toolbar overflow, and OS-aware update routing introduced in v0.9.1.3.
+v0.9.1.6 improves removable-volume copy and delete feedback, bounds progress-window width, and checks space before copying files missing from the destination. It retains automatic, resumable Cleanup scanning from v0.9.1.5, the compact titlebar from v0.9.1.4, and the macOS 27 minimum, native toolbar overflow, and OS-aware update routing introduced in v0.9.1.3.
 
 ## Later stages
 

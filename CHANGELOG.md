@@ -7,6 +7,16 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.6] - 2026-11-09
+
+### Changed
+- Kept file-operation progress windows centered and capped their width; show the selected path and destination without flooding the log with duplicate path lines.
+- Create destination directory trees off the main thread and check space needed for files still missing at the destination before copying.
+
+### Fixed
+- Report per-file copy progress and destination errors for directory copies, including when a previous attempt left a partial tree.
+- Explain full-volume Trash failures and how to recover while keeping deletion recoverable.
+
 ## [0.9.1.5] - 2026-10-30
 
 ### Added
@@ -1417,7 +1427,9 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.4...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.6...HEAD
+[0.9.1.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.5...v0.9.1.6
+[0.9.1.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.4...v0.9.1.5
 [0.9.1.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...v0.9.1.4
 [0.9.1.3]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.2...v0.9.1.3
 [0.9.1.2]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1...v0.9.1.2

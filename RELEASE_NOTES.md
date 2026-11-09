@@ -1,3 +1,28 @@
+# MiMiNavigator v0.9.1.6
+
+This release improves copy and delete feedback for removable volumes.
+
+## Improvements since v0.9.1.5
+
+- Keep the progress window centered at a readable width and show the current file path, destination, and per-file results.
+- Build destination directory trees in the background and check whether files still missing at the destination can fit before starting a copy, including retries after an interrupted or incomplete copy.
+- Explain when the volume is too full to move deleted items to Trash and how to free space while keeping deleted items recoverable.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Users of v0.9.1.2 must install a macOS 27 release manually before later updates can use the OS-aware feed.
+- Open the DMG and drag MiMiNavigator to Applications.
+
+## Validation
+
+- The Debug build passed on macOS 27.
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.5...v0.9.1.6
+
+---
+
 # MiMiNavigator v0.9.1.5
 
 This release adds automatic, review-first cleanup assistance to Find Files.
