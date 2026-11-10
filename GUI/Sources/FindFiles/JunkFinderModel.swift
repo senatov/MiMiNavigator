@@ -213,6 +213,7 @@ final class JunkFinderModel {
 
     // MARK: - Prune Removed Candidates
     private func prune(_ items: [JunkCandidate]) -> [JunkCandidate] {
+        let runningBundleIdentifiers = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
         let existing = Dictionary(items.filter { candidate in
             !JunkScanScope.isUserExcluded(candidate.id, excludedPaths: activeExcludedPaths) &&
                 (scanAccess == .full || candidate.kind != .appLeftover) &&
@@ -221,8 +222,9 @@ final class JunkFinderModel {
                         && JunkScanScope.mayInspect(candidate.id, from: root, access: scanAccess)
                 } &&
                 FileManager.default.fileExists(atPath: candidate.id) &&
-                (candidate.kind == .appLeftover || candidate.kind == .processArtifact || candidate.kind == .browserCache || candidate.kind == .browserPrivacy || !JunkScanEngine.shouldExclude(candidate.id)) &&
+                (candidate.kind == .appLeftover || candidate.kind == .processArtifact || candidate.kind == .browserCache || candidate.kind == .browserPrivacy || candidate.kind == .appCache || !JunkScanEngine.shouldExclude(candidate.id)) &&
                 ((candidate.kind == .browserCache || candidate.kind == .browserPrivacy) ? JunkBrowserDataScanner.isRecognized(candidate) : true) &&
+                (candidate.kind != .appCache || JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: runningBundleIdentifiers)) &&
                 (candidate.kind != .emptyFolder || JunkScanEngine.isEligibleEmptyFolder(candidate.url))
         }.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values
         let groupCounts = Dictionary(grouping: existing.compactMap(\.group), by: { $0 }).mapValues(\.count)
@@ -335,6 +337,10 @@ final class JunkFinderModel {
         if candidate.kind == .processArtifact {
             let logs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true)
             return candidate.url.deletingLastPathComponent().standardizedFileURL == logs.standardizedFileURL
+        }
+        if candidate.kind == .appCache {
+            let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
+            return JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: running)
         }
         let inScope = activeScanRoots.contains { path == $0.path || path.hasPrefix($0.path + "/") }
         let readable = activeScanRoots.contains { JunkScanScope.mayInspect(path, from: $0, access: scanAccess) }

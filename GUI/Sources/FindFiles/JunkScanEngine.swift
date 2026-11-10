@@ -19,6 +19,7 @@ struct JunkCandidate: Identifiable, Sendable, Codable {
         case processArtifact = "Stale process file"
         case browserCache = "Browser cache"
         case browserPrivacy = "Browser activity and site data"
+        case appCache = "Application cache"
     }
     let url: URL
     let kind: Kind
@@ -124,6 +125,7 @@ enum JunkScanEngine {
         if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
             try await inspectStaleProcessArtifacts(excludedPaths: excludedPaths, into: &candidates)
             if access == .full { try await inspectApplicationLeftovers(excludedPaths: excludedPaths, into: &candidates) }
+            try await inspectApplicationCaches(access: access, excludedPaths: excludedPaths, into: &candidates)
             let browserContext = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
             candidates += try await JunkBrowserDataScanner.scan(access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths, context: browserContext)
         }
@@ -378,6 +380,11 @@ enum JunkScanEngine {
         case .browserCache, .browserPrivacy:
             let context = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
             return await JunkBrowserDataScanner.stillMatches(candidate, access: access, authorizedRoots: authorizedRoots, context: context)
+        case .appCache:
+            let running = await MainActor.run {
+                Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
+            }
+            return await stillMatchesApplicationCache(candidate, access: access, runningBundleIdentifiers: running)
         }
     }
 

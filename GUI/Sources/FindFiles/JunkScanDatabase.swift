@@ -127,7 +127,8 @@ actor JunkScanDatabase {
                 FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true).standardizedFileURL
             let browserData = (candidate.kind == .browserCache || candidate.kind == .browserPrivacy)
                 && JunkBrowserDataScanner.isRecognized(candidate)
-            let recognized = leftover || processFile || browserData || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path))
+            let appCache = candidate.kind == .appCache && JunkScanEngine.isApplicationCacheRoot(candidate.url)
+            let recognized = leftover || processFile || browserData || appCache || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path))
             return recognized && FileManager.default.fileExists(atPath: path)
         }
     }

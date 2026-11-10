@@ -105,6 +105,16 @@ enum JunkBrowserDataScanner {
         return stores.contains { owns(candidate.url, browser: $0) }
     }
 
+    // MARK: - Generic Cache Exclusion
+    static func isKnownBrowserCachePath(_ url: URL) -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let path = url.path
+        return stores.flatMap(\.cachePaths).contains { relative in
+            let root = home.appendingPathComponent("Library/Caches/\(relative)").path
+            return isSameOrInside(path, root: root)
+        }
+    }
+
     // MARK: - Find Cache and Profile Data
     private static func discover(in root: URL, browser: BrowserStore, access: JunkScanAccess, authorizedRoots: [URL], excludedPaths: [String], cacheOnly: Bool, visited: inout Set<String>) async throws -> [JunkCandidate] {
         guard mayInspect(root.path, access: access, authorizedRoots: authorizedRoots),

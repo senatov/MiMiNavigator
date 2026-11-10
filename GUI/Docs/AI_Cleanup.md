@@ -27,6 +27,7 @@ AI review requires Apple Intelligence to be enabled and its model to be ready on
 - Old installers and temporary files, based on their type and age.
 - Exact duplicate content across eligible local volumes; at least one copy should be kept.
 - Cache and selected browsing data from known browsers other than the current macOS default, when the browser is closed and the data has been inactive for more than three days. Cookie and site-storage candidates can sign the user out; each candidate remains a manual choice.
+- Third-party top-level caches in `~/Library/Caches` when the owning app is closed, the cache has been inactive for more than 90 days, and it is at least 10 MB. System, identity, authentication, password-manager, and known browser cache roots are excluded. Every candidate still requires manual review.
 
 The scanner revalidates candidates before offering cleanup actions. Review findings and choose explicitly what to move to Trash.
 

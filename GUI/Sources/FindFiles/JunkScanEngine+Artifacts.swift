@@ -9,6 +9,129 @@ import Foundation
 
 // MARK: - Application and Process Artifacts
 extension JunkScanEngine {
+    private static let oldApplicationCacheAge: TimeInterval = 90 * 86_400
+    private static let minimumApplicationCacheSize: Int64 = 10 * 1_048_576
+    private static let protectedApplicationCacheNameFragments = [
+        "account", "icloud", "itunescloud", "appleid", "authentication", "authorization", "identityservice",
+        "keychain", "passkit", "screentime", "1password", "agilebits", "bitwarden", "lastpass", "dashlane",
+        "keepass", "authy", "yubico", "inputmethod", "credential", "password", "wallet", "signal", "whatsapp"
+    ]
+
+    private struct ApplicationCacheMeasurement {
+        let size: Int64
+        let latestModification: Date
+    }
+
+    // MARK: - Stale Third-Party Application Caches
+    static func inspectApplicationCaches(access: JunkScanAccess, excludedPaths: [String], into candidates: inout [JunkCandidate]) async throws {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let caches = home.appendingPathComponent("Library/Caches", isDirectory: true)
+        guard JunkScanScope.mayInspect(caches.path, from: home, access: access),
+              let children = try? FileManager.default.contentsOfDirectory(
+                  at: caches,
+                  includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+                  options: [.skipsHiddenFiles]
+              ) else { return }
+        let running = await MainActor.run {
+            Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
+        }
+        for cache in children {
+            try Task.checkCancellation()
+            guard isEligibleApplicationCacheRoot(cache, runningBundleIdentifiers: running),
+                  !JunkScanScope.isUserExcluded(cache.path, excludedPaths: excludedPaths),
+                  JunkScanScope.mayInspect(cache.path, from: home, access: access),
+                  let measurement = try await measureApplicationCache(cache, access: access, excludedPaths: excludedPaths),
+                  measurement.size >= minimumApplicationCacheSize,
+                  Date().timeIntervalSince(measurement.latestModification) > oldApplicationCacheAge else { continue }
+            candidates.append(JunkCandidate(
+                url: cache,
+                kind: .appCache,
+                reason: "Closed app cache has been inactive for more than 90 days; review before clearing",
+                size: measurement.size,
+                group: nil,
+                modified: measurement.latestModification
+            ))
+        }
+    }
+
+    // MARK: - Application Cache Path Guard
+    static func isApplicationCacheRoot(_ url: URL) -> Bool {
+        let caches = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches", isDirectory: true).path
+        return url.deletingLastPathComponent().path == caches && hasReverseDNSShape(url.lastPathComponent)
+            && !url.lastPathComponent.lowercased().hasPrefix("com.apple.")
+            && !protectedApplicationCacheNameFragments.contains(where: { url.lastPathComponent.lowercased().contains($0) })
+            && !JunkBrowserDataScanner.isKnownBrowserCachePath(url)
+    }
+
+    private static func isEligibleApplicationCacheRoot(_ url: URL, runningBundleIdentifiers: Set<String>) -> Bool {
+        guard isApplicationCacheRoot(url),
+              !runningBundleIdentifiers.contains(where: { $0 == url.lastPathComponent.lowercased() || $0.hasPrefix(url.lastPathComponent.lowercased() + ".") }),
+              let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { return false }
+        return values.isDirectory == true && values.isSymbolicLink != true
+    }
+
+    // MARK: - Restore Cached Application Candidate
+    static func isRestorableApplicationCache(_ candidate: JunkCandidate, runningBundleIdentifiers: Set<String>) -> Bool {
+        guard candidate.kind == .appCache,
+              isEligibleApplicationCacheRoot(candidate.url, runningBundleIdentifiers: runningBundleIdentifiers),
+              candidate.size >= minimumApplicationCacheSize,
+              let modified = candidate.modified else { return false }
+        return Date().timeIntervalSince(modified) > oldApplicationCacheAge
+    }
+
+    // MARK: - Measure Application Cache Metadata
+    private static func measureApplicationCache(_ root: URL, access: JunkScanAccess, excludedPaths: [String]) async throws -> ApplicationCacheMeasurement? {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        var pending = [root]
+        var total: Int64 = 0
+        var latest = (try? root.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+        var inspected = 0
+        while let directory = pending.popLast() {
+            try Task.checkCancellation()
+            if inspected.isMultiple(of: 128) { try await waitForIdle() }
+            inspected += 1
+            guard let children = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else { return nil }
+            for child in children {
+                try Task.checkCancellation()
+                if inspected.isMultiple(of: 256) { try await waitForIdle() }
+                inspected += 1
+                guard inspected <= 50_000 else { return nil }
+                guard !JunkScanScope.isUserExcluded(child.path, excludedPaths: excludedPaths),
+                      JunkScanScope.mayInspect(child.path, from: home, access: access),
+                      let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]),
+                      values.isSymbolicLink != true else { continue }
+                latest = max(latest, values.contentModificationDate ?? .distantPast)
+                if values.isDirectory == true {
+                    pending.append(child)
+                } else if values.isRegularFile == true {
+                    total += Int64(values.fileSize ?? 0)
+                }
+            }
+        }
+        return ApplicationCacheMeasurement(size: total, latestModification: latest)
+    }
+
+    // MARK: - Recheck Application Cache Before Trash
+    static func stillMatchesApplicationCache(_ candidate: JunkCandidate, access: JunkScanAccess, runningBundleIdentifiers: Set<String>) async -> Bool {
+        guard candidate.kind == .appCache,
+              isEligibleApplicationCacheRoot(candidate.url, runningBundleIdentifiers: runningBundleIdentifiers),
+              let measurement = try? await measureApplicationCache(candidate.url, access: access, excludedPaths: []),
+              measurement.size >= minimumApplicationCacheSize,
+              measurement.size == candidate.size,
+              measurement.latestModification == candidate.modified,
+              Date().timeIntervalSince(measurement.latestModification) > oldApplicationCacheAge else { return false }
+        return true
+    }
+
+    private static func hasReverseDNSShape(_ value: String) -> Bool {
+        let components = value.split(separator: ".")
+        return components.count >= 2 && components.allSatisfy { !$0.isEmpty && $0.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" } }
+    }
+
     // MARK: - Possible Application Leftovers
     static func inspectApplicationLeftovers(excludedPaths: [String], into candidates: inout [JunkCandidate]) async throws {
         let installed = FindFilesLeftoverSafety.installedApplicationIdentities()

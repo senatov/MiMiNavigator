@@ -51,6 +51,9 @@ struct JunkFinderView: View {
                     Text("The browser sweep excludes the current system default. Other known browsers are offered for cache, cookies, history, and site storage inactive for more than 3 days. Clearing site data may sign you out.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Text("Closed-app caches are offered only after 90 days of inactivity and when they exceed 10 MB. System, identity, password-manager, and known browser caches are excluded from this pass.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(JunkAIReviewer.statusText)
