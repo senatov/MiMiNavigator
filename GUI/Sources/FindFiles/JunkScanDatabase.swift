@@ -117,7 +117,9 @@ actor JunkScanDatabase {
         let payload = Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
         let decoded = (try? JSONDecoder().decode([JunkCandidate].self, from: payload)) ?? []
         return decoded.filter { candidate in
-            let path = candidate.url.standardizedFileURL.path
+            let path = candidate.url.path
+            guard !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
+                  JunkScanScope.mayInspect(path, from: root, access: access) else { return false }
             let leftover = candidate.kind == .appLeftover && FindFilesLeftoverSafety.searchDirectories.contains {
                 path == $0.appendingPathComponent(candidate.url.lastPathComponent).path
             }
@@ -125,10 +127,8 @@ actor JunkScanDatabase {
                 FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true).standardizedFileURL
             let browserData = (candidate.kind == .browserCache || candidate.kind == .browserPrivacy)
                 && JunkBrowserDataScanner.isRecognized(candidate)
-            return !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths)
-                && JunkScanScope.mayInspect(path, from: root, access: access)
-                && (leftover || processFile || browserData || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
-                && FileManager.default.fileExists(atPath: path)
+            let recognized = leftover || processFile || browserData || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path))
+            return recognized && FileManager.default.fileExists(atPath: path)
         }
     }
 

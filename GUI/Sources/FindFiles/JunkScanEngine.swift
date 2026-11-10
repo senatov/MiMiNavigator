@@ -134,7 +134,9 @@ enum JunkScanEngine {
 
     // MARK: - Inspect One Directory
     private static func inspectDirectory(_ directory: URL, scanRoot: URL, access: JunkScanAccess, excludedPaths: [String]) async throws -> JunkDirectoryBatch {
-        if shouldExclude(directory.standardizedFileURL.path) || JunkScanScope.isUserExcluded(directory.path, excludedPaths: excludedPaths) || !JunkScanScope.mayInspect(directory.path, from: scanRoot, access: access) {
+        if !JunkScanScope.mayInspect(directory.path, from: scanRoot, access: access)
+            || JunkScanScope.isUserExcluded(directory.path, excludedPaths: excludedPaths)
+            || shouldExclude(directory.path) {
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey, .isUbiquitousItemKey]
@@ -149,8 +151,10 @@ enum JunkScanEngine {
         for url in children {
             try Task.checkCancellation()
             if visited.isMultiple(of: 64) { try await waitForIdle() }
-            let path = url.standardizedFileURL.path
-            guard !shouldExclude(path), !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths), JunkScanScope.mayInspect(path, from: scanRoot, access: access),
+            let path = url.path
+            guard !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
+                  JunkScanScope.mayInspect(path, from: scanRoot, access: access),
+                  !shouldExclude(path),
                   let values = try? url.resourceValues(forKeys: keys),
                   values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
             visited += 1
@@ -179,12 +183,12 @@ enum JunkScanEngine {
         var grouped: [String: [JunkFileRecord]] = [:]
         for record in records {
             try Task.checkCancellation()
-            let path = record.url.standardizedFileURL.path
-            guard !shouldExclude(path), !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
+            let path = record.url.path
+            guard !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
                   roots.contains(where: { root in
                       (path == root.path || path.hasPrefix(root.path + "/"))
                           && JunkScanScope.mayInspect(path, from: root, access: access)
-                  }) else { continue }
+                  }), !shouldExclude(path) else { continue }
             try await waitForIdle()
             guard isUnchanged(record.url, size: record.size, modified: record.modified) else { continue }
             let digest: String
@@ -231,6 +235,7 @@ enum JunkScanEngine {
 
     // MARK: - Safety Rules
     static func isSafeRoot(_ path: String, access: JunkScanAccess = .full, authorizedRoots: [URL] = []) -> Bool {
+        guard JunkScanScope.mayInspect(path, from: URL(fileURLWithPath: path, isDirectory: true), access: access) else { return false }
         let resolved = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         if authorizedRoots.contains(where: { $0.standardizedFileURL.path == resolved }) && isExplicitlyAuthorizedRootSafe(resolved, home: home) { return true }

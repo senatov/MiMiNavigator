@@ -43,12 +43,12 @@ extension JunkScanDatabase {
         guard sqlite3_step(statement) == SQLITE_ROW, let pointer = sqlite3_column_blob(statement, 0) else { return [] }
         let payload = Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
         return ((try? JSONDecoder().decode([JunkCandidate].self, from: payload)) ?? []).filter { candidate in
-            !JunkScanScope.isUserExcluded(candidate.url.path, excludedPaths: excludedPaths)
-                && roots.contains { root in
-                (candidate.url.path == root.path || candidate.url.path.hasPrefix(root.path + "/"))
-                    && JunkScanScope.mayInspect(candidate.url.path, from: root, access: access)
-            }
-                && !JunkScanEngine.shouldExclude(candidate.url.path)
+            guard !JunkScanScope.isUserExcluded(candidate.url.path, excludedPaths: excludedPaths),
+                  roots.contains(where: { root in
+                      (candidate.url.path == root.path || candidate.url.path.hasPrefix(root.path + "/"))
+                          && JunkScanScope.mayInspect(candidate.url.path, from: root, access: access)
+                  }) else { return false }
+            return !JunkScanEngine.shouldExclude(candidate.url.path)
                 && FileManager.default.fileExists(atPath: candidate.url.path)
         }
     }

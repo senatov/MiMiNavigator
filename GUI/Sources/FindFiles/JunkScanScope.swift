@@ -12,6 +12,7 @@ enum JunkScanAccess: Sendable, Equatable {
 
 // MARK: - Automatic Cleanup Scope
 enum JunkScanScope {
+    private static let maximumSymlinkHops = 8
     private static let timeMachineMounts: Set<String> = {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
@@ -77,26 +78,79 @@ enum JunkScanScope {
     }
 
     static func mayInspect(_ path: String, from scanRoot: URL, access: JunkScanAccess) -> Bool {
-        guard access == .full else {
-            let standardized = URL(fileURLWithPath: path).standardizedFileURL.path
-            guard let protectedRoot = protectedHomeRoots.first(where: { isSameOrInside(standardized, root: $0) }) else { return true }
-            return isSameOrInside(scanRoot.standardizedFileURL.path, root: protectedRoot)
-                && isSameOrInside(standardized, root: scanRoot.standardizedFileURL.path)
+        guard access == .limited else { return true }
+        let candidate = lexicalPath(path)
+        let root = lexicalPath(scanRoot.path)
+        let protected = protectedHomeRoots
+        let selectedProtectedRoot = protected.first {
+            isSameOrInside(root, root: $0) && isSameOrInside(candidate, root: root)
         }
+        guard let resolved = resolvingLinks(in: path, fileManager: .default, stopAt: { partial in
+            guard protected.contains(where: { isSameOrInside(partial, root: $0) }) else { return false }
+            guard selectedProtectedRoot != nil else { return true }
+            let leadsToSelectedFolder = isSameOrInside(root, root: partial) || isSameOrInside(partial, root: root)
+            return !leadsToSelectedFolder
+        }) else { return false }
+        if selectedProtectedRoot != nil { return isSameOrInside(lexicalPath(resolved), root: root) }
         return true
     }
 
     // MARK: - User Exclusions
     static func isUserExcluded(_ path: String, excludedPaths: [String]) -> Bool {
-        let candidate = URL(fileURLWithPath: path).standardizedFileURL.path
+        let candidate = lexicalPath(path)
         return excludedPaths.contains { excluded in
-            let root = URL(fileURLWithPath: excluded).standardizedFileURL.path
+            let root = lexicalPath(excluded)
             return candidate == root || candidate.hasPrefix(root.hasSuffix("/") ? root : root + "/")
         }
     }
 
+    // MARK: - Resolve Symlinks Without Opening Targets
+    private static func resolvingLinks(in path: String, fileManager: FileManager, stopAt: (String) -> Bool) -> String? {
+        var remaining = pathComponents(path)
+        var resolved: [String] = []
+        var hops = 0
+        while !remaining.isEmpty {
+            let component = remaining.removeFirst()
+            if component == ".." {
+                if !resolved.isEmpty { resolved.removeLast() }
+                continue
+            }
+            let next = resolved + [component]
+            let nextPath = "/" + next.joined(separator: "/")
+            if stopAt(nextPath) { return nil }
+            guard let destination = try? fileManager.destinationOfSymbolicLink(atPath: nextPath) else {
+                resolved = next
+                continue
+            }
+            hops += 1
+            guard hops <= maximumSymlinkHops else { return nil }
+            if destination.hasPrefix("/") { resolved = [] }
+            remaining = pathComponents(destination) + remaining
+        }
+        let resolvedPath = "/" + resolved.joined(separator: "/")
+        return stopAt(resolvedPath) ? nil : resolvedPath
+    }
+
+    private static func lexicalPath(_ path: String) -> String {
+        var components: [String] = []
+        for component in pathComponents(path) {
+            if component == ".." {
+                if !components.isEmpty { components.removeLast() }
+            } else {
+                components.append(component)
+            }
+        }
+        return "/" + components.joined(separator: "/")
+    }
+
+    private static func pathComponents(_ path: String) -> [String] {
+        path.split(separator: "/", omittingEmptySubsequences: true)
+            .map(String.init)
+            .filter { $0 != "." }
+    }
+
     static func protectedHomeRootsForCurrentUser() -> [String] {
-        let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
+        let home = lexicalPath(FileManager.default.homeDirectoryForCurrentUser.path)
         return protectedHomeRelativePaths.map { "\(home)/\($0)" }
     }
 
@@ -112,7 +166,9 @@ enum JunkScanScope {
     private static var protectedHomeRoots: [String] { protectedHomeRootsForCurrentUser() }
 
     private static func isSameOrInside(_ path: String, root: String) -> Bool {
-        path == root || path.hasPrefix(root.hasSuffix("/") ? root : root + "/")
+        let path = path.lowercased()
+        let root = root.lowercased()
+        return path == root || path.hasPrefix(root.hasSuffix("/") ? root : root + "/")
     }
 
     // MARK: - Writable Local Volumes
