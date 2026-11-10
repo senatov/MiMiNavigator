@@ -17,6 +17,8 @@ struct FindFilesTemplateSection: View {
                 template("App leftovers", icon: "app.dashed", preset: .applicationLeftovers, action: viewModel.applyApplicationLeftoversPreset)
                 template("Empty old folders", icon: "folder.badge.minus", preset: .emptyStaleFolders, action: viewModel.applyEmptyStaleFoldersPreset)
                 template("Old downloads", icon: "arrow.down.circle", preset: .oldDownloads, action: viewModel.applyOldDownloadsPreset)
+                template("Old installers", icon: "shippingbox", preset: .oldInstallers, action: viewModel.applyOldInstallersPreset)
+                template("Temporary files", icon: "doc.badge.clock", preset: .temporaryFiles, action: viewModel.applyTemporaryFilesPreset)
                 template("Recently modified", icon: "clock", preset: .recentlyModified, action: viewModel.applyRecentlyModifiedPreset)
             }
             if viewModel.advancedSettings.activePreset != nil {

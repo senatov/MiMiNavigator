@@ -87,6 +87,32 @@ extension FindFilesViewModel {
         advancedSettings.staleAgeAmount = "6"
     }
 
+    // MARK: - Old Installers
+    func applyOldInstallersPreset() {
+        applyPresetDefaults(.oldInstallers)
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+        advancedSettings.searchInSubdirectories = true
+        advancedSettings.itemTypeFilter = .filesOnly
+        advancedSettings.fileNamePattern = ".*\\.(dmg|pkg|xip)"
+        advancedSettings.useRegex = true
+        advancedSettings.staleTimestampFilter = .modified
+        advancedSettings.staleAgeAmount = "90"
+        advancedSettings.staleAgeUnit = .days
+    }
+
+    // MARK: - Temporary Files
+    func applyTemporaryFilesPreset() {
+        applyPresetDefaults(.temporaryFiles)
+        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
+        advancedSettings.searchInSubdirectories = true
+        advancedSettings.itemTypeFilter = .filesOnly
+        advancedSettings.fileNamePattern = ".*\\.(tmp|temp|part)"
+        advancedSettings.useRegex = true
+        advancedSettings.staleTimestampFilter = .modified
+        advancedSettings.staleAgeAmount = "30"
+        advancedSettings.staleAgeUnit = .days
+    }
+
     // MARK: - Recently Modified Files
     func applyRecentlyModifiedPreset() {
         applyLargeStaleFilesPreset()

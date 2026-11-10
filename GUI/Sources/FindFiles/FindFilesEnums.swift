@@ -63,6 +63,8 @@ enum FindFilesPreset: String, Codable {
     case emptyStaleFolders
     case oldDownloads
     case recentlyModified
+    case oldInstallers
+    case temporaryFiles
 }
 
 // MARK: - Find Files Module
