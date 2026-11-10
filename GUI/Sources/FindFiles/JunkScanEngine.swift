@@ -17,6 +17,8 @@ struct JunkCandidate: Identifiable, Sendable, Codable {
         case temporary = "Temporary file"
         case appLeftover = "App leftover"
         case processArtifact = "Stale process file"
+        case browserCache = "Browser cache"
+        case browserPrivacy = "Browser activity and site data"
     }
     let url: URL
     let kind: Kind
@@ -60,16 +62,16 @@ enum JunkScanEngine {
         return cache
     }()
     // MARK: - Scan
-    static func scan(root: URL, update: @escaping @Sendable (JunkScanProgress) async -> Void) async throws {
+    static func scan(root: URL, access: JunkScanAccess, authorizedRoots: [URL], update: @escaping @Sendable (JunkScanProgress) async -> Void) async throws {
         let rootPath = root.standardizedFileURL.path
-        guard isSafeRoot(rootPath) else { throw JunkScanError.unsafeLocation }
+        guard isSafeRoot(rootPath, access: access, authorizedRoots: authorizedRoots) else { throw JunkScanError.unsafeLocation }
         let database = JunkScanDatabase.shared
         var visited = try await database.beginTraversal(root: root)
         try await waitForIdle()
         while let directory = await database.nextDirectory(root: root) {
             try Task.checkCancellation()
             try await waitForIdle()
-            let batch = try await inspectDirectory(directory)
+            let batch = try await inspectDirectory(directory, scanRoot: root, access: access)
             guard await database.saveDirectory(batch, root: root) else { throw JunkScanError.unreadableLocation }
             visited += batch.visited
             if visited % 256 < batch.visited {
@@ -121,7 +123,9 @@ enum JunkScanEngine {
         }
         if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
             try await inspectStaleProcessArtifacts(into: &candidates)
-            try await inspectApplicationLeftovers(into: &candidates)
+            if access == .full { try await inspectApplicationLeftovers(into: &candidates) }
+            let browserContext = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
+            candidates += try await JunkBrowserDataScanner.scan(access: access, authorizedRoots: authorizedRoots, context: browserContext)
         }
         await JunkScanDatabase.shared.saveSnapshot(candidates, root: root)
         try await JunkScanDatabase.shared.finishTraversal(root: root)
@@ -129,8 +133,8 @@ enum JunkScanEngine {
     }
 
     // MARK: - Inspect One Directory
-    private static func inspectDirectory(_ directory: URL) async throws -> JunkDirectoryBatch {
-        if shouldExclude(directory.standardizedFileURL.path) {
+    private static func inspectDirectory(_ directory: URL, scanRoot: URL, access: JunkScanAccess) async throws -> JunkDirectoryBatch {
+        if shouldExclude(directory.standardizedFileURL.path) || !JunkScanScope.mayInspect(directory.path, from: scanRoot, access: access) {
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey, .isUbiquitousItemKey]
@@ -146,7 +150,7 @@ enum JunkScanEngine {
             try Task.checkCancellation()
             if visited.isMultiple(of: 64) { try await waitForIdle() }
             let path = url.standardizedFileURL.path
-            guard !shouldExclude(path),
+            guard !shouldExclude(path), JunkScanScope.mayInspect(path, from: scanRoot, access: access),
                   let values = try? url.resourceValues(forKeys: keys),
                   values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
             visited += 1
@@ -170,12 +174,17 @@ enum JunkScanEngine {
     }
 
     // MARK: - Cross-Volume Exact Duplicates
-    static func scanGlobalDuplicates() async throws -> [JunkCandidate] {
+    static func scanGlobalDuplicates(roots: [URL], access: JunkScanAccess) async throws -> [JunkCandidate] {
         let records = await JunkScanDatabase.shared.globalDuplicateRecords()
         var grouped: [String: [JunkFileRecord]] = [:]
         for record in records {
             try Task.checkCancellation()
-            guard !shouldExclude(record.url.standardizedFileURL.path) else { continue }
+            let path = record.url.standardizedFileURL.path
+            guard !shouldExclude(path),
+                  roots.contains(where: { root in
+                      (path == root.path || path.hasPrefix(root.path + "/"))
+                          && JunkScanScope.mayInspect(path, from: root, access: access)
+                  }) else { continue }
             try await waitForIdle()
             guard isUnchanged(record.url, size: record.size, modified: record.modified) else { continue }
             let digest: String
@@ -221,11 +230,22 @@ enum JunkScanEngine {
     }
 
     // MARK: - Safety Rules
-    static func isSafeRoot(_ path: String) -> Bool {
+    static func isSafeRoot(_ path: String, access: JunkScanAccess = .full, authorizedRoots: [URL] = []) -> Bool {
         let resolved = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
+        if authorizedRoots.contains(where: { $0.standardizedFileURL.path == resolved }) && isExplicitlyAuthorizedRootSafe(resolved, home: home) { return true }
         if (resolved == home || resolved.hasPrefix(home + "/")) && !shouldExclude(resolved) { return true }
+        guard access == .full else { return false }
         return JunkScanScope.localVolumes().contains { resolved == $0.path } && !shouldExclude(resolved)
+    }
+
+    // MARK: - Authorized Root Guard
+    private static func isExplicitlyAuthorizedRootSafe(_ path: String, home: String) -> Bool {
+        let hardExcluded = ["/", "/System", "/Applications", "/Library", "/private", "/usr", "/bin", "/sbin", "/var", "/etc", "/Users"]
+        guard !hardExcluded.contains(where: { path == $0 || path.hasPrefix($0 + "/") }) else { return false }
+        guard path != "/Volumes" else { return false }
+        if path.hasPrefix(home + "/Library/") && !path.hasPrefix(home + "/Library/CloudStorage/") { return true }
+        return !shouldExclude(path)
     }
 
     static func shouldExclude(_ path: String) -> Bool {
@@ -333,7 +353,7 @@ enum JunkScanEngine {
     }
 
     // MARK: - Recheck Candidate Before Trash
-    static func stillMatchesCandidate(_ candidate: JunkCandidate) async -> Bool {
+    static func stillMatchesCandidate(_ candidate: JunkCandidate, access: JunkScanAccess, authorizedRoots: [URL]) async -> Bool {
         if candidate.group != nil { return await stillMatchesDuplicate(candidate) }
         let url = candidate.url
         guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isRegularFileKey, .contentModificationDateKey]),
@@ -350,6 +370,9 @@ enum JunkScanEngine {
                 && processID(in: url).map { !isProcessRunning($0) } == true
         case .duplicate, .duplicateFolder:
             return false
+        case .browserCache, .browserPrivacy:
+            let context = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
+            return await JunkBrowserDataScanner.stillMatches(candidate, access: access, authorizedRoots: authorizedRoots, context: context)
         }
     }
 

@@ -107,7 +107,7 @@ actor JunkScanDatabase {
     }
 
     // MARK: - Load Candidates
-    func loadSnapshot(root: URL) -> [JunkCandidate] {
+    func loadSnapshot(root: URL, access: JunkScanAccess = .full) -> [JunkCandidate] {
         guard let database else { return [] }
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, "SELECT payload FROM snapshots WHERE root = ?", -1, &statement, nil) == SQLITE_OK else { return [] }
@@ -123,7 +123,10 @@ actor JunkScanDatabase {
             }
             let processFile = candidate.kind == .processArtifact && candidate.url.deletingLastPathComponent().standardizedFileURL ==
                 FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true).standardizedFileURL
-            return (leftover || processFile || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
+            let browserData = (candidate.kind == .browserCache || candidate.kind == .browserPrivacy)
+                && JunkBrowserDataScanner.isRecognized(candidate)
+            return JunkScanScope.mayInspect(path, from: root, access: access)
+                && (leftover || processFile || browserData || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
                 && FileManager.default.fileExists(atPath: path)
         }
     }

@@ -44,6 +44,12 @@ struct JunkFinderView: View {
                     )
                     .font(.default)
                     .foregroundStyle(Color(#colorLiteral(red: 0, green: 0, blue: 0, alpha: 1)))
+                    Text("AI reviews only possible leftovers from uninstalled apps, older than 180 days, in the user's Library. It receives paths and categories only; it does not inspect files or classify browser data.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("The browser sweep excludes the current system default. Other known browsers are offered for cache, cookies, history, and site storage inactive for more than 3 days. Clearing site data may sign you out.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(JunkAIReviewer.statusText)

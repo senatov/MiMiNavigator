@@ -10,11 +10,13 @@ The scanner proceeds only when all of these conditions are true:
 - The one-minute system load average is below half the number of active processor cores.
 - The Mac's thermal state is `nominal`.
 
-It checks again every five seconds while waiting. A completed automatic pass is followed by an approximately six-hour delay before the next pass. The scanner uses a background task priority, so it yields to foreground work. The UI reports that it pauses while MiMiNavigator is active or the system is busy.
+It checks again every five seconds while waiting. A completed automatic pass is followed by an approximately three-hour delay before the next pass. The scanner uses a background task priority, so it yields to foreground work. The UI reports that it pauses while MiMiNavigator is active or the system is busy.
 
 ## Apple Intelligence requirements and observed setup
 
 AI review applies only to possible leftovers from uninstalled applications. It uses Apple's on-device Foundation Model and can return only **keep** or **review**. It receives the candidate path and category, not the file contents or the user's intent. A **review** result means the item may be worth checking; it is not a claim that deletion is safe. Results are cached against the file's modification date.
+
+In the Cleanup window, AI review applies only to possible application leftovers older than 180 days in the user's Library. It does not review browser caches, cookies, history, or site storage.
 
 AI review requires Apple Intelligence to be enabled and its model to be ready on a supported Mac. If the model is downloading or preparing, the app waits briefly; if it is still unavailable, that candidate is skipped for now. In the current observed setup, Apple Intelligence became available after both the system region was changed to **United States** and the **Siri language** was changed. This is a field observation, not a permanent app requirement: availability, supported languages, and setup steps can change with macOS releases and Apple's service behavior. Check **System Settings → Apple Intelligence & Siri** and **General → Language & Region** when the model is unavailable.
 
@@ -24,5 +26,6 @@ AI review requires Apple Intelligence to be enabled and its model to be ready on
 - Stale process artifacts: `.pid` files older than 30 days, only when the referenced process is not running.
 - Old installers and temporary files, based on their type and age.
 - Exact duplicate content across eligible local volumes; at least one copy should be kept.
+- Cache and selected browsing data from known browsers other than the current macOS default, when the browser is closed and the data has been inactive for more than three days. Cookie and site-storage candidates can sign the user out; each candidate remains a manual choice.
 
 The scanner revalidates candidates before offering cleanup actions. Review findings and choose explicitly what to move to Trash.

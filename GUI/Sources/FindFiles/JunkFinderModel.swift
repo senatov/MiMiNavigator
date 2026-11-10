@@ -11,6 +11,7 @@ import FindFilesKit
 @Observable
 final class JunkFinderModel {
     static let shared = JunkFinderModel()
+    private static let automaticScanIntervalSeconds: TimeInterval = 10_800
     private(set) var candidates: [JunkCandidate] = []
     private(set) var visited = 0
     private(set) var isScanning = false
@@ -19,6 +20,8 @@ final class JunkFinderModel {
     var selectedIDs: Set<String> = []
     private var scanTask: Task<Void, Never>?
     private var rootCandidates: [String: [JunkCandidate]] = [:]
+    private var activeScanRoots: [URL] = []
+    private var scanAccess: JunkScanAccess = .limited
     private var generation = 0
     private init() {}
 
@@ -31,22 +34,31 @@ final class JunkFinderModel {
         status = "Waiting for low system load and for MiMiNavigator to leave the foreground…"
         let receiver = self
         scanTask = Task.detached(priority: .background) {
-            let roots = JunkScanScope.roots().filter { JunkScanEngine.isSafeRoot($0.path) }
+            let access = JunkScanScope.scanAccess()
+            let authorizedRoots = await BookmarkStore.shared.restoreAll()
+            let roots = JunkScanScope.roots(access: access, authorizedFolders: authorizedRoots)
+                .filter { JunkScanEngine.isSafeRoot($0.path, access: access, authorizedRoots: authorizedRoots) }
+            await receiver.configureScanScope(roots, access: access, generation: currentGeneration)
             for root in roots {
-                let saved = await JunkScanDatabase.shared.loadSnapshot(root: root)
+                let saved = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access)
                 let partial = await JunkScanDatabase.shared.traversalCandidates(root: root)
                 await receiver.restore(saved + partial, root: root, generation: currentGeneration)
             }
-            let global = await JunkScanDatabase.shared.loadGlobalCandidates()
+            let global = await JunkScanDatabase.shared.loadGlobalCandidates(roots: roots, access: access)
             await receiver.restoreGlobal(global, generation: currentGeneration)
             while !Task.isCancelled {
-                await receiver.beginPass(generation: currentGeneration)
-                for root in JunkScanScope.roots() where JunkScanEngine.isSafeRoot(root.path) {
+                let access = JunkScanScope.scanAccess()
+                let authorizedRoots = await BookmarkStore.shared.restoreAll()
+                let roots = JunkScanScope.roots(access: access, authorizedFolders: authorizedRoots)
+                    .filter { JunkScanEngine.isSafeRoot($0.path, access: access, authorizedRoots: authorizedRoots) }
+                await receiver.configureScanScope(roots, access: access, generation: currentGeneration)
+                await receiver.beginPass(generation: currentGeneration, access: access)
+                for root in roots {
                     do {
-                        try await JunkScanEngine.scan(root: root) { progress in
+                        try await JunkScanEngine.scan(root: root, access: access, authorizedRoots: authorizedRoots) { progress in
                             await receiver.receive(progress, root: root, generation: currentGeneration)
                         }
-                        let latest = await JunkScanDatabase.shared.loadSnapshot(root: root)
+                        let latest = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access)
                         await receiver.completed(latest, root: root, generation: currentGeneration)
                     } catch is CancellationError {
                         return
@@ -55,16 +67,16 @@ final class JunkFinderModel {
                     }
                 }
                 do {
-                    let global = try await JunkScanEngine.scanGlobalDuplicates()
+                    let global = try await JunkScanEngine.scanGlobalDuplicates(roots: roots, access: access)
                     await receiver.restoreGlobal(global, generation: currentGeneration)
                 } catch is CancellationError {
                     return
                 } catch {
                     await receiver.scanError(error.localizedDescription, root: URL(fileURLWithPath: "/Volumes"), generation: currentGeneration)
                 }
-                await receiver.finishPass(generation: currentGeneration)
+                await receiver.finishPass(generation: currentGeneration, access: access)
                 do {
-                    try await Task.sleep(for: .seconds(21_600))
+                    try await Task.sleep(for: .seconds(Self.automaticScanIntervalSeconds))
                 } catch {
                     return
                 }
@@ -74,6 +86,15 @@ final class JunkFinderModel {
     }
 
     // MARK: - Restore Snapshot
+    private func configureScanScope(_ roots: [URL], access: JunkScanAccess, generation: Int) {
+        guard self.generation == generation else { return }
+        activeScanRoots = roots
+        scanAccess = access
+        rootCandidates = rootCandidates.mapValues(prune)
+        rebuildCandidates()
+    }
+
+    // MARK: - Scan Pass State
     private func restore(_ saved: [JunkCandidate], root: URL, generation: Int) {
         guard self.generation == generation, !saved.isEmpty else { return }
         rootCandidates[root.path] = prune(Array(Dictionary(saved.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values))
@@ -81,18 +102,21 @@ final class JunkFinderModel {
         status = "Showing \(candidates.count) saved candidates while the next idle scan is pending."
     }
 
-    // MARK: - Scan Pass State
-    private func beginPass(generation: Int) {
+    private func beginPass(generation: Int, access: JunkScanAccess) {
         guard self.generation == generation else { return }
         isScanning = true
         visited = 0
-        status = "Waiting for low system load and for MiMiNavigator to leave the foreground…"
+        status = access == .full
+            ? "Waiting for low system load and for MiMiNavigator to leave the foreground…"
+            : "Scanning accessible locations. Enable Full Disk Access for additional protected folders and AI app-leftover review."
     }
 
-    private func finishPass(generation: Int) {
+    private func finishPass(generation: Int, access: JunkScanAccess) {
         guard self.generation == generation else { return }
         isScanning = false
-        status = "Scan complete: \(candidates.count) candidates. Next automatic pass in about six hours."
+        status = access == .full
+            ? "Scan complete: \(candidates.count) candidates. Next automatic pass in about three hours."
+            : "Scan complete: \(candidates.count) candidates in accessible locations. Full Disk Access unlocks protected folders and AI app-leftover review. Next pass in about three hours."
         log.info("[Cleanup] \(status)")
     }
 
@@ -110,6 +134,16 @@ final class JunkFinderModel {
         if isScanning { status = "Automatic scan paused after \(visited) items." }
         isScanning = false
         generation += 1
+    }
+
+    // MARK: - Restart After Access Change
+    func restartAfterAccessChange() async {
+        let previousTask = scanTask
+        previousTask?.cancel()
+        scanTask = nil
+        generation += 1
+        await previousTask?.value
+        startAutomatic()
     }
 
     // MARK: - Receive
@@ -152,10 +186,16 @@ final class JunkFinderModel {
 
     // MARK: - Prune Removed Candidates
     private func prune(_ items: [JunkCandidate]) -> [JunkCandidate] {
-        let existing = Dictionary(items.filter {
-            FileManager.default.fileExists(atPath: $0.id) &&
-                ($0.kind == .appLeftover || $0.kind == .processArtifact || !JunkScanEngine.shouldExclude($0.id)) &&
-                ($0.kind != .emptyFolder || JunkScanEngine.isEligibleEmptyFolder($0.url))
+        let existing = Dictionary(items.filter { candidate in
+            (scanAccess == .full || candidate.kind != .appLeftover) &&
+                activeScanRoots.contains { root in
+                    (candidate.id == root.path || candidate.id.hasPrefix(root.path + "/"))
+                        && JunkScanScope.mayInspect(candidate.id, from: root, access: scanAccess)
+                } &&
+                FileManager.default.fileExists(atPath: candidate.id) &&
+                (candidate.kind == .appLeftover || candidate.kind == .processArtifact || candidate.kind == .browserCache || candidate.kind == .browserPrivacy || !JunkScanEngine.shouldExclude(candidate.id)) &&
+                ((candidate.kind == .browserCache || candidate.kind == .browserPrivacy) ? JunkBrowserDataScanner.isRecognized(candidate) : true) &&
+                (candidate.kind != .emptyFolder || JunkScanEngine.isEligibleEmptyFolder(candidate.url))
         }.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values
         let groupCounts = Dictionary(grouping: existing.compactMap(\.group), by: { $0 }).mapValues(\.count)
         return existing.filter { $0.group == nil || (groupCounts[$0.group!] ?? 0) > 1 }.map { item in
@@ -216,7 +256,7 @@ final class JunkFinderModel {
         Task {
             defer { isTrashing = false }
             do {
-                for candidate in topLevel where !(await JunkScanEngine.stillMatchesCandidate(candidate)) {
+                for candidate in topLevel where !(await JunkScanEngine.stillMatchesCandidate(candidate, access: scanAccess, authorizedRoots: activeScanRoots)) {
                     status = "An item changed since the scan. Nothing was moved to Trash."
                     return
                 }
@@ -238,7 +278,7 @@ final class JunkFinderModel {
                 }
                 try await FindFilesOperationService.shared.execute(urls: urls, operation: .trash)
                 status = "Moved \(urls.count) items to Trash."
-                for root in JunkScanScope.roots() {
+                for root in activeScanRoots {
                     rootCandidates[root.path] = prune(rootCandidates[root.path] ?? [])
                     await JunkScanDatabase.shared.saveSnapshot(rootCandidates[root.path] ?? [], root: root)
                 }
@@ -267,6 +307,11 @@ final class JunkFinderModel {
             let logs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true)
             return candidate.url.deletingLastPathComponent().standardizedFileURL == logs.standardizedFileURL
         }
-        return JunkScanScope.roots().contains { path.hasPrefix($0.path + "/") } && !JunkScanEngine.shouldExclude(path)
+        let inScope = activeScanRoots.contains { path == $0.path || path.hasPrefix($0.path + "/") }
+        let readable = activeScanRoots.contains { JunkScanScope.mayInspect(path, from: $0, access: scanAccess) }
+        if candidate.kind == .browserCache || candidate.kind == .browserPrivacy {
+            return inScope && readable && JunkBrowserDataScanner.isRecognized(candidate)
+        }
+        return inScope && readable && !JunkScanEngine.shouldExclude(path)
     }
 }
