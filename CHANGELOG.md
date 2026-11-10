@@ -7,6 +7,15 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.7] - 2026-11-10
+
+### Added
+- Added a closed allowlist of large, stale Xcode and package-manager caches, deterministic review levels, and visible scan-skip diagnostics.
+
+### Changed
+- Check current-user open-file paths before cleanup moves selections to Trash; block the operation if a selected path is active or the check is unavailable.
+- Require complete cache measurements and preserve parent folders containing user exclusions.
+
 ## [0.9.1.6] - 2026-11-09
 
 ### Changed
