@@ -79,6 +79,7 @@ enum FileOperationOutcomePresenter {
             systemImage: operation.icon,
             tint: .green,
             displayDuration: toastDisplayDuration,
+            suppressTransientPresentation: ProgressPanel.shared.isVisible,
             actionTitle: undo == nil ? (resultURL == nil ? nil : "Open Result") : "Undo",
             isActionAvailable: undo?.isAvailable,
             action: undo?.action ?? openAction(for: resultURL)
@@ -160,6 +161,7 @@ enum FileOperationOutcomePresenter {
             systemImage: "xmark.octagon.fill",
             tint: .red,
             displayDuration: bannerDisplayDuration,
+            suppressTransientPresentation: ProgressPanel.shared.isVisible,
             actionTitle: retry == nil ? (undo == nil ? "Report" : "Undo") : "Retry",
             isActionAvailable: retry == nil ? undo?.isAvailable : nil,
             action: retry ?? undo?.action ?? fallbackReport
@@ -173,7 +175,8 @@ enum FileOperationOutcomePresenter {
             message: message,
             systemImage: "stop.circle.fill",
             tint: .secondary,
-            displayDuration: toastDisplayDuration
+            displayDuration: toastDisplayDuration,
+            suppressTransientPresentation: ProgressPanel.shared.isVisible
         )
     }
 

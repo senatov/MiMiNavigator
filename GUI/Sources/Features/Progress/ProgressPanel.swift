@@ -75,6 +75,7 @@ final class ProgressPanel: NSObject {
     weak var presentationHostWindow: NSWindow?
     private override init() { super.init() }
     var appearance: ProgressPanelAppearance { .shared }
+    var isVisible: Bool { panel?.isVisible == true }
 
     // MARK: - Compatibility Helpers
     func reset(title: String, message: String, icon: String = "archivebox.fill") {
@@ -168,9 +169,12 @@ final class ProgressPanel: NSObject {
         guard let tv = logTextView else { return }
         lineCount += 1
         let entry = "\(lineCount). \(line)\n"
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byCharWrapping
         let attrs: [NSAttributedString.Key: Any] = [
             .font: appearance.logFont,
             .foregroundColor: appearance.logColor,
+            .paragraphStyle: paragraphStyle,
         ]
         tv.textStorage?.append(NSAttributedString(string: entry, attributes: attrs))
         tv.scrollToEndOfDocument(nil)
@@ -186,6 +190,9 @@ final class ProgressPanel: NSObject {
         let entry = NSMutableAttributedString(attributedString: prefix)
         entry.append(content)
         entry.append(NSAttributedString(string: "\n", attributes: [.font: appearance.logFont]))
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byCharWrapping
+        entry.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: entry.length))
         tv.textStorage?.append(entry)
         tv.scrollToEndOfDocument(nil)
     }

@@ -105,11 +105,12 @@ final class InAppNoticeCenter {
         systemImage: String = "checkmark.circle.fill",
         tint: Color = .green,
         displayDuration: Duration? = nil,
+        suppressTransientPresentation: Bool = false,
         actionTitle: String? = nil,
         isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
+        present(InAppNotice(kind: .toast, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action), suppressTransientPresentation: suppressTransientPresentation)
     }
 
     // MARK: - Present Banner
@@ -120,11 +121,12 @@ final class InAppNoticeCenter {
         systemImage: String = "exclamationmark.triangle.fill",
         tint: Color = .orange,
         displayDuration: Duration? = nil,
+        suppressTransientPresentation: Bool = false,
         actionTitle: String? = nil,
         isActionAvailable: (() -> Bool)? = nil,
         action: (() -> Void)? = nil
     ) {
-        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action))
+        present(InAppNotice(kind: .banner, scope: scope, title: title, message: message, systemImage: systemImage, tint: tint, displayDuration: displayDuration, actionTitle: actionTitle, isActionAvailable: isActionAvailable, action: action), suppressTransientPresentation: suppressTransientPresentation)
     }
 
     // MARK: - Present Error
@@ -201,12 +203,19 @@ final class InAppNoticeCenter {
     }
 
     // MARK: - Queue Management
-    private func present(_ notice: InAppNotice) {
+    private func present(_ notice: InAppNotice, suppressTransientPresentation: Bool = false) {
         history.insert(notice, at: 0)
         if history.count > historyLimit {
             history.removeLast(history.count - historyLimit)
         }
         persistHistory()
+        if suppressTransientPresentation {
+            if notice.scope == .main {
+                historyRivetTint = notice.tint
+                historyRivetPulse += 1
+            }
+            return
+        }
         if visibleNotices[notice.scope] == nil {
             display(notice)
             return
