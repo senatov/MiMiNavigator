@@ -12,6 +12,7 @@ import FindFilesKit
 final class JunkFinderModel {
     static let shared = JunkFinderModel()
     private static let automaticScanIntervalSeconds: TimeInterval = 10_800
+    private static let excludedPathsKey = "cleanup.excludedPaths.v1"
     private(set) var candidates: [JunkCandidate] = []
     private(set) var visited = 0
     private(set) var isScanning = false
@@ -21,9 +22,13 @@ final class JunkFinderModel {
     private var scanTask: Task<Void, Never>?
     private var rootCandidates: [String: [JunkCandidate]] = [:]
     private var activeScanRoots: [URL] = []
+    private var activeExcludedPaths: [String] = []
     private var scanAccess: JunkScanAccess = .limited
+    private(set) var excludedPaths: [String]
     private var generation = 0
-    private init() {}
+    private init() {
+        excludedPaths = MiMiDefaults.shared.stringArray(forKey: Self.excludedPathsKey) ?? []
+    }
 
     // MARK: - Start Automatic Scan
     func startAutomatic() {
@@ -36,29 +41,31 @@ final class JunkFinderModel {
         scanTask = Task.detached(priority: .background) {
             let access = JunkScanScope.scanAccess()
             let authorizedRoots = await BookmarkStore.shared.restoreAll()
+            let excludedPaths = await receiver.excludedPathsSnapshot()
             let roots = JunkScanScope.roots(access: access, authorizedFolders: authorizedRoots)
                 .filter { JunkScanEngine.isSafeRoot($0.path, access: access, authorizedRoots: authorizedRoots) }
-            await receiver.configureScanScope(roots, access: access, generation: currentGeneration)
+            await receiver.configureScanScope(roots, access: access, excludedPaths: excludedPaths, generation: currentGeneration)
             for root in roots {
-                let saved = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access)
+                let saved = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access, excludedPaths: excludedPaths)
                 let partial = await JunkScanDatabase.shared.traversalCandidates(root: root)
                 await receiver.restore(saved + partial, root: root, generation: currentGeneration)
             }
-            let global = await JunkScanDatabase.shared.loadGlobalCandidates(roots: roots, access: access)
+            let global = await JunkScanDatabase.shared.loadGlobalCandidates(roots: roots, access: access, excludedPaths: excludedPaths)
             await receiver.restoreGlobal(global, generation: currentGeneration)
             while !Task.isCancelled {
                 let access = JunkScanScope.scanAccess()
                 let authorizedRoots = await BookmarkStore.shared.restoreAll()
+                let excludedPaths = await receiver.excludedPathsSnapshot()
                 let roots = JunkScanScope.roots(access: access, authorizedFolders: authorizedRoots)
                     .filter { JunkScanEngine.isSafeRoot($0.path, access: access, authorizedRoots: authorizedRoots) }
-                await receiver.configureScanScope(roots, access: access, generation: currentGeneration)
+                await receiver.configureScanScope(roots, access: access, excludedPaths: excludedPaths, generation: currentGeneration)
                 await receiver.beginPass(generation: currentGeneration, access: access)
                 for root in roots {
                     do {
-                        try await JunkScanEngine.scan(root: root, access: access, authorizedRoots: authorizedRoots) { progress in
+                        try await JunkScanEngine.scan(root: root, access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths) { progress in
                             await receiver.receive(progress, root: root, generation: currentGeneration)
                         }
-                        let latest = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access)
+                        let latest = await JunkScanDatabase.shared.loadSnapshot(root: root, access: access, excludedPaths: excludedPaths)
                         await receiver.completed(latest, root: root, generation: currentGeneration)
                     } catch is CancellationError {
                         return
@@ -67,7 +74,7 @@ final class JunkFinderModel {
                     }
                 }
                 do {
-                    let global = try await JunkScanEngine.scanGlobalDuplicates(roots: roots, access: access)
+                    let global = try await JunkScanEngine.scanGlobalDuplicates(roots: roots, access: access, excludedPaths: excludedPaths)
                     await receiver.restoreGlobal(global, generation: currentGeneration)
                 } catch is CancellationError {
                     return
@@ -86,12 +93,32 @@ final class JunkFinderModel {
     }
 
     // MARK: - Restore Snapshot
-    private func configureScanScope(_ roots: [URL], access: JunkScanAccess, generation: Int) {
+    private func configureScanScope(_ roots: [URL], access: JunkScanAccess, excludedPaths: [String], generation: Int) {
         guard self.generation == generation else { return }
         activeScanRoots = roots
+        activeExcludedPaths = excludedPaths
         scanAccess = access
         rootCandidates = rootCandidates.mapValues(prune)
         rebuildCandidates()
+    }
+
+    // MARK: - Exclusion Preferences
+    private func excludedPathsSnapshot() -> [String] { excludedPaths }
+
+    func exclude(_ candidate: JunkCandidate) {
+        let path = candidate.url.standardizedFileURL.path
+        guard !excludedPaths.contains(path) else { return }
+        excludedPaths.append(path)
+        excludedPaths.sort()
+        MiMiDefaults.shared.set(excludedPaths, forKey: Self.excludedPathsKey)
+        selectedIDs.remove(candidate.id)
+        Task { await restartAfterPreferencesChange() }
+    }
+
+    func removeExclusion(_ path: String) {
+        excludedPaths.removeAll { $0 == path }
+        MiMiDefaults.shared.set(excludedPaths, forKey: Self.excludedPathsKey)
+        Task { await restartAfterPreferencesChange() }
     }
 
     // MARK: - Scan Pass State
@@ -137,7 +164,7 @@ final class JunkFinderModel {
     }
 
     // MARK: - Restart After Access Change
-    func restartAfterAccessChange() async {
+    func restartAfterPreferencesChange() async {
         let previousTask = scanTask
         previousTask?.cancel()
         scanTask = nil
@@ -187,7 +214,8 @@ final class JunkFinderModel {
     // MARK: - Prune Removed Candidates
     private func prune(_ items: [JunkCandidate]) -> [JunkCandidate] {
         let existing = Dictionary(items.filter { candidate in
-            (scanAccess == .full || candidate.kind != .appLeftover) &&
+            !JunkScanScope.isUserExcluded(candidate.id, excludedPaths: activeExcludedPaths) &&
+                (scanAccess == .full || candidate.kind != .appLeftover) &&
                 activeScanRoots.contains { root in
                     (candidate.id == root.path || candidate.id.hasPrefix(root.path + "/"))
                         && JunkScanScope.mayInspect(candidate.id, from: root, access: scanAccess)
@@ -296,6 +324,7 @@ final class JunkFinderModel {
     // MARK: - Candidate Safety
     private func isAllowed(candidate: JunkCandidate) -> Bool {
         let path = candidate.url.standardizedFileURL.path
+        guard !JunkScanScope.isUserExcluded(path, excludedPaths: activeExcludedPaths) else { return false }
         if candidate.kind == .appLeftover {
             let directChild = FindFilesLeftoverSafety.searchDirectories.contains {
                 path == $0.appendingPathComponent(candidate.url.lastPathComponent).path

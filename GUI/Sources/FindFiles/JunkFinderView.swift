@@ -10,6 +10,7 @@ struct JunkFinderView: View {
     @State private var model = JunkFinderModel.shared
     @State private var sortOrder = [KeyPathComparator(\JunkCandidate.name)]
     @State private var highlightedIDs: Set<JunkCandidate.ID> = []
+    @State private var showingExclusions = false
     @State private var columnCustomization: TableColumnCustomization<JunkCandidate>
     var appState: AppState?
     private static let columnsKey = "junkFinder.columns.v1"
@@ -62,6 +63,7 @@ struct JunkFinderView: View {
                 Text(model.status).font(.default).foregroundStyle(Color(#colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)))
                 Spacer()
                 Text("\(model.candidates.count) candidates").font(.caption.monospacedDigit())
+                Button("Excluded (\(model.excludedPaths.count))") { showingExclusions = true }
             }
             .padding(.horizontal, 14)
             .padding(.bottom, 8)
@@ -92,6 +94,9 @@ struct JunkFinderView: View {
         .onChange(of: columnCustomization) {
             guard let data = try? JSONEncoder().encode(columnCustomization) else { return }
             MiMiDefaults.shared.set(data, forKey: Self.columnsKey)
+        }
+        .sheet(isPresented: $showingExclusions) {
+            exclusionsSheet
         }
     }
 
@@ -196,10 +201,38 @@ struct JunkFinderView: View {
                 if let group = candidate.group {
                     Button("Select Copies Except One") { model.selectGroup(group) }
                 }
+                Button("Exclude This Item from Scans") { model.exclude(candidate) }
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))
         .fileTableColumnDividerStyle()
+    }
+
+    // MARK: - Excluded Paths
+    private var exclusionsSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Excluded from cleanup scans").font(.headline)
+            Text("Excluded paths and everything inside excluded folders are skipped. Remove a path to include it again.")
+                .font(.caption).foregroundStyle(.secondary)
+            if model.excludedPaths.isEmpty {
+                ContentUnavailableView("No exclusions", systemImage: "checkmark.circle")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List(model.excludedPaths, id: \.self) { path in
+                    HStack(spacing: 8) {
+                        Text(path).lineLimit(1).truncationMode(.middle).help(path)
+                        Spacer(minLength: 8)
+                        Button("Remove") { model.removeExclusion(path) }
+                    }
+                }
+            }
+            HStack {
+                Spacer()
+                Button("Done") { showingExclusions = false }
+            }
+        }
+        .padding(16)
+        .frame(minWidth: 480, minHeight: 300)
     }
 
     // MARK: - Navigate to Candidate Directory

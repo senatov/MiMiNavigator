@@ -86,6 +86,15 @@ enum JunkScanScope {
         return true
     }
 
+    // MARK: - User Exclusions
+    static func isUserExcluded(_ path: String, excludedPaths: [String]) -> Bool {
+        let candidate = URL(fileURLWithPath: path).standardizedFileURL.path
+        return excludedPaths.contains { excluded in
+            let root = URL(fileURLWithPath: excluded).standardizedFileURL.path
+            return candidate == root || candidate.hasPrefix(root.hasSuffix("/") ? root : root + "/")
+        }
+    }
+
     static func protectedHomeRootsForCurrentUser() -> [String] {
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         return protectedHomeRelativePaths.map { "\(home)/\($0)" }

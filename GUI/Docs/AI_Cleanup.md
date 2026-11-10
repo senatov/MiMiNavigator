@@ -29,3 +29,5 @@ AI review requires Apple Intelligence to be enabled and its model to be ready on
 - Cache and selected browsing data from known browsers other than the current macOS default, when the browser is closed and the data has been inactive for more than three days. Cookie and site-storage candidates can sign the user out; each candidate remains a manual choice.
 
 The scanner revalidates candidates before offering cleanup actions. Review findings and choose explicitly what to move to Trash.
+
+Paths excluded from Cleanup are skipped on later scans and can be restored from the **Excluded** list in the Cleanup window.

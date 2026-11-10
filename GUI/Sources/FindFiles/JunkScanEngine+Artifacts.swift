@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Application and Process Artifacts
 extension JunkScanEngine {
     // MARK: - Possible Application Leftovers
-    static func inspectApplicationLeftovers(into candidates: inout [JunkCandidate]) async throws {
+    static func inspectApplicationLeftovers(excludedPaths: [String], into candidates: inout [JunkCandidate]) async throws {
         let installed = FindFilesLeftoverSafety.installedApplicationIdentities()
         let running = await MainActor.run {
             Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
@@ -20,9 +20,11 @@ extension JunkScanEngine {
         // and a model that is still downloading gets a short grace period instead of an instant skip
         var modelReady: Bool?
         for directory in FindFilesLeftoverSafety.searchDirectories {
+            if JunkScanScope.isUserExcluded(directory.path, excludedPaths: excludedPaths) { continue }
             guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isSymbolicLinkKey, .contentModificationDateKey]) else { continue }
             for child in children {
                 try Task.checkCancellation()
+                if JunkScanScope.isUserExcluded(child.path, excludedPaths: excludedPaths) { continue }
                 let name = child.lastPathComponent.lowercased()
                 guard !name.hasPrefix("."), name.contains("."),
                       !name.hasPrefix("com.apple."), !name.hasPrefix("group.com.apple."),
@@ -56,11 +58,13 @@ extension JunkScanEngine {
     }
 
     // MARK: - Stale Process Files
-    static func inspectStaleProcessArtifacts(into candidates: inout [JunkCandidate]) async throws {
+    static func inspectStaleProcessArtifacts(excludedPaths: [String], into candidates: inout [JunkCandidate]) async throws {
         let logs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true)
+        if JunkScanScope.isUserExcluded(logs.path, excludedPaths: excludedPaths) { return }
         guard let children = try? FileManager.default.contentsOfDirectory(at: logs, includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]) else { return }
         for url in children where url.pathExtension.lowercased() == "pid" {
             try Task.checkCancellation()
+            if JunkScanScope.isUserExcluded(url.path, excludedPaths: excludedPaths) { continue }
             try await waitForIdle()
             guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]),
                   values.isRegularFile == true, values.isSymbolicLink != true,

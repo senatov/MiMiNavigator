@@ -63,7 +63,7 @@ enum JunkBrowserDataScanner {
     }
 
     // MARK: - Scan
-    static func scan(access: JunkScanAccess, authorizedRoots: [URL], context: RuntimeContext?) async throws -> [JunkCandidate] {
+    static func scan(access: JunkScanAccess, authorizedRoots: [URL], excludedPaths: [String], context: RuntimeContext?) async throws -> [JunkCandidate] {
         guard let context else { return [] }
         let home = FileManager.default.homeDirectoryForCurrentUser
         var results: [JunkCandidate] = []
@@ -73,12 +73,12 @@ enum JunkBrowserDataScanner {
             let library = home.appendingPathComponent("Library", isDirectory: true)
             for relative in browser.supportPaths {
                 let root = library.appendingPathComponent(relative, isDirectory: true)
-                results += try await discover(in: root, browser: browser, access: access, authorizedRoots: authorizedRoots, cacheOnly: false, visited: &visitedPaths)
+                results += try await discover(in: root, browser: browser, access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths, cacheOnly: false, visited: &visitedPaths)
             }
             let caches = home.appendingPathComponent("Library/Caches", isDirectory: true)
             for relative in browser.cachePaths {
                 let root = caches.appendingPathComponent(relative, isDirectory: true)
-                results += try await discover(in: root, browser: browser, access: access, authorizedRoots: authorizedRoots, cacheOnly: true, visited: &visitedPaths)
+                results += try await discover(in: root, browser: browser, access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths, cacheOnly: true, visited: &visitedPaths)
             }
         }
         return results
@@ -106,8 +106,9 @@ enum JunkBrowserDataScanner {
     }
 
     // MARK: - Find Cache and Profile Data
-    private static func discover(in root: URL, browser: BrowserStore, access: JunkScanAccess, authorizedRoots: [URL], cacheOnly: Bool, visited: inout Set<String>) async throws -> [JunkCandidate] {
+    private static func discover(in root: URL, browser: BrowserStore, access: JunkScanAccess, authorizedRoots: [URL], excludedPaths: [String], cacheOnly: Bool, visited: inout Set<String>) async throws -> [JunkCandidate] {
         guard mayInspect(root.path, access: access, authorizedRoots: authorizedRoots),
+              !JunkScanScope.isUserExcluded(root.path, excludedPaths: excludedPaths),
               isRealDirectory(root) else { return [] }
         var output: [JunkCandidate] = []
         var pending: [(URL, Int)] = [(root, 0)]
@@ -127,6 +128,7 @@ enum JunkBrowserDataScanner {
             for child in children {
                 let path = child.standardizedFileURL.path
                 guard mayInspect(path, access: access, authorizedRoots: authorizedRoots),
+                      !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
                       let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
                       values.isSymbolicLink != true else { continue }
                 let isDirectory = values.isDirectory == true

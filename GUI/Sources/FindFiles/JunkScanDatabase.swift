@@ -107,7 +107,7 @@ actor JunkScanDatabase {
     }
 
     // MARK: - Load Candidates
-    func loadSnapshot(root: URL, access: JunkScanAccess = .full) -> [JunkCandidate] {
+    func loadSnapshot(root: URL, access: JunkScanAccess = .full, excludedPaths: [String] = []) -> [JunkCandidate] {
         guard let database else { return [] }
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, "SELECT payload FROM snapshots WHERE root = ?", -1, &statement, nil) == SQLITE_OK else { return [] }
@@ -125,7 +125,8 @@ actor JunkScanDatabase {
                 FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs", isDirectory: true).standardizedFileURL
             let browserData = (candidate.kind == .browserCache || candidate.kind == .browserPrivacy)
                 && JunkBrowserDataScanner.isRecognized(candidate)
-            return JunkScanScope.mayInspect(path, from: root, access: access)
+            return !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths)
+                && JunkScanScope.mayInspect(path, from: root, access: access)
                 && (leftover || processFile || browserData || (path.hasPrefix(root.path + "/") && !JunkScanEngine.shouldExclude(path)))
                 && FileManager.default.fileExists(atPath: path)
         }

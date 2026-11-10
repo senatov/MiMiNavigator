@@ -35,7 +35,7 @@ extension JunkScanDatabase {
     }
 
     // MARK: - Restore Global Groups
-    func loadGlobalCandidates(roots: [URL], access: JunkScanAccess = .full) -> [JunkCandidate] {
+    func loadGlobalCandidates(roots: [URL], access: JunkScanAccess = .full, excludedPaths: [String] = []) -> [JunkCandidate] {
         guard let database else { return [] }
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, "SELECT payload FROM global_candidates WHERE id = 1", -1, &statement, nil) == SQLITE_OK else { return [] }
@@ -43,7 +43,8 @@ extension JunkScanDatabase {
         guard sqlite3_step(statement) == SQLITE_ROW, let pointer = sqlite3_column_blob(statement, 0) else { return [] }
         let payload = Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
         return ((try? JSONDecoder().decode([JunkCandidate].self, from: payload)) ?? []).filter { candidate in
-            roots.contains { root in
+            !JunkScanScope.isUserExcluded(candidate.url.path, excludedPaths: excludedPaths)
+                && roots.contains { root in
                 (candidate.url.path == root.path || candidate.url.path.hasPrefix(root.path + "/"))
                     && JunkScanScope.mayInspect(candidate.url.path, from: root, access: access)
             }
