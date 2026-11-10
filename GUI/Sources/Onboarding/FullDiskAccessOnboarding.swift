@@ -18,6 +18,7 @@ import SwiftUI
 struct FullDiskAccessOnboarding: View {
 
     @Binding var isPresented: Bool
+    @State private var folderAccessError: String?
 
     private static let completedKey = "FullDiskAccessOnboardingCompleted"
 
@@ -42,7 +43,7 @@ struct FullDiskAccessOnboarding: View {
                 .foregroundStyle(Color.accentColor)
             Text("Full Disk Access")
                 .font(.system(size: 18, weight: .semibold))
-            Text("MiMiNavigator is a file manager — it needs access to your entire disk to browse, copy, and compare files across all folders.")
+            Text("Full Disk Access lets MiMiNavigator browse protected locations across your Mac. It is optional: you can authorize selected folders or continue with the locations already available to the app.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -57,9 +58,11 @@ struct FullDiskAccessOnboarding: View {
     private var explanation: some View {
         VStack(alignment: .leading, spacing: 8) {
             infoRow("folder.badge.gearshape",
-                    "Open System Settings and enable MiMiNavigator in Full Disk Access.")
+                    "Full Disk Access unlocks protected locations such as Desktop, Documents, and app data.")
+            infoRow("folder.badge.plus",
+                    "Choose Folders saves access only to the folders you select.")
             infoRow("lock.shield",
-                    "Only you can grant or revoke this permission in macOS.")
+                    "You can change Full Disk Access in System Settings or manage saved folders in MiMiNavigator Settings.")
             infoRow("exclamationmark.triangle",
                     "Restart MiMiNavigator after changing the permission.")
         }
@@ -74,14 +77,24 @@ struct FullDiskAccessOnboarding: View {
     // MARK: - Buttons
 
     private var buttons: some View {
-        HStack(spacing: 12) {
-            Spacer()
-            DownToolbarButtonView(title: "Grant Access…", systemImage: "lock.open") {
-                requestFullDiskAccess()
+        VStack(alignment: .trailing, spacing: 10) {
+            if let folderAccessError {
+                Text(folderAccessError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .help("Open Privacy & Security → Full Disk Access in System Settings")
-            .keyboardShortcut(.return)
-            DownToolbarButtonView(title: "Skip", systemImage: "forward") {
+            HStack(spacing: 10) {
+                DownToolbarButtonView(title: "Choose Folders…", systemImage: "folder.badge.plus") {
+                    chooseFolders()
+                }
+                .keyboardShortcut(.return)
+                DownToolbarButtonView(title: "Full Disk Access…", systemImage: "lock.open") {
+                    requestFullDiskAccess()
+                }
+                .help("Open Privacy & Security → Full Disk Access in System Settings")
+            }
+            DownToolbarButtonView(title: "Continue without access", systemImage: "forward") {
                 markComplete()
                 isPresented = false
             }
@@ -112,6 +125,34 @@ struct FullDiskAccessOnboarding: View {
         markComplete()
         isPresented = false
         SystemSettingsHelper.openFullDiskAccess()
+    }
+
+    // MARK: - Choose Authorized Folders
+    private func chooseFolders() {
+        Task { @MainActor in
+            let panel = NSOpenPanel()
+            panel.allowsMultipleSelection = true
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = false
+            panel.showsHiddenFiles = true
+            panel.treatsFilePackagesAsDirectories = true
+            panel.directoryURL = URL(fileURLWithPath: "/")
+            panel.message = "Choose folders that MiMiNavigator may access"
+            panel.prompt = "Authorize"
+            let response = await SystemPanelPresenter.response(for: panel)
+            guard response == .OK, !panel.urls.isEmpty else { return }
+            var savedAny = false
+            for url in panel.urls {
+                savedAny = await BookmarkStore.shared.persistAccess(for: url) || savedAny
+            }
+            guard savedAny else {
+                folderAccessError = "MiMiNavigator couldn't save access to those folders. Try again or continue without access."
+                return
+            }
+            markComplete()
+            isPresented = false
+        }
     }
 
 
