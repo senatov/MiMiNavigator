@@ -104,6 +104,15 @@ enum JunkScanScope {
         }
     }
 
+    // MARK: - Excluded Child Check
+    static func hasExcludedDescendant(_ path: String, excludedPaths: [String]) -> Bool {
+        let root = lexicalPath(path)
+        return excludedPaths.contains { excluded in
+            let candidate = lexicalPath(excluded)
+            return candidate.hasPrefix(root.hasSuffix("/") ? root : root + "/")
+        }
+    }
+
     // MARK: - Resolve Symlinks Without Opening Targets
     private static func resolvingLinks(in path: String, fileManager: FileManager, stopAt: (String) -> Bool) -> String? {
         var remaining = pathComponents(path)

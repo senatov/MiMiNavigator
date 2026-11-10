@@ -39,6 +39,7 @@ extension JunkScanEngine {
             try Task.checkCancellation()
             guard isEligibleApplicationCacheRoot(cache, runningBundleIdentifiers: running),
                   !JunkScanScope.isUserExcluded(cache.path, excludedPaths: excludedPaths),
+                  !JunkScanScope.hasExcludedDescendant(cache.path, excludedPaths: excludedPaths),
                   JunkScanScope.mayInspect(cache.path, from: home, access: access),
                   let measurement = try await measureApplicationCache(cache, access: access, excludedPaths: excludedPaths),
                   measurement.size >= minimumApplicationCacheSize,
@@ -55,9 +56,10 @@ extension JunkScanEngine {
     }
 
     // MARK: - Application Cache Path Guard
-    static func isApplicationCacheRoot(_ url: URL) -> Bool {
+    static func isApplicationCacheRoot(_ url: URL, excludedPaths: [String] = []) -> Bool {
         let caches = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches", isDirectory: true).path
-        return url.deletingLastPathComponent().path == caches && hasReverseDNSShape(url.lastPathComponent)
+        return !JunkScanScope.hasExcludedDescendant(url.path, excludedPaths: excludedPaths)
+            && url.deletingLastPathComponent().path == caches && hasReverseDNSShape(url.lastPathComponent)
             && !url.lastPathComponent.lowercased().hasPrefix("com.apple.")
             && !protectedApplicationCacheNameFragments.contains(where: { url.lastPathComponent.lowercased().contains($0) })
             && !JunkBrowserDataScanner.isKnownBrowserCachePath(url)
@@ -103,7 +105,7 @@ extension JunkScanEngine {
                 guard !JunkScanScope.isUserExcluded(child.path, excludedPaths: excludedPaths),
                       JunkScanScope.mayInspect(child.path, from: home, access: access),
                       let values = try? child.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]),
-                      values.isSymbolicLink != true else { continue }
+                      values.isSymbolicLink != true else { return nil }
                 latest = max(latest, values.contentModificationDate ?? .distantPast)
                 if values.isDirectory == true {
                     pending.append(child)
@@ -116,10 +118,11 @@ extension JunkScanEngine {
     }
 
     // MARK: - Recheck Application Cache Before Trash
-    static func stillMatchesApplicationCache(_ candidate: JunkCandidate, access: JunkScanAccess, runningBundleIdentifiers: Set<String>) async -> Bool {
+    static func stillMatchesApplicationCache(_ candidate: JunkCandidate, access: JunkScanAccess, runningBundleIdentifiers: Set<String>, excludedPaths: [String]) async -> Bool {
         guard candidate.kind == .appCache,
+              isApplicationCacheRoot(candidate.url, excludedPaths: excludedPaths),
               isEligibleApplicationCacheRoot(candidate.url, runningBundleIdentifiers: runningBundleIdentifiers),
-              let measurement = try? await measureApplicationCache(candidate.url, access: access, excludedPaths: []),
+              let measurement = try? await measureApplicationCache(candidate.url, access: access, excludedPaths: excludedPaths),
               measurement.size >= minimumApplicationCacheSize,
               measurement.size == candidate.size,
               measurement.latestModification == candidate.modified,

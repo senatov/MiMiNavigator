@@ -15,6 +15,7 @@ final class JunkFinderModel {
     private static let excludedPathsKey = "cleanup.excludedPaths.v1"
     private(set) var candidates: [JunkCandidate] = []
     private(set) var visited = 0
+    private(set) var scanDiagnostics = JunkScanDiagnostics()
     private(set) var isScanning = false
     private(set) var isTrashing = false
     private(set) var status = "Automatic scan starts when MiMiNavigator is in the background and the Mac is idle."
@@ -23,6 +24,7 @@ final class JunkFinderModel {
     private var rootCandidates: [String: [JunkCandidate]] = [:]
     private var activeScanRoots: [URL] = []
     private var activeExcludedPaths: [String] = []
+    private var rootDiagnostics: [String: JunkScanDiagnostics] = [:]
     private var scanAccess: JunkScanAccess = .limited
     private(set) var excludedPaths: [String]
     private var generation = 0
@@ -133,6 +135,8 @@ final class JunkFinderModel {
         guard self.generation == generation else { return }
         isScanning = true
         visited = 0
+        rootDiagnostics = [:]
+        scanDiagnostics = JunkScanDiagnostics()
         status = access == .full
             ? "Waiting for low system load and for MiMiNavigator to leave the foreground…"
             : "Scanning accessible locations. Enable Full Disk Access for additional protected folders and AI app-leftover review."
@@ -141,9 +145,10 @@ final class JunkFinderModel {
     private func finishPass(generation: Int, access: JunkScanAccess) {
         guard self.generation == generation else { return }
         isScanning = false
-        status = access == .full
+        let skipped = scanDiagnostics.summary.isEmpty ? "" : " Skipped: \(scanDiagnostics.summary)."
+        status = (access == .full
             ? "Scan complete: \(candidates.count) candidates. Next automatic pass in about three hours."
-            : "Scan complete: \(candidates.count) candidates in accessible locations. Full Disk Access unlocks protected folders and AI app-leftover review. Next pass in about three hours."
+            : "Scan complete: \(candidates.count) candidates in accessible locations. Full Disk Access unlocks protected folders and AI app-leftover review. Next pass in about three hours.") + skipped
         log.info("[Cleanup] \(status)")
     }
 
@@ -177,10 +182,16 @@ final class JunkFinderModel {
     private func receive(_ progress: JunkScanProgress, root: URL, generation: Int) {
         guard self.generation == generation else { return }
         visited = progress.visited
+        rootDiagnostics[root.path] = progress.diagnostics
+        scanDiagnostics = JunkScanDiagnostics(
+            inaccessiblePaths: rootDiagnostics.values.reduce(0) { $0 + $1.inaccessiblePaths },
+            unreadablePaths: rootDiagnostics.values.reduce(0) { $0 + $1.unreadablePaths }
+        )
         let existing = rootCandidates[root.path] ?? []
         rootCandidates[root.path] = prune(Array(Dictionary((existing + progress.candidates).map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values))
         rebuildCandidates()
         status = "Inspected \(visited) items in \(root.lastPathComponent). Pauses while the app is active or the system is busy."
+        if !scanDiagnostics.summary.isEmpty { status += " Skipped: \(scanDiagnostics.summary)." }
     }
 
     // MARK: - Rebuild Candidate List
@@ -222,9 +233,10 @@ final class JunkFinderModel {
                         && JunkScanScope.mayInspect(candidate.id, from: root, access: scanAccess)
                 } &&
                 FileManager.default.fileExists(atPath: candidate.id) &&
-                (candidate.kind == .appLeftover || candidate.kind == .processArtifact || candidate.kind == .browserCache || candidate.kind == .browserPrivacy || candidate.kind == .appCache || !JunkScanEngine.shouldExclude(candidate.id)) &&
+                (candidate.kind == .appLeftover || candidate.kind == .processArtifact || candidate.kind == .browserCache || candidate.kind == .browserPrivacy || candidate.kind == .appCache || candidate.kind == .developerCache || !JunkScanEngine.shouldExclude(candidate.id)) &&
                 ((candidate.kind == .browserCache || candidate.kind == .browserPrivacy) ? JunkBrowserDataScanner.isRecognized(candidate) : true) &&
-                (candidate.kind != .appCache || JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: runningBundleIdentifiers)) &&
+                (candidate.kind != .appCache || (JunkScanEngine.isApplicationCacheRoot(candidate.url, excludedPaths: activeExcludedPaths) && JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: runningBundleIdentifiers))) &&
+                (candidate.kind != .developerCache || JunkScanEngine.isDeveloperCacheRoot(candidate.url, excludedPaths: activeExcludedPaths)) &&
                 (candidate.kind != .emptyFolder || JunkScanEngine.isEligibleEmptyFolder(candidate.url))
         }.map { ($0.id, $0) }, uniquingKeysWith: { _, newest in newest }).values
         let groupCounts = Dictionary(grouping: existing.compactMap(\.group), by: { $0 }).mapValues(\.count)
@@ -286,7 +298,19 @@ final class JunkFinderModel {
         Task {
             defer { isTrashing = false }
             do {
-                for candidate in topLevel where !(await JunkScanEngine.stillMatchesCandidate(candidate, access: scanAccess, authorizedRoots: activeScanRoots)) {
+                switch await JunkOpenFileGuard.check(urls) {
+                case .free: break
+                case .inUse(let holders):
+                    let details = holders.map { "\($0.process): \($0.path)" }.joined(separator: "; ")
+                    showTrashSafetyNotice(title: "Selected files are in use", message: "Nothing was moved to Trash. Close the listed apps and try again.\n\n\(details)")
+                    status = "Nothing moved to Trash because one or more selected paths are open."
+                    return
+                case .unavailable:
+                    showTrashSafetyNotice(title: "Could not verify selected files", message: "Nothing was moved to Trash because MiMiNavigator could not check whether the selected paths are in use.")
+                    status = "Nothing moved to Trash because MiMiNavigator could not verify that the selected paths are unused."
+                    return
+                }
+                for candidate in topLevel where !(await JunkScanEngine.stillMatchesCandidate(candidate, access: scanAccess, authorizedRoots: activeScanRoots, excludedPaths: activeExcludedPaths)) {
                     status = "An item changed since the scan. Nothing was moved to Trash."
                     return
                 }
@@ -340,13 +364,25 @@ final class JunkFinderModel {
         }
         if candidate.kind == .appCache {
             let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
-            return JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: running)
+            return JunkScanEngine.isApplicationCacheRoot(candidate.url, excludedPaths: activeExcludedPaths)
+                && JunkScanEngine.isRestorableApplicationCache(candidate, runningBundleIdentifiers: running)
         }
+        if candidate.kind == .developerCache { return JunkScanEngine.isDeveloperCacheRoot(candidate.url, excludedPaths: activeExcludedPaths) }
         let inScope = activeScanRoots.contains { path == $0.path || path.hasPrefix($0.path + "/") }
         let readable = activeScanRoots.contains { JunkScanScope.mayInspect(path, from: $0, access: scanAccess) }
         if candidate.kind == .browserCache || candidate.kind == .browserPrivacy {
             return inScope && readable && JunkBrowserDataScanner.isRecognized(candidate)
         }
         return inScope && readable && !JunkScanEngine.shouldExclude(path)
+    }
+
+    // MARK: - Trash Safety Notice
+    private func showTrashSafetyNotice(title: String, message: String) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }

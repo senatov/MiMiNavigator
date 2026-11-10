@@ -28,7 +28,11 @@ AI review requires Apple Intelligence to be enabled and its model to be ready on
 - Exact duplicate content across eligible local volumes; at least one copy should be kept.
 - Cache and selected browsing data from known browsers other than the current macOS default, when the browser is closed and the data has been inactive for more than three days. Cookie and site-storage candidates can sign the user out; each candidate remains a manual choice.
 - Third-party top-level caches in `~/Library/Caches` when the owning app is closed, the cache has been inactive for more than 90 days, and it is at least 10 MB. System, identity, authentication, password-manager, and known browser cache roots are excluded. Every candidate still requires manual review.
+- Known developer caches, including Xcode DerivedData entries and selected package-manager caches, only when inactive for more than 180 days and at least 100 MB. Projects and source trees remain excluded; a cache containing a user-excluded or unreadable path is not offered.
+- A deterministic review label marks sensitive browser data and app leftovers, duplicate groups that must retain one copy, and stale or cache candidates that need checking.
 
-The scanner revalidates candidates before offering cleanup actions. Review findings and choose explicitly what to move to Trash.
+The scanner revalidates candidates before offering cleanup actions. Before moving anything to Trash, it checks whether the selected paths are open by a process belonging to the current user; if that check is unavailable or finds an open path, nothing is moved. Review findings and choose explicitly what to move to Trash.
+
+The scan summary reports paths skipped by access or safety rules and paths whose metadata could not be read.
 
 Paths excluded from Cleanup are skipped on later scans and can be restored from the **Excluded** list in the Cleanup window.

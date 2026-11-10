@@ -7,54 +7,6 @@ import CryptoKit
 import Darwin
 import Foundation
 
-// MARK: - Cleanup Candidate
-struct JunkCandidate: Identifiable, Sendable, Codable {
-    enum Kind: String, Sendable, Codable {
-        case duplicate = "Duplicate"
-        case duplicateFolder = "Duplicate folder"
-        case emptyFolder = "Empty folder"
-        case oldInstaller = "Old installer"
-        case temporary = "Temporary file"
-        case appLeftover = "App leftover"
-        case processArtifact = "Stale process file"
-        case browserCache = "Browser cache"
-        case browserPrivacy = "Browser activity and site data"
-        case appCache = "Application cache"
-    }
-    let url: URL
-    let kind: Kind
-    let reason: String
-    let size: Int64
-    let group: String?
-    var modified: Date? = nil
-    var id: String { url.path }
-    var name: String { url.lastPathComponent }
-    var location: String { url.deletingLastPathComponent().path }
-    var sortableDate: Date { modified ?? .distantPast }
-}
-
-// MARK: - Scan Progress
-struct JunkScanProgress: Sendable {
-    let visited: Int
-    let candidates: [JunkCandidate]
-}
-
-// MARK: - Persistent Traversal Record
-struct JunkFileRecord: Sendable {
-    let url: URL
-    let size: Int64
-    let modified: Date
-}
-
-// MARK: - Directory Checkpoint
-struct JunkDirectoryBatch: Sendable {
-    let directory: URL
-    let childDirectories: [URL]
-    let files: [JunkFileRecord]
-    let candidates: [JunkCandidate]
-    let visited: Int
-}
-
 // MARK: - Idle Cleanup Scanner
 enum JunkScanEngine {
     nonisolated(unsafe) private static let developmentCache: NSCache<NSString, NSNumber> = {
@@ -68,6 +20,7 @@ enum JunkScanEngine {
         guard isSafeRoot(rootPath, access: access, authorizedRoots: authorizedRoots) else { throw JunkScanError.unsafeLocation }
         let database = JunkScanDatabase.shared
         var visited = try await database.beginTraversal(root: root)
+        var diagnostics = JunkScanDiagnostics()
         try await waitForIdle()
         while let directory = await database.nextDirectory(root: root) {
             try Task.checkCancellation()
@@ -75,9 +28,11 @@ enum JunkScanEngine {
             let batch = try await inspectDirectory(directory, scanRoot: root, access: access, excludedPaths: excludedPaths)
             guard await database.saveDirectory(batch, root: root) else { throw JunkScanError.unreadableLocation }
             visited += batch.visited
+            diagnostics.inaccessiblePaths += batch.diagnostics.inaccessiblePaths
+            diagnostics.unreadablePaths += batch.diagnostics.unreadablePaths
             if !batch.candidates.isEmpty || visited % 256 < batch.visited {
                 let partial = await database.traversalCandidates(root: root)
-                await update(JunkScanProgress(visited: visited, candidates: partial))
+                await update(JunkScanProgress(visited: visited, candidates: partial, diagnostics: diagnostics))
             }
         }
         let traversal = await database.traversalData(root: root)
@@ -109,7 +64,7 @@ enum JunkScanEngine {
             for file in records.sorted(by: { $0.url.path < $1.url.path }) {
                 candidates.append(JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(records.count) files; keep at least one copy", size: file.size, group: group, modified: file.modified))
             }
-            await update(JunkScanProgress(visited: visited, candidates: candidates))
+            await update(JunkScanProgress(visited: visited, candidates: candidates, diagnostics: diagnostics))
         }
         var folderGroups: [String: [(URL, Int64)]] = [:]
         for directory in directories {
@@ -122,47 +77,56 @@ enum JunkScanEngine {
             for (url, size) in folders {
                 candidates.append(JunkCandidate(url: url, kind: .duplicateFolder, reason: "Exact names and contents match in \(folders.count) folders; keep at least one", size: size, group: "folder:\(signature)", modified: (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate))
             }
-            await update(JunkScanProgress(visited: visited, candidates: candidates))
+            await update(JunkScanProgress(visited: visited, candidates: candidates, diagnostics: diagnostics))
         }
         if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
             try await inspectStaleProcessArtifacts(excludedPaths: excludedPaths, into: &candidates)
             if access == .full { try await inspectApplicationLeftovers(excludedPaths: excludedPaths, into: &candidates) }
             try await inspectApplicationCaches(access: access, excludedPaths: excludedPaths, into: &candidates)
-            await update(JunkScanProgress(visited: visited, candidates: candidates))
+            try await inspectDeveloperCaches(access: access, excludedPaths: excludedPaths, into: &candidates)
+            await update(JunkScanProgress(visited: visited, candidates: candidates, diagnostics: diagnostics))
             let browserContext = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
             candidates += try await JunkBrowserDataScanner.scan(access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths, context: browserContext)
-            await update(JunkScanProgress(visited: visited, candidates: candidates))
+            await update(JunkScanProgress(visited: visited, candidates: candidates, diagnostics: diagnostics))
         }
         await JunkScanDatabase.shared.saveSnapshot(candidates, root: root)
         try await JunkScanDatabase.shared.finishTraversal(root: root)
-        await update(JunkScanProgress(visited: visited, candidates: candidates))
+        await update(JunkScanProgress(visited: visited, candidates: candidates, diagnostics: diagnostics))
     }
 
     // MARK: - Inspect One Directory
     private static func inspectDirectory(_ directory: URL, scanRoot: URL, access: JunkScanAccess, excludedPaths: [String]) async throws -> JunkDirectoryBatch {
-        if !JunkScanScope.mayInspect(directory.path, from: scanRoot, access: access)
-            || JunkScanScope.isUserExcluded(directory.path, excludedPaths: excludedPaths)
+        if !JunkScanScope.mayInspect(directory.path, from: scanRoot, access: access) {
+            return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0, diagnostics: JunkScanDiagnostics(inaccessiblePaths: 1))
+        }
+        if JunkScanScope.isUserExcluded(directory.path, excludedPaths: excludedPaths)
             || shouldExclude(directory.path) {
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey, .isUbiquitousItemKey]
         guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]) else {
             log.warning("[Cleanup] Cannot inspect \(directory.path)")
-            return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
+            return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0, diagnostics: JunkScanDiagnostics(unreadablePaths: 1))
         }
         var childDirectories: [URL] = []
         var files: [JunkFileRecord] = []
         var candidates: [JunkCandidate] = []
+        var diagnostics = JunkScanDiagnostics()
         var visited = 0
         for url in children {
             try Task.checkCancellation()
             if visited.isMultiple(of: 64) { try await waitForIdle() }
             let path = url.path
-            guard !JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths),
-                  JunkScanScope.mayInspect(path, from: scanRoot, access: access),
-                  !shouldExclude(path),
-                  let values = try? url.resourceValues(forKeys: keys),
-                  values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
+            if JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths) || shouldExclude(path) { continue }
+            guard JunkScanScope.mayInspect(path, from: scanRoot, access: access) else {
+                diagnostics.inaccessiblePaths += 1
+                continue
+            }
+            guard let values = try? url.resourceValues(forKeys: keys) else {
+                diagnostics.unreadablePaths += 1
+                continue
+            }
+            guard values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
             visited += 1
             if values.isDirectory == true {
                 guard values.isPackage != true else { continue }
@@ -180,7 +144,7 @@ enum JunkScanEngine {
                 }
             }
         }
-        return JunkDirectoryBatch(directory: directory, childDirectories: childDirectories, files: files, candidates: candidates, visited: visited)
+        return JunkDirectoryBatch(directory: directory, childDirectories: childDirectories, files: files, candidates: candidates, visited: visited, diagnostics: diagnostics)
     }
 
     // MARK: - Cross-Volume Exact Duplicates
@@ -364,7 +328,7 @@ enum JunkScanEngine {
     }
 
     // MARK: - Recheck Candidate Before Trash
-    static func stillMatchesCandidate(_ candidate: JunkCandidate, access: JunkScanAccess, authorizedRoots: [URL]) async -> Bool {
+    static func stillMatchesCandidate(_ candidate: JunkCandidate, access: JunkScanAccess, authorizedRoots: [URL], excludedPaths: [String]) async -> Bool {
         if candidate.group != nil { return await stillMatchesDuplicate(candidate) }
         let url = candidate.url
         guard let values = try? url.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isRegularFileKey, .contentModificationDateKey]),
@@ -388,7 +352,9 @@ enum JunkScanEngine {
             let running = await MainActor.run {
                 Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier).map { $0.lowercased() })
             }
-            return await stillMatchesApplicationCache(candidate, access: access, runningBundleIdentifiers: running)
+            return await stillMatchesApplicationCache(candidate, access: access, runningBundleIdentifiers: running, excludedPaths: excludedPaths)
+        case .developerCache:
+            return await stillMatchesDeveloperCache(candidate, access: access, excludedPaths: excludedPaths)
         }
     }
 

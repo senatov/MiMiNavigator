@@ -1,3 +1,29 @@
+# MiMiNavigator v0.9.1.7
+
+This release adds safer review and broader developer-cache discovery to Cleanup.
+
+## Improvements since v0.9.1.6
+
+- List large Xcode and package-manager caches only after 180 days without changes and above 100 MB; active Xcode indexes, source trees, and any cache containing an excluded or unreadable path are not offered.
+- Check open paths for processes belonging to the current user immediately before moving selected items to Trash. If the check finds an open file or cannot complete, Cleanup leaves the selection untouched.
+- Label sensitive, stale, duplicate, and review-first candidates so the reason for extra care is visible in the list.
+- Report locations skipped by access and metadata-reading failures in the scan status.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Users of v0.9.1.2 must install a macOS 27 release manually before later updates can use the OS-aware feed.
+- Open the DMG and drag MiMiNavigator to Applications.
+
+## Validation
+
+- The Debug build passed on macOS 27. Automated tests were not run for this release preparation.
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.6...v0.9.1.7
+
+---
+
 # MiMiNavigator v0.9.1.6
 
 This release improves copy and delete feedback for removable volumes.

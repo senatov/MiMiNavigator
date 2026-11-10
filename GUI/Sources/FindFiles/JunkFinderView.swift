@@ -54,6 +54,9 @@ struct JunkFinderView: View {
                     Text("Closed-app caches are offered only after 90 days of inactivity and when they exceed 10 MB. System, identity, password-manager, and known browser caches are excluded from this pass.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Text("Known developer caches, including old Xcode indexes and package-manager caches, are listed only above 100 MB after 180 days of inactivity. Open files are checked again before anything moves to Trash.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(JunkAIReviewer.statusText)
@@ -189,6 +192,15 @@ struct JunkFinderView: View {
             }
             .width(min: 100, ideal: 130)
             .customizationID("kind")
+            TableColumn("Review level") { candidate in
+                Text(candidate.reviewLevel)
+                    .font(.body)
+                    .foregroundStyle(candidate.reviewLevel.hasPrefix("Sensitive") ? Color.red : Color.secondary)
+                    .lineLimit(1)
+                    .help(candidate.reviewLevel)
+            }
+            .width(min: 110, ideal: 170)
+            .customizationID("reviewLevel")
             TableColumn("Reason") { candidate in
                 Text(candidate.reason).font(.body).lineLimit(1).truncationMode(.tail)
                     .help(candidate.reason)
