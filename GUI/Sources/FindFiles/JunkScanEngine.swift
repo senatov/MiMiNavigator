@@ -75,7 +75,7 @@ enum JunkScanEngine {
             let batch = try await inspectDirectory(directory, scanRoot: root, access: access, excludedPaths: excludedPaths)
             guard await database.saveDirectory(batch, root: root) else { throw JunkScanError.unreadableLocation }
             visited += batch.visited
-            if visited % 256 < batch.visited {
+            if !batch.candidates.isEmpty || visited % 256 < batch.visited {
                 let partial = await database.traversalCandidates(root: root)
                 await update(JunkScanProgress(visited: visited, candidates: partial))
             }
@@ -109,6 +109,7 @@ enum JunkScanEngine {
             for file in records.sorted(by: { $0.url.path < $1.url.path }) {
                 candidates.append(JunkCandidate(url: file.url, kind: .duplicate, reason: "Exact content match in \(records.count) files; keep at least one copy", size: file.size, group: group, modified: file.modified))
             }
+            await update(JunkScanProgress(visited: visited, candidates: candidates))
         }
         var folderGroups: [String: [(URL, Int64)]] = [:]
         for directory in directories {
@@ -121,13 +122,16 @@ enum JunkScanEngine {
             for (url, size) in folders {
                 candidates.append(JunkCandidate(url: url, kind: .duplicateFolder, reason: "Exact names and contents match in \(folders.count) folders; keep at least one", size: size, group: "folder:\(signature)", modified: (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate))
             }
+            await update(JunkScanProgress(visited: visited, candidates: candidates))
         }
         if rootPath == FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path {
             try await inspectStaleProcessArtifacts(excludedPaths: excludedPaths, into: &candidates)
             if access == .full { try await inspectApplicationLeftovers(excludedPaths: excludedPaths, into: &candidates) }
             try await inspectApplicationCaches(access: access, excludedPaths: excludedPaths, into: &candidates)
+            await update(JunkScanProgress(visited: visited, candidates: candidates))
             let browserContext = await MainActor.run { JunkBrowserDataScanner.runtimeContext() }
             candidates += try await JunkBrowserDataScanner.scan(access: access, authorizedRoots: authorizedRoots, excludedPaths: excludedPaths, context: browserContext)
+            await update(JunkScanProgress(visited: visited, candidates: candidates))
         }
         await JunkScanDatabase.shared.saveSnapshot(candidates, root: root)
         try await JunkScanDatabase.shared.finishTraversal(root: root)

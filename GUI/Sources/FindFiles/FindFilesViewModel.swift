@@ -191,8 +191,9 @@ final class FindFilesViewModel {
             )
 
             var batch: [FindFilesResult] = []
-            batch.reserveCapacity(500)
+            batch.reserveCapacity(50)
             var receivedCount = 0
+            var lastFlush = Date()
             for await result in stream {
                 guard !Task.isCancelled else { break }
                 batch.append(result)
@@ -201,9 +202,10 @@ final class FindFilesViewModel {
                     await engine.reachResultLimit()
                     break
                 }
-                if batch.count >= 500 {
+                if batch.count >= 50 || Date().timeIntervalSince(lastFlush) >= 0.15 {
                     let chunk = batch
                     batch.removeAll(keepingCapacity: true)
+                    lastFlush = Date()
                     let currentStats = await engine.getStats()
                     await MainActor.run { [weak self] in
                         guard let self else { return }

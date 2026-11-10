@@ -127,7 +127,7 @@ struct FindFilesResultsView: View {
         }
         guard sortTask == nil else { return }
         sortTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1))
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else {
                 sortTask = nil
                 return
