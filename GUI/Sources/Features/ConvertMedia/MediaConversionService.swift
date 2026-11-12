@@ -24,6 +24,12 @@ final class MediaConversionService {
     static let lottieFramesDirectoryName = "frames"
     static let lottieJSONFileName = "sticker.json"
     static let lottieFramePattern = "f_%04d.png"
+    static let telegramVideoStickerArguments = [
+        "-map", "0:v:0", "-an", "-sn", "-dn",
+        "-vf", "fps=30,scale=512:512:force_original_aspect_ratio=decrease:force_divisible_by=2,format=yuva420p",
+        "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-auto-alt-ref", "0",
+        "-crf", "40", "-b:v", "0", "-deadline", "good", "-cpu-used", "4",
+    ]
 
     var activeProcess: Process?
     private var conversionInFlight = false
@@ -46,6 +52,9 @@ final class MediaConversionService {
         onCancel: @escaping () -> Void
     ) async throws -> URL {
         guard !conversionInFlight else { throw ConversionError.conversionAlreadyRunning }
+        if options.telegramVideoSticker && (targetFormat != .webm || !(sourceFormat.isVideo || sourceFormat == .gif)) {
+            throw ConversionError.writeFailed("Telegram video sticker needs video or GIF input and WebM output")
+        }
         try Self.validateDestination(source: source, target: target)
         conversionInFlight = true
         defer { conversionInFlight = false }
@@ -247,23 +256,23 @@ final class MediaConversionService {
     ) async throws {
         let sourceDuration = await probeDuration(of: source, panel: panel)
         let remainingDuration = sourceDuration.map { max(0, $0 - (options.clipStartSeconds ?? 0)) }
-        let duration = [remainingDuration, options.clipDurationSeconds].compactMap { $0 }.min()
+        let duration = [remainingDuration, options.clipDurationSeconds, options.telegramVideoSticker ? 3 : nil].compactMap { $0 }.min()
         panel.updateProgress(duration == nil || duration == 0 ? nil : 0)
-        let arguments = makeFFmpegArguments(
-            source: source,
-            target: target,
-            sourceFormat: sourceFormat,
-            targetFormat: targetFormat,
-            preset: preset,
-            options: options
-        )
-
-        try await runProcess(
-            executablePath: ConversionTool.ffmpegPath,
-            arguments: arguments,
-            panel: panel,
-            progressDuration: duration == 0 ? nil : duration
-        )
+        let stickerQualities: [Int?] = options.telegramVideoSticker ? [40, 48, 56] : [nil]
+        for quality in stickerQualities {
+            let arguments = makeFFmpegArguments(
+                source: source, target: target, sourceFormat: sourceFormat,
+                targetFormat: targetFormat, preset: preset, options: options,
+                stickerQuality: quality
+            )
+            try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: arguments, panel: panel, progressDuration: duration == 0 ? nil : duration)
+            guard options.telegramVideoSticker else { return }
+            let size = (try FileManager.default.attributesOfItem(atPath: target.path)[.size] as? NSNumber)?.intValue ?? 0
+            if size > 0 && size <= 256_000 { return }
+            panel.appendLine("Telegram sticker is \(size) bytes; retrying at lower quality…")
+            try FileManager.default.removeItem(at: target)
+        }
+        throw ConversionError.writeFailed("Telegram video sticker exceeds 256 KB even at reduced quality")
     }
 
     private func makeFFmpegArguments(
@@ -272,12 +281,15 @@ final class MediaConversionService {
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         preset: MediaConversionPreset?,
-        options: MediaConversionOptions
+        options: MediaConversionOptions,
+        stickerQuality: Int? = nil
     ) -> [String] {
         var arguments = Self.ffmpegBannerArguments + ["-nostats", "-progress", "pipe:1"]
         if let start = options.clipStartSeconds { arguments += ["-ss", String(start)] }
         arguments += ["-i", source.path]
-        if let preset {
+        if options.telegramVideoSticker {
+            arguments += Self.telegramVideoStickerArguments
+        } else if let preset {
             arguments += preset.ffmpegOutputArguments(sourceFormat: sourceFormat)
         } else {
             arguments += MediaFormat.requiredFFmpegArguments(sourceFormat: sourceFormat, targetFormat: targetFormat)
@@ -285,7 +297,14 @@ final class MediaConversionService {
         if targetFormat == .webp && sourceFormat.isImage {
             arguments += ["-quality", "\(Int((options.imageQuality * 100).rounded()))"]
         }
-        if let duration = options.clipDurationSeconds { arguments += ["-t", String(duration)] }
+        if options.telegramVideoSticker, let stickerQuality, let crfIndex = arguments.firstIndex(of: "-crf") {
+            arguments[crfIndex + 1] = String(stickerQuality)
+        }
+        if options.telegramVideoSticker {
+            arguments += ["-t", String(min(options.clipDurationSeconds ?? 3, 3))]
+        } else if let duration = options.clipDurationSeconds {
+            arguments += ["-t", String(duration)]
+        }
         arguments.append(target.path)
         return arguments
     }

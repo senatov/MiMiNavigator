@@ -287,6 +287,7 @@ struct MediaInfoPanelView: View {
                     imageQuality: $controller.imageQuality,
                     preserveImageMetadata: $controller.preserveImageMetadata,
                     gifSizeLimitEnabled: $controller.gifSizeLimitEnabled,
+                    telegramVideoSticker: $controller.telegramVideoSticker,
                     clipStartText: $controller.clipStartText,
                     clipDurationText: $controller.clipDurationText
                 )

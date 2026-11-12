@@ -68,6 +68,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
     @Published var targetPreset: MediaConversionPreset = .mp4H264VideoToolbox {
         didSet {
+            if targetPreset.targetFormat != .webm { telegramVideoSticker = false }
             targetFormat = targetPreset.targetFormat
             persistPreferences()
         }
@@ -81,6 +82,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     @Published var imageQuality: Double = 0.85
     @Published var preserveImageMetadata = true
     @Published var gifSizeLimitEnabled = true
+    @Published var telegramVideoSticker = false
     @Published var clipStartText = ""
     @Published var clipDurationText = ""
     @Published var deleteOriginal: Bool = false {
@@ -216,7 +218,8 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
     func configureConversionState(for url: URL) {
         let detectedSourceFormat = MediaFormat.from(extension: url.pathExtension.lowercased())
-        let targetPresets = detectedSourceFormat.map { MediaConversionPreset.presets(for: $0) } ?? []
+        var targetPresets = detectedSourceFormat.map { MediaConversionPreset.presets(for: $0) } ?? []
+        if detectedSourceFormat == .webm { targetPresets.append(.webmVP9) }
         availablePresets = targetPresets
         availableFormats = targetPresets.map(\.targetFormat).deduplicated()
 
@@ -231,6 +234,8 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         }
 
         outputName = url.deletingPathExtension().lastPathComponent
+        if detectedSourceFormat == .webm && targetPreset == .webmVP9 { outputName += "-sticker" }
+        telegramVideoSticker = false
         clipStartText = ""
         clipDurationText = ""
         if let storedOutputDirectory = UserDefaults.standard.string(forKey: PreferenceKeys.outputDirectory),
@@ -269,6 +274,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             imageQuality: imageQuality,
             preserveImageMetadata: preserveImageMetadata,
             gifSizeLimitEnabled: gifSizeLimitEnabled,
+            telegramVideoSticker: telegramVideoSticker,
             clipStartSeconds: Double(clipStartText),
             clipDurationSeconds: Double(clipDurationText)
         )

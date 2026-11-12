@@ -12,6 +12,7 @@ struct MediaInfoConversionOptionsView: View {
     @Binding var imageQuality: Double
     @Binding var preserveImageMetadata: Bool
     @Binding var gifSizeLimitEnabled: Bool
+    @Binding var telegramVideoSticker: Bool
     @Binding var clipStartText: String
     @Binding var clipDurationText: String
 
@@ -33,6 +34,10 @@ struct MediaInfoConversionOptionsView: View {
             }
             if targetFormat == .gif {
                 Toggle("Limit GIF to 19.5 MB", isOn: $gifSizeLimitEnabled)
+                    .toggleStyle(.checkbox)
+            }
+            if targetFormat == .webm && (sourceFormat?.isVideo == true || sourceFormat == .gif) {
+                Toggle("Telegram video sticker (512 px, ≤3 s, ≤256 KB)", isOn: $telegramVideoSticker)
                     .toggleStyle(.checkbox)
             }
             if sourceFormat?.isVideo == true || sourceFormat == .gif {
