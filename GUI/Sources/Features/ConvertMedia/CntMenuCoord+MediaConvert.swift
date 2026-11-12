@@ -36,6 +36,8 @@ extension CntMenuCoord {
                 preset: preset,
                 deleteOriginal: deleteOriginal
             )
+        } catch is CancellationError {
+            log.info("[MediaConvert] cancelled before output was installed")
         } catch {
             handleMediaConversionError(error)
         }
@@ -85,7 +87,7 @@ extension CntMenuCoord {
     ) async throws {
         let mediaConversionService: MediaConversionService = .shared
 
-        try await mediaConversionService.convert(
+        let convertedURL = try await mediaConversionService.convert(
             source: file.urlValue,
             target: outputURL,
             sourceFormat: sourceFormat,
@@ -102,7 +104,7 @@ extension CntMenuCoord {
         }
 
         refreshPanels(appState: appState)
-        log.info("[MediaConvert] done → '\(outputURL.lastPathComponent)'")
+        log.info("[MediaConvert] done → '\(convertedURL.lastPathComponent)'")
     }
 
     private func handleMediaConversionError(_ error: Error) {

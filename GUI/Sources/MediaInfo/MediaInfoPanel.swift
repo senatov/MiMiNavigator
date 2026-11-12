@@ -192,7 +192,8 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
 
     var isValidConversion: Bool {
-        isConvertible && !outputName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let name = outputName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return isConvertible && !name.isEmpty && name != "." && name != ".." && !name.contains("/")
     }
 
     var toolInfo: String {

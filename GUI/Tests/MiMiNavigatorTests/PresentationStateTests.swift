@@ -187,6 +187,49 @@ final class PresentationStateTests: XCTestCase {
 // MARK: - Media process diagnostics tests
 @MainActor
 final class MediaProcessDiagnosticsTests: XCTestCase {
+    // MARK: - Staged conversion output
+    func testStagedOutputKeepsExistingFileUntilInstallation() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("output.png")
+        let staged = MediaConversionService.shared.stagedOutputURL(for: target)
+        try Data("old".utf8).write(to: target)
+        try Data("new".utf8).write(to: staged)
+        XCTAssertEqual(try Data(contentsOf: target), Data("old".utf8))
+        try MediaConversionService.shared.installStagedOutput(staged, at: target, replaceExisting: true)
+        XCTAssertEqual(try Data(contentsOf: target), Data("new".utf8))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: staged.path))
+    }
+
+    // MARK: - Output collision and empty result
+    func testUnexpectedCollisionAndEmptyOutputPreserveDestination() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("output.png")
+        let staged = MediaConversionService.shared.stagedOutputURL(for: target)
+        try Data("old".utf8).write(to: target)
+        try Data().write(to: staged)
+        XCTAssertThrowsError(try MediaConversionService.shared.installStagedOutput(staged, at: target, replaceExisting: true))
+        try Data("new".utf8).write(to: staged)
+        XCTAssertThrowsError(try MediaConversionService.shared.installStagedOutput(staged, at: target, replaceExisting: false))
+        XCTAssertEqual(try Data(contentsOf: target), Data("old".utf8))
+    }
+
+    // MARK: - Keep both name
+    func testUniqueDestinationSkipsExistingNamesAndTheSource() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let requested = directory.appendingPathComponent("image.png")
+        let source = directory.appendingPathComponent("image 2.png")
+        try Data("existing".utf8).write(to: requested)
+        try Data("source".utf8).write(to: source)
+        let unique = try MediaConversionService.shared.uniqueDestination(source: source, requested: requested)
+        XCTAssertEqual(unique.lastPathComponent, "image 3.png")
+    }
+
     // MARK: - GIF recovery
     func testGIFRecoveryRestoresBackupAndPreservesConflicts() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

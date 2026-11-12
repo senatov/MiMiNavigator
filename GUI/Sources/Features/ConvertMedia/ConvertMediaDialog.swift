@@ -80,7 +80,8 @@ struct ConvertMediaDialog: View {
     }
 
     var isValid: Bool {
-        !outputName.isEmpty && !availablePresets.isEmpty && sourceFormat != nil
+        let name = outputName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !name.isEmpty && name != "." && name != ".." && !name.contains("/") && !availablePresets.isEmpty && sourceFormat != nil
     }
 
     var toolInfo: String {

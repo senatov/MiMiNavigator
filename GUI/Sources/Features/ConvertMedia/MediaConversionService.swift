@@ -42,14 +42,18 @@ final class MediaConversionService {
         targetFormat: MediaFormat,
         preset: MediaConversionPreset? = nil,
         onCancel: @escaping () -> Void
-    ) async throws {
+    ) async throws -> URL {
         guard !conversionInFlight else { throw ConversionError.conversionAlreadyRunning }
         try Self.validateDestination(source: source, target: target)
         conversionInFlight = true
         defer { conversionInFlight = false }
+        let destination = try await resolveDestination(source: source, requested: target)
+        let replaceExisting = FileManager.default.fileExists(atPath: destination.path)
+        let staged = stagedOutputURL(for: destination)
+        defer { try? FileManager.default.removeItem(at: staged) }
         let operationID = UUID().uuidString
         let started = ContinuousClock.now
-        log.info("[MediaConvert] id=\(operationID) begin source=\(source.path.debugDescription) target=\(target.path.debugDescription)")
+        log.info("[MediaConvert] id=\(operationID) begin source=\(source.path.debugDescription) target=\(destination.path.debugDescription)")
         MemoryDiagnostics.shared.checkpoint("convert.before.\(operationID)")
         defer {
             log.info("[MediaConvert] id=\(operationID) end elapsed=\(started.duration(to: .now)) phase=\(phase)")
@@ -59,8 +63,8 @@ final class MediaConversionService {
         let requestedTool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
         var executionTool = requestedTool
         logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: requestedTool)
-        approvedOversizedGIFTargets.remove(target.path)
-        defer { approvedOversizedGIFTargets.remove(target.path) }
+        approvedOversizedGIFTargets.remove(staged.path)
+        defer { approvedOversizedGIFTargets.remove(staged.path) }
         phase = .preparing
         let toolReady = await ExternalToolDoctor.shared.ensureReady(
             conversionTool: requestedTool,
@@ -82,18 +86,18 @@ final class MediaConversionService {
             try await runConversion(
                 tool: executionTool,
                 source: source,
-                target: target,
+                target: staged,
                 sourceFormat: sourceFormat,
                 targetFormat: targetFormat,
                 preset: conversionPreset,
                 panel: panel
             )
             guard phase != .cancelled else { throw CancellationError() }
-            if targetFormat == .gif {
-                try await enforceGIFLimit(target: target, panel: panel)
-            }
-            finishSuccess(panel: panel, target: target)
-            phase = .completed(output: target)
+            if targetFormat == .gif { try await enforceGIFLimit(target: staged, panel: panel) }
+            try installStagedOutput(staged, at: destination, replaceExisting: replaceExisting)
+            finishSuccess(panel: panel, target: destination)
+            phase = .completed(output: destination)
+            return destination
         } catch is CancellationError {
             phase = .cancelled
             panel.finish(success: false, message: "⏹ Cancelled")

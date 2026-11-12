@@ -291,7 +291,7 @@ struct MediaInfoPanelView: View {
                 }
                 .padding(.top, Layout.sectionButtonTopPadding)
             } else {
-                Text("Conversion is not available for this file type.")
+                Text("Media preview is available, but conversion is not supported for this file type.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             }

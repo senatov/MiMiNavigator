@@ -129,9 +129,9 @@ struct JunkScanSafetyTests {
         try original.write(to: file)
         let digest = SHA256.hash(data: original).map { String(format: "%02x", $0) }.joined()
         let candidate = JunkCandidate(url: file, kind: .duplicate, reason: "test", size: Int64(original.count), group: "\(original.count):\(digest)")
-        #expect(await JunkScanEngine.stillMatchesCandidate(candidate))
+        #expect(await JunkScanEngine.stillMatchesCandidate(candidate, access: .full, authorizedRoots: [root], excludedPaths: []))
         try Data("same-size-b".utf8).write(to: file)
-        #expect(!(await JunkScanEngine.stillMatchesCandidate(candidate)))
+        #expect(!(await JunkScanEngine.stillMatchesCandidate(candidate, access: .full, authorizedRoots: [root], excludedPaths: [])))
     }
 
     @Test func excludesDevelopmentTreeFromCleanupCandidates() throws {
