@@ -103,6 +103,10 @@ resolve_release_packages() {
     local idle_seconds
     local last_size
     local resolution_timed_out
+    local resolved_file="${PROJECT_FILE}/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+    if [[ ! -f "${resolved_file}" ]]; then
+        resolved_file="${PROJECT_DIR}/MiMiNavigator.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+    fi
     for (( attempt = 1; attempt <= PACKAGE_MAX_ATTEMPTS; attempt++ )); do
         zsh "${PROJECT_DIR}/Scripts/preserve_tmp_log.zsh" "${PACKAGE_LOG}"
         xcodebuild -resolvePackageDependencies \
@@ -143,7 +147,9 @@ resolve_release_packages() {
         echo "   Package resolution attempt ${attempt}/${PACKAGE_MAX_ATTEMPTS} failed."
         tail -20 "${PACKAGE_LOG}"
         if (( attempt < PACKAGE_MAX_ATTEMPTS )); then
-            if repair_corrupt_package_checkout; then
+            if zsh "${PROJECT_DIR}/Scripts/fetch_pinned_swiftpm_revisions.zsh" "${resolved_file}" "${PROJECT_DIR}/.spm-checkouts" "${PACKAGE_LOG}"; then
+                echo "   Retrying package resolution with refreshed pinned revisions..."
+            elif repair_corrupt_package_checkout; then
                 echo "   Retrying package resolution with a fresh checkout..."
             else
                 echo "   Retrying package resolution once..."
