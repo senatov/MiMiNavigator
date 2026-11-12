@@ -65,10 +65,12 @@ enum GifSizeGuard {
         framePattern: URL,
         fps: Int,
         maxWidth: Int,
-        maxDuration: Int? = nil
+        startSeconds: Double? = nil,
+        maxDuration: Double? = nil
     ) -> [String] {
-        var args = [
-            "-hide_banner", "-y",
+        var args = ["-hide_banner", "-y"]
+        if let startSeconds { args += ["-ss", String(startSeconds)] }
+        args += [
             "-i", source.path,
             "-vf", "fps=\(fps),scale=\(maxWidth):-1:flags=lanczos"
         ]

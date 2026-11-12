@@ -15,6 +15,9 @@ extension MediaConversionService {
     func runGifskiConvert(
         source: URL,
         target: URL,
+        enforceSizeLimit: Bool,
+        clipStartSeconds: Double?,
+        clipDurationSeconds: Double?,
         panel: ProgressPanel
     ) async throws {
         let tempDir = FileManager.default.temporaryDirectory
@@ -25,9 +28,10 @@ extension MediaConversionService {
         var width = GifSizeGuard.initialMaxWidth
         var fps = GifSizeGuard.initialFPS
         panel.appendLine("🎬 Extracting frames (\(width)px, \(fps)fps)…")
-        try await extractFrames(source: source, framePattern: framePattern, fps: fps, width: width, panel: panel)
+        try await extractFrames(source: source, framePattern: framePattern, fps: fps, width: width, clipStartSeconds: clipStartSeconds, clipDurationSeconds: clipDurationSeconds, panel: panel)
         panel.appendLine("🌈 gifski encoding pass 1…")
         try await runGifskiEncode(target: target, framesDir: tempDir, width: width, fps: fps, panel: panel)
+        guard enforceSizeLimit else { return }
         if !GifSizeGuard.exceedsLimit(target) {
             panel.appendLine("✅ GIF size OK: \(GifSizeGuard.fileSizeMB(target))")
             return
@@ -52,6 +56,8 @@ extension MediaConversionService {
             fps: fps,
             width: width,
             maxDuration: GifSizeGuard.fallbackDurationSeconds,
+            clipStartSeconds: clipStartSeconds,
+            clipDurationSeconds: clipDurationSeconds,
             panel: panel
         )
         try await runGifskiEncode(target: target, framesDir: tempDir, width: width, fps: fps, panel: panel)
@@ -69,6 +75,8 @@ extension MediaConversionService {
             fps: fps,
             width: width,
             maxDuration: GifSizeGuard.finalDurationSeconds,
+            clipStartSeconds: clipStartSeconds,
+            clipDurationSeconds: clipDurationSeconds,
             panel: panel
         )
         try await runGifskiEncode(target: target, framesDir: tempDir, width: width, fps: fps, panel: panel)
@@ -87,14 +95,18 @@ extension MediaConversionService {
         fps: Int,
         width: Int,
         maxDuration: Int? = nil,
+        clipStartSeconds: Double? = nil,
+        clipDurationSeconds: Double? = nil,
         panel: ProgressPanel
     ) async throws {
+        let duration = [maxDuration.map(Double.init), clipDurationSeconds].compactMap { $0 }.min()
         let args = GifSizeGuard.ffmpegFrameExtractArguments(
             source: source,
             framePattern: framePattern,
             fps: fps,
             maxWidth: width,
-            maxDuration: maxDuration
+            startSeconds: clipStartSeconds,
+            maxDuration: duration
         )
         try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: args, panel: panel)
     }

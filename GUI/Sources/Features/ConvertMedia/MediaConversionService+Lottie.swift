@@ -17,6 +17,7 @@ extension MediaConversionService {
         source: URL,
         target: URL,
         targetFormat: MediaFormat,
+        enforceSizeLimit: Bool,
         panel: ProgressPanel
     ) async throws {
         let temporaryDirectory = try makeTemporaryLottieDirectory()
@@ -31,6 +32,7 @@ extension MediaConversionService {
                 jsonFile: jsonFile,
                 target: target,
                 targetFormat: targetFormat,
+                enforceSizeLimit: enforceSizeLimit,
                 panel: panel
             )
             return
@@ -114,11 +116,12 @@ extension MediaConversionService {
         jsonFile: URL,
         target: URL,
         targetFormat: MediaFormat,
+        enforceSizeLimit: Bool,
         panel: ProgressPanel
     ) async throws {
         let args = makeLottieConvertArguments(jsonFile: jsonFile, target: target, targetFormat: targetFormat)
         try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
-        if targetFormat == .gif && GifSizeGuard.exceedsLimit(target) {
+        if enforceSizeLimit && targetFormat == .gif && GifSizeGuard.exceedsLimit(target) {
             try await handleOversizedLottieGIF(
                 executablePath: executablePath,
                 jsonFile: jsonFile,

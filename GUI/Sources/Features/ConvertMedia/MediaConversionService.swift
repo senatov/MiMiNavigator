@@ -7,6 +7,7 @@
 //   Reports progress line-by-line through ProgressPanel.
 
 import AppKit
+import ExternalToolsKit
 import FileModelKit
 import Foundation
 import Observation
@@ -41,6 +42,7 @@ final class MediaConversionService {
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         preset: MediaConversionPreset? = nil,
+        options: MediaConversionOptions = MediaConversionOptions(),
         onCancel: @escaping () -> Void
     ) async throws -> URL {
         guard !conversionInFlight else { throw ConversionError.conversionAlreadyRunning }
@@ -90,10 +92,11 @@ final class MediaConversionService {
                 sourceFormat: sourceFormat,
                 targetFormat: targetFormat,
                 preset: conversionPreset,
+                options: options,
                 panel: panel
             )
             guard phase != .cancelled else { throw CancellationError() }
-            if targetFormat == .gif { try await enforceGIFLimit(target: staged, panel: panel) }
+            if targetFormat == .gif && options.gifSizeLimitEnabled { try await enforceGIFLimit(target: staged, panel: panel) }
             try installStagedOutput(staged, at: destination, replaceExisting: replaceExisting)
             finishSuccess(panel: panel, target: destination)
             phase = .completed(output: destination)
@@ -165,6 +168,7 @@ final class MediaConversionService {
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         preset: MediaConversionPreset?,
+        options: MediaConversionOptions,
         panel: ProgressPanel
     ) async throws {
         switch tool {
@@ -172,6 +176,9 @@ final class MediaConversionService {
                 try await runGifskiConvert(
                     source: source,
                     target: target,
+                    enforceSizeLimit: options.gifSizeLimitEnabled,
+                    clipStartSeconds: options.clipStartSeconds,
+                    clipDurationSeconds: options.clipDurationSeconds,
                     panel: panel
                 )
             case .ffmpeg:
@@ -181,12 +188,13 @@ final class MediaConversionService {
                     sourceFormat: sourceFormat,
                     targetFormat: targetFormat,
                     preset: preset,
+                    options: options,
                     panel: panel
                 )
             case .imageIO:
-                try await runImageIO(source: source, target: target, targetFormat: targetFormat, panel: panel)
+                try await runImageIO(source: source, target: target, targetFormat: targetFormat, options: options, panel: panel)
             case .lottieAndFFmpeg:
-                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, panel: panel)
+                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, enforceSizeLimit: options.gifSizeLimitEnabled, panel: panel)
         }
     }
 
@@ -234,20 +242,27 @@ final class MediaConversionService {
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
         preset: MediaConversionPreset?,
+        options: MediaConversionOptions,
         panel: ProgressPanel
     ) async throws {
+        let sourceDuration = await probeDuration(of: source, panel: panel)
+        let remainingDuration = sourceDuration.map { max(0, $0 - (options.clipStartSeconds ?? 0)) }
+        let duration = [remainingDuration, options.clipDurationSeconds].compactMap { $0 }.min()
+        panel.updateProgress(duration == nil || duration == 0 ? nil : 0)
         let arguments = makeFFmpegArguments(
             source: source,
             target: target,
             sourceFormat: sourceFormat,
             targetFormat: targetFormat,
-            preset: preset
+            preset: preset,
+            options: options
         )
 
         try await runProcess(
             executablePath: ConversionTool.ffmpegPath,
             arguments: arguments,
-            panel: panel
+            panel: panel,
+            progressDuration: duration == 0 ? nil : duration
         )
     }
 
@@ -256,15 +271,21 @@ final class MediaConversionService {
         target: URL,
         sourceFormat: MediaFormat,
         targetFormat: MediaFormat,
-        preset: MediaConversionPreset?
+        preset: MediaConversionPreset?,
+        options: MediaConversionOptions
     ) -> [String] {
-        var arguments = Self.ffmpegBannerArguments
+        var arguments = Self.ffmpegBannerArguments + ["-nostats", "-progress", "pipe:1"]
+        if let start = options.clipStartSeconds { arguments += ["-ss", String(start)] }
         arguments += ["-i", source.path]
         if let preset {
             arguments += preset.ffmpegOutputArguments(sourceFormat: sourceFormat)
         } else {
             arguments += MediaFormat.requiredFFmpegArguments(sourceFormat: sourceFormat, targetFormat: targetFormat)
         }
+        if targetFormat == .webp && sourceFormat.isImage {
+            arguments += ["-quality", "\(Int((options.imageQuality * 100).rounded()))"]
+        }
+        if let duration = options.clipDurationSeconds { arguments += ["-t", String(duration)] }
         arguments.append(target.path)
         return arguments
     }
@@ -275,15 +296,24 @@ final class MediaConversionService {
         source: URL,
         target: URL,
         targetFormat: MediaFormat,
+        options: MediaConversionOptions,
         panel: ProgressPanel
     ) async throws {
         panel.appendLine("Loading image via ImageIO…")
 
-        let image = try loadImage(from: source)
+        let imageSource = try loadImageSource(from: source)
+        guard let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+            throw ConversionError.readFailed(source.lastPathComponent)
+        }
         let uti = utiForFormat(targetFormat)
         let destination = try makeImageDestination(target: target, uti: uti)
-
-        CGImageDestinationAddImage(destination, image, nil)
+        var properties = options.preserveImageMetadata
+            ? (CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [CFString: Any] ?? [:])
+            : [:]
+        if targetFormat == .jpg || targetFormat == .heic {
+            properties[kCGImageDestinationLossyCompressionQuality] = min(max(options.imageQuality, 0.01), 1)
+        }
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else {
             throw ConversionError.writeFailed(target.lastPathComponent)
         }
@@ -291,14 +321,11 @@ final class MediaConversionService {
         panel.appendLine("✅ Image written: \(target.lastPathComponent)")
     }
 
-    private func loadImage(from source: URL) throws -> CGImage {
-        guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil),
-            let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
-        else {
+    private func loadImageSource(from source: URL) throws -> CGImageSource {
+        guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil) else {
             throw ConversionError.readFailed(source.lastPathComponent)
         }
-
-        return image
+        return imageSource
     }
 
     private func makeImageDestination(target: URL, uti: String) throws -> CGImageDestination {

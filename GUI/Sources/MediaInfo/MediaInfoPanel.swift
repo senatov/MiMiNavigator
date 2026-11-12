@@ -78,6 +78,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     }
     @Published var availableFormats: [MediaFormat] = []
     @Published var availablePresets: [MediaConversionPreset] = []
+    @Published var imageQuality: Double = 0.85
+    @Published var preserveImageMetadata = true
+    @Published var gifSizeLimitEnabled = true
+    @Published var clipStartText = ""
+    @Published var clipDurationText = ""
     @Published var deleteOriginal: Bool = false {
         didSet { persistPreferences() }
     }
@@ -193,7 +198,11 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
     var isValidConversion: Bool {
         let name = outputName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return isConvertible && !name.isEmpty && name != "." && name != ".." && !name.contains("/")
+        let start = clipStartText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let duration = clipDurationText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let validStart = start.isEmpty || (Double(start).map { $0.isFinite && $0 >= 0 } ?? false)
+        let validDuration = duration.isEmpty || (Double(duration).map { $0.isFinite && $0 > 0 } ?? false)
+        return isConvertible && !name.isEmpty && name != "." && name != ".." && !name.contains("/") && validStart && validDuration
     }
 
     var toolInfo: String {
@@ -222,6 +231,8 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         }
 
         outputName = url.deletingPathExtension().lastPathComponent
+        clipStartText = ""
+        clipDurationText = ""
         if let storedOutputDirectory = UserDefaults.standard.string(forKey: PreferenceKeys.outputDirectory),
            FileManager.default.fileExists(atPath: storedOutputDirectory) {
             outputDir = storedOutputDirectory
@@ -250,16 +261,28 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         let currentFile = CustomFile(path: currentURL.path)
         let resolvedAppState = appState ?? AppStateProvider.shared
         guard let resolvedAppState else { return }
+        let preset = targetPreset
+        let destination = outputURL
+        let panelSide = currentPanelSide
+        let shouldDeleteOriginal = deleteOriginal
+        let options = MediaConversionOptions(
+            imageQuality: imageQuality,
+            preserveImageMetadata: preserveImageMetadata,
+            gifSizeLimitEnabled: gifSizeLimitEnabled,
+            clipStartSeconds: Double(clipStartText),
+            clipDurationSeconds: Double(clipDurationText)
+        )
 
         Task {
             await CntMenuCoord.shared.performMediaConversion(
                 file: currentFile,
-                targetFormat: targetPreset.targetFormat,
-                outputURL: outputURL,
-                panel: currentPanelSide,
+                targetFormat: preset.targetFormat,
+                outputURL: destination,
+                panel: panelSide,
                 appState: resolvedAppState,
-                preset: targetPreset,
-                deleteOriginal: deleteOriginal
+                preset: preset,
+                options: options,
+                deleteOriginal: shouldDeleteOriginal
             )
         }
     }

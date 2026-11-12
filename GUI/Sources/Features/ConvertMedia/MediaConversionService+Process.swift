@@ -17,7 +17,8 @@ extension MediaConversionService {
         executablePath: String,
         arguments: [String],
         panel: ProgressPanel,
-        outputFile: URL? = nil
+        outputFile: URL? = nil,
+        progressDuration: Double? = nil
     ) async throws -> String {
         guard phase != .cancelled else { throw CancellationError() }
         let fileOutput: FileHandle?
@@ -42,7 +43,7 @@ extension MediaConversionService {
                 try? stdout.fileHandleForWriting.close()
             }
             installReadabilityHandler(for: stderr.fileHandleForReading, panel: panel, process: process, output: errorOutput)
-            installReadabilityHandler(for: stdout.fileHandleForReading, panel: panel, process: process, output: standardOutput)
+            installReadabilityHandler(for: stdout.fileHandleForReading, panel: panel, process: process, output: standardOutput, progressDuration: progressDuration)
             let watchdog = Task { @MainActor in
                 while !Task.isCancelled {
                     do { try await Task.sleep(for: .seconds(30)) } catch { return }
@@ -93,7 +94,7 @@ extension MediaConversionService {
         process.standardOutput = stdout
     }
 
-    func installReadabilityHandler(for handle: FileHandle, panel: ProgressPanel, process: Process, output: MediaProcessOutput) {
+    func installReadabilityHandler(for handle: FileHandle, panel: ProgressPanel, process: Process, output: MediaProcessOutput, progressDuration: Double? = nil) {
         handle.readabilityHandler = { fileHandle in
             let chunk = output.read(fileHandle)
             guard !chunk.isEmpty else {
@@ -102,7 +103,11 @@ extension MediaConversionService {
             }
             Task { @MainActor in
                 guard self.activeProcess === process else { return }
-                self.appendProcessOutput(chunk, panel: panel)
+                if let progressDuration {
+                    self.updateFFmpegProgress(from: output.snapshot().text, duration: progressDuration, panel: panel)
+                } else {
+                    self.appendProcessOutput(chunk, panel: panel)
+                }
             }
         }
     }

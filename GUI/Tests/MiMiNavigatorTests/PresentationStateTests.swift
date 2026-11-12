@@ -187,6 +187,26 @@ final class PresentationStateTests: XCTestCase {
 // MARK: - Media process diagnostics tests
 @MainActor
 final class MediaProcessDiagnosticsTests: XCTestCase {
+    // MARK: - FFmpeg progress parsing
+    func testFFmpegProgressUsesLatestCompleteTimestamp() {
+        let output = "out_time=00:00:02.000000\nprogress=continue\nout_time=00:00:05.000000\nprogress=continue\n"
+        XCTAssertEqual(MediaConversionService.ffmpegProgressFraction(from: output, duration: 10), 0.5)
+        XCTAssertNil(MediaConversionService.ffmpegProgressFraction(from: "out_time=N/A\n", duration: 10))
+        XCTAssertNil(MediaConversionService.ffmpegProgressFraction(from: output, duration: 0))
+    }
+
+    // MARK: - GIF clip arguments
+    func testGIFFrameExtractionBoundsTheSelectedClip() {
+        let source = URL(fileURLWithPath: "/tmp/source.mov")
+        let target = URL(fileURLWithPath: "/tmp/frame_%04d.png")
+        let arguments = GifSizeGuard.ffmpegFrameExtractArguments(
+            source: source, framePattern: target, fps: 10, maxWidth: 600, startSeconds: 4.5, maxDuration: 3
+        )
+        XCTAssertEqual(Array(arguments.prefix(6)), ["-hide_banner", "-y", "-ss", "4.5", "-i", source.path])
+        XCTAssertTrue(arguments.contains("-t"))
+        XCTAssertEqual(arguments[arguments.firstIndex(of: "-t")! + 1], "3.0")
+    }
+
     // MARK: - Staged conversion output
     func testStagedOutputKeepsExistingFileUntilInstallation() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

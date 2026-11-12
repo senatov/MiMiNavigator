@@ -281,6 +281,16 @@ struct MediaInfoPanelView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                MediaInfoConversionOptionsView(
+                    sourceFormat: controller.sourceFormat,
+                    targetFormat: controller.targetPreset.targetFormat,
+                    imageQuality: $controller.imageQuality,
+                    preserveImageMetadata: $controller.preserveImageMetadata,
+                    gifSizeLimitEnabled: $controller.gifSizeLimitEnabled,
+                    clipStartText: $controller.clipStartText,
+                    clipDurationText: $controller.clipDurationText
+                )
+
                 Toggle("Delete original", isOn: $controller.deleteOriginal)
                     .toggleStyle(.checkbox)
                     .font(.system(size: 13))
