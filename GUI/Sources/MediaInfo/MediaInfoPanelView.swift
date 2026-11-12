@@ -245,7 +245,7 @@ struct MediaInfoPanelView: View {
                     .labelsHidden()
                     .pickerStyle(.menu)
                     .frame(maxWidth: 320, alignment: .leading)
-                    Text(controller.targetPreset.subtitle)
+                    Text(controller.targetPreset == .webpImage ? "Still WebP via ImageIO + cwebp" : controller.targetPreset.subtitle)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -288,6 +288,7 @@ struct MediaInfoPanelView: View {
                     preserveImageMetadata: $controller.preserveImageMetadata,
                     gifSizeLimitEnabled: $controller.gifSizeLimitEnabled,
                     telegramVideoSticker: $controller.telegramVideoSticker,
+                    telegramStaticSticker: $controller.telegramStaticSticker,
                     clipStartText: $controller.clipStartText,
                     clipDurationText: $controller.clipDurationText
                 )

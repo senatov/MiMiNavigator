@@ -14,6 +14,7 @@ enum ConversionError: LocalizedError {
     case toolMissing(String)
     case gifskiMissing
     case lottieToolMissing
+    case webpEncoderMissing
     case gifTooLarge(String)
     case readFailed(String)
     case writeFailed(String)
@@ -31,6 +32,8 @@ enum ConversionError: LocalizedError {
                 return "gifski not installed. Install via: brew install gifski"
             case .lottieToolMissing:
                 return "Lottie conversion needs python-lottie. Install via: python3 -m pip install --user lottie"
+            case .webpEncoderMissing:
+                return "WebP encoding needs cwebp. Install via: brew install webp"
             case .gifTooLarge(let size):
                 return "GIF too large (\(size)) even after duration and size reduction"
             case .readFailed(let name):

@@ -69,6 +69,12 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     @Published var targetPreset: MediaConversionPreset = .mp4H264VideoToolbox {
         didSet {
             if targetPreset.targetFormat != .webm { telegramVideoSticker = false }
+            if targetPreset.targetFormat != .webp { telegramStaticSticker = false }
+            if sourceFormat == targetPreset.targetFormat,
+               let sourceName = currentURL?.deletingPathExtension().lastPathComponent,
+               outputName == sourceName {
+                outputName += "-sticker"
+            }
             targetFormat = targetPreset.targetFormat
             persistPreferences()
         }
@@ -83,6 +89,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
     @Published var preserveImageMetadata = true
     @Published var gifSizeLimitEnabled = true
     @Published var telegramVideoSticker = false
+    @Published var telegramStaticSticker = false
     @Published var clipStartText = ""
     @Published var clipDurationText = ""
     @Published var deleteOriginal: Bool = false {
@@ -213,6 +220,10 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             ? MediaFormat.requiredTool(from: sourceFormat, to: targetPreset.targetFormat)
             : targetPreset.requiredTool
         let status = tool.isAvailable ? "available" : "not installed"
+        if sourceFormat.isImage && targetPreset.targetFormat == .webp {
+            let webpStatus = WebPEncoder.path == nil ? "not installed" : "available"
+            return "ImageIO + cwebp • \(webpStatus) • \(sourceFormat.rawValue) → webp"
+        }
         return "\(tool.rawValue) • \(status) • \(sourceFormat.rawValue) → \(targetPreset.targetFormat.rawValue)"
     }
 
@@ -220,6 +231,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
         let detectedSourceFormat = MediaFormat.from(extension: url.pathExtension.lowercased())
         var targetPresets = detectedSourceFormat.map { MediaConversionPreset.presets(for: $0) } ?? []
         if detectedSourceFormat == .webm { targetPresets.append(.webmVP9) }
+        if detectedSourceFormat == .webp { targetPresets.append(.webpImage) }
         availablePresets = targetPresets
         availableFormats = targetPresets.map(\.targetFormat).deduplicated()
 
@@ -235,7 +247,9 @@ final class MediaInfoPanel: NSObject, ObservableObject {
 
         outputName = url.deletingPathExtension().lastPathComponent
         if detectedSourceFormat == .webm && targetPreset == .webmVP9 { outputName += "-sticker" }
+        if detectedSourceFormat == .webp && targetPreset == .webpImage { outputName += "-sticker" }
         telegramVideoSticker = false
+        telegramStaticSticker = false
         clipStartText = ""
         clipDurationText = ""
         if let storedOutputDirectory = UserDefaults.standard.string(forKey: PreferenceKeys.outputDirectory),
@@ -275,6 +289,7 @@ final class MediaInfoPanel: NSObject, ObservableObject {
             preserveImageMetadata: preserveImageMetadata,
             gifSizeLimitEnabled: gifSizeLimitEnabled,
             telegramVideoSticker: telegramVideoSticker,
+            telegramStaticSticker: telegramStaticSticker,
             clipStartSeconds: Double(clipStartText),
             clipDurationSeconds: Double(clipDurationText)
         )

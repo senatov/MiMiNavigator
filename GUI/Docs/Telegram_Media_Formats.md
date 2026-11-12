@@ -19,11 +19,14 @@ Sources: [Telegram stickers API](https://core.telegram.org/api/stickers),
   an existing WebM; give the result a distinct filename.
 - TGS input is decompressed with `gzip` and rendered through `python-lottie`
   when available. The FFmpeg fallback cannot reliably render Lottie JSON.
-- The current FFmpeg build has no WebP encoder. The existing WebP preset uses
-  `libwebp` and therefore needs a separate backend. ImageIO on this Mac also
-  exposes no WebP destination type. The installed `cwebp` utility and
-  ImageMagick both support encoding, but neither is registered as a managed
-  conversion dependency yet.
+- WebP still images now use ImageIO to decode the source and `cwebp` to encode
+  it. The installed FFmpeg build has no WebP encoder and ImageIO exposes no
+  WebP destination type on this Mac. If `cwebp` is missing, conversion gives
+  a specific installation instruction (`brew install webp`).
+- The Telegram static sticker option requires a source alpha channel, scales
+  the longest side to 512 pixels, aims below 512 KB and validates the encoded
+  image, dimensions, transparency, and final size. The option also works for
+  WebP input, writing a distinct filename by default.
 
 ## Native library candidates
 
@@ -40,5 +43,5 @@ Sources: [Telegram stickers API](https://core.telegram.org/api/stickers),
   library to link directly.
 
 Next steps: choose and package a renderer after testing representative TGS
-files; add a managed WebP encoder; then offer static Telegram sticker and
-TGS export presets with size and content validation.
+files; offer TGS export with size and content validation. A bundled WebP
+library may replace the external `cwebp` requirement in a later release.

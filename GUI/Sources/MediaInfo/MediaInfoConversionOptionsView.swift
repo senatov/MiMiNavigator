@@ -13,12 +13,14 @@ struct MediaInfoConversionOptionsView: View {
     @Binding var preserveImageMetadata: Bool
     @Binding var gifSizeLimitEnabled: Bool
     @Binding var telegramVideoSticker: Bool
+    @Binding var telegramStaticSticker: Bool
     @Binding var clipStartText: String
     @Binding var clipDurationText: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if sourceFormat?.isImage == true && [.jpg, .heic, .webp].contains(targetFormat) {
+            if sourceFormat?.isImage == true && [.jpg, .heic, .webp].contains(targetFormat)
+                && !(targetFormat == .webp && telegramStaticSticker) {
                 HStack(spacing: 8) {
                     Text("Image quality")
                     Slider(value: $imageQuality, in: 0.1...1, step: 0.05)
@@ -28,7 +30,7 @@ struct MediaInfoConversionOptionsView: View {
                         .frame(width: 40, alignment: .trailing)
                 }
             }
-            if sourceFormat?.isImage == true && [.png, .jpg, .heic, .tiff, .bmp].contains(targetFormat) {
+            if sourceFormat?.isImage == true && [.png, .jpg, .webp, .heic, .tiff, .bmp].contains(targetFormat) {
                 Toggle("Keep image metadata", isOn: $preserveImageMetadata)
                     .toggleStyle(.checkbox)
             }
@@ -38,6 +40,10 @@ struct MediaInfoConversionOptionsView: View {
             }
             if targetFormat == .webm && (sourceFormat?.isVideo == true || sourceFormat == .gif) {
                 Toggle("Telegram video sticker (512 px, ≤3 s, ≤256 KB)", isOn: $telegramVideoSticker)
+                    .toggleStyle(.checkbox)
+            }
+            if targetFormat == .webp && sourceFormat?.isImage == true {
+                Toggle("Telegram static sticker (512 px, ≤512 KB, transparency)", isOn: $telegramStaticSticker)
                     .toggleStyle(.checkbox)
             }
             if sourceFormat?.isVideo == true || sourceFormat == .gif {

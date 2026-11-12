@@ -10,6 +10,7 @@ struct MediaConversionOptions: Sendable {
     var preserveImageMetadata = true
     var gifSizeLimitEnabled = true
     var telegramVideoSticker = false
+    var telegramStaticSticker = false
     var clipStartSeconds: Double?
     var clipDurationSeconds: Double?
 }

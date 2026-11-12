@@ -93,7 +93,7 @@ extension ConvertMediaDialog {
                 .onChange(of: targetPreset) { _, newPreset in
                     targetFormat = newPreset.targetFormat
                 }
-                Text(targetPreset.subtitle)
+                Text(targetPreset == .webpImage ? "Still WebP via ImageIO + cwebp" : targetPreset.subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

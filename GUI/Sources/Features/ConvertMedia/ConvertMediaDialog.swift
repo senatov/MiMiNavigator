@@ -86,6 +86,9 @@ struct ConvertMediaDialog: View {
 
     var toolInfo: String {
         guard let sourceFormat else { return "" }
+        if sourceFormat.isImage && targetPreset.targetFormat == .webp {
+            return WebPEncoder.path == nil ? "ImageIO + cwebp ❌ not installed" : "ImageIO + cwebp ✅"
+        }
         let tool = sourceFormat == .tgs || sourceFormat == .json
             ? MediaFormat.requiredTool(from: sourceFormat, to: targetPreset.targetFormat)
             : targetPreset.requiredTool

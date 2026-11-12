@@ -55,6 +55,9 @@ final class MediaConversionService {
         if options.telegramVideoSticker && (targetFormat != .webm || !(sourceFormat.isVideo || sourceFormat == .gif)) {
             throw ConversionError.writeFailed("Telegram video sticker needs video or GIF input and WebM output")
         }
+        if options.telegramStaticSticker && (targetFormat != .webp || !sourceFormat.isImage) {
+            throw ConversionError.writeFailed("Telegram static sticker needs an image and WebP output")
+        }
         try Self.validateDestination(source: source, target: target)
         conversionInFlight = true
         defer { conversionInFlight = false }
@@ -71,7 +74,9 @@ final class MediaConversionService {
             MemoryDiagnostics.shared.checkpoint("convert.after.\(operationID)")
         }
         let conversionPreset = preset ?? MediaConversionPreset.defaultPreset(for: sourceFormat, target: targetFormat)
-        let requestedTool = resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
+        let requestedTool: ConversionTool = targetFormat == .webp && sourceFormat.isImage
+            ? .imageIO
+            : resolvedTool(sourceFormat: sourceFormat, targetFormat: targetFormat, preset: conversionPreset)
         var executionTool = requestedTool
         logStart(source: source, sourceFormat: sourceFormat, targetFormat: targetFormat, tool: requestedTool)
         approvedOversizedGIFTargets.remove(staged.path)
@@ -201,7 +206,11 @@ final class MediaConversionService {
                     panel: panel
                 )
             case .imageIO:
-                try await runImageIO(source: source, target: target, targetFormat: targetFormat, options: options, panel: panel)
+                if targetFormat == .webp {
+                    try await runWebPConvert(source: source, target: target, options: options, panel: panel)
+                } else {
+                    try await runImageIO(source: source, target: target, targetFormat: targetFormat, options: options, panel: panel)
+                }
             case .lottieAndFFmpeg:
                 try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, enforceSizeLimit: options.gifSizeLimitEnabled, panel: panel)
         }
