@@ -1,294 +1,66 @@
 // MediaConversionService+Lottie.swift
 // MiMiNavigator
-//
-// Created by Iakov Senatov on 27.05.2026.
 // Copyright © 2026 Senatov. All rights reserved.
-// Description: Lottie and TGS conversion helpers for MediaConversionService.
+// Description: Telegram rlottie rendering for TGS and Lottie JSON conversion.
 
-import FileModelKit
 import ExternalToolsKit
+import FileModelKit
 import Foundation
 
 // MARK: - Lottie / TGS
-
 @MainActor
 extension MediaConversionService {
-    func runLottieConvert(
-        source: URL,
-        target: URL,
-        targetFormat: MediaFormat,
-        enforceSizeLimit: Bool,
-        panel: ProgressPanel
-    ) async throws {
+    func runLottieConvert(source: URL, target: URL, targetFormat: MediaFormat, panel: ProgressPanel) async throws {
         let temporaryDirectory = try makeTemporaryLottieDirectory()
         defer { recycleConversionArtifactLater(temporaryDirectory) }
         let jsonFile = temporaryDirectory.appendingPathComponent(Self.lottieJSONFileName)
         try await prepareLottieJSON(source: source, destination: jsonFile, panel: panel)
-        panel.appendLine("Rendering Lottie frames…")
-        if let lottieConvertPath = try await resolvedLottieConvertPath(targetFormat: targetFormat, panel: panel) {
-            panel.appendLine("Using python-lottie: \(lottieConvertPath)")
-            try await runLottieConvertCLI(
-                executablePath: lottieConvertPath,
-                jsonFile: jsonFile,
-                target: target,
-                targetFormat: targetFormat,
-                enforceSizeLimit: enforceSizeLimit,
-                panel: panel
-            )
-            return
+        guard let helper = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("mimi-rlottie-render"), FileManager.default.isExecutableFile(atPath: helper.path) else {
+            throw ConversionError.lottieToolMissing
         }
-        if targetFormat == .gif {
-            do {
-                try await runLottieToGIF(jsonFile: jsonFile, target: target, temporaryDirectory: temporaryDirectory, panel: panel)
-            } catch {
-                try await handleMissingLottieConvert(error: error)
-            }
-            return
+        let rawFrames = temporaryDirectory.appendingPathComponent("frames.bgra")
+        panel.appendLine("Rendering frames with TelegramMessenger/rlottie…")
+        try await runProcess(executablePath: helper.path, arguments: [jsonFile.path, rawFrames.path, Self.lottieFrameRate], panel: panel)
+        guard !isEmptyFile(rawFrames) else { throw ConversionError.readFailed("no Lottie frames rendered") }
+        let input = Self.ffmpegBannerArguments + ["-f", "rawvideo", "-pixel_format", "bgra", "-video_size", "512x512", "-framerate", Self.lottieFrameRate, "-i", rawFrames.path]
+        let output: [String]
+        switch targetFormat {
+        case .gif:
+            output = ["-filter_complex", "[0:v]split[a][b];[a]palettegen=reserve_transparent=1[p];[b][p]paletteuse=alpha_threshold=128", "-loop", "0"]
+        case .png:
+            output = ["-frames:v", "1", "-update", "1"]
+        case .mp4:
+            output = ["-vf", "format=yuv420p", "-an", "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+        case .webm:
+            output = ["-an", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-auto-alt-ref", "0", "-b:v", "0", "-crf", "35"]
+        default:
+            throw ConversionError.unsupportedConversion(source.pathExtension, targetFormat.fileExtension)
         }
-        do {
-            try await runGenericLottieExport(jsonFile: jsonFile, target: target, panel: panel)
-        } catch {
-            try await handleMissingLottieConvert(error: error)
-        }
+        try await runProcess(executablePath: ConversionTool.ffmpegPath, arguments: input + output + [target.path], panel: panel)
     }
 
+    // MARK: - Temporary animation workspace
     func makeTemporaryLottieDirectory() throws -> URL {
-        let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mimi_tgs_\(UUID().uuidString)")
-        try FileManager.default.createDirectory(
-            at: temporaryDirectory,
-            withIntermediateDirectories: true
-        )
-        return temporaryDirectory
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("mimi_tgs_\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
     }
 
-    func prepareLottieJSON(
-        source: URL,
-        destination: URL,
-        panel: ProgressPanel
-    ) async throws {
+    // MARK: - Prepare JSON source
+    func prepareLottieJSON(source: URL, destination: URL, panel: ProgressPanel) async throws {
         if source.pathExtension.lowercased() == "tgs" {
             panel.appendLine("Decompressing TGS → JSON…")
-            try await decompressTGS(source: source, destination: destination, panel: panel)
+            let gzip = ExternalToolCatalog.gzip.resolvedPath ?? "/usr/bin/gzip"
+            try await runProcess(executablePath: gzip, arguments: ["-dc", source.path], panel: panel, outputFile: destination)
+            if isEmptyFile(destination) { throw ConversionError.readFailed(source.lastPathComponent) }
             return
         }
         try FileManager.default.copyItem(at: source, to: destination)
     }
 
-    func decompressTGS(source: URL, destination: URL, panel: ProgressPanel) async throws {
-        let gzipPath = ExternalToolCatalog.gzip.resolvedPath ?? "/usr/bin/gzip"
-        try await runProcess(executablePath: gzipPath, arguments: ["-dc", source.path], panel: panel, outputFile: destination)
-        if isEmptyFile(destination) { throw ConversionError.readFailed(source.lastPathComponent) }
-    }
-
+    // MARK: - Check rendered output
     func isEmptyFile(_ url: URL) -> Bool {
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
-              let size = attributes[.size] as? UInt64
-        else {
-            return true
-        }
+        guard let size = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? UInt64 else { return true }
         return size == 0
-    }
-
-    func resolvedLottieConvertPath(targetFormat: MediaFormat, panel: ProgressPanel) async throws -> String? {
-        if targetFormat != .gif {
-            return ExternalToolCatalog.lottieConvert.resolvedPath
-        }
-        for path in ExternalToolCatalog.lottieConvert.binaryCandidates where FileManager.default.isExecutableFile(atPath: path) {
-            if try await lottieConvertSupportsGIF(path, panel: panel) { return path }
-        }
-        return nil
-    }
-
-    func lottieConvertSupportsGIF(_ path: String, panel: ProgressPanel) async throws -> Bool {
-        do {
-            let text = try await runProcess(executablePath: path, arguments: ["--help"], panel: panel)
-            return text.contains("gif")
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            return false
-        }
-    }
-
-    func runLottieConvertCLI(
-        executablePath: String,
-        jsonFile: URL,
-        target: URL,
-        targetFormat: MediaFormat,
-        enforceSizeLimit: Bool,
-        panel: ProgressPanel
-    ) async throws {
-        let args = makeLottieConvertArguments(jsonFile: jsonFile, target: target, targetFormat: targetFormat)
-        try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
-        if enforceSizeLimit && targetFormat == .gif && GifSizeGuard.exceedsLimit(target) {
-            try await handleOversizedLottieGIF(
-                executablePath: executablePath,
-                jsonFile: jsonFile,
-                target: target,
-                panel: panel
-            )
-        }
-    }
-
-    func makeLottieConvertArguments(
-        jsonFile: URL,
-        target: URL,
-        targetFormat: MediaFormat,
-        fps: Int = GifSizeGuard.initialFPS,
-        width: Int = GifSizeGuard.initialMaxWidth
-    ) -> [String] {
-        if targetFormat == .gif {
-            return ["--fps", "\(fps)", "--width", "\(width)", jsonFile.path, target.path]
-        }
-        return [jsonFile.path, target.path]
-    }
-
-    func handleOversizedLottieGIF(
-        executablePath: String,
-        jsonFile: URL,
-        target: URL,
-        panel: ProgressPanel
-    ) async throws {
-        let firstPassSize = GifSizeGuard.fileSizeMB(target)
-        panel.appendLine("⚠️ GIF too large: \(firstPassSize)")
-        switch await requestOversizedGIFDecision(size: firstPassSize) {
-            case .keep:
-                approvedOversizedGIFTargets.insert(target.path)
-                panel.appendLine("Keeping GIF above 19.5 MB by user choice")
-                return
-            case .cancel:
-                throw CancellationError()
-            case .reduce:
-                panel.appendLine("Regenerating smaller Lottie GIF…")
-        }
-        var args = makeLottieConvertArguments(
-            jsonFile: jsonFile,
-            target: target,
-            targetFormat: .gif,
-            fps: GifSizeGuard.fallbackFPS,
-            width: GifSizeGuard.fallbackWidth
-        )
-        try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
-        if GifSizeGuard.exceedsLimit(target) {
-            args = makeLottieConvertArguments(
-                jsonFile: jsonFile,
-                target: target,
-                targetFormat: .gif,
-                fps: GifSizeGuard.finalFPS,
-                width: GifSizeGuard.finalWidth
-            )
-            try await runProcess(executablePath: executablePath, arguments: args, panel: panel)
-        }
-        if GifSizeGuard.exceedsLimit(target) {
-            throw ConversionError.gifTooLarge(GifSizeGuard.fileSizeMB(target))
-        }
-    }
-
-    func handleMissingLottieConvert(error: Error) async throws {
-        guard error is ConversionError else { throw error }
-        _ = await ExternalToolDoctor.shared.ensureReady(
-            toolID: ExternalToolCatalog.lottieConvert.id,
-            context: "TGS and Lottie conversion needs python-lottie when ffmpeg cannot render Lottie JSON."
-        )
-        throw ConversionError.lottieToolMissing
-    }
-
-    func runLottieToGIF(
-        jsonFile: URL,
-        target: URL,
-        temporaryDirectory: URL,
-        panel: ProgressPanel
-    ) async throws {
-        if isGifskiAvailable() {
-            try await runLottieToGIFViaGifski(
-                jsonFile: jsonFile,
-                target: target,
-                temporaryDirectory: temporaryDirectory,
-                panel: panel
-            )
-            return
-        }
-        try await runLottieToGIFFallback(jsonFile: jsonFile, target: target, panel: panel)
-    }
-
-    func isGifskiAvailable() -> Bool {
-        FileManager.default.isExecutableFile(atPath: ConversionTool.gifskiPath)
-    }
-
-    func runLottieToGIFViaGifski(
-        jsonFile: URL,
-        target: URL,
-        temporaryDirectory: URL,
-        panel: ProgressPanel
-    ) async throws {
-        let framesDirectory = temporaryDirectory.appendingPathComponent(Self.lottieFramesDirectoryName)
-        let framePattern = framesDirectory.appendingPathComponent(Self.lottieFramePattern)
-        try FileManager.default.createDirectory(at: framesDirectory, withIntermediateDirectories: true)
-        try await runProcess(
-            executablePath: ConversionTool.ffmpegPath,
-            arguments: makeLottieFrameRenderArguments(jsonFile: jsonFile, framePattern: framePattern),
-            panel: panel
-        )
-        let framePaths = try enumerateSortedFrames(in: framesDirectory)
-        guard !framePaths.isEmpty else {
-            throw ConversionError.readFailed("no Lottie frames rendered")
-        }
-        try await runProcess(
-            executablePath: ConversionTool.gifskiPath,
-            arguments: makeGifskiArguments(target: target, framePaths: framePaths),
-            panel: panel
-        )
-    }
-
-    func runLottieToGIFFallback(
-        jsonFile: URL,
-        target: URL,
-        panel: ProgressPanel
-    ) async throws {
-        try await runProcess(
-            executablePath: ConversionTool.ffmpegPath,
-            arguments: makeLottieGIFFallbackArguments(jsonFile: jsonFile, target: target),
-            panel: panel
-        )
-    }
-
-    func runGenericLottieExport(
-        jsonFile: URL,
-        target: URL,
-        panel: ProgressPanel
-    ) async throws {
-        try await runProcess(
-            executablePath: ConversionTool.ffmpegPath,
-            arguments: Self.ffmpegBannerArguments + ["-i", jsonFile.path, target.path],
-            panel: panel
-        )
-    }
-
-    func makeLottieFrameRenderArguments(jsonFile: URL, framePattern: URL) -> [String] {
-        Self.ffmpegBannerArguments + [
-            "-i", jsonFile.path,
-            "-vf", "fps=\(Self.lottieFrameRate)",
-            framePattern.path,
-        ]
-    }
-
-    func makeGifskiArguments(target: URL, framePaths: [String]) -> [String] {
-        var args = [
-            "--fps", Self.lottieFrameRate,
-            "--quality", Self.gifskiQuality,
-            "-o", target.path,
-        ]
-        args.append(contentsOf: framePaths)
-        return args
-    }
-
-    func makeLottieGIFFallbackArguments(jsonFile: URL, target: URL) -> [String] {
-        Self.ffmpegBannerArguments + [
-            "-i", jsonFile.path,
-            "-vf", Self.lottiePreviewScaleFilter,
-            "-loop", "0",
-            target.path,
-        ]
     }
 }

@@ -17,8 +17,9 @@ Sources: [Telegram stickers API](https://core.telegram.org/api/stickers),
   limits output to 30 fps and three seconds, removes audio, and retries with
   lower quality until the output is within 256,000 bytes. It can also convert
   an existing WebM; give the result a distinct filename.
-- TGS input is decompressed with `gzip` and rendered through `python-lottie`
-  when available. The FFmpeg fallback cannot reliably render Lottie JSON.
+- TGS input is decompressed with the system `gzip`, then rendered at 15 fps by
+  the bundled `TelegramMessenger/rlottie` helper. FFmpeg encodes its BGRA frames
+  as GIF, first-frame PNG, MP4, or WebM. Plain Lottie JSON uses the same path.
 - WebP still images now use ImageIO to decode the source and `cwebp` to encode
   it. The installed FFmpeg build has no WebP encoder and ImageIO exposes no
   WebP destination type on this Mac. If `cwebp` is missing, conversion gives
@@ -28,20 +29,16 @@ Sources: [Telegram stickers API](https://core.telegram.org/api/stickers),
   image, dimensions, transparency, and final size. The option also works for
   WebP input, writing a distinct filename by default.
 
-## Native library candidates
+## Bundled renderer
 
 - [TelegramMessenger/rlottie](https://github.com/TelegramMessenger/rlottie)
-  is Telegram's C++14 Lottie renderer. It is a suitable candidate for a local
-  C wrapper and Swift package to render TGS frames without Python. Review its
-  LGPL 2.1 and bundled component licenses before shipping binaries.
-- [Airbnb Lottie for iOS/macOS](https://github.com/airbnb/lottie-ios) is a
-  Swift-compatible renderer available through Swift Package Manager. It may
-  support native preview, but frame export and TGS decompression still need a
-  defined pipeline and tests with real Telegram stickers.
-- [LottieViewConvert](https://github.com/SwaggyMacro/LottieViewConvert) is a
-  desktop application and useful implementation reference, rather than a
-  library to link directly.
+  is pinned to commit `53c9679069eb6b6513ccc3c892ef4f4a760658da` in
+  `Vendor/rlottie`. `Vendor/TelegramRlottieRenderer` builds a separate helper
+  executable for each app build. Its source and license files are included in
+  the repository; the helper is signed with the app for distribution. The
+  vendored CMake file omits examples and the arm64 build uses the portable
+  compositor because upstream's 32-bit ARM NEON assembly cannot link on macOS
+  arm64. Two C++ files have small current-Clang warning fixes.
 
-Next steps: choose and package a renderer after testing representative TGS
-files; offer TGS export with size and content validation. A bundled WebP
-library may replace the external `cwebp` requirement in a later release.
+Remaining work: Telegram TGS export and validation, plus a bundled WebP encoder
+to remove the separate `cwebp` requirement.

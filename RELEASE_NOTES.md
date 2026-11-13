@@ -1,3 +1,29 @@
+# MiMiNavigator v0.9.1.8
+
+This release improves Telegram sticker conversion and refreshes the About window.
+
+## Improvements since v0.9.1.7
+
+- Render animated Telegram `.tgs` stickers and Lottie JSON with the bundled TelegramMessenger/rlottie engine. Export GIF, first-frame PNG, MP4, or WebM without installing Python or python-lottie.
+- Keep FFmpeg as the output encoder and show a clear error if the bundled renderer is missing.
+- Add rlottie and cwebp to the dependency inventory, update resolved Swift package versions, and remove the obsolete python-lottie setup requirement.
+- Use the standard macOS system font with restrained color accents in About; remove duplicate architecture text and an outdated Swift version label.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Users of v0.9.1.2 must install a macOS 27 release manually before later updates can use the OS-aware feed.
+- Open the DMG and drag MiMiNavigator to Applications. FFmpeg remains required for TGS output encoding; static WebP encoding requires cwebp.
+
+## Validation
+
+- The bundled renderer was built for arm64 and a compressed Lottie test animation was rendered to PNG and GIF.
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.7...v0.9.1.8
+
+---
+
 # MiMiNavigator v0.9.1.7
 
 This release adds safer review and broader developer-cache discovery to Cleanup.

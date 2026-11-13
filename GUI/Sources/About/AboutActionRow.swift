@@ -28,8 +28,8 @@ struct AboutActionRow: View {
                     .frame(width: 1, height: 25)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .font(.system(.callout, design: .default, weight: .semibold))
+                        .foregroundStyle(iconTint)
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -38,7 +38,7 @@ struct AboutActionRow: View {
                 Spacer(minLength: 4)
                 Image(systemName: "arrow.up.right")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(iconTint)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

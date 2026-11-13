@@ -62,8 +62,8 @@ struct AboutView: View {
             }
 
             Text(appName)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(.primary)
+                .font(.system(.title2, design: .default, weight: .semibold))
+                .foregroundStyle(.blue)
 
             Text(tagline)
                 .font(.subheadline)
@@ -90,6 +90,7 @@ struct AboutView: View {
                 .frame(width: 100, alignment: .trailing)
             Text(value)
                 .fontWeight(.medium)
+                .foregroundStyle(.blue)
                 .textSelection(.enabled)
             Spacer()
         }
@@ -137,7 +138,7 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Application Architecture")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.teal)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 6) {
@@ -145,11 +146,6 @@ struct AboutView: View {
                     name: "CacheKit",
                     description: "SQLite-backed persistent cache with TTL and LRU pruning",
                     icon: "externaldrive.badge.timemachine"
-                )
-                architectureRow(
-                    name: "Two-level caching",
-                    description: "Bounded in-memory L1 with persistent, validated L2 storage",
-                    icon: "square.2.layers.3d"
                 )
                 architectureRow(
                     name: "NetworkKit",
@@ -201,7 +197,7 @@ struct AboutView: View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 12))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.teal)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -225,16 +221,16 @@ struct AboutView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Third-Party Libraries")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.purple)
                 .padding(.horizontal, 4)
 
             VStack(spacing: 6) {
                 ForEach(AboutDependencyCatalog.libraries) { dependency in
-                    AboutActionRow(title: dependency.name, subtitle: "\(dependency.description) · \(dependency.license)", systemImage: "shippingbox", iconTint: .blue, url: dependency.url)
+                    AboutActionRow(title: dependency.name, subtitle: "\(dependency.description) · \(dependency.license)", systemImage: "shippingbox", iconTint: .purple, url: dependency.url)
                 }
                 Text("Optional External Tools")
                     .font(.callout.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.orange)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
                     .padding(.top, 4)
@@ -255,7 +251,7 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
-                creditBadge("Swift 6.2", color: .blue)
+                creditBadge("Swift", color: .blue)
                 creditBadge("SwiftUI", color: .blue)
                 creditBadge("AppKit", color: .purple)
             }

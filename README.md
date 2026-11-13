@@ -165,7 +165,7 @@ The current DMG is signed and notarized by Apple. No App Store account or subscr
 
 MiMiNavigator automatically installs missing command-line dependencies on first launch. It downloads the official signed [Homebrew package](https://docs.brew.sh/Installation) for Apple Silicon, checks its macOS installation signature, and installs it in Terminal. macOS may ask permission to control Terminal and request an administrator password. MiMiNavigator waits until installation finishes before continuing to its permission onboarding. If installation stops, check Terminal and use **Retry installation** in MiMiNavigator.
 
-The setup installs Git; unar and sevenzip for archives; ffmpeg (including ffprobe) and gifski for media; sshpass for password-based SSH; and pipx plus python-lottie for Lottie/TGS conversion. Already available tools are kept. The macOS built-in ZIP, TAR, search, SSH, networking, and file tools need no separate installation. Basic browsing can run without these third-party tools, but the first-launch setup prepares the complete feature set.
+The setup installs Git; unar and sevenzip for archives; ffmpeg (including ffprobe) and gifski for media; and sshpass for password-based SSH. WebP stickers additionally require cwebp (`brew install webp`). Telegram TGS and Lottie JSON rendering uses the bundled TelegramMessenger/rlottie helper. Already available tools are kept. The macOS built-in ZIP, TAR, search, SSH, networking, and file tools need no separate installation. Basic browsing can run without these third-party tools, and first-launch setup prepares the standard optional tools.
 
 GUI Git clients (Fork, GitHub Desktop, Sourcetree, Tower, and Sublime Merge) and comparison apps are chosen separately in Settings; they are not installed automatically. For later tool checks or repair, use **Settings → External Tools**. Developers can refresh the recommended tool set with:
 
@@ -203,6 +203,7 @@ Requirements:
 
 - macOS 27+ on Apple Silicon (for current source builds)
 - Xcode 27 with Swift 6.4
+- CMake from Homebrew (`brew install cmake`) to compile the bundled rlottie renderer
 
 ```zsh
 git clone https://github.com/senatov/MiMiNavigator.git
@@ -281,7 +282,7 @@ Useful contribution areas include tests, localization, performance, previews, th
 
 ## Credits
 
-MiMiNavigator builds on excellent open-source work, including SwiftyBeaver, GRDB.swift, Citadel, SwiftNIO, Swift Crypto, BigInt, FFmpeg, gifski, 7-Zip, and unar. The complete version, source, and license inventory is maintained in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
+MiMiNavigator builds on excellent open-source work, including SwiftyBeaver, GRDB.swift, Citadel, SwiftNIO, Swift Crypto, BigInt, TelegramMessenger/rlottie, FFmpeg, gifski, 7-Zip, and unar. The complete version, source, and license inventory is maintained in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
 MiMiNavigator is developed by **Iakov Senatov** — Diplom-Ingenieur (Chemical Process Engineering), with 35 years of programming experience.
 

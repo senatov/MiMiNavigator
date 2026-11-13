@@ -7,6 +7,16 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.8] - 2026-11-13
+
+### Added
+- Bundle TelegramMessenger/rlottie as a signed renderer for animated Telegram TGS stickers and Lottie JSON, with GIF, MP4, and first-frame PNG output through FFmpeg.
+
+### Changed
+- Remove the python-lottie setup requirement and obsolete tool listing.
+- Refresh About with system-font color accents, rlottie and cwebp credits, and current Swift package information.
+- Update Telegram conversion and third-party documentation to match the bundled renderer.
+
 ## [0.9.1.7] - 2026-11-10
 
 ### Added

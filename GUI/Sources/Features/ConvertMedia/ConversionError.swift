@@ -31,7 +31,7 @@ enum ConversionError: LocalizedError {
             case .gifskiMissing:
                 return "gifski not installed. Install via: brew install gifski"
             case .lottieToolMissing:
-                return "Lottie conversion needs python-lottie. Install via: python3 -m pip install --user lottie"
+                return "Bundled Telegram rlottie renderer is missing. Reinstall MiMiNavigator."
             case .webpEncoderMissing:
                 return "WebP encoding needs cwebp. Install via: brew install webp"
             case .gifTooLarge(let size):

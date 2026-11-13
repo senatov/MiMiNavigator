@@ -19,11 +19,8 @@ final class MediaConversionService {
 
     static let ffmpegBannerArguments = ["-hide_banner", "-nostdin", "-y"]
     static let lottieFrameRate = "15"
-    static let lottiePreviewScaleFilter = "fps=15,scale=512:-1:flags=lanczos"
     static let gifskiQuality = "90"
-    static let lottieFramesDirectoryName = "frames"
     static let lottieJSONFileName = "sticker.json"
-    static let lottieFramePattern = "f_%04d.png"
     static let telegramVideoStickerArguments = [
         "-map", "0:v:0", "-an", "-sn", "-dn",
         "-vf", "fps=30,scale=512:512:force_original_aspect_ratio=decrease:force_divisible_by=2,format=yuva420p",
@@ -212,7 +209,7 @@ final class MediaConversionService {
                     try await runImageIO(source: source, target: target, targetFormat: targetFormat, options: options, panel: panel)
                 }
             case .lottieAndFFmpeg:
-                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, enforceSizeLimit: options.gifSizeLimitEnabled, panel: panel)
+                try await runLottieConvert(source: source, target: target, targetFormat: targetFormat, panel: panel)
         }
     }
 

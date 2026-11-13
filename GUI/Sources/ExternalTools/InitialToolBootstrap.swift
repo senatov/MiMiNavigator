@@ -31,7 +31,6 @@ final class InitialToolBootstrap {
         return !ExternalToolCatalog.brew.isInstalled
             || !gitPaths.contains(where: fileManager.isExecutableFile(atPath:))
             || formulaTools.contains(where: { !$0.isInstalled })
-            || !ExternalToolCatalog.lottieConvert.isInstalled
     }
 
     // MARK: - Start Installation
@@ -115,15 +114,7 @@ final class InitialToolBootstrap {
             .reduce(into: [String]()) { result, formula in
                 if !result.contains(formula) { result.append(formula) }
             }
-        let installLottie = !ExternalToolCatalog.lottieConvert.isInstalled
         let formulaCommands = formulas.map { "\"$brew\" install \($0)" }.joined(separator: "\n")
-        let lottieCommands = installLottie ? """
-            "$brew" install pipx
-            PIPX_BIN_DIR="$HOME/.local/bin" "$(dirname "$brew")/pipx" install --force lottie
-            if [[ -x "$HOME/.local/bin/lottie_convert.py" && ! -e "$(dirname "$brew")/lottie_convert.py" ]]; then
-                /bin/ln -s "$HOME/.local/bin/lottie_convert.py" "$(dirname "$brew")/lottie_convert.py"
-            fi
-            """ : ""
         return #"""
             #!/bin/zsh
             set -e
@@ -158,7 +149,6 @@ final class InitialToolBootstrap {
             fi
             print 'Installing MiMiNavigator command-line tools…'
             \#(formulaCommands)
-            \#(lottieCommands)
             print 'MiMiNavigator command-line tools are ready.'
             """#
     }

@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This document describes third-party software used by MiMiNavigator. Swift package versions are taken from the committed `Package.resolved` file. Optional command-line tools are installed separately by the user and are not distributed inside the application bundle.
+This document describes third-party software used by MiMiNavigator. Swift package versions are taken from the committed `Package.resolved` file. Optional command-line tools are installed separately by the user and are not distributed inside the application bundle. The rlottie renderer is bundled with the application.
 
 ## Linked Swift packages
 
@@ -9,13 +9,14 @@ This document describes third-party software used by MiMiNavigator. Swift packag
 | SwiftyBeaver | 2.1.1 | MIT | <https://github.com/SwiftyBeaver/SwiftyBeaver> |
 | GRDB.swift | 7.11.1 | MIT | <https://github.com/groue/GRDB.swift> |
 | Citadel | 0.12.1 | MIT | <https://github.com/orlandos-nl/Citadel> |
-| SwiftNIO SSH security fork | 0.3.7 | Apache-2.0 | <https://github.com/njacknot/swift-nio-ssh> |
-| SwiftNIO | 2.101.3 | Apache-2.0 | <https://github.com/apple/swift-nio> |
+| SwiftNIO SSH security fork | 0.3.7 | Apache-2.0 | <https://github.com/Wellz26/swift-nio-ssh> |
+| SwiftNIO | 2.105.0 | Apache-2.0 | <https://github.com/apple/swift-nio> |
 | Swift Crypto | 3.15.1 | Apache-2.0 | <https://github.com/apple/swift-crypto> |
-| Swift ASN.1 | 1.7.1 | Apache-2.0 | <https://github.com/apple/swift-asn1> |
+| Swift ASN.1 | 1.7.4 | Apache-2.0 | <https://github.com/apple/swift-asn1> |
 | Swift Atomics | 1.3.1 | Apache-2.0 | <https://github.com/apple/swift-atomics> |
-| Swift Collections | 1.6.0 | Apache-2.0 | <https://github.com/apple/swift-collections> |
-| Swift Log | 1.15.0 | Apache-2.0 | <https://github.com/apple/swift-log> |
+| Swift Collections | 1.7.5 | Apache-2.0 | <https://github.com/apple/swift-collections> |
+| Swift Log | 1.17.0 | Apache-2.0 | <https://github.com/apple/swift-log> |
+| Swift Subprocess | 1.0.2 | Apache-2.0 | <https://github.com/swiftlang/swift-subprocess> |
 | Swift System | 1.8.1 | Apache-2.0 | <https://github.com/apple/swift-system> |
 | BigInt | 5.7.0 | MIT | <https://github.com/attaswift/BigInt> |
 
@@ -24,6 +25,8 @@ The SwiftNIO SSH package is mirrored to the compatible 0.3.7 security fork becau
 The complete license text for every linked package is available in the `LICENSE` or `LICENSE.txt` file at the corresponding source link. MIT and Apache-2.0 notices and attribution requirements remain applicable to redistributed binaries and source code.
 
 ## Adapted source components
+
+TelegramMessenger/rlottie is vendored at commit `53c9679069eb6b6513ccc3c892ef4f4a760658da` under `Vendor/rlottie` and built as a separate bundled executable for TGS and Lottie JSON rendering. Its main license is LGPL-2.1-or-later. The bundled source includes additional FreeType, Pixman, stb, and RapidJSON license terms, preserved in `Vendor/rlottie/licenses` and listed in `Vendor/rlottie/COPYING`. Source: <https://github.com/TelegramMessenger/rlottie>.
 
 The compact toolbar sparkline is adapted from Hop: <https://github.com/antonyshakirov/hop>.
 
@@ -46,7 +49,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 | sshpass | Non-interactive SSH password authentication | GPL-2.0-only | <https://sourceforge.net/projects/sshpass/> |
 | FFmpeg and ffprobe | Media conversion and inspection | GPL/LGPL, depending on build | <https://ffmpeg.org/legal.html> |
 | gifski | High-quality GIF encoding | AGPL-3.0-only | <https://gif.ski> |
-| python-lottie | Lottie JSON and TGS conversion | GPL-3.0 | <https://pypi.org/project/lottie/> |
+| cwebp (libwebp) | WebP still-image and Telegram static-sticker encoding | BSD-3-Clause | <https://developers.google.com/speed/webp> |
 | KDiff3 | File and directory comparison | GPL-2.0-or-later | <https://apps.kde.org/kdiff3/> |
 
 MiMiNavigator only discovers and launches these separately installed programs. Their executables are not linked into or bundled with MiMiNavigator.

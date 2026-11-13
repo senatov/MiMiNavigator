@@ -19,6 +19,7 @@ Thank you for your interest in contributing to MiMiNavigator! This document prov
 - **macOS**: 27+ on Apple Silicon (arm64 required for current source builds)
 - **Xcode**: Latest version with Swift 6.4 support
 - **Git**: Latest stable version
+- **CMake**: Homebrew CMake (`brew install cmake`) for the bundled rlottie renderer
 
 ### Getting Started
 
@@ -26,7 +27,7 @@ The project downloads compiled MiMiKits libraries through Swift Package Manager.
 No access to the private implementation sources is required. See
 [Binary package distribution](GUI/Docs/Binary_Packages.md) for details.
 
-```bash
+```zsh
 # Clone the repository
 git clone https://github.com/senatov/MiMiNavigator.git
 cd MiMiNavigator
