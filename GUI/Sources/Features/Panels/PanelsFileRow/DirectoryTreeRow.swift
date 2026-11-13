@@ -11,6 +11,7 @@ import SwiftUI
 
 // MARK: - Directory Tree Row
 struct DirectoryTreeRow: View {
+    @State private var preferences = UserPreferences.shared
     @Environment(AppState.self) private var appState
     @Environment(DragDropManager.self) private var dragDropManager
     let file: CustomFile
@@ -187,15 +188,17 @@ struct DirectoryTreeRow: View {
     private func text(for col: ColumnID) -> String {
         switch col {
         case .name: return file.nameStr
-        case .dateModified: return file.modifiedDateFormatted
-        case .size: return file.displaySizeFormatted
+        case .dateModified: return PanelMetadataFormatter.date(file.modifiedDate, format: preferences.snapshot.dateFormat)
+        case .size:
+            if file.isDirectory && file.cachedDirectorySize == nil && file.cachedShallowSize == nil { return "—" }
+            return PanelMetadataFormatter.size(file.displaySize, format: preferences.snapshot.sizeFormat, alwaysKB: preferences.snapshot.showSizeInKB)
         case .kind: return file.kindFormatted
         case .permissions: return file.permissionsFormatted
         case .owner: return file.ownerFormatted
         case .childCount: return file.childCountFormatted
-        case .dateCreated: return file.creationDateFormatted
-        case .dateLastOpened: return file.lastOpenedFormatted
-        case .dateAdded: return file.dateAddedFormatted
+        case .dateCreated: return PanelMetadataFormatter.date(file.creationDate, format: preferences.snapshot.dateFormat)
+        case .dateLastOpened: return PanelMetadataFormatter.date(file.lastOpenedDate, format: preferences.snapshot.dateFormat)
+        case .dateAdded: return PanelMetadataFormatter.date(file.dateAdded, format: preferences.snapshot.dateFormat)
         case .group: return file.groupNameFormatted
         case .finderVersion: return file.finderVersion
         case .finderComment: return file.finderComment

@@ -136,18 +136,34 @@ struct SettingsPanelsPane: View {
             // ── Date & Size format ───────────────────────────
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Date format:", help: "How modification date is shown in the file list") {
+                    SettingsRow(label: "Date format:", help: "How dates are shown in file list columns") {
                         Picker("", selection: prefBinding(\.dateFormat)) {
-                            Text("Short  (14.02.26)").tag("short")
+                            Text("System (Finder)").tag("system")
+                            Text("Short (14.02.26 09:30)").tag("short")
+                            Text("Full year (14.02.2026 09:30)").tag("long")
                             Text("Medium (Feb 14, 2026)").tag("medium")
-                            Text("Relative (2 days ago)").tag("relative")
-                            Text("ISO-8601").tag("iso")
+                            Text("Relative (Today, 09:30)").tag("relative")
+                            Text("ISO (2026-02-14 09:30)").tag("iso")
                         }
                         .labelsHidden()
-                        .frame(width: 200)
+                        .frame(width: 240)
                     }
                     Divider()
-                    SettingsRow(label: "Size display:", help: "Show file sizes in KB instead of auto-scaling") {
+                    SettingsRow(label: "Size format:", help: "Choose the base and units used in file list columns") {
+                        Picker("", selection: Binding(
+                            get: { prefs.snapshot.sizeFormat ?? "system" },
+                            set: { prefs.snapshot.sizeFormat = $0 }
+                        )) {
+                            Text("System (Finder)").tag("system")
+                            Text("Decimal (1000: KB, MB)").tag("decimal")
+                            Text("Binary (1024: KiB, MiB)").tag("binary")
+                            Text("Exact bytes").tag("bytes")
+                        }
+                        .labelsHidden()
+                        .frame(width: 240)
+                    }
+                    Divider()
+                    SettingsRow(label: "Size display:", help: "Override the selected size format with whole KB") {
                         Toggle("Always show size in KB", isOn: prefBinding(\.showSizeInKB))
                             .toggleStyle(.checkbox)
                     }

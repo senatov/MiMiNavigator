@@ -125,12 +125,7 @@ private struct ThumbnailCellFramesKey: PreferenceKey {
 // MARK: - ThumbnailCellView
 
 private struct ThumbnailCellView: View {
-
-    private static let creationDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM.yy HH:mm"
-        return formatter
-    }()
+    @State private var preferences = UserPreferences.shared
 
     let file: CustomFile
     let cellSize: CGFloat
@@ -246,11 +241,11 @@ private struct ThumbnailCellView: View {
 
     // MARK: - File metadata
     private var fileMetadata: Text {
-        let size = ByteCountFormatter.string(fromByteCount: file.sizeInBytes, countStyle: .file)
+        let size = PanelMetadataFormatter.size(file.sizeInBytes, format: preferences.snapshot.sizeFormat, alwaysKB: preferences.snapshot.showSizeInKB)
         guard let creationDate = file.creationDate ?? self.creationDate else {
             return Text("\(Image(systemName: "internaldrive")) \(size)")
         }
-        let date = Self.creationDateFormatter.string(from: creationDate)
+        let date = PanelMetadataFormatter.date(creationDate, format: preferences.snapshot.dateFormat)
         return Text("\(Image(systemName: "internaldrive")) \(size)  \(Image(systemName: "clock")) \(date)")
     }
 

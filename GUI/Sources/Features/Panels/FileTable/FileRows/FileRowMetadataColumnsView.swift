@@ -6,6 +6,7 @@ import FileModelKit
 import SwiftUI
 
 struct FileRowMetadataColumnsView: View {
+    @State private var preferences = UserPreferences.shared
     let file: CustomFile
     let layout: ColumnLayoutModel
     let isParentEntry: Bool
@@ -17,10 +18,12 @@ struct FileRowMetadataColumnsView: View {
     }
 
     var body: some View {
+        let formatIdentity = "\(preferences.snapshot.sizeFormat ?? "system")-\(preferences.snapshot.dateFormat)-\(showSizeInKB)"
         ForEach(fixedColumns.indices, id: \.self) { index in
             let spec = fixedColumns[index]
             dividerSpacer
             metadataCell(for: spec)
+                .id("\(spec.id)-\(formatIdentity)")
         }
     }
 
@@ -89,15 +92,15 @@ struct FileRowMetadataColumnsView: View {
 
     private func cellText(for column: ColumnID) -> String {
         switch column {
-        case .dateModified: file.modifiedDateFormatted
+        case .dateModified: dateText(file.modifiedDate)
         case .size: sizeText
         case .kind: file.kindFormatted
         case .permissions: file.permissionsFormatted
         case .owner: file.ownerFormatted
         case .childCount: file.childCountFormatted
-        case .dateCreated: file.creationDateFormatted
-        case .dateLastOpened: file.lastOpenedFormatted
-        case .dateAdded: file.dateAddedFormatted
+        case .dateCreated: dateText(file.creationDate)
+        case .dateLastOpened: dateText(file.lastOpenedDate)
+        case .dateAdded: dateText(file.dateAdded)
         case .group: file.groupNameFormatted
         case .finderVersion: file.finderVersion
         case .finderComment: file.finderComment
@@ -111,15 +114,15 @@ struct FileRowMetadataColumnsView: View {
     @ViewBuilder
     private func cellContent(for column: ColumnID) -> some View {
         switch column {
-        case .dateModified: Text(file.modifiedDateFormatted)
+        case .dateModified: Text(dateText(file.modifiedDate))
         case .size: Text(sizeText)
         case .kind: KindCell(file: file)
         case .permissions: PermissionsCell(permissions: file.permissionsFormatted)
         case .owner: Text(file.ownerFormatted)
         case .childCount: Text(file.childCountFormatted)
-        case .dateCreated: Text(file.creationDateFormatted)
-        case .dateLastOpened: Text(file.lastOpenedFormatted)
-        case .dateAdded: Text(file.dateAddedFormatted)
+        case .dateCreated: Text(dateText(file.creationDate))
+        case .dateLastOpened: Text(dateText(file.lastOpenedDate))
+        case .dateAdded: Text(dateText(file.dateAdded))
         case .group: Text(file.groupNameFormatted)
         case .finderVersion: Text(file.finderVersion)
         case .finderComment: Text(file.finderComment)
@@ -130,12 +133,13 @@ struct FileRowMetadataColumnsView: View {
 
     // MARK: - Size Text
     private var sizeText: String {
-        guard showSizeInKB else { return file.displaySizeFormatted }
         if file.isDirectory && file.cachedDirectorySize == nil && file.cachedShallowSize == nil { return "—" }
-        let bytes = file.displaySize
-        if bytes < 0 { return "—" }
-        if bytes == 0 { return "0 KB" }
-        return "\(max(1, (bytes + 1_023) / 1_024)) KB"
+        return PanelMetadataFormatter.size(file.displaySize, format: preferences.snapshot.sizeFormat, alwaysKB: showSizeInKB)
+    }
+
+    // MARK: - Date Text
+    private func dateText(_ date: Date?) -> String {
+        PanelMetadataFormatter.date(date, format: preferences.snapshot.dateFormat)
     }
 
     // MARK: - Cell Font

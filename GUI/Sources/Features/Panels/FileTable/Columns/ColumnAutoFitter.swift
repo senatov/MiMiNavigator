@@ -7,6 +7,7 @@ import FileModelKit
 import Foundation
 
 // MARK: - Column Auto Fitter
+@MainActor
 enum ColumnAutoFitter {
     private static let widthStabilityEpsilon: CGFloat = 1
     private static let correctiveClippingThreshold: CGFloat = 0.15

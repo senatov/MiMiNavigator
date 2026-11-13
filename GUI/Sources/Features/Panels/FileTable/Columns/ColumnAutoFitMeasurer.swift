@@ -8,6 +8,7 @@ import FileModelKit
 import Foundation
 
 // MARK: - Column Auto Fit Measurer
+@MainActor
 enum ColumnAutoFitMeasurer {
     private static let correctiveClippingThreshold: CGFloat = 0.15
 
@@ -160,9 +161,11 @@ enum ColumnAutoFitMeasurer {
         case .name:
             return (sampled.map(\.nameStr), .systemFont(ofSize: 14, weight: .light))
         case .size:
-            return (sampled.map(\.displaySizeFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            let preferences = UserPreferences.shared.snapshot
+            return (sampled.map { PanelMetadataFormatter.size($0.displaySize, format: preferences.sizeFormat, alwaysKB: preferences.showSizeInKB) }, .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateModified:
-            return (sampled.map(\.modifiedDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            let format = UserPreferences.shared.snapshot.dateFormat
+            return (sampled.map { PanelMetadataFormatter.date($0.modifiedDate, format: format) }, .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .kind:
             return (sampled.map(\.kindFormatted), .systemFont(ofSize: 12))
         case .permissions:
@@ -172,11 +175,14 @@ enum ColumnAutoFitMeasurer {
         case .childCount:
             return (sampled.map(\.childCountFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateCreated:
-            return (sampled.map(\.creationDateFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            let format = UserPreferences.shared.snapshot.dateFormat
+            return (sampled.map { PanelMetadataFormatter.date($0.creationDate, format: format) }, .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateLastOpened:
-            return (sampled.map(\.lastOpenedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            let format = UserPreferences.shared.snapshot.dateFormat
+            return (sampled.map { PanelMetadataFormatter.date($0.lastOpenedDate, format: format) }, .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .dateAdded:
-            return (sampled.map(\.dateAddedFormatted), .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
+            let format = UserPreferences.shared.snapshot.dateFormat
+            return (sampled.map { PanelMetadataFormatter.date($0.dateAdded, format: format) }, .monospacedDigitSystemFont(ofSize: 12, weight: .regular))
         case .group:
             return (sampled.map(\.groupNameFormatted), .systemFont(ofSize: 12))
         case .finderVersion:
