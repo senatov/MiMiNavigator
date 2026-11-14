@@ -61,6 +61,7 @@
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
 				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
+				Tests/MiMiNavigatorTests/ThumbnailImageLoaderTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITestsLaunchTests.swift,
 			);
@@ -76,6 +77,7 @@
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
 				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
+				Tests/MiMiNavigatorTests/ThumbnailImageLoaderTests.swift,
 			);
 			target = 97AD1A402C624E040045C38D /* MiMiNavigatorTests */;
 		};

@@ -275,6 +275,11 @@ private struct ThumbnailCellView: View {
         let edge = max(1, cellSize - 8)
         let size = CGSize(width: edge, height: edge)
         let scale = NSScreen.main?.backingScaleFactor ?? 2.0
+        if let image = await ThumbnailImageLoader.image(for: url, pixelEdge: Int(edge * scale)) {
+            thumbnail = image
+            return
+        }
+        guard !Task.isCancelled else { return }
         let request = QLThumbnailGenerator.Request(
             fileAt: url,
             size: size,

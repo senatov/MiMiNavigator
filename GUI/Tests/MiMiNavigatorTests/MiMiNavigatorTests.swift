@@ -94,6 +94,7 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertFalse(layout.visibleColumns.contains(where: { $0.id == .permissions }))
     }
 
+    @MainActor
     func testKindWidthIncludesRenderedPaddingAndTextReserve() {
         let padding = ColumnID.kind.contentPadding.leading + ColumnID.kind.contentPadding.trailing
         XCTAssertEqual(
