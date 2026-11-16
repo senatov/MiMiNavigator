@@ -76,7 +76,7 @@ extension ProgressPanel {
         cancelAutoCloseTimer()
         iconView?.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)
         titleLabel?.stringValue = title
-        statusLabel?.stringValue = status
+        updateStatus(status)
         progressIndicator?.stopAnimating()
         progressStartedAt = nil
         lastProgressUpdateAt = nil

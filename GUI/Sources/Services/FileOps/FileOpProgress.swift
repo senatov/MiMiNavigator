@@ -185,7 +185,7 @@ final class FileOpProgress {
         if usesProgressPanel {
             ProgressPanel.shared.finish(
                 success: errors.isEmpty,
-                message: errors.isEmpty ? completionSummary : failureSummary,
+                message: completionSummary,
                 autoClose: errors.isEmpty
             )
         }

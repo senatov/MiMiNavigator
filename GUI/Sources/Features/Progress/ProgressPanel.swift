@@ -199,7 +199,7 @@ final class ProgressPanel: NSObject {
 
     // MARK: - Update Status
     func updateStatus(_ text: String) {
-        statusLabel?.stringValue = text
+        statusLabel?.stringValue = text.components(separatedBy: .newlines).first ?? ""
     }
 
     func updateProgress(_ fraction: Double?) {
@@ -253,12 +253,14 @@ final class ProgressPanel: NSObject {
     // MARK: - Update (preferred for live progress)
     func update(text: String) {
         guard panel?.isVisible == true else { return }
-        statusLabel?.stringValue = text
+        updateStatus(text)
     }
     // MARK: - Finish (Cancel → OK)
     func finish(success: Bool, message: String? = nil, autoClose: Bool = true) {
         if let msg = message {
-            statusLabel?.stringValue = msg
+            let lines = msg.components(separatedBy: .newlines)
+            statusLabel?.stringValue = lines.first ?? ""
+            for line in lines.dropFirst() where !line.isEmpty { appendLog(line) }
         } else {
             statusLabel?.stringValue =
                 success

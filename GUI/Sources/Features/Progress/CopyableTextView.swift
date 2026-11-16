@@ -10,6 +10,10 @@ import AppKit
 // MARK: - CopyableTextView
 
 final class CopyableTextView: NSTextView {
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: super.intrinsicContentSize.height)
+    }
+
     // MARK: - Configure
     func configureForProgressLog(insets: NSSize, linePadding: CGFloat) {
         isEditable = false
@@ -23,18 +27,20 @@ final class CopyableTextView: NSTextView {
         isVerticallyResizable = true
         isHorizontallyResizable = false
         autoresizingMask = [.width]
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         if let textContainer {
             textContainer.widthTracksTextView = true
-            textContainer.containerSize = NSSize(width: max(bounds.width, 1), height: .greatestFiniteMagnitude)
+            textContainer.containerSize = NSSize(width: max(bounds.width - insets.width * 2, 1), height: .greatestFiniteMagnitude)
         }
     }
 
     // MARK: - Keep Log Text Within Its Window
     override func layout() {
         super.layout()
-        guard let textContainer, bounds.width > 0,
-              abs(textContainer.containerSize.width - bounds.width) > 0.5 else { return }
-        textContainer.containerSize = NSSize(width: bounds.width, height: .greatestFiniteMagnitude)
+        guard let textContainer, bounds.width > 0 else { return }
+        let availableWidth = max(bounds.width - textContainerInset.width * 2, 1)
+        guard abs(textContainer.containerSize.width - availableWidth) > 0.5 else { return }
+        textContainer.containerSize = NSSize(width: availableWidth, height: .greatestFiniteMagnitude)
     }
 
     // MARK: - Perform Key Equivalent

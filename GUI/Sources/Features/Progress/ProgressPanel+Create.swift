@@ -80,11 +80,13 @@ extension ProgressPanel {
         iconView = icon
         let title = makeLabel(font: appearance.titleFont, color: appearance.titleColor)
         title.lineBreakMode = .byTruncatingMiddle
+        title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         title.setAccessibilityLabel("Operation")
         containerView.addSubview(title)
         titleLabel = title
         let status = makeLabel(font: appearance.statusFont, color: appearance.statusColor)
         status.lineBreakMode = .byTruncatingMiddle
+        status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         status.setAccessibilityLabel("Operation status")
         containerView.addSubview(status)
         statusLabel = status
@@ -102,6 +104,7 @@ extension ProgressPanel {
     func addLogView(to containerView: NSView) {
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         scrollView.hasVerticalScroller = true
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
@@ -110,6 +113,7 @@ extension ProgressPanel {
         scrollView.addSubview(logEffectView, positioned: .below, relativeTo: nil)
         logBackgroundEffectView = logEffectView
         let textView = CopyableTextView()
+        textView.frame = NSRect(origin: .zero, size: scrollView.contentSize)
         textView.configureForProgressLog(insets: Layout.logInset, linePadding: Layout.logLinePadding)
         let menu = NSMenu()
         menu.addItem(withTitle: "Copy All", action: #selector(copyAll), keyEquivalent: "")
