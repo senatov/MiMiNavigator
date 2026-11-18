@@ -47,8 +47,16 @@ final class BatchOpsCoord {
             return
         }
 
+        let sourceIsRemote = AppState.isRemotePath(appState.url(for: sourcePanel))
+        let destinationIsRemote = AppState.isRemotePath(destination)
+        if sourceIsRemote && destinationIsRemote {
+            Task { @MainActor in
+                await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState)
+            }
+            return
+        }
         // Remote source → download
-        if AppState.isRemotePath(appState.url(for: sourcePanel)) {
+        if sourceIsRemote {
             log.info("[BatchOps] remote copy: \(files.count) file(s) → \(destination.lastPathComponent)")
             Task { @MainActor in
                 await performRemoteDownload(
@@ -120,11 +128,17 @@ final class BatchOpsCoord {
 
         Task { @MainActor in
             let destinationPanel: FavPanelSide = sourcePanel == .left ? .right : .left
-            if AppState.isRemotePath(appState.url(for: sourcePanel)), !AppState.isRemotePath(destination) {
+            let sourceIsRemote = AppState.isRemotePath(appState.url(for: sourcePanel))
+            let destinationIsRemote = AppState.isRemotePath(destination)
+            if sourceIsRemote && destinationIsRemote {
+                await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: true)
+                return
+            }
+            if sourceIsRemote && !destinationIsRemote {
                 await performRemoteDownload(files: files, sourcePanel: sourcePanel, destination: destination, appState: appState, moveSource: true)
                 return
             }
-            if AppState.isRemotePath(destination), !AppState.isRemotePath(appState.url(for: sourcePanel)) {
+            if destinationIsRemote && !sourceIsRemote {
                 await performRemoteUpload(files: files, sourcePanel: sourcePanel, destinationPanel: destinationPanel, appState: appState, moveSource: true)
                 return
             }

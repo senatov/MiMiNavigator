@@ -245,7 +245,13 @@ final class DragDropManager {
         }
 
         if sourceIsRemote && destIsRemote {
-            log.warning("[DnD] remote to remote transfer not yet implemented")
+            await BatchOpsCoord.shared.performRemoteToRemoteTransfer(
+                files: files,
+                destination: dest,
+                sourcePanel: operation.sourcePanelSide,
+                appState: appState,
+                moveSource: kind == .move
+            )
             return
         }
 

@@ -60,10 +60,6 @@ struct BreadCrumbView: View {
             : appState.rightArchiveState.archiveTempDir
     }
 
-    private var activeRemoteConnection: RemoteConnection? {
-        RemoteConnectionManager.shared.activeConnection
-    }
-
     // MARK: - Init
     init(selectedSide: FavPanelSide) { self.panelSide = selectedSide }
 
@@ -144,20 +140,8 @@ struct BreadCrumbView: View {
     /// Example: sftp://demo@test.rebex.net/pub/docs
     ///          → ["SFTP demo@test.rebex.net", "pub", "docs"]
     private func remoteComponents(for url: URL) -> [String] {
-        let originLabel: String
-        let remotePath: String
-
-        if let connection = activeRemoteConnection {
-            let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
-            originLabel = formatOriginLabel(origin)
-            remotePath = connection.currentPath
-        } else {
-            originLabel = formatOriginLabel(url.absoluteString)
-            remotePath = url.path
-        }
-
-        let pathParts = pathParts(from: remotePath)
-        return [originLabel] + pathParts
+        let origin = AppState.remoteOrigin(from: url.absoluteString)
+        return [formatOriginLabel(origin)] + pathParts(from: url.path)
     }
 
     private func pathParts(from path: String) -> [String] {
@@ -203,9 +187,7 @@ struct BreadCrumbView: View {
     }
 
     private func remoteTargetPath(for segment: DisplaySegment) -> String? {
-        guard let connection = activeRemoteConnection else { return nil }
-
-        let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
+        let origin = AppState.remoteOrigin(from: panelURL.absoluteString)
         if segment.originalIndex == 0 {
             return origin + "/"
         }
@@ -306,10 +288,7 @@ struct BreadCrumbView: View {
 
     private func remoteCopyPath(for segment: DisplaySegment) -> String {
         if segment.originalIndex == 0 {
-            return
-                activeRemoteConnection
-                .map { AppState.remoteOrigin(from: $0.provider.mountPath) }
-                ?? segment.fullName
+            return AppState.remoteOrigin(from: panelURL.absoluteString)
         }
 
         let parts = Array(pathComponentTexts[1...segment.originalIndex])
