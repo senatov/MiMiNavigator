@@ -236,10 +236,6 @@ struct FilePanelView: View {
             : nil
     }
 
-    private func canEnterRemoteItem(_ file: CustomFile) -> Bool {
-        file.isDirectory || file.isParentEntry
-    }
-
     // MARK: - Handle double click (archive-aware)
     private func logRemoteActivation(_ file: CustomFile) {
         log.debug("[FilePanelView] remote activate name=\(file.nameStr)")
@@ -251,9 +247,8 @@ struct FilePanelView: View {
         let _ = log.debug(#function)
         if isRemotePanel {
             logRemoteActivation(file)
-
-            guard canEnterRemoteItem(file) else {
-                log.debug("[FilePanelView] remote activate ignored")
+            if !file.isDirectory && !file.isParentEntry {
+                appState.activateItem(file, on: viewModel.panelSide)
                 return
             }
             enterRemoteDirectory(file)
