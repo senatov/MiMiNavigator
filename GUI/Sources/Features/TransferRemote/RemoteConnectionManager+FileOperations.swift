@@ -11,11 +11,21 @@ extension RemoteConnectionManager {
         return items
     }
 
+    func listDirectory(_ path: String, on connection: RemoteConnection) async throws -> [RemoteFileItem] {
+        let items = try await connection.provider.listDirectory(path)
+        updateCurrentPath(path, for: connection.id)
+        return items
+    }
+
     func downloadFile(remotePath: String) async throws -> URL {
         log.debug(#function + " active=\(activeConnection?.displayName ?? "none")")
         let connection = try requireActiveConnection()
         log.info("\(#function) '\(remotePath)'")
         return try await connection.provider.downloadFile(remotePath: remotePath)
+    }
+
+    func downloadFile(remotePath: String, on connection: RemoteConnection) async throws -> URL {
+        try await connection.provider.downloadFile(remotePath: remotePath)
     }
 
     func navigateUp() async throws -> [RemoteFileItem] {

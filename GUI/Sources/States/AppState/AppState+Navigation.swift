@@ -173,7 +173,7 @@ extension AppState {
     private func navigateToRemoteDirectory(_ remoteURL: URL, on panel: FavPanelSide, previousPath: String) async {
         log.info("[Navigate] \(panel): remote: \(remoteURL.absoluteString)")
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
+        guard let conn = manager.connection(for: remoteURL) else {
             log.error("[Navigate] \(panel): remote nav requested but no active connection")
             return
         }
@@ -196,7 +196,7 @@ extension AppState {
         }
         let remotePath = remoteURL.path.isEmpty ? "/" : remoteURL.path
         do {
-            let items = try await manager.listDirectory(remotePath)
+            let items = try await manager.listDirectory(remotePath, on: conn)
             guard remoteNavigationTargets[panel] == target else { return }
             let allFiles = items.map { CustomFile(remoteItem: $0) }
             let showHidden = UserPreferences.shared.snapshot.showHiddenFiles
@@ -244,14 +244,14 @@ extension AppState {
     /// Remote parent navigation — uses panel URL (not conn.currentPath which can lag)
     private func navigateToParentRemote(on panel: FavPanelSide) async {
         let manager = RemoteConnectionManager.shared
-        guard manager.activeConnection != nil else { return }
+        guard let connection = manager.connection(for: url(for: panel)) else { return }
         // Use the panel's actual URL — always current, never stale
         let currentRemotePath = url(for: panel).path
         let parentRemote = (currentRemotePath as NSString).deletingLastPathComponent
         let normalizedParent = parentRemote.isEmpty ? "/" : parentRemote
         log.info("[AppState] navigateToParent remote: \(currentRemotePath) → \(normalizedParent)")
         // Build full remote URL and navigate
-        let origin = Self.remoteOrigin(from: manager.activeConnection?.provider.mountPath ?? "")
+        let origin = Self.remoteOrigin(from: connection.provider.mountPath)
         let targetURL = normalizedParent == "/" ? origin : origin + normalizedParent
         await navigateToDirectory(targetURL, on: panel)
     }

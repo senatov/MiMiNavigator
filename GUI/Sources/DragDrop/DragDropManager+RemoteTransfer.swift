@@ -16,7 +16,7 @@ extension DragDropManager {
         appState: AppState
     ) async {
         guard kind != .abort else { return }
-        guard let connection = RemoteConnectionManager.shared.activeConnection else {
+        guard let connection = RemoteConnectionManager.shared.connection(for: operation.destinationPath) else {
             log.error("[DnD] remote upload — no active connection")
             return
         }
@@ -74,7 +74,8 @@ extension DragDropManager {
         operation: FileTransferOperation,
         appState: AppState
     ) async {
-        guard let connection = RemoteConnectionManager.shared.activeConnection else {
+        guard let sourceSide = operation.sourcePanelSide,
+              let connection = RemoteConnectionManager.shared.connection(for: appState.url(for: sourceSide)) else {
             log.error("[DnD] remote download — no active connection")
             return
         }

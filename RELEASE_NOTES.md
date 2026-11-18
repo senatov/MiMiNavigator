@@ -1,3 +1,28 @@
+# MiMiNavigator v0.9.1.9
+
+This release improves SFTP navigation and makes remote file transfers safer.
+
+## Improvements since v0.9.1.8
+
+- Keep the two SFTP panels independent when navigating and refreshing folders, and use each panel's own connection to open remote files.
+- Restore remote-to-remote copy and move between directories, including the reported Belege and UMTAUSCH paths.
+- Open remote PDFs by double-clicking or pressing Enter after downloading them to a unique temporary location.
+- Transfer SFTP files in bounded chunks. Upload to a temporary remote name, verify its size, and publish it only after completion. Preserve an existing destination if upload fails, and delete a moved source only after the destination succeeds.
+- Require unit tests in CI while keeping UI tests advisory pending a reliable hosted remote fixture.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Open the DMG and drag MiMiNavigator to Applications.
+
+## Validation
+
+- Debug build and unit tests were run with Xcode 27.3 on macOS 27. The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.8...v0.9.1.9
+
+---
+
 # MiMiNavigator v0.9.1.8
 
 This release improves Telegram sticker conversion and refreshes the About window.

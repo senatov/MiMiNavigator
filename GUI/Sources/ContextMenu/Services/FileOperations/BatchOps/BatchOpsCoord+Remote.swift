@@ -77,7 +77,7 @@ extension BatchOpsCoord {
         moveSource: Bool = false
     ) async {
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
+        guard let conn = manager.connection(for: appState.url(for: sourcePanel)) else {
             log.error("[BatchOps] remote download — no active connection")
             ErrorAlertService.show(
                 title: "Not Connected",
@@ -184,7 +184,7 @@ extension BatchOpsCoord {
         moveSource: Bool = false
     ) async {
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.activeConnection else {
+        guard let conn = manager.connection(for: appState.url(for: destinationPanel)) else {
             log.error("[BatchOps] remote upload — no active connection")
             ErrorAlertService.show(
                 title: "Not Connected",

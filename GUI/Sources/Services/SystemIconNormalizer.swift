@@ -87,14 +87,14 @@ enum SystemIconNormalizer {
     static func fittedDestinationRect(for sourceBounds: CGRect, pixelDimension: Int = 36) -> CGRect {
         let available = CGFloat(pixelDimension) * occupancy
         let scale = min(available / sourceBounds.width, available / sourceBounds.height)
-        let width = sourceBounds.width * scale
-        let height = sourceBounds.height * scale
+        let width = (sourceBounds.width * scale).rounded()
+        let height = (sourceBounds.height * scale).rounded()
         return CGRect(
-            x: (CGFloat(pixelDimension) - width) / 2,
-            y: (CGFloat(pixelDimension) - height) / 2,
+            x: ((CGFloat(pixelDimension) - width) / 2).rounded(),
+            y: ((CGFloat(pixelDimension) - height) / 2).rounded(),
             width: width,
             height: height
-        ).integral
+        )
     }
     // MARK: - Fallback
     @MainActor

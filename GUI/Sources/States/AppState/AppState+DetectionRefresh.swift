@@ -9,9 +9,6 @@
 import FileModelKit
 import Foundation
 
-@MainActor
-private var remoteRefreshInFlightPanels: Set<FavPanelSide> = []
-
 // MARK: - Remote Path Detection & Refresh
 extension AppState {
 
@@ -37,7 +34,8 @@ extension AppState {
 
     private func beginRemoteRefresh(for panel: FavPanelSide) -> Bool {
         if remoteRefreshInFlightPanels.contains(panel) {
-            log.debug("[AppState] refreshRemoteFiles skipped — already in flight for panel=\(panel)")
+            remoteRefreshPendingPanels.insert(panel)
+            log.debug("[AppState] refreshRemoteFiles queued for panel=\(panel)")
             return false
         }
         remoteRefreshInFlightPanels.insert(panel)
@@ -46,6 +44,9 @@ extension AppState {
 
     private func endRemoteRefresh(for panel: FavPanelSide) {
         remoteRefreshInFlightPanels.remove(panel)
+        if remoteRefreshPendingPanels.remove(panel) != nil {
+            Task { await refreshRemoteFiles(for: panel) }
+        }
     }
 
     private func resetRemotePanelState(_ panel: FavPanelSide) {
@@ -96,7 +97,7 @@ extension AppState {
             return
         }
         let manager = RemoteConnectionManager.shared
-        guard manager.activeConnection != nil else {
+        guard let connection = manager.connection(for: panelURL) else {
             log.error("[AppState] refreshRemoteFiles — no active connection")
             resetRemotePanelState(panel)
             return
@@ -107,7 +108,7 @@ extension AppState {
             // Use panel URL path — NOT conn.currentPath which may lag behind navigation.
             let remotePath = normalizedRemotePath(for: panelURL)
             log.info("[AppState] refreshRemoteFiles panel=\(panel) path=\(remotePath)")
-            let items = try await manager.listDirectory(remotePath)
+            let items = try await manager.listDirectory(remotePath, on: connection)
             guard url(for: panel) == panelURL else {
                 log.debug("[AppState] stale remote refresh skipped panel=\(panel) path=\(remotePath)")
                 return

@@ -60,6 +60,8 @@ final class AppState {
     var directorySelectionRestore: [FavPanelSide: [String: URL]] = [.left: [:], .right: [:]]
     var directorySelectionRestoreOrder: [FavPanelSide: [String]] = [.left: [], .right: []]
     var remoteNavigationTargets: [FavPanelSide: String] = [:]
+    var remoteRefreshInFlightPanels: Set<FavPanelSide> = []
+    var remoteRefreshPendingPanels: Set<FavPanelSide> = []
 
     // MARK: - Autosave
     var configurationAutosaveTask: Task<Void, Never>?

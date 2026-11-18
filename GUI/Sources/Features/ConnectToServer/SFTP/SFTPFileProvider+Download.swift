@@ -10,11 +10,6 @@
 import Citadel
 import Foundation
 
-// MARK: - Concurrent SFTP Read Handle
-private struct ConcurrentSFTPReadHandle: @unchecked Sendable {
-    let file: SFTPFile
-}
-
 extension SFTPFileProvider {
 
     // MARK: - Download
@@ -56,16 +51,7 @@ extension SFTPFileProvider {
             return
         }
 
-        try ensureParentDirectoryExists(for: localURL)
-        try removeExistingFileIfNeeded(at: localURL)
-
-        let data = try await readRemoteFileData(
-            at: normalizedRemotePath,
-            using: sftp
-        )
-
-        try data.write(to: localURL, options: .atomic)
-        log.info("[SFTP] saved file '\(normalizedRemotePath)' → '\(localURL.path)' bytes=\(data.count)")
+        try await downloadRegularFile(at: normalizedRemotePath, to: localURL, using: sftp)
     }
 
     // MARK: - Download helpers
@@ -96,94 +82,47 @@ extension SFTPFileProvider {
             if isDirectory {
                 try await downloadDirectory(at: childRemotePath, to: childLocalURL, using: sftp)
             } else {
-                let data = try await readRemoteFileData(at: childRemotePath, using: sftp)
-                try ensureParentDirectoryExists(for: childLocalURL)
-                try removeExistingFileIfNeeded(at: childLocalURL)
-                try data.write(to: childLocalURL, options: Data.WritingOptions.atomic)
-                log.info("[SFTP] saved nested file '\(childRemotePath)' → '\(childLocalURL.path)' bytes=\(data.count)")
+                try await downloadRegularFile(at: childRemotePath, to: childLocalURL, using: sftp)
             }
         }
     }
 
-    private func readRemoteFileData(at remotePath: String, using sftp: SFTPClient) async throws -> Data {
+    // MARK: - Bounded File Download
+    private func downloadRegularFile(at remotePath: String, to localURL: URL, using sftp: SFTPClient) async throws {
+        try ensureParentDirectoryExists(for: localURL)
+        let temporaryURL = localURL.deletingLastPathComponent().appendingPathComponent(".mimi-download-\(UUID().uuidString)")
+        FileManager.default.createFile(atPath: temporaryURL.path, contents: nil)
+        let output = try FileHandle(forWritingTo: temporaryURL)
         let handle = try await sftp.openFile(filePath: remotePath, flags: .read)
-
         do {
             let size = try await handle.readAttributes().size
-            let collected: Data
-            if let size, size <= UInt64(Int.max) {
-                collected = try await readKnownSize(size, from: ConcurrentSFTPReadHandle(file: handle))
-            } else {
-                collected = try await readUntilEOF(from: handle)
+            var offset: UInt64 = 0
+            while size.map({ offset < $0 }) ?? true {
+                try Task.checkCancellation()
+                let length = UInt32(min(UInt64(256 * 1024), (size ?? (offset + 256 * 1024)) - offset))
+                var buffer = try await handle.read(from: offset, length: length)
+                guard let bytes = buffer.readBytes(length: buffer.readableBytes), !bytes.isEmpty else {
+                    if size != nil { throw RemoteProviderError.downloadFailed("Unexpected end of remote file: \(remotePath)") }
+                    break
+                }
+                try output.write(contentsOf: bytes)
+                offset += UInt64(bytes.count)
             }
             try await handle.close()
-            return collected
+            try output.close()
+            try Task.checkCancellation()
+            if FileManager.default.fileExists(atPath: localURL.path) {
+                _ = try FileManager.default.replaceItemAt(localURL, withItemAt: temporaryURL)
+            } else {
+                try FileManager.default.moveItem(at: temporaryURL, to: localURL)
+            }
+            log.info("[SFTP] saved file '\(remotePath)' → '\(localURL.path)' bytes=\(offset)")
         } catch {
             try? await handle.close()
+            try? output.close()
+            try? FileManager.default.removeItem(at: temporaryURL)
             throw error
         }
-    }
-
-    // MARK: - Pipelined File Read
-    private func readKnownSize(_ size: UInt64, from handle: ConcurrentSFTPReadHandle) async throws -> Data {
-        let chunkSize = 256 * 1024
-        let count = Int((size + UInt64(chunkSize) - 1) / UInt64(chunkSize))
-        var collected = Data(capacity: Int(size))
-        var readyChunks: [Int: Data] = [:]
-        var nextAppendIndex = 0
-        try await withThrowingTaskGroup(of: (Int, Data).self) { group in
-            var nextIndex = 0
-            var pendingReads = 0
-            while nextIndex < count {
-                if pendingReads == 8 {
-                    if let (index, data) = try await group.next() {
-                        readyChunks[index] = data
-                        while let ready = readyChunks.removeValue(forKey: nextAppendIndex) {
-                            collected.append(ready)
-                            nextAppendIndex += 1
-                        }
-                    }
-                    pendingReads -= 1
-                }
-                let index = nextIndex
-                let start = UInt64(index) * UInt64(chunkSize)
-                let length = Int(min(UInt64(chunkSize), size - start))
-                group.addTask {
-                    var data = Data()
-                    while data.count < length {
-                        var buffer = try await handle.file.read(
-                            from: start + UInt64(data.count),
-                            length: UInt32(length - data.count)
-                        )
-                        guard let bytes = buffer.readBytes(length: buffer.readableBytes), !bytes.isEmpty else {
-                            throw RemoteProviderError.downloadFailed("Unexpected end of remote file")
-                        }
-                        data.append(contentsOf: bytes)
-                    }
-                    return (index, data)
-                }
-                nextIndex += 1
-                pendingReads += 1
-            }
-            while let (index, data) = try await group.next() {
-                readyChunks[index] = data
-                while let ready = readyChunks.removeValue(forKey: nextAppendIndex) {
-                    collected.append(ready)
-                    nextAppendIndex += 1
-                }
-            }
-        }
-        return collected
-    }
-
-    private func readUntilEOF(from handle: SFTPFile) async throws -> Data {
-        var collected = Data()
-        while true {
-            var buffer = try await handle.read(from: UInt64(collected.count), length: 256 * 1024)
-            guard let bytes = buffer.readBytes(length: buffer.readableBytes), !bytes.isEmpty else { break }
-            collected.append(contentsOf: bytes)
-        }
-        return collected
     }
 
     private func appendDownloadRemoteComponent(_ name: String, to remotePath: String) -> String {
@@ -201,9 +140,9 @@ extension SFTPFileProvider {
             withIntermediateDirectories: true
         )
 
-        let localURL = temporaryDirectory.appendingPathComponent(fileName)
-        try removeExistingFileIfNeeded(at: localURL)
-        return localURL
+        let downloadDirectory = temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: downloadDirectory, withIntermediateDirectories: true)
+        return downloadDirectory.appendingPathComponent(fileName)
     }
 
     private func localFileSize(at url: URL) -> Int64 {
@@ -218,9 +157,4 @@ extension SFTPFileProvider {
         )
     }
 
-    private func removeExistingFileIfNeeded(at url: URL) throws {
-        if FileManager.default.fileExists(atPath: url.path) {
-            try FileManager.default.removeItem(at: url)
-        }
-    }
 }

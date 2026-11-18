@@ -10,11 +10,6 @@ import Citadel
 import Foundation
 import NIOCore
 
-// MARK: - Concurrent SFTP Handle
-private struct ConcurrentSFTPHandle: @unchecked Sendable {
-    let file: SFTPFile
-}
-
 extension SFTPFileProvider {
 
     private func childNameForRecursiveDelete(from entry: SFTPMessage.Name) -> String? {
@@ -133,50 +128,54 @@ extension SFTPFileProvider {
     private func uploadRegularFile(from localURL: URL, to remotePath: String) async throws {
         let sftp = try requireSFTPClient()
         let normalizedRemotePath = normalizeUploadRemotePath(remotePath)
-
-        let data = try localFileData(at: localURL)
-        let handle: SFTPFile
+        try await ensureRemoteParentDirectoryExists(for: normalizedRemotePath)
+        let temporaryPath = normalizedRemotePath + ".mimi-upload-\(UUID().uuidString)"
+        let backupPath = normalizedRemotePath + ".mimi-backup-\(UUID().uuidString)"
+        let source = try FileHandle(forReadingFrom: localURL)
+        let expectedSize = try source.seekToEnd()
+        try source.seek(toOffset: 0)
+        let handle = try await sftp.openFile(filePath: temporaryPath, flags: [.write, .create])
+        var staged = true
+        var backedUp = false
         do {
-            handle = try await sftp.openFile(filePath: normalizedRemotePath, flags: [.write, .create, .truncate])
-        } catch let status as SFTPMessage.Status where status.errorCode == .noSuchFile {
-            try await ensureRemoteParentDirectoryExists(for: normalizedRemotePath)
-            handle = try await sftp.openFile(filePath: normalizedRemotePath, flags: [.write, .create, .truncate])
-        }
-
-        do {
-            let writeStartedAt = Date()
-            try await writeFileData(data, to: ConcurrentSFTPHandle(file: handle))
+            var offset: UInt64 = 0
+            while true {
+                try Task.checkCancellation()
+                guard let chunk = try source.read(upToCount: 256 * 1024), !chunk.isEmpty else { break }
+                var buffer = ByteBufferAllocator().buffer(capacity: chunk.count)
+                buffer.writeBytes(chunk)
+                try await handle.write(buffer, at: offset)
+                offset += UInt64(chunk.count)
+            }
             try await handle.close()
-            log.info("[SFTP] wrote \(data.count) bytes to '\(normalizedRemotePath)' in \(String(format: "%.2f", Date().timeIntervalSince(writeStartedAt))) s")
+            try source.close()
+            guard offset == expectedSize else {
+                throw RemoteProviderError.downloadFailed("Local file changed during upload: \(localURL.path)")
+            }
+            let stagedHandle = try await sftp.openFile(filePath: temporaryPath, flags: .read)
+            let stagedSize = try await stagedHandle.readAttributes().size
+            try await stagedHandle.close()
+            guard stagedSize == expectedSize else {
+                throw RemoteProviderError.downloadFailed("Remote upload size mismatch: \(normalizedRemotePath)")
+            }
+            let parent = (normalizedRemotePath as NSString).deletingLastPathComponent
+            let name = (normalizedRemotePath as NSString).lastPathComponent
+            let entries = try await sftp.listDirectory(atPath: parent.isEmpty ? "/" : parent)
+            if entries.contains(where: { $0.components.first?.filename == name }) {
+                try await sftp.rename(at: normalizedRemotePath, to: backupPath)
+                backedUp = true
+            }
+            try Task.checkCancellation()
+            try await sftp.rename(at: temporaryPath, to: normalizedRemotePath)
+            staged = false
+            if backedUp { try? await sftp.remove(at: backupPath) }
+            log.info("[SFTP] published \(offset) bytes to '\(normalizedRemotePath)'")
         } catch {
             try? await handle.close()
+            try? source.close()
+            if backedUp { try? await sftp.rename(at: backupPath, to: normalizedRemotePath) }
+            if staged { try? await sftp.remove(at: temporaryPath) }
             throw error
-        }
-    }
-
-    // MARK: - Pipelined File Write
-    private func writeFileData(_ data: Data, to handle: ConcurrentSFTPHandle) async throws {
-        let chunkSize = 32_000
-        let maximumPendingWrites = 32
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            var offset = 0
-            var pendingWrites = 0
-            while offset < data.count {
-                if pendingWrites == maximumPendingWrites {
-                    try await group.next()
-                    pendingWrites -= 1
-                }
-                let start = offset
-                let end = min(start + chunkSize, data.count)
-                group.addTask {
-                    var buffer = ByteBufferAllocator().buffer(capacity: end - start)
-                    buffer.writeBytes(data[start..<end])
-                    try await handle.file.write(buffer, at: UInt64(start))
-                }
-                offset = end
-                pendingWrites += 1
-            }
-            try await group.waitForAll()
         }
     }
 
@@ -217,7 +216,4 @@ extension SFTPFileProvider {
         }
     }
 
-    private func localFileData(at url: URL) throws -> Data {
-        try Data(contentsOf: url)
-    }
 }

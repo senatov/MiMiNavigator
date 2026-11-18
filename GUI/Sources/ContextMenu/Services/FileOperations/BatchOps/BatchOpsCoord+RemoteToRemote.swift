@@ -16,7 +16,7 @@ extension BatchOpsCoord {
         moveSource: Bool = false
     ) async {
         let operation: FileOperationOutcomePresenter.Operation = moveSource ? .move : .copy
-        guard let connection = RemoteConnectionManager.shared.activeConnection else {
+        guard let connection = RemoteConnectionManager.shared.connection(for: destination) else {
             FileOperationOutcomePresenter.failure(operation, message: "No active SFTP/FTP connection.")
             return
         }

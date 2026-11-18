@@ -29,7 +29,8 @@ extension DragNSView {
 
     // MARK: - Prepare Remote Drag
     private func prepareRemoteDrag(key: [String]) {
-        guard let provider = RemoteConnectionManager.shared.activeConnection?.provider else {
+        guard let appState, let panelSide,
+              let provider = RemoteConnectionManager.shared.connection(for: appState.url(for: panelSide))?.provider else {
             pendingRemoteDragKey = nil
             log.error("[DragExport] no active provider for remote drag")
             return

@@ -82,6 +82,22 @@ final class RemoteConnectionManager {
         return connection
     }
 
+    // MARK: - URL-bound Connection Lookup
+    func connection(for remoteURL: URL) -> RemoteConnection? {
+        guard let scheme = remoteURL.scheme?.lowercased(), let host = remoteURL.host?.lowercased() else { return nil }
+        return connections.first {
+            $0.server.remoteProtocol.urlScheme == scheme
+                && $0.server.host.lowercased() == host
+                && $0.server.user == (remoteURL.user ?? "")
+                && $0.server.port == (remoteURL.port ?? (scheme == "sftp" ? 22 : 21))
+        }
+    }
+
+    func requireConnection(for remoteURL: URL) throws -> RemoteConnection {
+        guard let connection = connection(for: remoteURL) else { throw RemoteProviderError.notConnected }
+        return connection
+    }
+
     private func startPath(for server: RemoteServer) -> String {
         let normalizedPath = Self.normalizeRemotePath(server.remotePath)
         return normalizedPath.isEmpty ? "/" : normalizedPath

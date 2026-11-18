@@ -38,8 +38,21 @@ jobs:
             SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
           | xcbeautify --renderer github-actions
 
-      - name: Run tests
-        # Keep a bounded test duration on the hosted runner.
+      - name: Run unit tests
+        timeout-minutes: 15
+        shell: zsh {0}
+        run: |
+          set -e -o pipefail
+          xcodebuild test \
+            -project MiMiNavigator.xcodeproj \
+            -scheme MiMiNavigator \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -only-testing:MiMiNavigatorTests \
+            CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+      - name: Run UI tests
         timeout-minutes: 15
         continue-on-error: true
         shell: zsh {0}
@@ -50,6 +63,7 @@ jobs:
             -scheme MiMiNavigator \
             -configuration Debug \
             -destination 'platform=macOS' \
+            -only-testing:MiMiNavigatorUITests \
             CODE_SIGNING_ALLOWED=NO \
           | xcbeautify --renderer github-actions
 

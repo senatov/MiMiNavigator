@@ -118,7 +118,7 @@ struct SelectionStatusBar: View {
     /// Active remote connection (if panel path is remote)
     private var remoteConnection: RemoteConnection? {
         guard AppState.isRemotePath(currentURL) else { return nil }
-        return RemoteConnectionManager.shared.activeConnection
+        return RemoteConnectionManager.shared.connection(for: currentURL)
     }
 
     /// Filter binding for the current panel

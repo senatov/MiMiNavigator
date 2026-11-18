@@ -162,7 +162,8 @@ extension AppState {
             log.info("[AppState] activateItem: remote file '\(remotePath)' — downloading to tmp")
             Task {
                 do {
-                    let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath)
+                    let connection = try RemoteConnectionManager.shared.requireConnection(for: panelURL)
+                    let localURL = try await RemoteConnectionManager.shared.downloadFile(remotePath: remotePath, on: connection)
                     let configuration = NSWorkspace.OpenConfiguration()
                     NSWorkspace.shared.open(localURL, configuration: configuration) { _, error in
                         if let error {

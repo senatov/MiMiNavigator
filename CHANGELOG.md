@@ -7,6 +7,17 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.1.9] - 2026-11-18
+
+### Changed
+- Bind SFTP navigation, refresh, file activation, copy, move, and drag operations to the connection represented by each panel URL.
+- Stream SFTP uploads and downloads in bounded chunks; publish verified uploads from a temporary remote file and preserve an existing destination when transfer fails.
+- Require unit tests in CI while retaining advisory UI tests.
+
+### Fixed
+- Keep the other panel in its own directory during SFTP navigation, restore remote-to-remote copy and move, and open remote PDFs by double-click or Enter.
+- Queue a second remote refresh when one is already in progress and avoid temporary download filename collisions.
+
 ## [0.9.1.8] - 2026-11-13
 
 ### Added

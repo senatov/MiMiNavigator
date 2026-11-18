@@ -260,7 +260,7 @@ struct FilePanelView: View {
 
     // MARK: - Enter remote directory
     private func enterRemoteDirectory(_ file: CustomFile) {
-        guard let connection = remoteConnectionManager.activeConnection else {
+        guard let connection = remoteConnectionManager.connection(for: appState.url(for: viewModel.panelSide)) else {
             log.error("[FilePanelView] enterRemoteDirectory failed: no active remote connection")
             return
         }

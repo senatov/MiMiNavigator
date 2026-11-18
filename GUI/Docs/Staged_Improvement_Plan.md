@@ -11,13 +11,13 @@ The staged program covers the entire application. Keep each change small enough 
 
 The signed, notarized, stapled v0.9.1.2 DMG was published after these changes.
 
-## Current release: v0.9.1.6
+## Current release: v0.9.1.9
 
-v0.9.1.6 improves removable-volume copy and delete feedback, bounds progress-window width, and checks space before copying files missing from the destination. It retains automatic, resumable Cleanup scanning from v0.9.1.5, the compact titlebar from v0.9.1.4, and the macOS 27 minimum, native toolbar overflow, and OS-aware update routing introduced in v0.9.1.3.
+v0.9.1.9 addresses SFTP panel independence, remote copy/move, and file activation. Remote panel navigation, refresh, and file opening resolve the connection from that panel's URL. SFTP file transfers use bounded chunks; uploads write to a temporary remote name, verify its size, and rename into place only after completion. An existing destination is backed up during replacement. A failed transfer retains the old destination and, for a move, the source. Unit tests are required in CI; UI tests remain advisory until a reliable hosted fixture is available.
 
 ## Later stages
 
-The release pipeline checks the signed app's version and macOS minimum in both `Info.plist` and the executable before creating a DMG. Build failures behind `xcbeautify` fail CI; tests remain advisory until the UI test suite is validated on the hosted runner.
+The release pipeline checks the signed app's version and macOS minimum in both `Info.plist` and the executable before creating a DMG. Build and unit-test failures behind `xcbeautify` fail CI; UI tests remain advisory until the UI test suite is validated on the hosted runner.
 
 1. The macOS 27 transition works in daily use on the current host. Compatibility validation on an actual macOS 26 host is still open: check the OS-aware feed, Homebrew rejection, and the in-app installer against a current signed release. Finder drag-to-install from a DMG cannot run a pre-copy check; decide whether a future release needs a signed installer package with an OS-version installation check. Existing v0.9.1.2 users on macOS 27 must install a newer release manually because that client does not report its host OS.
 2. Performance baseline is in progress: stages 1–10 and the v0.9.1.5 observation below cover startup, large local folders, scrolling, and memory. Next capture a controlled open/scroll/leave cycle and an Allocations trace on macOS 27. Measure remote-operation latency when a disposable remote fixture is available. Use those measurements to select the next performance change.
