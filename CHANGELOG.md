@@ -7,6 +7,17 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.2.0] - 2026-11-20
+
+### Added
+- Share image, video, and audio files through an optional Cloudflare R2 public bucket, copying the direct URL after a successful upload.
+- Enable Google Drive, Dropbox, and Cloudflare R2 independently in Cloud Share+Link settings while preserving saved credentials.
+
+### Changed
+- Highlight the selected tab in the focused panel and make cached tab changes feel more immediate.
+- Coalesce activation refreshes, defer unnecessary scans during rapid tab changes, and skip unchanged automatic column measurements.
+- Refresh factory appearance, toolbar, shortcuts, and onboarding defaults.
+
 ## [0.9.1.9] - 2026-11-18
 
 ### Changed

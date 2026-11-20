@@ -1,3 +1,28 @@
+# MiMiNavigator v0.9.2.0
+
+This release adds optional Cloudflare R2 media sharing and reduces unnecessary work when switching tabs or returning to the app.
+
+## Improvements since v0.9.1.9
+
+- Upload image, video, and audio files to a configured public Cloudflare R2 bucket and copy the direct public URL after the upload succeeds. R2 starts disabled and requires your own bucket and S3 credentials.
+- Enable Google Drive, Dropbox, and Cloudflare R2 independently in Cloud Share+Link. Turning a provider off keeps its credentials and previously shared files.
+- Make the active tab easier to identify, shorten tab transitions, and update the default appearance, toolbar, shortcuts, and Full Disk Access onboarding action.
+- Coalesce repeated panel refreshes on app activation, delay scans for fresh cached tabs during rapid switches, and avoid repeating unchanged automatic column measurements.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Open the DMG and drag MiMiNavigator to Applications.
+- R2 links are public while the bucket and uploaded object remain public; remove the object or disable public access to revoke one.
+
+## Validation
+
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.9...v0.9.2.0
+
+---
+
 # MiMiNavigator v0.9.1.9
 
 This release improves SFTP navigation and makes remote file transfers safer.
