@@ -10,6 +10,9 @@ import SwiftUI
 // MARK: - SettingsCloudLinkPane
 
 struct SettingsCloudLinkPane: View {
+    @AppStorage(CloudLinkProviderAvailability.googleDriveKey) private var googleDriveEnabled = true
+    @AppStorage(CloudLinkProviderAvailability.dropboxKey) private var dropboxEnabled = true
+    @AppStorage(CloudLinkProviderAvailability.cloudflareR2Key) private var cloudflareR2Enabled = false
     @State private var googleClientSecret = ""
     @State private var googleRefreshToken = ""
     @State private var dropboxRefreshToken = ""
@@ -27,22 +30,32 @@ struct SettingsCloudLinkPane: View {
         VStack(alignment: .leading, spacing: 20) {
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Google client secret:", help: "Desktop OAuth client secret stored in ~/.mimi/google_drive_oauth.json", labelWidth: 170) {
-                        CloudCredentialField("client_secret", text: $googleClientSecret)
+                    Toggle("Google Drive enabled", isOn: $googleDriveEnabled)
+                        .padding(.bottom, 8)
+                    VStack(spacing: 0) {
+                        SettingsRow(label: "Google client secret:", help: "Desktop OAuth client secret stored in ~/.mimi/google_drive_oauth.json", labelWidth: 170) {
+                            CloudCredentialField("client_secret", text: $googleClientSecret)
+                        }
+                        Divider()
+                        SettingsRow(label: "Google refresh token:", help: "Google Drive refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
+                            CloudCredentialField("refresh_token", text: $googleRefreshToken)
+                        }
                     }
-                    Divider()
-                    SettingsRow(label: "Google refresh token:", help: "Google Drive refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
-                        CloudCredentialField("refresh_token", text: $googleRefreshToken)
-                    }
+                    .disabled(!googleDriveEnabled)
                 }
             }
+            .opacity(googleDriveEnabled ? 1 : 0.48)
             SettingsGroupBox {
                 VStack(spacing: 0) {
+                    Toggle("Dropbox enabled", isOn: $dropboxEnabled)
+                        .padding(.bottom, 8)
                     SettingsRow(label: "Dropbox refresh token:", help: "Dropbox OAuth refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
                         CloudCredentialField("refresh_token", text: $dropboxRefreshToken)
                     }
+                    .disabled(!dropboxEnabled)
                 }
             }
+            .opacity(dropboxEnabled ? 1 : 0.48)
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "TinyURL API token:", help: "TinyURL API token stored in ~/.mimi/cloud_link_credentials.json. Leave empty to keep original provider links.", labelWidth: 170) {
@@ -52,23 +65,29 @@ struct SettingsCloudLinkPane: View {
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "R2 account ID:", help: "Cloudflare Account ID from R2 Overview", labelWidth: 170) {
-                        TextField("32-character account ID", text: $r2AccountID).textFieldStyle(.roundedBorder).frame(width: 340)
+                    Toggle("Cloudflare R2 enabled", isOn: $cloudflareR2Enabled)
+                        .padding(.bottom, 8)
+                    VStack(spacing: 0) {
+                        SettingsRow(label: "R2 account ID:", help: "Cloudflare Account ID from R2 Overview", labelWidth: 170) {
+                            TextField("32-character account ID", text: $r2AccountID).textFieldStyle(.roundedBorder).frame(width: 340)
+                        }
+                        SettingsRow(label: "R2 bucket:", help: "Public R2 bucket name", labelWidth: 170) {
+                            TextField("bucket name", text: $r2Bucket).textFieldStyle(.roundedBorder).frame(width: 340)
+                        }
+                        SettingsRow(label: "R2 public URL:", help: "HTTPS custom domain or public r2.dev bucket URL", labelWidth: 170) {
+                            TextField("https://media.example.com", text: $r2PublicURL).textFieldStyle(.roundedBorder).frame(width: 340)
+                        }
+                        SettingsRow(label: "R2 access key ID:", help: "R2 S3 API Access Key ID", labelWidth: 170) {
+                            CloudCredentialField("Access Key ID", text: $r2AccessKeyID)
+                        }
+                        SettingsRow(label: "R2 secret access key:", help: "R2 S3 API Secret Access Key", labelWidth: 170) {
+                            CloudCredentialField("Secret Access Key", text: $r2SecretAccessKey)
+                        }
                     }
-                    SettingsRow(label: "R2 bucket:", help: "Public R2 bucket name", labelWidth: 170) {
-                        TextField("bucket name", text: $r2Bucket).textFieldStyle(.roundedBorder).frame(width: 340)
-                    }
-                    SettingsRow(label: "R2 public URL:", help: "HTTPS custom domain or public r2.dev bucket URL", labelWidth: 170) {
-                        TextField("https://media.example.com", text: $r2PublicURL).textFieldStyle(.roundedBorder).frame(width: 340)
-                    }
-                    SettingsRow(label: "R2 access key ID:", help: "R2 S3 API Access Key ID", labelWidth: 170) {
-                        CloudCredentialField("Access Key ID", text: $r2AccessKeyID)
-                    }
-                    SettingsRow(label: "R2 secret access key:", help: "R2 S3 API Secret Access Key", labelWidth: 170) {
-                        CloudCredentialField("Secret Access Key", text: $r2SecretAccessKey)
-                    }
+                    .disabled(!cloudflareR2Enabled)
                 }
             }
+            .opacity(cloudflareR2Enabled ? 1 : 0.48)
             HStack(spacing: 10) {
                 DownToolbarButtonView(title: "Save", systemImage: "checkmark", iconTint: .green) { saveSettings() }
                     .keyboardShortcut(.defaultAction)

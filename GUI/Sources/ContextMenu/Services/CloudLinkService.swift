@@ -22,6 +22,7 @@ enum CloudLinkService {
     /// Returns true if a link was copied to clipboard, false if web UI was opened instead.
     @discardableResult
     static func generateLink(for url: URL, provider: CloudProvider) -> Bool {
+        guard CloudLinkProviderAvailability.isEnabled(provider) else { return false }
         log.info("[CloudLink] \(provider.rawValue) view for \(url.lastPathComponent)")
         guard CloudLinkSetupCoordinator.prepareShare(for: provider) else { return false }
         switch provider {

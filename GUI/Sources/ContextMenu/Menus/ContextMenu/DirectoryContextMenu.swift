@@ -210,14 +210,18 @@ struct DirectoryContextMenu: View {
         Divider()
         Menu {
             let providers = CloudDriveAvailability.shareProviders
-            if providers.count > 1 {
+            if !providers.isEmpty {
                 ForEach(providers, id: \.rawValue) { provider in
                     cloudProviderMenu(provider)
                 }
-            } else if let provider = providers.first {
-                cloudProviderActions(provider)
             } else {
                 Text("No supported cloud drive connected")
+            }
+            Divider()
+            Button {
+                SettingsCoordinator.shared.openOnSection(.cloudLink)
+            } label: {
+                Label("Cloud settings…", systemImage: "gearshape")
             }
         } label: {
             Label {
@@ -232,10 +236,17 @@ struct DirectoryContextMenu: View {
 
     @ViewBuilder
     private func cloudProviderMenu(_ provider: CloudProvider) -> some View {
-        Menu {
-            cloudProviderActions(provider)
-        } label: {
-            Label(provider.rawValue, systemImage: provider.systemImage)
+        if CloudLinkProviderAvailability.isEnabled(provider) {
+            Menu {
+                cloudProviderActions(provider)
+            } label: {
+                Label(provider.rawValue, systemImage: provider.systemImage)
+            }
+        } else {
+            Button {} label: {
+                Label(provider.rawValue, systemImage: provider.systemImage)
+            }
+            .disabled(true)
         }
     }
 
@@ -247,12 +258,6 @@ struct DirectoryContextMenu: View {
             CloudLinkService.generateLink(for: file.urlValue, provider: provider)
         } label: {
             Label("Copy Link (view only)", systemImage: "eye")
-        }
-        Divider()
-        Button {
-            SettingsCoordinator.shared.openOnSection(.cloudLink)
-        } label: {
-            Label("Cloud settings…", systemImage: "gearshape")
         }
     }
 }

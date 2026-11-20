@@ -37,14 +37,18 @@ extension FileContextMenu {
         Divider()
         Menu {
             let providers = CloudDriveAvailability.shareProviders + (CloudflareR2ShareService.isMedia(file.urlValue) ? [.cloudflareR2] : [])
-            if providers.count > 1 {
+            if !providers.isEmpty {
                 ForEach(providers, id: \.rawValue) { provider in
                     cloudProviderMenu(provider)
                 }
-            } else if let provider = providers.first {
-                cloudProviderActions(provider)
             } else {
                 Text("No supported cloud drive connected")
+            }
+            Divider()
+            Button {
+                SettingsCoordinator.shared.openOnSection(.cloudLink)
+            } label: {
+                Label("Cloud settings…", systemImage: "gearshape")
             }
         } label: {
             Label {
@@ -59,10 +63,17 @@ extension FileContextMenu {
 
     @ViewBuilder
     private func cloudProviderMenu(_ provider: CloudProvider) -> some View {
-        Menu {
-            cloudProviderActions(provider)
-        } label: {
-            Label(provider.rawValue, systemImage: provider.systemImage)
+        if CloudLinkProviderAvailability.isEnabled(provider) {
+            Menu {
+                cloudProviderActions(provider)
+            } label: {
+                Label(provider.rawValue, systemImage: provider.systemImage)
+            }
+        } else {
+            Button {} label: {
+                Label(provider.rawValue, systemImage: provider.systemImage)
+            }
+            .disabled(true)
         }
     }
 
@@ -74,12 +85,6 @@ extension FileContextMenu {
             CloudLinkService.generateLink(for: file.urlValue, provider: provider)
         } label: {
             Label("Copy Link (view only)", systemImage: "eye")
-        }
-        Divider()
-        Button {
-            SettingsCoordinator.shared.openOnSection(.cloudLink)
-        } label: {
-            Label("Cloud settings…", systemImage: "gearshape")
         }
     }
 
