@@ -99,9 +99,14 @@ extension AppState {
             if panel == .left { displayedLeftFiles = cached.files } else { displayedRightFiles = cached.files }
             if let f = firstRealFile(in: cached.files) { setSelectedFile(f, for: panel) }
             restoreRememberedSelection(in: newPath, on: panel)
-            // background refresh — no spinner, no blocking
+            // Let a quick tab switch finish before refreshing a fresh cached listing.
+            let isCachedListingStale = cached.isStale
             Task { [weak self] in
                 guard let self else { return }
+                if !isCachedListingStale {
+                    do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+                }
+                guard PathUtils.areEqual(self.path(for: panel), newPath) else { return }
                 await self.scanner.clearCooldown(for: panel)
                 await self.setScannerDirectoryAndRefresh(newPath, for: panel, force: true)
                 guard PathUtils.areEqual(self.path(for: panel), newPath) else { return }

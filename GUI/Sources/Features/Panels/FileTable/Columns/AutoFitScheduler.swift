@@ -12,6 +12,16 @@ import Foundation
 @Observable
 final class AutoFitScheduler {
 
+    // MARK: - Fit Identity
+    private struct FitIdentity: Equatable {
+        let path: String
+        let filesVersion: Int
+        let containerWidth: CGFloat
+        let columns: [ColumnID]
+        let dateFormat: String
+        let sizeFormat: String
+    }
+
     static let shared = AutoFitScheduler()
 
     // MARK: - Config
@@ -30,6 +40,8 @@ final class AutoFitScheduler {
     private var visibleRows: [FavPanelSide: (first: Int, count: Int)] = [:]
     private var lastVisibleChange: [FavPanelSide: Date] = [:]
     private var backgroundFitTasks: [FavPanelSide: Task<Void, Never>] = [:]
+    private var scheduledFit: [FavPanelSide: FitIdentity] = [:]
+    private var completedFit: [FavPanelSide: FitIdentity] = [:]
 
     private init() {}
 
@@ -53,22 +65,32 @@ final class AutoFitScheduler {
         }
         let isSamePath = lastScheduledPath[panel] == path
         lastScheduledPath[panel] = path
-        navigationFitTasks[panel]?.cancel()
-        navigationFitTasks[panel] = nil
         if !isSamePath {
             pendingNavigationFitPaths[panel] = path
         }
         let isNavigationFit = pendingNavigationFitPaths[panel] == path
         let isPresentationFit = pendingPresentationFitPaths[panel] == path
+        let identity = fitIdentity(panel: panel, appState: appState)
+        if !isNavigationFit && !isPresentationFit {
+            if scheduledFit[panel] == identity || completedFit[panel] == identity {
+                log.debug("[AutoFit] unchanged content skipped panel=\(panel)")
+                return
+            }
+        }
+        navigationFitTasks[panel]?.cancel()
+        navigationFitTasks[panel] = nil
         let delay = isNavigationFit ? eventCoalescingDelay : contentSettleDelay
         log.debug("[AutoFit] content event panel=\(panel) path=\(path) samePath=\(isSamePath)")
+        scheduledFit[panel] = identity
         navigationFitTasks[panel] = Task { @MainActor in
             try? await Task.sleep(for: delay)
             if Task.isCancelled { return }
             self.navigationFitTasks[panel] = nil
+            self.scheduledFit[panel] = nil
             guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
             guard appState.path(for: panel) == path else { return }
             guard self.runAutoFit(panel: panel, appState: appState, limitFileCount: !isNavigationFit && !isPresentationFit) else { return }
+            self.completedFit[panel] = self.fitIdentity(panel: panel, appState: appState)
             if self.pendingNavigationFitPaths[panel] == path { self.pendingNavigationFitPaths[panel] = nil }
             if self.pendingPresentationFitPaths[panel] == path { self.pendingPresentationFitPaths[panel] = nil }
         }
@@ -85,6 +107,7 @@ final class AutoFitScheduler {
     /// navigating away. Unlike navigation fit, same-path publishes are allowed.
     func scheduleContentFit(panel: FavPanelSide, appState: AppState, reason: String) {
         log.debug("[AutoFit] explicit content event panel=\(panel) reason=\(reason)")
+        pendingPresentationFitPaths[panel] = appState.path(for: panel)
         scheduleNavigationFit(panel: panel, appState: appState)
     }
 
@@ -95,6 +118,7 @@ final class AutoFitScheduler {
         navigationFitTasks[panel]?.cancel()
         backgroundFitTasks[panel]?.cancel()
         navigationFitTasks[panel] = nil
+        scheduledFit[panel] = nil
         pendingNavigationFitPaths[panel] = nil
         log.debug("[AutoFit] paused for navigation loading panel=\(panel)")
     }
@@ -102,6 +126,7 @@ final class AutoFitScheduler {
     func preserveMirroredLayout(panel: FavPanelSide, path: String) {
         navigationFitTasks[panel]?.cancel()
         navigationFitTasks[panel] = nil
+        scheduledFit[panel] = nil
         pendingNavigationFitPaths[panel] = nil
         lastAutoFitWidth[panel] = ColumnLayoutStore.shared.layout(for: panel).containerWidth
         log.debug("[AutoFit] preserved mirrored layout panel=\(panel) path=\(path)")
@@ -113,6 +138,7 @@ final class AutoFitScheduler {
             navigationFitTasks[panel]?.cancel()
             backgroundFitTasks[panel]?.cancel()
             navigationFitTasks[panel] = nil
+            scheduledFit[panel] = nil
             pendingNavigationFitPaths[panel] = nil
             log.debug("[AutoFit] paused panel=\(panel)")
             return
@@ -126,6 +152,8 @@ final class AutoFitScheduler {
     func scheduleSidebarLayoutFit(appState: AppState, reason: String) {
         guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
         log.info("[AutoFit] sidebar layout schedule reason=\(reason)")
+        pendingPresentationFitPaths[.left] = appState.path(for: .left)
+        pendingPresentationFitPaths[.right] = appState.path(for: .right)
         scheduleNavigationFit(panel: .left, appState: appState)
         scheduleNavigationFit(panel: .right, appState: appState)
     }
@@ -176,10 +204,24 @@ final class AutoFitScheduler {
         pendingNavigationFitPaths[panel] = nil
         pendingPresentationFitPaths[panel] = nil
         lastAutoFitFinish[panel] = Date()
+        completedFit[panel] = fitIdentity(panel: panel, appState: appState)
+    }
+
+    // MARK: - Fit Identity
+    private func fitIdentity(panel: FavPanelSide, appState: AppState) -> FitIdentity {
+        let layout = ColumnLayoutStore.shared.layout(for: panel)
+        let preferences = UserPreferences.shared.snapshot
+        return FitIdentity(
+            path: appState.path(for: panel),
+            filesVersion: panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion,
+            containerWidth: layout.containerWidth,
+            columns: layout.fixedColumns.map(\.id),
+            dateFormat: preferences.dateFormat,
+            sizeFormat: preferences.sizeFormat ?? "system"
+        )
     }
 
     // MARK: - Helpers
-
     private func runAutoFit(panel: FavPanelSide, appState: AppState, limitFileCount: Bool) -> Bool {
         guard !loadingPanels.contains(panel), !appState.isLoading(panel) else {
             log.debug("[AutoFit] pass skipped while loading panel=\(panel)")

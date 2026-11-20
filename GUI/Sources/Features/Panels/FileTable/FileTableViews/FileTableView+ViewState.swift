@@ -144,6 +144,8 @@ extension FileTableView {
             .onReceive(jumpToFirstPublisher, perform: handleJumpToFirst)
             .onReceive(jumpToLastPublisher, perform: handleJumpToLast)
             .onDisappear {
+                activationRefreshTask?.cancel()
+                activationRefreshTask = nil
                 spinnerTask?.cancel()
                 sortTask?.cancel()
                 sortTask = nil

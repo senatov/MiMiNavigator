@@ -130,12 +130,13 @@ extension FileTableView {
         }
         guard !currentPanelPath.isEmpty else { return }
 
-        log.info("[FileTableView] app became active — refreshing panel=\(panelSide) path='\(currentPanelPath)'")
-        Task {
-            guard !appState.isTerminating else {
-                log.info("[FileTableView] app-activation refresh task cancelled panel=\(panelSide) — app is terminating")
-                return
-            }
+        activationRefreshTask?.cancel()
+        let path = currentPanelPath
+        activationRefreshTask = Task {
+            do { try await Task.sleep(for: .milliseconds(120)) } catch { return }
+            guard !Task.isCancelled, !appState.isTerminating, !isMenuTracking, !isLoading,
+                  PathUtils.areEqual(currentPanelPath, path) else { return }
+            log.info("[FileTableView] app became active — refreshing panel=\(panelSide) path='\(path)'")
             await appState.scanner.refreshFiles(currSide: panelSide, force: true)
         }
     }

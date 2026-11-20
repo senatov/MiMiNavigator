@@ -66,6 +66,7 @@ struct FileTableView: View {
 
     @State var activeMenuTrackingCount: Int = 0
     @State var deferredFilesVersion: Int? = nil
+    @State var activationRefreshTask: Task<Void, Never>? = nil
 
     /// True only when an explicit navigation occurred (directory change, back/forward, click-select).
     /// Background refreshes (periodic scan) must NOT scroll — it hijacks user's scroll position.
