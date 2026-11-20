@@ -12,8 +12,8 @@ import SwiftUI
 // MARK: - Command Bar Appearance Defaults
 enum CommandBarAppearanceDefaults {
     static let backgroundColor =
-        Color(#colorLiteral(red: 0.910, green: 0.918, blue: 0.941, alpha: 1))
-    static let moireIntensity = 0.20
+        Color(#colorLiteral(red: 0.918, green: 0.918, blue: 0.918, alpha: 1))
+    static let moireIntensity = 0.35
 }
 
 // MARK: - Duo Panel Chrome Background

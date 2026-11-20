@@ -70,7 +70,7 @@ final class GitClientRegistry {
     private(set) var preferredClient: GitClient
 
     private init() {
-        preferredClient = GitClient(rawValue: UserDefaults.standard.string(forKey: Self.preferenceKey) ?? "") ?? .terminal
+        preferredClient = GitClient(rawValue: UserDefaults.standard.string(forKey: Self.preferenceKey) ?? "") ?? .githubDesktop
         refreshAvailability()
     }
 

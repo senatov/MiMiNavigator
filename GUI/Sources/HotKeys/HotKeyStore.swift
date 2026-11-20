@@ -26,7 +26,7 @@ final class HotKeyStore {
     private var reverseLookup: [UInt64: HotKeyAction] = [:]
     
     /// Current preset (or .custom if user modified)
-    private(set) var currentPreset: HotKeyPreset = .totalCommander
+    private(set) var currentPreset: HotKeyPreset = .mimiNavigator
 
     private let userDefaultsKey = "com.senatov.MiMiNavigator.hotkeys"
     private let presetKey = "com.senatov.MiMiNavigator.hotkeyPreset"
@@ -126,8 +126,8 @@ final class HotKeyStore {
 
     /// Reset all bindings to factory defaults
     func resetToDefaults() {
-        log.info("[HotKeys] Resetting to Total Commander defaults")
-        applyPreset(.totalCommander)
+        log.info("[HotKeys] Resetting to MiMiNavigator defaults")
+        applyPreset(.mimiNavigator)
     }
     
     /// Apply a preset shortcut set
@@ -188,7 +188,7 @@ final class HotKeyStore {
            let preset = HotKeyPreset(rawValue: presetName) {
             currentPreset = preset
         } else {
-            currentPreset = .totalCommander
+            currentPreset = .mimiNavigator
         }
     }
     

@@ -73,7 +73,7 @@ struct TabBarView: View {
             }
             .frame(height: 32)
             .onChange(of: activeID) { _, newID in
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.easeInOut(duration: 0.12)) {
                     proxy.scrollTo(newID, anchor: .center)
                 }
             }

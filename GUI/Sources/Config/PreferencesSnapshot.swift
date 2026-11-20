@@ -100,7 +100,7 @@ struct PreferencesSnapshot: Codable, Sendable {
         sortAscending: false,
         excludeDirectoriesFromSorting: true,
         dateFormat: "system",
-        sizeFormat: "system",
+        sizeFormat: "binary",
         showSizeInKB: false,
         openOnSingleClick: false,
         rowDensity: "normal",

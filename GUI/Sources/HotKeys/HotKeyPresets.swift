@@ -2,12 +2,13 @@
 // MiMiNavigator
 //
 // Copyright © 2024-2026 Senatov. All rights reserved.
-// Description: Predefined shortcut sets — Finder style and Total Commander style.
+// Description: Predefined shortcut sets for MiMiNavigator, Finder and Total Commander.
 
 import Foundation
 
 // MARK: - HotKeyPreset
 enum HotKeyPreset: String, CaseIterable, Identifiable {
+    case mimiNavigator = "MiMiNavigator"
     case totalCommander = "Total Commander"
     case finder = "Finder"
     case custom = "Custom"
@@ -17,6 +18,7 @@ enum HotKeyPreset: String, CaseIterable, Identifiable {
     
     var icon: String {
         switch self {
+        case .mimiNavigator: return "keyboard"
         case .totalCommander: return "rectangle.split.2x1"
         case .finder: return "folder"
         case .custom: return "slider.horizontal.3"
@@ -26,6 +28,29 @@ enum HotKeyPreset: String, CaseIterable, Identifiable {
 
 // MARK: - HotKeyPresets
 enum HotKeyPresets {
+
+    // MARK: - MiMiNavigator Default Layout
+    static let mimiNavigator: [HotKeyBinding] = {
+        let overrides: [HotKeyAction: (UInt16, HotKeyModifiers)] = [
+            .backupFiles: (0x0B, .option),
+            .editFile: (0x76, .function),
+            .copyFile: (0x0F, .command),
+            .moveFile: (0x61, .function),
+            .deleteFile: (0x75, .function),
+            .renameFile: (0x78, .function),
+            .packFiles: (0x0F, [.command, .option]),
+            .unpackFiles: (0x20, .option),
+            .compareContent: (0x08, .control),
+            .syncDirectories: (0x01, .control),
+            .refreshPanels: (0x00, .none),
+            .findFiles: (0x03, .command),
+            .connectToServer: (0x2D, .control)
+        ]
+        return totalCommander.map { binding in
+            guard let override = overrides[binding.action] else { return binding }
+            return HotKeyBinding(action: binding.action, keyCode: override.0, modifiers: override.1)
+        }
+    }()
     
     // ═══════════════════════════════════════════════════════════════════
     // MARK: - Total Commander Layout (F-keys, Insert for marking)
@@ -156,6 +181,7 @@ enum HotKeyPresets {
     // MARK: - Get bindings for preset
     static func bindings(for preset: HotKeyPreset) -> [HotKeyBinding] {
         switch preset {
+        case .mimiNavigator: return mimiNavigator
         case .totalCommander: return totalCommander
         case .finder: return finder
         case .custom: return [] // No preset, keep current

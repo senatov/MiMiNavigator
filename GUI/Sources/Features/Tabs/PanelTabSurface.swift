@@ -12,13 +12,24 @@ struct PanelTabSurface: View {
     @AppStorage("tabs.appearance.unfocusedBackground") private var unfocusedBackgroundHex = TabAppearance.unfocusedBackground
     private var tabShape: BottomSheetTabShape { BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)) }
     var body: some View {
-        tabFill
-            .opacity(isPanelFocused ? 1 : inactivePanelOpacity)
-            .clipShape(tabShape)
-            .shadow(color: tabShadowColor, radius: isActive ? 1.8 : 1.1, x: 0.7, y: 1)
+        surfaceFill
+            .shadow(color: tabShadowColor, radius: isFocusedSelection ? 2.8 : isActive ? 1.8 : 1.1, x: 0.7, y: 1)
             .overlay(tabInnerHighlight)
             .overlay(tabBorder)
     }
+    // MARK: - Surface Fill
+    @ViewBuilder
+    private var surfaceFill: some View {
+        if isFocusedSelection {
+            tabFill
+                .glassEffect(.regular.tint(Color.accentColor.opacity(colorScheme == .dark ? 0.16 : 0.10)), in: tabShape)
+        } else {
+            tabFill
+                .opacity(isPanelFocused ? 1 : inactivePanelOpacity)
+                .clipShape(tabShape)
+        }
+    }
+    private var isFocusedSelection: Bool { isActive && isPanelFocused }
     // MARK: - Tab Fill
 
     @ViewBuilder
@@ -64,7 +75,7 @@ struct PanelTabSurface: View {
                 isActive
                     ? activeBorder.opacity(isPanelFocused ? 0.94 : 0.72)
                     : inactiveBorder.opacity(isHovered ? 0.72 : 0.52),
-                lineWidth: isActive ? 0.8 : 0.65
+                lineWidth: isFocusedSelection ? 1.1 : isActive ? 0.8 : 0.65
             )
     }
 

@@ -122,4 +122,6 @@ enum ToolbarItemID: String, CaseIterable, Identifiable, Codable, Sendable {
         .memory,
         .threads,
     ]
+
+    static let defaultVisible = defaultOrder.filter { $0 != .multiRename }
 }

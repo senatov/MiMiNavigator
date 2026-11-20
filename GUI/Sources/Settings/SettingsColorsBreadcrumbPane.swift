@@ -69,7 +69,7 @@ struct SettingsColorsBreadcrumbPane: View, ColorPaneHelpers {
             paneGroupBox {
                 VStack(spacing: 0) {
                     sectionHeader("Typography")
-                    sliderRow("Font size", help: "Path text size in points (default 14.5 pt)",
+                    sliderRow("Font size", help: "Path text size in points (default 13 pt)",
                               value: fontSizeBinding, range: 9...16, step: 0.5,
                               displayFormat: "%.1f", unit: " pt") {
                         store.breadcrumbFontSize = storedFontSize

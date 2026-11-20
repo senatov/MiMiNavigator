@@ -13,7 +13,7 @@ import Foundation
 enum HotKeyDefaults {
 
     /// Total Commander/Norton Commander defaults, excluding macOS-reserved shortcuts.
-    static let bindings: [HotKeyBinding] = HotKeyPresets.totalCommander
+    static let bindings: [HotKeyBinding] = HotKeyPresets.mimiNavigator
 
     /// Lookup dictionary for quick access (one primary binding per action)
     static let bindingsByAction: [HotKeyAction: HotKeyBinding] = {

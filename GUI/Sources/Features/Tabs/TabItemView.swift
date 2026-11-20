@@ -54,7 +54,7 @@ struct TabItemView: View {
                     onDuplicate: onDuplicate
                 )
             }
-        .animation(.easeOut(duration: 0.15), value: isActive)
+        .animation(.easeOut(duration: 0.10), value: isActive)
         .animation(.easeOut(duration: 0.12), value: isHovered)
         .zIndex(isActive ? 2 : isHovered ? 1 : 0)
     }

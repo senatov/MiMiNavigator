@@ -32,7 +32,7 @@ final class ToolbarStore {
 
     /// Set of currently visible item IDs.
     private(set) var visibleIDs: Set<ToolbarItemID>
-    var labelStyle: ToolbarLabelStyle = .iconAndText { didSet { MiMiDefaults.shared.set(labelStyle.rawValue, forKey: labelStyleKey) } }
+    var labelStyle: ToolbarLabelStyle = .iconOnly { didSet { MiMiDefaults.shared.set(labelStyle.rawValue, forKey: labelStyleKey) } }
 
     /// Whether the top menu bar (Files, Mark, Commands…) is visible.
     /// Default: true. Persisted in UserDefaults.
@@ -50,7 +50,7 @@ final class ToolbarStore {
     private init() {
         // Temporary values before load
         orderedIDs = ToolbarItemID.defaultOrder
-        visibleIDs = Set(ToolbarItemID.defaultOrder)
+        visibleIDs = Set(ToolbarItemID.defaultVisible)
         load()
     }
 
@@ -150,9 +150,9 @@ final class ToolbarStore {
     /// Reset order and visibility to factory defaults.
     func resetToDefaults() {
         orderedIDs = ToolbarItemID.defaultOrder
-        visibleIDs = Set(ToolbarItemID.defaultOrder)
+        visibleIDs = Set(ToolbarItemID.defaultVisible)
         menuBarVisible = true
-        labelStyle = .iconAndText
+        labelStyle = .iconOnly
         save()
         log.info("[Toolbar] reset to defaults")
     }
@@ -180,7 +180,7 @@ final class ToolbarStore {
             }
             visibleIDs = saved.union(Set(brandNew))
         } else {
-            visibleIDs = Set(ToolbarItemID.defaultOrder)
+            visibleIDs = Set(ToolbarItemID.defaultVisible)
         }
 
         // Load menu bar visibility (default = true)

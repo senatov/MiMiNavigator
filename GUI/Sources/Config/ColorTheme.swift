@@ -84,7 +84,7 @@ struct ColorTheme: Identifiable, Equatable {
 extension ColorTheme {
     // MARK: - defaultTheme
 
-    /// Default — matches current hardcoded values exactly
+    /// Default appearance for new installations and reset actions.
     static let defaultTheme = ColorTheme(
         id: "default",
         name: "Default",
@@ -93,8 +93,8 @@ extension ColorTheme {
         dirNameColor: Color.primary,
         fileNameColor: Color.primary,
         symlinkColor: Color(#colorLiteral(red: 0.098, green: 0.376, blue: 0.294, alpha: 1)),
-        selectionActive: Color(red: 255 / 255, green: 255 / 255, blue: 220 / 255),
-        selectionInactive: Color(#colorLiteral(red: 0.863, green: 0.863, blue: 0.863, alpha: 1)),
+        selectionActive: Color(#colorLiteral(red: 0.866667, green: 0.866667, blue: 0.945098, alpha: 1)),
+        selectionInactive: Color(#colorLiteral(red: 0.996078, green: 1.000000, blue: 1.000000, alpha: 1)),
         selectionBorder: Color(#colorLiteral(red: 0.518, green: 0.510, blue: 1.000, alpha: 1)),
         selectionLineWidth: 0.5,
         separatorColor: Color(nsColor: .separatorColor),
@@ -116,22 +116,22 @@ extension ColorTheme {
         columnGroupColor: Color(red: 0.28, green: 0.20, blue: 0.30),
         columnChildCountColor: Color(red: 0.30, green: 0.20, blue: 0.10),
         columnDividerColor: Color(#colorLiteral(red: 0.18, green: 0.23, blue: 0.32, alpha: 1)),
-        dividerNormalColor: Color(#colorLiteral(red: 1.000, green: 0.576, blue: 0.000, alpha: 1)),
-        dividerActiveColor: Color(#colorLiteral(red: 1.000, green: 0.576, blue: 0.000, alpha: 1)),
+        dividerNormalColor: Color(#colorLiteral(red: 0.878431, green: 0.643137, blue: 0.101961, alpha: 1)),
+        dividerActiveColor: Color(#colorLiteral(red: 1.000000, green: 0.149020, blue: 0.000000, alpha: 1)),
         panelBorderActive: Color(#colorLiteral(red: 0.000, green: 0.588, blue: 1.000, alpha: 1)),
         panelBorderInactive: Color(red: 0.45, green: 0.45, blue: 0.50, opacity: 0.38),
         panelBorderWidth: 0.5,
         warmWhite: Color(red: 0.97, green: 0.97, blue: 0.95, opacity: 0.91),
-        zebraActiveEven: Color(#colorLiteral(red: 0.988, green: 0.980, blue: 0.957, alpha: 1)),
+        zebraActiveEven: Color(#colorLiteral(red: 0.984314, green: 0.976471, blue: 0.964706, alpha: 1)),
         zebraActiveOdd: Color(#colorLiteral(red: 0.933, green: 0.925, blue: 0.894, alpha: 1)),
         zebraInactiveEven: Color(red: 0.985, green: 0.985, blue: 0.985),
         zebraInactiveOdd: Color(red: 0.93, green: 0.93, blue: 0.925),
         filterActiveColor: Color(red: 0.25, green: 0.55, blue: 1.0, opacity: 0.8),
         breadcrumbTextActive: Color(#colorLiteral(red: 0.051, green: 0.063, blue: 0.871, alpha: 1)),
         breadcrumbTextInactive: Color(#colorLiteral(red: 0.349, green: 0.376, blue: 0.478, alpha: 1)),
-        breadcrumbBgActive: Color(#colorLiteral(red: 0.996, green: 0.988, blue: 0.843, alpha: 1)),
+        breadcrumbBgActive: Color(#colorLiteral(red: 0.980392, green: 0.976471, blue: 0.870588, alpha: 1)),
         breadcrumbBgInactive: Color(nsColor: .windowBackgroundColor),
-        breadcrumbFontSize: 14.5,
+        breadcrumbFontSize: 13,
         breadcrumbVariableColor: Color(red: 0.32, green: 0.02, blue: 0.08),
         panelBackgroundDark: Color(nsColor: .windowBackgroundColor),
         panelTextDark: Color.primary,

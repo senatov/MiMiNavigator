@@ -151,7 +151,7 @@ struct SettingsPanelsPane: View {
                     Divider()
                     SettingsRow(label: "Size format:", help: "Choose the base and units used in file list columns") {
                         Picker("", selection: Binding(
-                            get: { prefs.snapshot.sizeFormat ?? "system" },
+                            get: { prefs.snapshot.sizeFormat ?? "binary" },
                             set: { prefs.snapshot.sizeFormat = $0 }
                         )) {
                             Text("System (Finder)").tag("system")

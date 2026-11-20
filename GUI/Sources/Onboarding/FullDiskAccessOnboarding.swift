@@ -43,7 +43,7 @@ struct FullDiskAccessOnboarding: View {
                 .foregroundStyle(Color.accentColor)
             Text("Full Disk Access")
                 .font(.system(size: 18, weight: .semibold))
-            Text("Full Disk Access lets MiMiNavigator browse protected locations across your Mac. It is optional: you can authorize selected folders or continue with the locations already available to the app.")
+            Text("For full file manager functionality, enable Full Disk Access in macOS Settings. You can also authorize selected folders or continue with the locations already available to the app.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -88,10 +88,10 @@ struct FullDiskAccessOnboarding: View {
                 DownToolbarButtonView(title: "Choose Folders…", systemImage: "folder.badge.plus") {
                     chooseFolders()
                 }
-                .keyboardShortcut(.return)
                 DownToolbarButtonView(title: "Full Disk Access…", systemImage: "lock.open") {
                     requestFullDiskAccess()
                 }
+                .keyboardShortcut(.return)
                 .help("Open Privacy & Security → Full Disk Access in System Settings")
             }
             DownToolbarButtonView(title: "Continue without access", systemImage: "forward") {

@@ -6,11 +6,11 @@ enum TabAppearance {
     static let fontSize = 15.0
     static let height: CGFloat = 29
     static let bottomRadius = 12.0
-    static let inactivePanelOpacity = 0.58
+    static let inactivePanelOpacity = 0.65
     static let focusedBackground = "#EAF3FC"
     static let unfocusedBackground = "#EAEAEA"
-    static let focusedText = "#10243D"
-    static let unfocusedText = "#929292"
+    static let focusedText = "#5E5E5E"
+    static let unfocusedText = "#A9A9A9"
     static let darkFocusedBackground = "#415A78"
     static let darkUnfocusedBackground = "#424A58"
     static let darkFocusedText = "#F3F7FC"
@@ -44,7 +44,7 @@ struct TabAppearanceLabel: View {
                     .frame(width: 14)
             }
             Text(title)
-                .font(.system(size: CGFloat(fontSize), weight: .regular))
+                .font(.system(size: CGFloat(fontSize), weight: isSelected && isFocused ? .medium : .regular))
                 .lineLimit(1)
                 .foregroundStyle(textColor)
         }
