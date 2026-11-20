@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="400" viewBox="0 0 660 400">
+  <defs>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F3F7FC"/>
+      <stop offset="1" stop-color="#E4ECF8"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="0.6" x2="1" y2="0.4">
+      <stop offset="0" stop-color="#2879E0"/>
+      <stop offset="0.52" stop-color="#2DBCD6"/>
+      <stop offset="1" stop-color="#36C790"/>
+    </linearGradient>
+  </defs>
+  <rect width="660" height="400" fill="url(#canvas)"/>
+  <path d="M0 334 Q330 264 660 326 V400 H0Z" fill="#D7E6F7" opacity="0.45"/>
+  <text x="330" y="42" text-anchor="middle" fill="#25385E" font-family="Helvetica Neue, Helvetica, sans-serif" font-size="17" font-weight="600">Drag MiMiNavigator to Applications</text>
+  <path d="M261 189 H367 V173 L406 200 L367 227 V211 H261Z" fill="#173E79" opacity="0.15" transform="translate(3 5)"/>
+  <path d="M261 189 H367 V173 L406 200 L367 227 V211 H261Z" fill="url(#arrow)" stroke="#1B69BB" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M272 193 H370" fill="none" stroke="#B6FFED" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+</svg>
