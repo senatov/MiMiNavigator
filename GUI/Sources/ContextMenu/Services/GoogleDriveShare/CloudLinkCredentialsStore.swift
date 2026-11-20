@@ -12,6 +12,11 @@ struct CloudLinkCredentials: Codable, Sendable {
     var googleDriveRefreshToken: String?
     var dropboxRefreshToken: String?
     var tinyURLAPIToken: String?
+    var r2AccountID: String?
+    var r2Bucket: String?
+    var r2PublicURL: String?
+    var r2AccessKeyID: String?
+    var r2SecretAccessKey: String?
 }
 
 // MARK: - CloudLinkCredentialKind
@@ -20,6 +25,8 @@ enum CloudLinkCredentialKind: String, Sendable {
     case googleDriveRefreshToken
     case dropboxRefreshToken
     case tinyURLAPIToken
+    case r2AccessKeyID
+    case r2SecretAccessKey
 }
 
 // MARK: - CloudLinkCredentialsStore
@@ -64,6 +71,10 @@ enum CloudLinkCredentialsStore {
             return normalized(credentials.dropboxRefreshToken)
         case .tinyURLAPIToken:
             return normalized(credentials.tinyURLAPIToken)
+        case .r2AccessKeyID:
+            return normalized(credentials.r2AccessKeyID)
+        case .r2SecretAccessKey:
+            return normalized(credentials.r2SecretAccessKey)
         }
     }
 
@@ -79,6 +90,10 @@ enum CloudLinkCredentialsStore {
             credentials.dropboxRefreshToken = value
         case .tinyURLAPIToken:
             credentials.tinyURLAPIToken = value
+        case .r2AccessKeyID:
+            credentials.r2AccessKeyID = value
+        case .r2SecretAccessKey:
+            credentials.r2SecretAccessKey = value
         }
         try save(credentials)
     }

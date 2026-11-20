@@ -33,6 +33,13 @@ enum CloudLinkService {
             return oneDriveLink(url: url)
         case .googleDrive:
             return googleDriveLink(url: url)
+        case .cloudflareR2:
+            activeTask?.cancel()
+            activeTask = Task {
+                _ = await CloudflareR2ShareService.copyShareLink(for: url)
+                activeTask = nil
+            }
+            return true
         }
     }
 

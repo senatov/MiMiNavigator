@@ -2,7 +2,13 @@
 
 ## Scope
 
-MiMiNavigator supports API-backed publishing for Google Drive and Dropbox. Both providers produce a provider-owned shared URL and pass it to the common `CloudLinkShortener`.
+MiMiNavigator supports API-backed publishing for Google Drive and Dropbox. Both providers produce a provider-owned shared URL and pass it to the common `CloudLinkShortener`. Cloudflare R2 uploads image, video, and audio files to a public bucket and copies a direct URL without TinyURL.
+
+## Cloudflare R2 media links
+
+The file context menu offers Cloudflare R2 for image, video, and audio files regardless of mounted cloud drives. A selected file is uploaded under `miminavi/<random UUID>/<original filename>` so an existing object is never overwritten. Its direct public URL is copied only after R2 accepts the upload. Direct URLs remain public while the bucket and object remain public; revocation requires deleting the object or disabling public access. A cancelled or failed upload may leave an incomplete object in R2.
+
+Create an R2 bucket in the Cloudflare dashboard, enable a custom domain for production traffic (or the rate-limited `r2.dev` development URL), and create a bucket-scoped R2 API token with **Object Read & Write** access. R2 provides an **Access Key ID** and **Secret Access Key** for its S3 API; a general Cloudflare API token cannot be used as the S3 secret. Save the Account ID, bucket name, public URL, and both S3 keys in Settings → Cloud Share+Link. The secret is only shown by Cloudflare when created. Credentials are stored in `~/.mimi/cloud_link_credentials.json` with mode 0600. The upload uses AWS Signature Version 4 and streams the local file through URLSession.
 
 The feature is intentionally narrow. MiMiNavigator remains a filesystem-first application and does not treat provider APIs as general remote filesystems.
 

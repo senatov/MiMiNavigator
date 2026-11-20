@@ -36,7 +36,7 @@ extension FileContextMenu {
     var cloudLinkSection: some View {
         Divider()
         Menu {
-            let providers = CloudDriveAvailability.shareProviders
+            let providers = CloudDriveAvailability.shareProviders + (CloudflareR2ShareService.isMedia(file.urlValue) ? [.cloudflareR2] : [])
             if providers.count > 1 {
                 ForEach(providers, id: \.rawValue) { provider in
                     cloudProviderMenu(provider)

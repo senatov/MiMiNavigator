@@ -15,6 +15,7 @@ enum CloudProvider: String, Sendable {
     case oneDrive = "OneDrive"
     case googleDrive = "Google Drive"
     case dropbox  = "Dropbox"
+    case cloudflareR2 = "Cloudflare R2"
 
     var systemImage: String {
         switch self {
@@ -22,6 +23,7 @@ enum CloudProvider: String, Sendable {
         case .oneDrive:    return "cloud"
         case .googleDrive: return "externaldrive.badge.icloud"
         case .dropbox:     return "shippingbox"
+        case .cloudflareR2: return "cloud.fill"
         }
     }
 }

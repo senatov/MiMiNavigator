@@ -29,15 +29,17 @@ enum CloudLinkSetupCoordinator {
             return URL(string: "https://developers.google.com/workspace/guides/create-credentials")
         case .dropbox:
             return URL(string: "https://www.dropbox.com/developers/apps")
+        case .cloudflareR2:
+            return URL(string: "https://dash.cloudflare.com/?to=/:account/r2/overview")
         default:
             return nil
         }
     }
     // MARK: - Prepare Share
     static func prepareShare(for provider: CloudProvider) -> Bool {
-        guard provider == .googleDrive || provider == .dropbox else { return true }
+        guard provider == .googleDrive || provider == .dropbox || provider == .cloudflareR2 else { return true }
         guard !hasRequiredCredentials(for: provider) else {
-            return prepareTinyURLFallback()
+            return provider == .cloudflareR2 ? true : prepareTinyURLFallback()
         }
         if guideWasShown(for: provider) {
             SettingsCoordinator.shared.openOnSection(.cloudLink)
@@ -55,6 +57,9 @@ enum CloudLinkSetupCoordinator {
             return hasClientSecret && hasRefreshToken
         case .dropbox:
             return (try? DropboxTokenStore.loadRefreshToken())?.isEmpty == false
+        case .cloudflareR2:
+            guard let config = try? CloudLinkCredentialsStore.load() else { return false }
+            return [config.r2AccountID, config.r2Bucket, config.r2PublicURL, config.r2AccessKeyID, config.r2SecretAccessKey].allSatisfy { $0?.isEmpty == false }
         default:
             return true
         }
@@ -98,6 +103,8 @@ enum CloudLinkSetupCoordinator {
             return "Create Desktop OAuth credentials in Google Cloud Console, enable the Google Drive API, then save the client secret and refresh token in Settings → Cloud Share+Link. Until both values exist, Google Drive sharing remains disabled. This guidance is shown only once."
         case .dropbox:
             return "Create a Dropbox API app with files.metadata.read, sharing.read, and sharing.write permissions, obtain a refresh token, then save it in Settings → Cloud Share+Link. Until the token exists, Dropbox sharing remains disabled. This guidance is shown only once."
+        case .cloudflareR2:
+            return "Create an R2 bucket, enable its public URL or custom domain, and create a bucket-scoped Object Read & Write R2 API token. Save the Account ID, bucket, public URL, Access Key ID and Secret Access Key in Settings → Cloud Share+Link."
         default:
             return "Configure this provider in Settings → Cloud Share+Link."
         }
@@ -110,6 +117,11 @@ enum CloudLinkSetupCoordinator {
         UserDefaults.standard.set(true, forKey: guideKey(for: provider))
     }
     private static func guideKey(for provider: CloudProvider) -> String {
-        provider == .googleDrive ? googleGuideKey : dropboxGuideKey
+        switch provider {
+        case .googleDrive: googleGuideKey
+        case .dropbox: dropboxGuideKey
+        case .cloudflareR2: "cloudLink.setupGuide.cloudflareR2Shown"
+        default: googleGuideKey
+        }
     }
 }

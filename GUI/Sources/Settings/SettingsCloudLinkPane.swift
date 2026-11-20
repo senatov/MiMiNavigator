@@ -14,6 +14,11 @@ struct SettingsCloudLinkPane: View {
     @State private var googleRefreshToken = ""
     @State private var dropboxRefreshToken = ""
     @State private var tinyURLAPIToken = ""
+    @State private var r2AccountID = ""
+    @State private var r2Bucket = ""
+    @State private var r2PublicURL = ""
+    @State private var r2AccessKeyID = ""
+    @State private var r2SecretAccessKey = ""
     @State private var statusMessage = ""
 
     // MARK: - Body
@@ -23,29 +28,44 @@ struct SettingsCloudLinkPane: View {
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Google client secret:", help: "Desktop OAuth client secret stored in ~/.mimi/google_drive_oauth.json", labelWidth: 170) {
-                        DialogSecureField("client_secret", text: $googleClientSecret)
-                            .textFieldStyle(.roundedBorder)
+                        CloudCredentialField("client_secret", text: $googleClientSecret)
                     }
                     Divider()
                     SettingsRow(label: "Google refresh token:", help: "Google Drive refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
-                        DialogSecureField("refresh_token", text: $googleRefreshToken)
-                            .textFieldStyle(.roundedBorder)
+                        CloudCredentialField("refresh_token", text: $googleRefreshToken)
                     }
                 }
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "Dropbox refresh token:", help: "Dropbox OAuth refresh token stored in ~/.mimi/cloud_link_credentials.json", labelWidth: 170) {
-                        DialogSecureField("refresh_token", text: $dropboxRefreshToken)
-                            .textFieldStyle(.roundedBorder)
+                        CloudCredentialField("refresh_token", text: $dropboxRefreshToken)
                     }
                 }
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
                     SettingsRow(label: "TinyURL API token:", help: "TinyURL API token stored in ~/.mimi/cloud_link_credentials.json. Leave empty to keep original provider links.", labelWidth: 170) {
-                        DialogSecureField("api-token", text: $tinyURLAPIToken)
-                            .textFieldStyle(.roundedBorder)
+                        CloudCredentialField("api-token", text: $tinyURLAPIToken)
+                    }
+                }
+            }
+            SettingsGroupBox {
+                VStack(spacing: 0) {
+                    SettingsRow(label: "R2 account ID:", help: "Cloudflare Account ID from R2 Overview", labelWidth: 170) {
+                        TextField("32-character account ID", text: $r2AccountID).textFieldStyle(.roundedBorder).frame(width: 340)
+                    }
+                    SettingsRow(label: "R2 bucket:", help: "Public R2 bucket name", labelWidth: 170) {
+                        TextField("bucket name", text: $r2Bucket).textFieldStyle(.roundedBorder).frame(width: 340)
+                    }
+                    SettingsRow(label: "R2 public URL:", help: "HTTPS custom domain or public r2.dev bucket URL", labelWidth: 170) {
+                        TextField("https://media.example.com", text: $r2PublicURL).textFieldStyle(.roundedBorder).frame(width: 340)
+                    }
+                    SettingsRow(label: "R2 access key ID:", help: "R2 S3 API Access Key ID", labelWidth: 170) {
+                        CloudCredentialField("Access Key ID", text: $r2AccessKeyID)
+                    }
+                    SettingsRow(label: "R2 secret access key:", help: "R2 S3 API Secret Access Key", labelWidth: 170) {
+                        CloudCredentialField("Secret Access Key", text: $r2SecretAccessKey)
                     }
                 }
             }
@@ -69,7 +89,7 @@ struct SettingsCloudLinkPane: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Credential setup")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-            Text("Google Drive requires Desktop OAuth credentials, Drive API access, and a refresh token. Dropbox requires an API app with metadata and sharing permissions plus a refresh token. TinyURL is optional; without its API token MiMiNavigator copies the original provider link.")
+            Text("Google Drive requires Desktop OAuth credentials and a refresh token. Dropbox requires a refresh token. Cloudflare R2 requires a public bucket and bucket-scoped Object Read & Write S3 keys. R2 uploads media and copies its direct public URL. TinyURL is optional for Google Drive and Dropbox.")
                 .font(.system(size: 11))
                 .foregroundStyle(SettingsVisualStyle.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -77,6 +97,7 @@ struct SettingsCloudLinkPane: View {
                 DownToolbarButtonView(title: "Google OAuth Setup", systemImage: "arrow.up.right.square", iconTint: .blue) { openSetupPage(.googleDrive) }
                 DownToolbarButtonView(title: "Dropbox App Console", systemImage: "arrow.up.right.square", iconTint: .blue) { openSetupPage(.dropbox) }
                 DownToolbarButtonView(title: "TinyURL API", systemImage: "arrow.up.right.square", iconTint: .blue) { openTinyURLSetupPage() }
+                DownToolbarButtonView(title: "Cloudflare R2", systemImage: "arrow.up.right.square", iconTint: .blue) { openSetupPage(.cloudflareR2) }
             }
         }
         .padding(12)
@@ -107,6 +128,11 @@ struct SettingsCloudLinkPane: View {
             googleRefreshToken = credentials.googleDriveRefreshToken ?? ""
             dropboxRefreshToken = credentials.dropboxRefreshToken ?? ""
             tinyURLAPIToken = credentials.tinyURLAPIToken ?? ""
+            r2AccountID = credentials.r2AccountID ?? ""
+            r2Bucket = credentials.r2Bucket ?? ""
+            r2PublicURL = credentials.r2PublicURL ?? ""
+            r2AccessKeyID = credentials.r2AccessKeyID ?? ""
+            r2SecretAccessKey = credentials.r2SecretAccessKey ?? ""
             statusMessage = "Loaded local credentials from \(CloudLinkCredentialsStore.path)."
         } catch {
             statusMessage = "Failed to load local credentials: \(error.localizedDescription)"
@@ -118,9 +144,16 @@ struct SettingsCloudLinkPane: View {
     private func saveSettings() {
         do {
             try GoogleDriveCredentialBootstrap.saveLocalClientSecret(googleClientSecret)
-            try CloudLinkCredentialsStore.setToken(googleRefreshToken, for: .googleDriveRefreshToken)
-            try CloudLinkCredentialsStore.setToken(dropboxRefreshToken, for: .dropboxRefreshToken)
-            try CloudLinkCredentialsStore.setToken(tinyURLAPIToken, for: .tinyURLAPIToken)
+            var credentials = try CloudLinkCredentialsStore.load()
+            credentials.googleDriveRefreshToken = googleRefreshToken
+            credentials.dropboxRefreshToken = dropboxRefreshToken
+            credentials.tinyURLAPIToken = tinyURLAPIToken
+            credentials.r2AccountID = r2AccountID
+            credentials.r2Bucket = r2Bucket
+            credentials.r2PublicURL = r2PublicURL
+            credentials.r2AccessKeyID = r2AccessKeyID
+            credentials.r2SecretAccessKey = r2SecretAccessKey
+            try CloudLinkCredentialsStore.save(credentials)
             statusMessage = "Saved credentials to ~/.mimi."
         } catch {
             statusMessage = "Failed to save credentials: \(error.localizedDescription)"
@@ -135,9 +168,13 @@ struct SettingsCloudLinkPane: View {
             GoogleDriveTokenConfigStore.delete()
             try DropboxTokenStore.deleteRefreshToken(ignoreMissing: true)
             try TinyURLTokenStore.deleteAPIToken(ignoreMissing: true)
+            try CloudLinkCredentialsStore.setToken(nil, for: .r2AccessKeyID)
+            try CloudLinkCredentialsStore.setToken(nil, for: .r2SecretAccessKey)
             googleRefreshToken = ""
             dropboxRefreshToken = ""
             tinyURLAPIToken = ""
+            r2AccessKeyID = ""
+            r2SecretAccessKey = ""
             statusMessage = "Cleared Share+Link tokens from ~/.mimi and Keychain mirrors."
         } catch {
             statusMessage = "Failed to clear tokens: \(error.localizedDescription)"
@@ -163,5 +200,37 @@ struct SettingsCloudLinkPane: View {
 
     private func openTinyURLSetupPage() {
         NSWorkspace.shared.open(CloudLinkSetupCoordinator.tinyURLSetupURL)
+    }
+}
+
+// MARK: - CloudCredentialField
+private struct CloudCredentialField: View {
+    let placeholder: String
+    @Binding var text: String
+    @State private var isVisible = false
+    init(_ placeholder: String, text: Binding<String>) {
+        self.placeholder = placeholder
+        self._text = text
+    }
+    var body: some View {
+        HStack(spacing: 5) {
+            Group {
+                if isVisible {
+                    TextField(placeholder, text: $text)
+                } else {
+                    SecureField(placeholder, text: $text)
+                }
+            }
+            .textFieldStyle(.roundedBorder)
+            Button {
+                isVisible.toggle()
+            } label: {
+                Image(systemName: isVisible ? "eye.slash" : "eye")
+            }
+            .buttonStyle(.borderless)
+            .help(isVisible ? "Hide value" : "Show value")
+            .accessibilityLabel(isVisible ? "Hide value" : "Show value")
+        }
+        .frame(width: 340)
     }
 }
