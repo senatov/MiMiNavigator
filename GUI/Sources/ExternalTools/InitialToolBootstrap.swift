@@ -50,16 +50,27 @@ final class InitialToolBootstrap {
                 .appendingPathComponent("MiMiNavigator/ToolBootstrap", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let statusURL = directory.appendingPathComponent("status-\(UUID().uuidString).txt")
-            let scriptURL = directory.appendingPathComponent("install-\(UUID().uuidString).zsh")
+            let scriptURL = directory.appendingPathComponent("install-\(UUID().uuidString).command")
             try script(statusURL: statusURL).write(to: scriptURL, atomically: true, encoding: .utf8)
-            let command = "zsh \(Self.shellQuote(scriptURL.path))"
-            let source = "tell application \"Terminal\" to do script \(command.appleScriptQuoted)"
-            var error: NSDictionary?
-            guard NSAppleScript(source: source)?.executeAndReturnError(&error) != nil else {
-                throw BootstrapError.terminal(error?[NSAppleScript.errorMessage] as? String ?? "Terminal could not be opened")
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptURL.path)
+            guard let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else {
+                throw BootstrapError.terminal("Terminal could not be found")
             }
+            log.info("[ToolBootstrap] opening installer in Terminal")
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
             pollTask = Task { [weak self] in
                 await self?.poll(statusURL: statusURL, scriptURL: scriptURL)
+            }
+            NSWorkspace.shared.open([scriptURL], withApplicationAt: terminalURL, configuration: configuration) { [weak self] _, error in
+                guard let error else { return }
+                Task { @MainActor [weak self] in
+                    self?.pollTask?.cancel()
+                    self?.pollTask = nil
+                    self?.isRunning = false
+                    self?.errorMessage = "Terminal could not be opened: \(error.localizedDescription)"
+                    log.error("[ToolBootstrap] \(error.localizedDescription)")
+                }
             }
         } catch {
             isRunning = false
@@ -76,8 +87,10 @@ final class InitialToolBootstrap {
                 statusMessage = "Installing missing command-line tools in Terminal…"
             }
             if let result = try? String(contentsOf: statusURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) {
+                log.info("[ToolBootstrap] installer result=\(result)")
                 try? FileManager.default.removeItem(at: statusURL)
                 try? FileManager.default.removeItem(at: scriptURL)
+                pollTask = nil
                 ExternalToolRegistry.shared.refreshAll()
                 if result == "done", !Self.needsSetup {
                     finish()
@@ -94,6 +107,7 @@ final class InitialToolBootstrap {
         }
         isRunning = false
         errorMessage = "Installation has not finished. Check Terminal and retry if needed."
+        log.error("[ToolBootstrap] installer timed out")
     }
 
     // MARK: - Complete Setup
@@ -165,7 +179,7 @@ private enum BootstrapError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .terminal(let message): "Terminal automation could not start: \(message)"
+        case .terminal(let message): "Terminal installer could not start: \(message)"
         }
     }
 }

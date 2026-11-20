@@ -17,7 +17,7 @@ struct InitialToolBootstrapView: View {
                 .font(.title2.bold())
             Text("MiMiNavigator is setting up Homebrew and the tools used for Git, archives, media conversion, and SSH connections.")
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Terminal will show the installation. Allow Terminal automation if macOS asks; installing Homebrew may also require your administrator password.")
+            Text("Terminal will show the installation. Installing Homebrew may require your administrator password.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if bootstrap.isRunning {
@@ -35,6 +35,8 @@ struct InitialToolBootstrapView: View {
             }
             HStack {
                 Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .buttonStyle(.bordered)
+                Button("Continue without tools", action: onComplete)
                     .buttonStyle(.bordered)
                 Spacer()
                 if bootstrap.errorMessage != nil {
