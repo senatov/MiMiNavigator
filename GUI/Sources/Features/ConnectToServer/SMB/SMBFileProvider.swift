@@ -124,6 +124,11 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
 
     @concurrent
     func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+        try await searchEntries(path).map(\.item)
+    }
+
+    @concurrent
+    func searchEntries(_ path: String) async throws -> [RemoteSearchEntry] {
         let directoryURL = try resolvedURL(for: path)
         log.debug("[SMB] listDirectory path='\(path)' local='\(directoryURL.path)'")
 
@@ -131,6 +136,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
             .isDirectoryKey,
             .fileSizeKey,
             .contentModificationDateKey,
+            .contentAccessDateKey,
             .creationDateKey,
             .localizedTypeDescriptionKey,
             .nameKey,
@@ -146,7 +152,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
             let values = try url.resourceValues(forKeys: resourceKeys)
             let normalizedBasePath = Self.normalizeRemotePath(path)
             let itemPath = normalizedBasePath == "/" ? "/\(url.lastPathComponent)" : "\(normalizedBasePath)/\(url.lastPathComponent)"
-            return RemoteFileItem(
+            let item = RemoteFileItem(
                 name: values.name ?? url.lastPathComponent,
                 path: itemPath,
                 isDirectory: values.isDirectory ?? false,
@@ -154,6 +160,7 @@ final class SMBFileProvider: @unchecked Sendable, RemoteFileProvider {
                 modified: values.contentModificationDate,
                 permissions: nil
             )
+            return RemoteSearchEntry(item: item, accessed: values.contentAccessDate)
         }
 
         log.debug("[SMB] listed \(items.count) items at '\(path)'")

@@ -27,6 +27,10 @@ final class FindFilesViewModel {
             markAdvancedCriteriaEdited()
         }
     }
+    var isRemoteLocation: Bool {
+        guard let scheme = URL(string: searchDirectory)?.scheme?.lowercased() else { return false }
+        return ["sftp", "ftp", "smb"].contains(scheme)
+    }
     var caseSensitive: Bool = false
     var useRegex: Bool = false
     var searchInSubdirectories: Bool = true
@@ -79,7 +83,10 @@ final class FindFilesViewModel {
 
     // MARK: - Engine
     private let engine = FindFilesEngine()
+    private let remoteEngine = RemoteFindFilesEngine()
+    private var isRemoteSearchRunning = false
     private var searchTask: Task<Void, Never>?
+    private var searchGeneration = UUID()
     private var statsUpdateTask: Task<Void, Never>?
 
     // MARK: - Initialization
@@ -88,35 +95,42 @@ final class FindFilesViewModel {
         loadPreferences()
     }
 
-    // MARK: - Configure Shared Search Directory
-    func configure(searchPath: String, selectedFile _: CustomFile? = nil) {
-        let path = (searchPath as NSString).expandingTildeInPath
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
-        searchDirectory = exists && !isDirectory.boolValue
-            ? URL(fileURLWithPath: path).deletingLastPathComponent().path : path
-    }
-
     // MARK: - Start Search
 
     func startSearch() {
         guard searchState != .searching else { return }
+        searchGeneration = UUID()
         MemoryDiagnostics.shared.checkpoint("search.before")
         normalizeContentSearchSettings()
         let settings = activeSearchSettings
         let applicationLeftoversOnly = settings.usesApplicationLeftovers
-        let targetPath = applicationLeftoversOnly
-            ? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library", isDirectory: true).path
-            : settings.searchDirectory
+        let targetPath = settings.searchDirectory
+        results.removeAll()
+        selectedResultIDs.removeAll()
+        selectedResult = nil
+        stats = FindFilesStats()
         log.info("[FindFiles] Starting \(activeModule.rawValue) search: preset='\(settings.activePreset?.rawValue ?? "none")' name='\(settings.fileNamePattern)' text='\(settings.searchText)' dir='\(targetPath)'")
         errorMessage = nil
         // Validate target path
-        let targetURL = URL(fileURLWithPath: (targetPath as NSString).expandingTildeInPath)
-        var isDir: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
-        guard exists && isDir.boolValue else {
-            errorMessage = "Choose an existing directory in Search in: \(targetPath)"
-            return
+        let remoteURL = URL(string: targetPath).flatMap { ["sftp", "ftp", "smb"].contains($0.scheme?.lowercased() ?? "") ? $0 : nil }
+        let targetURL: URL
+        let remoteProvider: (any RemoteFileProvider)?
+        if let remoteURL {
+            guard let connection = RemoteConnectionManager.shared.connection(for: remoteURL) else {
+                errorMessage = "Connect to the remote server before searching: \(targetPath)"
+                return
+            }
+            targetURL = remoteURL
+            remoteProvider = connection.provider
+        } else {
+            targetURL = URL(fileURLWithPath: (targetPath as NSString).expandingTildeInPath)
+            remoteProvider = nil
+            var isDir: ObjCBool = false
+            let exists = FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir)
+            guard exists && isDir.boolValue else {
+                errorMessage = "Choose an existing directory in Search in: \(targetPath)"
+                return
+            }
         }
         let staleAgeDays = staleAgeDaysIfNeeded()
         guard errorMessage == nil else { return }
@@ -127,10 +141,6 @@ final class FindFilesViewModel {
             SearchHistoryManager.shared.add(settings.searchText, for: .searchText)
         }
         savePreferences()
-        // Clear previous results
-        results.removeAll()
-        selectedResultIDs.removeAll()
-        selectedResult = nil
         searchState = .searching
         // Build search summary for export header
         var summaryParts: [String] = []
@@ -139,7 +149,7 @@ final class FindFilesViewModel {
             summaryParts.append("Name: \(nameOperator)\(settings.fileNamePattern)")
         }
         if !settings.searchText.isEmpty { summaryParts.append("Text: \(settings.searchText)") }
-        summaryParts.append(applicationLeftoversOnly ? "In: Library app data" : "In: \(targetPath)")
+        summaryParts.append("In: \(targetPath)")
         lastSearchSummary = summaryParts.joined(separator: " | ")
 
         // Build criteria
@@ -155,8 +165,13 @@ final class FindFilesViewModel {
         criteria.excludeSystemLocations = activeModule == .advanced && settings.excludeSystemLocations
         criteria.deletableOnly = activeModule == .advanced && settings.deletableOnly
         criteria.applicationLeftoversOnly = applicationLeftoversOnly
-        if criteria.applicationLeftoversOnly {
-            criteria.searchDirectories = FindFilesLeftoverSafety.searchDirectories
+        if applicationLeftoversOnly && remoteProvider == nil {
+            criteria.searchDirectories = localLeftoverRoots(within: targetURL)
+            guard !criteria.searchDirectories.isEmpty else {
+                searchState = .idle
+                errorMessage = "No application data directories exist inside the selected search path."
+                return
+            }
         }
         criteria.emptyFoldersOnly = activeModule == .advanced && settings.emptyFoldersOnly
         criteria.isArchiveOnlySearch = false
@@ -172,6 +187,14 @@ final class FindFilesViewModel {
             criteria.dateTo = settings.dateTo
         }
         applyStaleCriteria(to: &criteria, settings: settings, staleAgeDays: staleAgeDays)
+        guard errorMessage == nil else { searchState = .idle; return }
+        if let remoteProvider {
+            isRemoteSearchRunning = true
+            startStatsPolling()
+            startRemoteSearch(criteria: criteria, provider: remoteProvider)
+            return
+        }
+        isRemoteSearchRunning = false
 
         // Start async search — detached task keeps stream consumption off MainActor.
         let engine = self.engine
@@ -245,6 +268,53 @@ final class FindFilesViewModel {
         }
     }
 
+    // MARK: - Remote Search
+    private func startRemoteSearch(criteria: FindFilesCriteria, provider: any RemoteFileProvider) {
+        let remoteEngine = self.remoteEngine
+        let generation = searchGeneration
+        searchTask = Task.detached { [weak self] in
+            guard let self else { return }
+            do {
+                try await remoteEngine.search(criteria: criteria, provider: provider,
+                    passwordCallback: { @concurrent [weak self] archiveName in
+                        guard let self else { return .skip }
+                        return await self.requestArchivePassword(archiveName: archiveName)
+                    }, onResult: { [weak self] result in
+                        await MainActor.run { [weak self] in
+                            guard let self, self.searchGeneration == generation, self.searchState == .searching else { return }
+                            self.results.append(result)
+                        }
+                    })
+                let finalStats = await remoteEngine.getStats()
+                await MainActor.run { [weak self] in
+                    guard let self, self.searchGeneration == generation, self.searchState == .searching else { return }
+                    self.finishRemoteSearch(stats: finalStats, error: nil)
+                }
+            } catch {
+                let finalStats = await remoteEngine.getStats()
+                await MainActor.run { [weak self] in
+                    guard let self, self.searchGeneration == generation, self.searchState == .searching else { return }
+                    self.finishRemoteSearch(stats: finalStats, error: error)
+                }
+            }
+        }
+    }
+
+    private func finishRemoteSearch(stats: FindFilesStats, error: Error?) {
+        stopStatsPolling()
+        self.stats = stats
+        isRemoteSearchRunning = false
+        if let error {
+            searchState = .cancelled
+            errorMessage = "Remote search stopped: \(error.localizedDescription)"
+            log.error("[FindFiles] \(errorMessage ?? "remote search failed")")
+        } else {
+            searchState = .completed
+            if results.count <= 10_000 { saveResults() }
+            log.info("[FindFiles] Remote search finished: \(results.count) results, \(stats.formattedElapsed)")
+        }
+    }
+
     // MARK: - Normalize Content Search Settings
     func normalizeContentSearchSettings() {
         guard activeModule == .advanced,
@@ -261,6 +331,7 @@ final class FindFilesViewModel {
     // MARK: - Cancel Search
 
     func cancelSearch() {
+        searchGeneration = UUID()
         cancelPasswordRequest()
         guard searchState == .searching else { return }
         log.info("[FindFiles] Cancelling search")
@@ -293,7 +364,8 @@ final class FindFilesViewModel {
         statsUpdateTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self, self.searchState == .searching else { break }
-                let currentStats = await engine.getStats()
+                let currentStats = self.isRemoteSearchRunning
+                    ? await self.remoteEngine.getStats() : await engine.getStats()
                 self.stats = currentStats
                 try? await Task.sleep(for: .milliseconds(150))
             }

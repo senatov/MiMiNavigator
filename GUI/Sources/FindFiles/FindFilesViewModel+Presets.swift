@@ -38,7 +38,6 @@ extension FindFilesViewModel {
 
     func applyLargeStaleFilesPreset() {
         applyPresetDefaults(.largeStaleFiles)
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
         advancedSettings.searchInSubdirectories = true
         advancedSettings.itemTypeFilter = .filesOnly
         advancedSettings.emptyFoldersOnly = false
@@ -46,15 +45,13 @@ extension FindFilesViewModel {
         advancedSettings.fileSizeMin = "100"
         advancedSettings.fileSizeMax = ""
         advancedSettings.fileSizeUnit = .megabytes
-        advancedSettings.staleTimestampFilter = .both
+        advancedSettings.staleTimestampFilter = URL(string: searchDirectory)?.scheme?.lowercased() == "ftp" ? .modified : .both
         advancedSettings.staleAgeAmount = "12"
         advancedSettings.staleAgeUnit = .months
     }
 
     func applyApplicationLeftoversPreset() {
         applyPresetDefaults(.applicationLeftovers)
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library", isDirectory: true).path
         advancedSettings.searchInSubdirectories = false
         advancedSettings.itemTypeFilter = .filesAndFolders
         advancedSettings.emptyFoldersOnly = false
@@ -66,7 +63,6 @@ extension FindFilesViewModel {
 
     func applyEmptyStaleFoldersPreset() {
         applyPresetDefaults(.emptyStaleFolders)
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
         advancedSettings.searchInSubdirectories = true
         advancedSettings.itemTypeFilter = .foldersOnly
         advancedSettings.emptyFoldersOnly = true
@@ -80,8 +76,6 @@ extension FindFilesViewModel {
     func applyOldDownloadsPreset() {
         applyLargeStaleFilesPreset()
         advancedSettings.activePreset = .oldDownloads
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Downloads", isDirectory: true).path
         advancedSettings.useSizeFilter = false
         advancedSettings.staleTimestampFilter = .modified
         advancedSettings.staleAgeAmount = "6"
@@ -90,7 +84,6 @@ extension FindFilesViewModel {
     // MARK: - Old Installers
     func applyOldInstallersPreset() {
         applyPresetDefaults(.oldInstallers)
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
         advancedSettings.searchInSubdirectories = true
         advancedSettings.itemTypeFilter = .filesOnly
         advancedSettings.fileNamePattern = ".*\\.(dmg|pkg|xip)"
@@ -103,7 +96,6 @@ extension FindFilesViewModel {
     // MARK: - Temporary Files
     func applyTemporaryFilesPreset() {
         applyPresetDefaults(.temporaryFiles)
-        advancedSettings.searchDirectory = FileManager.default.homeDirectoryForCurrentUser.path
         advancedSettings.searchInSubdirectories = true
         advancedSettings.itemTypeFilter = .filesOnly
         advancedSettings.fileNamePattern = ".*\\.(tmp|temp|part)"

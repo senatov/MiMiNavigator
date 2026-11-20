@@ -232,8 +232,8 @@ struct FindFilesResultsView: View {
                         result.isPasswordProtected
                             ? "? Password protected archive"
                             : (result.isInsideArchive
-                                ? "Inside archive: \(result.archivePath ?? "?")\n\(result.filePath)"
-                                : result.filePath)
+                                ? "Inside archive: \(result.archivePath ?? "?")\n\(result.fileURL.isFileURL ? result.filePath : result.fileURL.absoluteString)"
+                                : (result.fileURL.isFileURL ? result.filePath : result.fileURL.absoluteString))
                     )
                 }
             }
@@ -363,7 +363,9 @@ struct FindFilesResultsView: View {
     // MARK: - Helpers
 
     private func displayedLocation(for result: FindFilesResult) -> String {
-        let parentPath = (result.filePath as NSString).deletingLastPathComponent
+        let parentPath = result.fileURL.isFileURL
+            ? (result.filePath as NSString).deletingLastPathComponent
+            : result.fileURL.deletingLastPathComponent().absoluteString
         guard result.isInsideArchive else { return parentPath }
         let archiveName = (result.archivePath as NSString?)?.lastPathComponent ?? "archive"
         return "\u{1F4E6} [\(archiveName)] \(parentPath)"

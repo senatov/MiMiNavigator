@@ -20,6 +20,12 @@ final class FindFilesResultCoordinator {
     // MARK: - Navigate
     func navigate(to result: FindFilesResult, appState: AppState) async {
         let panel = appState.focusedPanel
+        if !result.fileURL.isFileURL {
+            let destination = result.isInsideArchive ? URL(string: result.archivePath ?? "") ?? result.fileURL : result.fileURL
+            await navigate(to: destination.deletingLastPathComponent().absoluteString,
+                selecting: destination.lastPathComponent, panel: panel, appState: appState)
+            return
+        }
         guard result.isInsideArchive, let archivePath = result.archivePath else {
             await navigate(to: result.fileURL.deletingLastPathComponent().path, selecting: result.fileName, panel: panel, appState: appState)
             return

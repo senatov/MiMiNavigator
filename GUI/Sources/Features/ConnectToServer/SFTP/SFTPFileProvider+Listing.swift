@@ -16,12 +16,17 @@ extension SFTPFileProvider {
 
     @concurrent
     func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+        try await searchEntries(path).map(\.item)
+    }
+
+    @concurrent
+    func searchEntries(_ path: String) async throws -> [RemoteSearchEntry] {
         let sftp = try requireSFTPClient()
         let dirPath = normalizedListingRemotePath(path)
         let entries = try await sftp.listDirectory(atPath: dirPath)
 
         let components = entries.flatMap(\.components)
-        let items = components.compactMap { component -> RemoteFileItem? in
+        let items = components.compactMap { component -> RemoteSearchEntry? in
             let name = component.filename
             guard name != ".", name != ".." else { return nil }
 
@@ -31,7 +36,7 @@ extension SFTPFileProvider {
             let modified = modificationDate(from: component)
             let permissions = permissionString(from: component)
 
-            return RemoteFileItem(
+            let item = RemoteFileItem(
                 name: name,
                 path: fullPath,
                 isDirectory: isDirectory,
@@ -39,6 +44,7 @@ extension SFTPFileProvider {
                 modified: modified,
                 permissions: permissions
             )
+            return RemoteSearchEntry(item: item, accessed: component.attributes.accessModificationTime?.accessTime)
         }
 
         log.debug("[SFTP] listed \(items.count) items at \(dirPath) chunks=\(entries.count) components=\(components.count)")

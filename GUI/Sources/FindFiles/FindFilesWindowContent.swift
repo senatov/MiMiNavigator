@@ -30,9 +30,20 @@ struct FindFilesWindowContent: View {
                 dialogBgColor.ignoresSafeArea()
                 VStack(spacing: 0) {
                     if selectedTab == .cleanup {
+                        if viewModel.isRemoteLocation {
+                            FindFilesSearchLocation(viewModel: viewModel)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                        }
                         moduleHeader
-                        JunkFinderView(appState: appState)
-                            .frame(maxHeight: .infinity)
+                        if viewModel.isRemoteLocation {
+                            RemoteCleanupView(searchDirectory: viewModel.searchDirectory)
+                                .id(viewModel.searchDirectory)
+                                .frame(maxHeight: .infinity)
+                        } else {
+                            JunkFinderView(appState: appState)
+                                .frame(maxHeight: .infinity)
+                        }
                     } else {
                         criteriaPane
                             .frame(height: clampedCriteriaHeight(totalHeight: geometry.size.height))
@@ -148,7 +159,9 @@ struct FindFilesWindowContent: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(selectedTab == .cleanup ? "Cleanup" : "File Search")
                         .font(.headline)
-                    Text(selectedTab == .cleanup ? "Automatic review of accessible local files" : viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
+                    Text(selectedTab == .cleanup && !viewModel.isRemoteLocation
+                        ? "Automatic review of accessible local files"
+                        : viewModel.searchDirectory.isEmpty ? "Choose a location" : viewModel.searchDirectory)
                         .font(DesignTokens.Typography.path)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -221,7 +234,7 @@ struct FindFilesWindowContent: View {
             .help("Open live search results in a separate resizable window")
 
             // Show in Panel — inject results into focused panel
-            if let appState, !viewModel.results.isEmpty {
+            if let appState, !viewModel.results.isEmpty, !viewModel.isRemoteLocation {
                 DownToolbarButtonView(title: "Show in Panel", systemImage: "sidebar.squares.left", iconTint: .blue) {
                     viewModel.cancelSearch()
                     viewModel.showInPanel(appState: appState)

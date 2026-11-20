@@ -16,6 +16,7 @@ protocol RemoteFileProvider: AnyObject, Sendable {
     var mountPath: String { get }
     @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws
     @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem]
+    @concurrent func searchEntries(_ path: String) async throws -> [RemoteSearchEntry]
     /// Downloads a remote file to a local temp URL. Returns the local URL.
     @concurrent func downloadFile(remotePath: String) async throws -> URL
     /// Downloads file or directory to a specific local path. `recursive` enables dir tree copy.
@@ -25,4 +26,11 @@ protocol RemoteFileProvider: AnyObject, Sendable {
     @concurrent func createDirectory(at remotePath: String) async throws
     @concurrent func deleteItem(at remotePath: String, recursive: Bool) async throws
     @concurrent func disconnect() async
+}
+
+// MARK: - Search Listing Default
+extension RemoteFileProvider {
+    @concurrent func searchEntries(_ path: String) async throws -> [RemoteSearchEntry] {
+        try await listDirectory(path).map { RemoteSearchEntry(item: $0, accessed: nil) }
+    }
 }

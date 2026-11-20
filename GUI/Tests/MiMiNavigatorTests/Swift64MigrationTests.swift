@@ -2,8 +2,10 @@
 // MiMiNavigatorTests
 
 import FileModelKit
+import FindFilesKit
 import Foundation
 import Testing
+import XCTest
 @testable import MiMiNavigator
 
 // MARK: - Stream Copy Tests
@@ -218,4 +220,131 @@ struct GitStatusSubprocessTests {
         await store.refresh(directory: parent)
         #expect(store.state(for: repository, in: parent) == .untracked)
     }
+}
+// MARK: - Mock Remote Provider
+private final class MockRemoteSearchProvider: RemoteFileProvider, @unchecked Sendable {
+    let isConnected = true
+    let mountPath = "sftp://kira@example.test/Users/kira"
+    let entries: [String: [RemoteFileItem]]
+    let download: URL?
+    init(entries: [String: [RemoteFileItem]], download: URL? = nil) {
+        self.entries = entries
+        self.download = download
+    }
+    @concurrent func connect(host: String, port: Int, user: String, password: String, remotePath: String) async throws {}
+    @concurrent func listDirectory(_ path: String) async throws -> [RemoteFileItem] {
+        guard let items = entries[path] else { throw CocoaError(.fileNoSuchFile) }
+        return items
+    }
+    @concurrent func downloadFile(remotePath: String) async throws -> URL {
+        guard let download else { throw CocoaError(.fileNoSuchFile) }
+        return download
+    }
+    @concurrent func downloadToLocal(remotePath: String, localPath: String, recursive: Bool) async throws {}
+    @concurrent func uploadToRemote(localPath: String, remotePath: String, recursive: Bool) async throws {}
+    @concurrent func createFile(at remotePath: String) async throws {}
+    @concurrent func createDirectory(at remotePath: String) async throws {}
+    @concurrent func deleteItem(at remotePath: String, recursive: Bool) async throws {}
+    @concurrent func disconnect() async {}
+}
+
+// MARK: - Remote Find Files Tests
+final class RemoteFindFilesTests: XCTestCase {
+    @MainActor
+    func testOriginatingRemotePathSurvivesEverySearchPreset() {
+        let path = "sftp://kira@example.test/Users/kira/Documents"
+        let model = FindFilesViewModel()
+        model.configure(searchPath: path)
+        XCTAssertEqual(model.searchDirectory, path)
+        model.applyLargeStaleFilesPreset()
+        model.applyApplicationLeftoversPreset()
+        model.applyEmptyStaleFoldersPreset()
+        model.applyOldDownloadsPreset()
+        model.applyOldInstallersPreset()
+        model.applyTemporaryFilesPreset()
+        model.applyRecentlyModifiedPreset()
+        XCTAssertEqual(model.searchDirectory, path)
+    }
+
+    @MainActor
+    func testFTPStalePresetUsesAvailableModificationDate() {
+        let model = FindFilesViewModel()
+        model.configure(searchPath: "ftp://kira@example.test/Users/kira")
+        model.applyLargeStaleFilesPreset()
+        XCTAssertEqual(model.advancedSettings.staleTimestampFilter, .modified)
+    }
+
+    func testRemoteSearchStaysInsideSelectedRoot() async throws {
+        let root = URL(string: "sftp://kira@example.test/Users/kira/Documents")!
+        let provider = MockRemoteSearchProvider(entries: [
+            "/Users/kira/Documents": [
+                RemoteFileItem(name: "notes.txt", path: "/Users/kira/Documents/notes.txt", isDirectory: false, size: 8),
+                RemoteFileItem(name: "Projects", path: "/Users/kira/Documents/Projects", isDirectory: true),
+                RemoteFileItem(name: "outside.txt", path: "/Users/kira/Other/outside.txt", isDirectory: false, size: 8)
+            ],
+            "/Users/kira/Documents/Projects": [
+                RemoteFileItem(name: "report.txt", path: "/Users/kira/Documents/Projects/report.txt", isDirectory: false, size: 12)
+            ]
+        ])
+        var criteria = FindFilesCriteria(searchDirectory: root)
+        criteria.fileNamePattern = "*.txt"
+        let results = await collect(criteria: criteria, provider: provider)
+        XCTAssertEqual(results.count, 2)
+        XCTAssertTrue(results.allSatisfy { $0.fileURL.absoluteString.hasPrefix(root.absoluteString + "/") })
+        XCTAssertTrue(results.allSatisfy { $0.filePath.hasPrefix("sftp://kira@example.test/") })
+    }
+
+    func testRemoteSearchRespectsNoSubdirectoriesAndModifiedDate() async throws {
+        let root = URL(string: "sftp://kira@example.test/Users/kira")!
+        let old = Date().addingTimeInterval(-120 * 86_400)
+        let recent = Date()
+        let provider = MockRemoteSearchProvider(entries: [
+            "/Users/kira": [
+                RemoteFileItem(name: "old.tmp", path: "/Users/kira/old.tmp", isDirectory: false, size: 1, modified: old),
+                RemoteFileItem(name: "new.tmp", path: "/Users/kira/new.tmp", isDirectory: false, size: 1, modified: recent),
+                RemoteFileItem(name: "Nested", path: "/Users/kira/Nested", isDirectory: true)
+            ],
+            "/Users/kira/Nested": [RemoteFileItem(name: "hidden.tmp", path: "/Users/kira/Nested/hidden.tmp", isDirectory: false, size: 1, modified: old)]
+        ])
+        var criteria = FindFilesCriteria(searchDirectory: root)
+        criteria.fileNamePattern = "*.tmp"
+        criteria.searchInSubdirectories = false
+        criteria.modificationOlderThanDays = 90
+        let results = await collect(criteria: criteria, provider: provider)
+        XCTAssertEqual(results.map(\.fileName), ["old.tmp"])
+    }
+
+    func testRemoteCleanupUsesSelectedRoot() async throws {
+        let root = URL(string: "sftp://kira@example.test/Users/kira/Documents")!
+        let old = Date().addingTimeInterval(-120 * 86_400)
+        let provider = MockRemoteSearchProvider(entries: [
+            "/Users/kira/Documents": [
+                RemoteFileItem(name: "old.tmp", path: "/Users/kira/Documents/old.tmp", isDirectory: false, modified: old),
+                RemoteFileItem(name: "empty", path: "/Users/kira/Documents/empty", isDirectory: true),
+                RemoteFileItem(name: "outside.tmp", path: "/Users/kira/Other/outside.tmp", isDirectory: false, modified: old)
+            ],
+            "/Users/kira/Documents/empty": []
+        ])
+        let candidates = try await RemoteCleanupScanner().scan(root: root, provider: provider) { _ in }
+        XCTAssertEqual(Set(candidates.map(\.item.name)), ["old.tmp", "empty"])
+        XCTAssertTrue(candidates.allSatisfy { $0.url.absoluteString.hasPrefix(root.absoluteString + "/") })
+    }
+
+    private func collect(criteria: FindFilesCriteria, provider: MockRemoteSearchProvider) async -> [FindFilesResult] {
+        let collector = ResultCollector()
+        let engine = RemoteFindFilesEngine()
+        do {
+            try await engine.search(criteria: criteria, provider: provider, passwordCallback: nil) { result in
+                await collector.append(result)
+            }
+        } catch {
+            XCTFail("Remote search failed: \(error)")
+        }
+        return await collector.results
+    }
+}
+
+private actor ResultCollector {
+    var results: [FindFilesResult] = []
+    func append(_ result: FindFilesResult) { results.append(result) }
 }

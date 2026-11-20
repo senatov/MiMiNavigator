@@ -8,13 +8,14 @@ extension FindFilesResultsView {
     @ViewBuilder
     func resultContextMenu(selection: Set<FindFilesResult.ID>) -> some View {
         let selected = viewModel.results.filter { selection.contains($0.id) }
-        let actionable = selected.filter { !$0.isInsideArchive && !$0.isPasswordProtected }
+        let actionable = selected.filter { $0.fileURL.isFileURL && !$0.isInsideArchive && !$0.isPasswordProtected }
         if selected.count == 1, let result = selected.first {
             Button("Go to File") {
                 if let state = appState { viewModel.goToFile(result: result, appState: state) }
             }
             .disabled(appState == nil)
             Button("Reveal in Finder") { viewModel.revealInFinder(result: result) }
+                .disabled(!result.fileURL.isFileURL)
         }
         Button(selected.count == 1 ? "Open" : "Open \(selected.count) Items") {
             viewModel.openResults(actionable)

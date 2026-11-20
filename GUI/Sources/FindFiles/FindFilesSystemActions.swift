@@ -20,7 +20,7 @@ enum FindFilesSystemActions {
     }
 
     static func copyPaths(_ results: [FindFilesResult]) {
-        let value = results.map(\.filePath).joined(separator: "\n")
+        let value = results.map { $0.fileURL.isFileURL ? $0.filePath : $0.fileURL.absoluteString }.joined(separator: "\n")
         guard !value.isEmpty else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
@@ -46,7 +46,7 @@ actor FindFilesExportWriter {
             ""
         ]
         for result in results {
-            var line = result.filePath
+            var line = result.fileURL.isFileURL ? result.filePath : result.fileURL.absoluteString
             if let context = result.matchContext, let lineNumber = result.lineNumber {
                 line += ":\(lineNumber): \(context)"
             }
