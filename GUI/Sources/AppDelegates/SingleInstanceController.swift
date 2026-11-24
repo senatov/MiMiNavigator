@@ -13,7 +13,8 @@ import Foundation
 final class SingleInstanceController {
     static let shared = SingleInstanceController()
     private var lockFileDescriptor: Int32 = -1
-    private let lockFilePath = "/private/tmp/Senatov.MiMiNavigator.instance.lock"
+    private let lockFilePath = FileManager.default.temporaryDirectory
+        .appendingPathComponent("Senatov.MiMiNavigator.instance.lock").path
     private init() {}
 
     // MARK: - Acquire
@@ -25,12 +26,15 @@ final class SingleInstanceController {
         }
         #endif
         guard lockFileDescriptor == -1 else { return true }
-        let descriptor = open(lockFilePath, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+        let descriptor = open(lockFilePath, O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, S_IRUSR | S_IWUSR)
         guard descriptor >= 0 else {
-            log.error("[SingleInstance] cannot open lock file errno=\(errno)")
+            log.error("[SingleInstance] cannot open lock file path=\(lockFilePath) errno=\(errno)")
             return false
         }
         guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else {
+            if errno != EWOULDBLOCK {
+                log.error("[SingleInstance] cannot lock file path=\(lockFilePath) errno=\(errno)")
+            }
             close(descriptor)
             return false
         }
