@@ -69,13 +69,15 @@ extension BatchOpsCoord {
 
     // MARK: - Remote download
 
+    @discardableResult
     func performRemoteDownload(
         files: [CustomFile],
         sourcePanel: FavPanelSide,
         destination: URL,
         appState: AppState,
-        moveSource: Bool = false
-    ) async {
+        moveSource: Bool = false,
+        renameOnConflict: Bool = false
+    ) async -> Bool {
         let manager = RemoteConnectionManager.shared
         guard let conn = manager.connection(for: appState.url(for: sourcePanel)) else {
             log.error("[BatchOps] remote download — no active connection")
@@ -84,7 +86,7 @@ extension BatchOpsCoord {
                 message: "No active SFTP/FTP connection.",
                 style: .warning
             )
-            return
+            return false
         }
 
         let totalItems = files.count
@@ -115,7 +117,9 @@ extension BatchOpsCoord {
             }
 
             let remotePath = file.pathStr
-            let localURL = destination.appendingPathComponent(file.nameStr, isDirectory: file.isDirectory)
+            let localURL = renameOnConflict
+                ? UniqueNameGen.resolve(name: file.nameStr, in: destination)
+                : destination.appendingPathComponent(file.nameStr, isDirectory: file.isDirectory)
             let stagedURL = destination.appendingPathComponent(".mimi-download-\(UUID().uuidString)")
             panel.updateStatus("[\(index + 1)/\(totalItems)] \(file.nameStr)")
 
@@ -172,6 +176,7 @@ extension BatchOpsCoord {
         if moveSource {
             await appState.refreshRemoteFiles(for: sourcePanel)
         }
+        return !cancelledDownload && fail == 0 && ok == totalItems
     }
 
     // MARK: - Remote upload

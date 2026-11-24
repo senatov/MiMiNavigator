@@ -48,9 +48,13 @@ final class DragDropManager {
     }
 
     nonisolated static func isNoOpTransfer(sourceURLs: [URL], destination: URL) -> Bool {
-        let destinationPath = destination.standardizedFileURL.path
         return !sourceURLs.isEmpty && sourceURLs.allSatisfy {
-            $0.deletingLastPathComponent().standardizedFileURL.path == destinationPath
+            let parent = $0.deletingLastPathComponent()
+            if AppState.isRemotePath(parent) || AppState.isRemotePath(destination) {
+                return AppState.remoteOrigin(from: parent.absoluteString) == AppState.remoteOrigin(from: destination.absoluteString)
+                    && NSString(string: parent.path).standardizingPath == NSString(string: destination.path).standardizingPath
+            }
+            return parent.standardizedFileURL == destination.standardizedFileURL
         }
     }
 
@@ -127,7 +131,7 @@ final class DragDropManager {
         let file = files[rowIndex]
         guard !ParentDirectoryEntry.isParentEntry(file) else { return nil }
         guard file.isDirectory || file.isSymbolicDirectory else { return nil }
-        return file.urlValue
+        return appState.remoteURL(for: file.pathStr, on: panelSide) ?? file.urlValue
     }
 
     // MARK: - Prepare Transfer
@@ -138,7 +142,10 @@ final class DragDropManager {
         from sourcePanelSide: FavPanelSide?
     ) {
         let resolvedDestination = resolveArchiveRootDestination(files: files, destination: destination)
-        guard !Self.isNoOpTransfer(sourceURLs: transferURLs(from: files), destination: resolvedDestination) else {
+        let sourceURLs = files.map { file in
+            sourcePanelSide.flatMap { dragAppState?.remoteURL(for: file.pathStr, on: $0) } ?? file.urlValue
+        }
+        guard !Self.isNoOpTransfer(sourceURLs: sourceURLs, destination: resolvedDestination) else {
             log.debug("[DnD] ignored no-op drop into source directory: \(resolvedDestination.standardizedFileURL.path)")
             return
         }
@@ -190,10 +197,6 @@ final class DragDropManager {
         showConfirmationDialog = false
         endDrag()
         await Task.yield()
-        if operation.sourceFiles.contains(where: { AppState.isRemotePath($0.urlValue) })
-            || AppState.isRemotePath(operation.destinationPath) {
-            try? await Task.sleep(for: .milliseconds(250))
-        }
         switch action {
             case .abort:
                 log.debug("[DnD] transfer aborted")

@@ -38,6 +38,17 @@ extension AppState {
         }
     }
 
+    // MARK: - URL for Remote Panel Item
+    func remoteURL(for path: String, on panel: FavPanelSide) -> URL? {
+        Self.remoteURL(for: path, relativeTo: url(for: panel))
+    }
+
+    nonisolated static func remoteURL(for path: String, relativeTo panelURL: URL) -> URL? {
+        guard Self.isRemotePath(panelURL), var components = URLComponents(url: panelURL, resolvingAgainstBaseURL: false) else { return nil }
+        components.path = path.hasPrefix("/") ? path : "/\(path)"
+        return components.url
+    }
+
     func path(for panel: FavPanelSide) -> String {
         switch panel {
             case .left: return leftPath

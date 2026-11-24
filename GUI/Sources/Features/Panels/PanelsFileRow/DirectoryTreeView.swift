@@ -290,7 +290,8 @@ struct DirectoryTreeView: View {
     private func drop(_ droppedFiles: [CustomFile], on file: CustomFile) -> Bool {
         guard isExpandableDirectory(file) else { return false }
         guard !droppedFiles.isEmpty else { return false }
-        dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: dragDropManager.dragSourcePanelSide)
+        let destination = appState.remoteURL(for: file.pathStr, on: panelSide) ?? file.urlValue
+        dragDropManager.prepareTransfer(files: droppedFiles, to: destination, from: dragDropManager.dragSourcePanelSide)
         return true
     }
 

@@ -79,17 +79,20 @@ final class ExternalFileDropNSView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if dragDropManager?.draggedFiles.isEmpty == false { return .copy }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         log.info("[ExternalDrop] entered urls=\(urls.count) side=\(panelSide(for: sender.draggingLocation))")
         return urls.isEmpty ? [] : .copy
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if dragDropManager?.draggedFiles.isEmpty == false { return .copy }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         return urls.isEmpty ? [] : .copy
     }
 
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        if dragDropManager?.draggedFiles.isEmpty == false { return true }
         let urls = PasteboardURLResolver.resolve(from: sender.draggingPasteboard)
         if urls.isEmpty {
             log.warning("[ExternalDrop] prepare rejected: no file URLs types=\(pasteboardTypes(sender))")

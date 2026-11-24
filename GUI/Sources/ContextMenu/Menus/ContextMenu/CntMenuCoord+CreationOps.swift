@@ -109,15 +109,29 @@ extension CntMenuCoord {
         isProcessing = true
         defer { isProcessing = false }
         let destination = getDestinationPath(for: panel, appState: appState)
-        if let remoteFiles = clipboard.remoteCopiedFiles,
-           let sourcePanel = clipboard.sourcePanel,
-           !AppState.isRemotePath(destination) {
-            await BatchOpsCoord.shared.performRemoteDownload(
-                files: remoteFiles,
-                sourcePanel: sourcePanel,
-                destination: destination,
-                appState: appState
-            )
+        if let remoteFiles = clipboard.remoteTransferFiles,
+           let sourcePanel = clipboard.sourcePanel {
+            let completed: Bool
+            if AppState.isRemotePath(destination) {
+                completed = await BatchOpsCoord.shared.performRemoteToRemoteTransfer(
+                    files: remoteFiles,
+                    destination: destination,
+                    sourcePanel: sourcePanel,
+                    appState: appState,
+                    moveSource: clipboard.isCut,
+                    renameOnConflict: !clipboard.isCut
+                )
+            } else {
+                completed = await BatchOpsCoord.shared.performRemoteDownload(
+                    files: remoteFiles,
+                    sourcePanel: sourcePanel,
+                    destination: destination,
+                    appState: appState,
+                    moveSource: clipboard.isCut,
+                    renameOnConflict: !clipboard.isCut
+                )
+            }
+            if completed && clipboard.isCut { clipboard.clear() }
             return
         }
         let operation: FileOperationOutcomePresenter.Operation = clipboard.isCut ? .move : .copy

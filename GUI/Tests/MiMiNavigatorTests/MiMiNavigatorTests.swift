@@ -188,6 +188,28 @@ final class MiMiNavigatorTests: XCTestCase {
         XCTAssertFalse(DragDropManager.isNoOpTransfer(sourceURLs: sources, destination: destination))
     }
 
+    func testRemoteDragDropDistinguishesServersWithIdenticalPaths() {
+        let source = URL(string: "sftp://alice@first.example/tmp/report.txt")!
+        let sameServer = URL(string: "sftp://alice@first.example/tmp")!
+        let otherServer = URL(string: "sftp://bob@second.example/tmp")!
+        XCTAssertTrue(DragDropManager.isNoOpTransfer(sourceURLs: [source], destination: sameServer))
+        XCTAssertFalse(DragDropManager.isNoOpTransfer(sourceURLs: [source], destination: otherServer))
+    }
+
+    func testRemoteDropTargetKeepsPanelConnection() {
+        let panel = URL(string: "sftp://bob@second.example/tmp")!
+        let target = AppState.remoteURL(for: "/tmp/archive folder", relativeTo: panel)
+        XCTAssertEqual(target?.host, "second.example")
+        XCTAssertEqual(target?.user, "bob")
+        XCTAssertEqual(target?.path, "/tmp/archive folder")
+    }
+
+    func testRepeatedRemotePasteGetsNextAvailableName() {
+        let existing: Set<String> = ["report.log", "report (2).log", "report (3).log"]
+        XCTAssertEqual(RemoteTransferNameResolver.uniqueName("report.log", isDirectory: false, existingNames: existing), "report (4).log")
+        XCTAssertEqual(RemoteTransferNameResolver.uniqueName("folder", isDirectory: true, existingNames: ["folder"]), "folder (2)")
+    }
+
     func testArchiveIconFamiliesAndEncryptedOverride() {
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "zip", isEncrypted: false), "ArchiveSystem")
         XCTAssertEqual(SmartIconService.archiveIconAssetName(for: "dmg", isEncrypted: false), "DiskImageInstaller")

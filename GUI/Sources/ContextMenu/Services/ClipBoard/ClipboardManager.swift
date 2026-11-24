@@ -28,8 +28,8 @@ final class ClipboardManager {
     var hasContent: Bool { internalClipboardIsCurrent || hasExternalFileURLs }
     var isCut: Bool { operation == .cut }
     var isCopy: Bool { operation == .copy }
-    var remoteCopiedFiles: [CustomFile]? {
-        guard internalClipboardIsCurrent, operation == .copy,
+    var remoteTransferFiles: [CustomFile]? {
+        guard internalClipboardIsCurrent, operation != nil,
               !copiedFiles.isEmpty,
               copiedFiles.allSatisfy({ AppState.isRemotePath($0.urlValue) }) else { return nil }
         return copiedFiles

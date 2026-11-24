@@ -19,10 +19,6 @@ final class DragNSView: NSView, NSDraggingSource {
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
     private var mouseUpMonitor: Any?
-    var pendingRemoteDrag: Task<Void, Never>?
-    var pendingRemoteDragKey: [String]?
-    var stagedRemoteDrag: (key: [String], urls: [URL], expires: Date)?
-    var latestRemoteDragEvent: NSEvent?
     private var isToParentContact = false
     private var lastLoggedHoverSide: FavPanelSide?
     private var lastLoggedTargetPath: String?
@@ -81,7 +77,6 @@ final class DragNSView: NSView, NSDraggingSource {
 
     // MARK: - Mouse Down
     private func handleMouseDown(_ event: NSEvent) {
-        latestRemoteDragEvent = nil
         guard canStartPanelDrag else { return }
         guard hasWindowContext(for: event) else { return }
         guard event.type == .leftMouseDown,
@@ -146,9 +141,6 @@ final class DragNSView: NSView, NSDraggingSource {
         guard expandedBounds(tolerance: DragNSViewUI.dragStartTolerance).contains(currentPoint) else { return false }
         guard passedDragThreshold(from: mouseDownPoint, to: currentWindowPoint) else { return false }
         guard !cachedSelection.isEmpty else { return false }
-        if cachedSelection.contains(where: { AppState.isRemotePath($0.urlValue) }) {
-            return handleRemoteDrag(event)
-        }
         beginDrag(with: cachedSelection, urls: cachedSelection.map(\.urlValue), event: event)
         return true
     }
@@ -224,7 +216,8 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     private func resolveDropDestination(side: FavPanelSide, targetURL: URL?, appState: AppState) -> URL {
-        targetURL ?? appState.url(for: side)
+        guard let targetURL else { return appState.url(for: side) }
+        return appState.remoteURL(for: targetURL.path, on: side) ?? targetURL
     }
 
     func resolveToParentDestination(
@@ -390,7 +383,6 @@ final class DragNSView: NSView, NSDraggingSource {
     }
 
     func resetDragState() {
-        latestRemoteDragEvent = nil
         dragState = DragState(startPoint: nil, didStart: false, isResize: false)
         cachedSelection = []
         isToParentContact = false

@@ -8,25 +8,26 @@ import Foundation
 // MARK: - Remote to Remote Transfer
 extension BatchOpsCoord {
     // MARK: - Transfer Between Remote Directories
+    @discardableResult
     func performRemoteToRemoteTransfer(
         files: [CustomFile],
         destination: URL,
         sourcePanel: FavPanelSide?,
         appState: AppState,
-        moveSource: Bool = false
-    ) async {
+        moveSource: Bool = false,
+        renameOnConflict: Bool = false
+    ) async -> Bool {
         let operation: FileOperationOutcomePresenter.Operation = moveSource ? .move : .copy
-        guard let connection = RemoteConnectionManager.shared.connection(for: destination) else {
+        let manager = RemoteConnectionManager.shared
+        guard let sourcePanel,
+              let sourceConnection = manager.connection(for: appState.url(for: sourcePanel)),
+              let destinationConnection = manager.connection(for: destination) else {
             FileOperationOutcomePresenter.failure(operation, message: "No active SFTP/FTP connection.")
-            return
-        }
-        let origin = AppState.remoteOrigin(from: connection.provider.mountPath)
-        guard AppState.remoteOrigin(from: destination.absoluteString) == origin,
-              sourcePanel.map({ AppState.remoteOrigin(from: appState.url(for: $0).absoluteString) == origin }) ?? true else {
-            FileOperationOutcomePresenter.failure(operation, message: "The source and destination must use the active remote connection.")
-            return
+            return false
         }
         let destinationPath = destination.path.isEmpty ? "/" : destination.path
+        let sameServer = AppState.remoteOrigin(from: appState.url(for: sourcePanel).absoluteString)
+            == AppState.remoteOrigin(from: destination.absoluteString)
         let progress = ProgressPanel.shared
         progress.showFileOp(
             icon: moveSource ? "arrow.right.doc.fill" : "doc.on.doc.fill",
@@ -43,16 +44,38 @@ extension BatchOpsCoord {
                 progress.appendLog("⛔ Cancelled")
                 break
             }
-            let targetPath = destinationPath == "/" ? "/\(file.nameStr)" : destinationPath + "/\(file.nameStr)"
+            var targetPath = destinationPath == "/" ? "/\(file.nameStr)" : destinationPath + "/\(file.nameStr)"
             progress.updateStatus("[\(index + 1)/\(files.count)] \(file.nameStr)")
             do {
-                guard file.pathStr != targetPath,
-                      !file.isDirectory || !destinationPath.hasPrefix(file.pathStr + "/") else {
+                let serverMove = moveSource && sameServer ? sourceConnection.provider as? SFTPFileProvider : nil
+                var existingNames: Set<String> = []
+                if renameOnConflict || serverMove != nil {
+                    let existing = try await destinationConnection.provider.listDirectory(destinationPath)
+                    existingNames = Set(existing.map(\.name))
+                }
+                if renameOnConflict {
+                    let targetName = RemoteTransferNameResolver.uniqueName(file.nameStr, isDirectory: file.isDirectory, existingNames: existingNames)
+                    targetPath = destinationPath == "/" ? "/\(targetName)" : destinationPath + "/\(targetName)"
+                }
+                guard !sameServer || file.pathStr != targetPath,
+                      !sameServer || !file.isDirectory || !destinationPath.hasPrefix(file.pathStr + "/") else {
                     throw RemoteProviderError.downloadFailed("Destination is the source or inside the source directory")
                 }
-                try await copyRemoteItem(file, to: targetPath, using: connection.provider)
-                if moveSource {
-                    try await connection.provider.deleteItem(at: file.pathStr, recursive: file.isDirectory)
+                var movedOnServer = false
+                if let serverMove, !existingNames.contains((targetPath as NSString).lastPathComponent) {
+                    do {
+                        try await serverMove.moveItem(at: file.pathStr, to: targetPath)
+                        movedOnServer = true
+                    } catch {
+                        log.warning("[BatchOps] server-side move unavailable; copying instead: \(error.localizedDescription)")
+                    }
+                }
+                if !movedOnServer {
+                    try await copyRemoteItem(file, to: targetPath, from: sourceConnection.provider, using: destinationConnection.provider)
+                    if moveSource {
+                        guard !progress.isCancelled else { break }
+                        try await sourceConnection.provider.deleteItem(at: file.pathStr, recursive: file.isDirectory)
+                    }
                 }
                 succeeded += 1
                 progress.appendLog("\(moveSource ? "➡" : "📄") \(file.nameStr)")
@@ -77,20 +100,26 @@ extension BatchOpsCoord {
             FileOperationOutcomePresenter.success(operation, itemCount: succeeded)
         }
         for panel in [FavPanelSide.left, .right] where appState.isRemotePanel(panel) {
-            let panelPath = appState.url(for: panel).path
-            if panelPath == destinationPath || moveSource && panel == sourcePanel {
+            let panelURL = appState.url(for: panel)
+            if panelURL == destination || moveSource && panel == sourcePanel {
                 await appState.refreshRemoteFiles(for: panel)
             }
         }
+        return !progress.isCancelled && failed == 0 && succeeded == files.count
     }
 
     // MARK: - Stage One Remote Item
-    private func copyRemoteItem(_ file: CustomFile, to targetPath: String, using provider: any RemoteFileProvider) async throws {
+    private func copyRemoteItem(
+        _ file: CustomFile,
+        to targetPath: String,
+        from source: any RemoteFileProvider,
+        using destination: any RemoteFileProvider
+    ) async throws {
         let stagingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("mimi-remote-transfer-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: stagingDirectory) }
         let stagedItem = stagingDirectory.appendingPathComponent(file.nameStr, isDirectory: file.isDirectory)
-        try await provider.downloadToLocal(remotePath: file.pathStr, localPath: stagedItem.path, recursive: file.isDirectory)
-        try await provider.uploadToRemote(localPath: stagedItem.path, remotePath: targetPath, recursive: file.isDirectory)
+        try await source.downloadToLocal(remotePath: file.pathStr, localPath: stagedItem.path, recursive: file.isDirectory)
+        try await destination.uploadToRemote(localPath: stagedItem.path, remotePath: targetPath, recursive: file.isDirectory)
     }
 }

@@ -50,7 +50,8 @@ final class DropNSView: NSView {
     }
 
     override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        !PasteboardURLResolver.resolve(from: sender.draggingPasteboard).isEmpty
+        dragDropManager?.draggedFiles.isEmpty == false
+            || !PasteboardURLResolver.resolve(from: sender.draggingPasteboard).isEmpty
     }
 
     override func draggingExited(_ sender: NSDraggingInfo?) {

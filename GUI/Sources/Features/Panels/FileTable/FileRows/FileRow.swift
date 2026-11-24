@@ -174,7 +174,7 @@ struct FileRow: View, Equatable {
             isDropTargeted = targeted
         }
         if targeted {
-            dragDropManager.setDropTarget(file.urlValue)
+            dragDropManager.setDropTarget(appState.remoteURL(for: file.pathStr, on: panelSide) ?? file.urlValue)
         }
     }
 
@@ -188,13 +188,17 @@ struct FileRow: View, Equatable {
             log.warning("[FileRow] drop rejected: empty payload")
             return false
         }
-        let droppedPaths = Set(droppedFiles.map { $0.urlValue.path })
-        guard !droppedPaths.contains(file.urlValue.path) else {
+        let destination = appState.remoteURL(for: file.pathStr, on: panelSide) ?? file.urlValue
+        let sourcePanel = dragDropManager.dragSourcePanelSide
+        let droppedURLs = droppedFiles.map { droppedFile in
+            sourcePanel.flatMap { appState.remoteURL(for: droppedFile.pathStr, on: $0) } ?? droppedFile.urlValue
+        }
+        guard !droppedURLs.contains(destination) else {
             log.warning("[FileRow] drop rejected: self-drop")
             return false
         }
         log.info("[FileRow] drop accepted: \(droppedFiles.count) → '\(file.nameStr)'")
-        dragDropManager.prepareTransfer(files: droppedFiles, to: file.urlValue, from: dragDropManager.dragSourcePanelSide)
+        dragDropManager.prepareTransfer(files: droppedFiles, to: destination, from: dragDropManager.dragSourcePanelSide)
         return true
     }
 

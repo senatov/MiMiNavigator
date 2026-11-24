@@ -22,35 +22,42 @@ struct RemoteConnectionsDropdown: View {
 
     @State private var store = RemoteServerStore.shared
     @State private var manager = RemoteConnectionManager.shared
+    @State private var isPopoverPresented = false
     private var servers: [RemoteServer] { store.servers }
 
 
     // MARK: - Body
     var body: some View {
-        Menu {
-            if servers.isEmpty {
-                Text("No servers configured")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            } else {
-                Section("Servers") {
-                    ForEach(servers) { server in
-                        serverMenuRow(server)
-                    }
-                }
-            }
-            Divider()
-            Button {
-                ConnectToServerCoordinator.shared.open()
-            } label: {
-                Label("Manage Connections…", systemImage: "slider.horizontal.3")
-            }
+        Button {
+            isPopoverPresented.toggle()
         } label: {
             dropdownLabel
         }
-        .menuStyle(.borderlessButton)
+        .buttonStyle(.plain)
         .controlSize(.small)
         .help("Remote connections")
+        .popover(isPresented: $isPopoverPresented, arrowEdge: .bottom) {
+            RemoteConnectionsPopoverView(
+                servers: servers,
+                isConnected: { manager.hasConnection(for: $0) },
+                onOpen: { server in
+                    isPopoverPresented = false
+                    navigateActivePanel(to: server)
+                },
+                onConnect: { server in
+                    isPopoverPresented = false
+                    connectServer(server)
+                },
+                onDisconnect: { server in
+                    isPopoverPresented = false
+                    disconnectServer(server)
+                },
+                onManage: {
+                    isPopoverPresented = false
+                    ConnectToServerCoordinator.shared.open()
+                }
+            )
+        }
     }
 
 
@@ -65,56 +72,6 @@ struct RemoteConnectionsDropdown: View {
                 .lineLimit(1)
         }
         .topDropdownLabelSurface()
-    }
-
-
-    // MARK: - Server Menu Row
-    @ViewBuilder
-    private func serverMenuRow(_ server: RemoteServer) -> some View {
-        let connected = manager.hasConnection(for: server)
-
-        if connected {
-            connectedServerSubmenu(server)
-        } else {
-            disconnectedServerButton(server)
-        }
-    }
-
-
-    // MARK: - Connected Server (submenu: Navigate / Disconnect)
-    private func connectedServerSubmenu(_ server: RemoteServer) -> some View {
-        Menu {
-            Button {
-                navigateActivePanel(to: server)
-            } label: {
-                Label("Open in Active Panel", systemImage: "folder")
-            }
-            Button {
-                disconnectServer(server)
-            } label: {
-                Label("Disconnect", systemImage: "xmark.circle")
-            }
-        } label: {
-            Label {
-                Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
-            } icon: {
-                ConnectionStatusIcon(kind: .lamp, isActive: true)
-            }
-        }
-    }
-
-
-    // MARK: - Disconnected Server (single action: connect)
-    private func disconnectedServerButton(_ server: RemoteServer) -> some View {
-        Button {
-            connectServer(server)
-        } label: {
-            Label {
-                Text("\(server.displayName) · \(server.remoteProtocol.rawValue)")
-            } icon: {
-                ConnectionStatusIcon(kind: .lamp, isActive: false)
-            }
-        }
     }
 
 
