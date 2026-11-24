@@ -309,6 +309,7 @@ final class AppState {
 
     // MARK: - Flags
     var isNavigatingFromHistory = false
+    var historyNavigationInProgress: Set<FavPanelSide> = []
     var navigatingPanel: FavPanelSide? = nil
 
     // MARK: - Selection (bridge)

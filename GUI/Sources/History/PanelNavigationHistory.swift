@@ -108,7 +108,11 @@ final class PanelNavigationHistory {
 
         log.debug("\(#function) panel=\(panel) path=\(normalized.path) currentIndex=\(currentIndex) historyCount=\(history.count)")
 
-        // If we're not at the end, truncate forward history
+        // A redundant visit must not erase the forward path.
+        if currentPath == normalized {
+            log.debug("\(#function) panel=\(panel) skip duplicate current: \(normalized)")
+            return
+        }
         if currentIndex < history.count - 1 {
             log.debug("\(#function) truncating forward history from index \(currentIndex + 1)")
             history = Array(history.prefix(currentIndex + 1))
@@ -116,14 +120,7 @@ final class PanelNavigationHistory {
             updateNavigationState()
         }
 
-        // Don't add duplicate of current path
-        if currentPath == normalized {
-            log.debug("\(#function) panel=\(panel) skip duplicate current: \(normalized)")
-            return
-        }
-
         if record {
-            history.removeAll { $0.standardizedFileURL == normalized }
             history.append(normalized)
             currentIndex = history.count - 1
 
@@ -257,23 +254,18 @@ final class PanelNavigationHistory {
         else {
             return
         }
-        let storedCurrentPath = hist.indices.contains(idx) ? hist[idx] : nil
-        // Validate paths exist (allow remote paths through)
-        let loadedHistory = hist.compactMap { path in
+        let loadedEntries = hist.enumerated().compactMap { index, path -> (Int, URL)? in
             let url = AppState.url(fromPathString: path)
             if AppState.isRemotePath(url) {
-                return url
+                return (index, url)
             }
             var isDir: ObjCBool = false
             if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
-                return url
+                return (index, url)
             }
             return nil
         }
-        let loadedCurrentPath = storedCurrentPath.flatMap { storedPath in
-            loadedHistory.first { AppState.pathString(for: $0) == storedPath }?.standardizedFileURL
-        }
-        history = Self.deduplicatedKeepingLatest(loadedHistory)
+        history = loadedEntries.map { $0.1 }
         let snapshotData = (data["snapshots"] as? String).flatMap { Data(base64Encoded: $0) }
             ?? data["snapshots"] as? Data
         if let snapshotData {
@@ -284,21 +276,12 @@ final class PanelNavigationHistory {
         // Adjust index if needed
         if history.isEmpty {
             currentIndex = -1
-        } else if let loadedCurrentPath,
-                  let restoredIndex = history.firstIndex(where: { $0.standardizedFileURL == loadedCurrentPath }) {
+        } else if let restoredIndex = loadedEntries.firstIndex(where: { $0.0 == idx }) {
             currentIndex = restoredIndex
         } else {
             currentIndex = history.count - 1
         }
         updateNavigationState()
-    }
-
-    // MARK: - Deduplicate History
-    private static func deduplicatedKeepingLatest(_ urls: [URL]) -> [URL] {
-        var seen = Set<String>()
-        return urls.reversed().filter {
-            seen.insert(AppState.pathString(for: $0.standardizedFileURL)).inserted
-        }.reversed()
     }
 
     private func pruneSnapshots() {

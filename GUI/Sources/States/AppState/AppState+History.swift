@@ -16,7 +16,13 @@ extension AppState {
         selectionsHistory.setSnapshot(snapshot, for: currentURL)
     }
 
-    func navigateToHistory(_ url: URL, on panel: FavPanelSide) async {
+    @discardableResult
+    func navigateToHistory(_ url: URL, on panel: FavPanelSide, recordVisit: Bool = true) async -> Bool {
+        if Self.isRemotePath(url) {
+            guard RemoteConnectionManager.shared.connection(for: url) != nil else { return false }
+        } else {
+            guard Self.isExistingDirectory(url.path) else { return false }
+        }
         captureHistoryState(for: panel)
         let snapshot = navigationHistory(for: panel).snapshot(for: url)
             ?? selectionsHistory.snapshot(for: url)
@@ -35,20 +41,37 @@ extension AppState {
         isNavigatingFromHistory = true
         defer { isNavigatingFromHistory = false }
         await navigateToDirectory(Self.pathString(for: url), on: panel)
+        let arrived = Self.isRemotePath(url)
+            ? Self.remoteOrigin(from: self.url(for: panel).absoluteString) == Self.remoteOrigin(from: url.absoluteString)
+                && self.url(for: panel).path == url.path
+            : PathUtils.areEqual(path(for: panel), url.path)
+        guard arrived else { return false }
+        if recordVisit { navigationHistory(for: panel).navigateTo(url) }
         guard let snapshot, let selectedPath = snapshot.selectedPath,
-              path(for: panel) == Self.pathString(for: url) else { return }
+              path(for: panel) == Self.pathString(for: url) else { return true }
         selectFileByURL(Self.url(fromPathString: selectedPath), on: panel)
+        return true
     }
 
     func navigateBackInPanelHistory(on panel: FavPanelSide) async {
+        guard historyNavigationInProgress.insert(panel).inserted else { return }
+        defer { historyNavigationInProgress.remove(panel) }
         captureHistoryState(for: panel)
         guard let target = navigationHistory(for: panel).goBack() else { return }
-        await navigateToHistory(target, on: panel)
+        if !(await navigateToHistory(target, on: panel, recordVisit: false)) {
+            _ = navigationHistory(for: panel).goForward()
+            log.warning("[History] back navigation failed; restored history position panel=\(panel)")
+        }
     }
 
     func navigateForwardInPanelHistory(on panel: FavPanelSide) async {
+        guard historyNavigationInProgress.insert(panel).inserted else { return }
+        defer { historyNavigationInProgress.remove(panel) }
         captureHistoryState(for: panel)
         guard let target = navigationHistory(for: panel).goForward() else { return }
-        await navigateToHistory(target, on: panel)
+        if !(await navigateToHistory(target, on: panel, recordVisit: false)) {
+            _ = navigationHistory(for: panel).goBack()
+            log.warning("[History] forward navigation failed; restored history position panel=\(panel)")
+        }
     }
 }

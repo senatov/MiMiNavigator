@@ -27,15 +27,15 @@ struct BreadCrumbToolBar: View {
 
     private enum Metrics {
         static let groupSpacing: CGFloat = 6
-        static let iconSize: CGFloat = 15
-        static let buttonSize: CGFloat = 28
-        static let raisedButtonHeight: CGFloat = 24
+        static let iconSize: CGFloat = 17
+        static let buttonSize: CGFloat = 30
+        static let raisedButtonHeight: CGFloat = 27
         static let raisedCornerRadius: CGFloat = 7
     }
 
     private enum Palette {
         static let activeIcon = Color(nsColor: .labelColor)
-        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.72)
+        static let inactiveIcon = Color(nsColor: .labelColor).opacity(0.88)
         static let historyIcon = Color(#colorLiteral(red: 0.07843137255, green: 0.3764705882, blue: 0.7058823529, alpha: 1))
         static let favoritesIcon = Color(#colorLiteral(red: 0.6980392157, green: 0.3137254902, blue: 0.04705882353, alpha: 1))
         static let hoverTint = Color(#colorLiteral(red: 0.3058823529, green: 0.1450980392, blue: 0.5294117647, alpha: 1))
@@ -87,8 +87,9 @@ struct BreadCrumbToolBar: View {
     // MARK: - Back Button
     private func backButton() -> some View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
+            && !appState.historyNavigationInProgress.contains(panelSide)
         return ToolBarIconButton(
-            iconName: "arrowshape.turn.up.backward",
+            iconName: "chevron.left",
             iconColor: iconColor,
             surfaceTint: Color.accentColor,
             isEnabled: canGoBack,
@@ -121,8 +122,9 @@ struct BreadCrumbToolBar: View {
     // MARK: - Forward Button
     private func forwardButton() -> some View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
+            && !appState.historyNavigationInProgress.contains(panelSide)
         return ToolBarIconButton(
-            iconName: "arrowshape.turn.up.forward",
+            iconName: "chevron.right",
             iconColor: iconColor,
             surfaceTint: Color.accentColor,
             isEnabled: canGoForward,
@@ -246,8 +248,8 @@ struct BreadCrumbToolBar: View {
         var body: some View {
             Button(action: action) {
                 Image(systemName: iconName)
-                    .font(.system(size: Metrics.iconSize, weight: isRaised ? .medium : .light))
-                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: Metrics.iconSize, weight: isRaised ? .semibold : .medium))
+                    .symbolRenderingMode(.monochrome)
                     .foregroundStyle(isHovered ? Palette.hoverTint : iconColor)
                     .frame(
                         width: Metrics.buttonSize,
@@ -266,7 +268,7 @@ struct BreadCrumbToolBar: View {
                 y: isHovered ? 1.4 : 1
             )
             .disabled(!isEnabled)
-            .opacity(isEnabled ? 1.0 : 0.35)
+            .opacity(isEnabled ? 1.0 : 0.55)
             .onHover { hovering in
                 isHovered = hovering && isEnabled
             }
