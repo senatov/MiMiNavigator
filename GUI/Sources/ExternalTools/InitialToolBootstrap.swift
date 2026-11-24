@@ -46,9 +46,10 @@ final class InitialToolBootstrap {
             ? "Installing missing command-line tools in Terminal…"
             : "Installing Homebrew in Terminal…"
         do {
-            let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("MiMiNavigator/ToolBootstrap", isDirectory: true)
+            let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+                .appendingPathComponent("miminavigator-tool-bootstrap-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
             let statusURL = directory.appendingPathComponent("status-\(UUID().uuidString).txt")
             let scriptURL = directory.appendingPathComponent("install-\(UUID().uuidString).command")
             try script(statusURL: statusURL).write(to: scriptURL, atomically: true, encoding: .utf8)
@@ -90,15 +91,23 @@ final class InitialToolBootstrap {
                 log.info("[ToolBootstrap] installer result=\(result)")
                 try? FileManager.default.removeItem(at: statusURL)
                 try? FileManager.default.removeItem(at: scriptURL)
+                try? FileManager.default.removeItem(at: scriptURL.deletingLastPathComponent())
                 pollTask = nil
                 ExternalToolRegistry.shared.refreshAll()
                 if result == "done", !Self.needsSetup {
                     finish()
                 } else {
                     isRunning = false
-                    errorMessage = result == "done"
-                        ? "Installation finished, but one or more tools are still unavailable. Check Terminal and retry."
-                        : "Installation stopped. Check the Terminal output, then retry."
+                    switch result {
+                    case "done":
+                        errorMessage = "Installation finished, but one or more tools are still unavailable. Check Terminal and retry."
+                    case "needs-admin":
+                        errorMessage = "An administrator must install Homebrew first. You can continue without the missing tools."
+                    case "needs-owner":
+                        errorMessage = "Homebrew belongs to another account. Ask its owner or an administrator to install the missing tools."
+                    default:
+                        errorMessage = "Installation stopped. Check the Terminal output, then retry."
+                    }
                     log.error("[ToolBootstrap] \(errorMessage ?? "installation failed")")
                 }
                 return
@@ -128,11 +137,12 @@ final class InitialToolBootstrap {
             .reduce(into: [String]()) { result, formula in
                 if !result.contains(formula) { result.append(formula) }
             }
-        let formulaCommands = formulas.map { "\"$brew\" install \($0)" }.joined(separator: "\n")
+        let formulaCommands = formulas.map { "\"${brew_command[@]}\" install \($0)" }.joined(separator: "\n")
         return #"""
             #!/bin/zsh
             set -e
             status_file=\#(Self.shellQuote(statusURL.path))
+            failure_reason=failed
             TRAPEXIT() {
                 local result=$?
                 if [[ -n "${package_dir:-}" ]]; then
@@ -141,16 +151,22 @@ final class InitialToolBootstrap {
                 if (( result == 0 )); then
                     print -r -- done > "$status_file"
                 else
-                    print -r -- failed > "$status_file"
+                    print -r -- "$failure_reason" > "$status_file"
                 fi
             }
+            is_admin() { [[ " $(/usr/bin/id -Gn) " == *" admin "* ]] }
             brew=/opt/homebrew/bin/brew
             if [[ ! -x "$brew" && -x /usr/local/bin/brew ]]; then
                 brew=/usr/local/bin/brew
             fi
             if [[ ! -x "$brew" ]]; then
+                if ! is_admin; then
+                    print -u2 'An administrator must provision Homebrew for this account before tools can be installed.'
+                    failure_reason=needs-admin
+                    exit 1
+                fi
                 print 'Installing Homebrew from the official signed package…'
-                package_dir=$(mktemp -d "${TMPDIR:-/tmp}/miminavigator-homebrew.XXXXXX")
+                package_dir=$(mktemp -d /tmp/miminavigator-homebrew.XXXXXX)
                 /usr/bin/curl --fail --location --show-error --retry 3 \
                     --output "$package_dir/Homebrew.pkg" \
                     https://github.com/Homebrew/brew/releases/latest/download/Homebrew.pkg
@@ -161,6 +177,26 @@ final class InitialToolBootstrap {
                 print -u2 'Homebrew installation did not produce a usable brew executable.'
                 exit 1
             fi
+            brew_prefix=${brew%/bin/brew}
+            brew_owner=$(/usr/bin/stat -f %Su "$brew_prefix")
+            brew_command=(/usr/bin/env)
+            if [[ "$brew_owner" == root ]]; then
+                print -u2 'The Homebrew prefix is owned by root and must be repaired by an administrator.'
+                failure_reason=needs-owner
+                exit 1
+            fi
+            if [[ "$brew_owner" != "$(/usr/bin/id -un)" ]]; then
+                if ! is_admin; then
+                    print -u2 "Homebrew belongs to $brew_owner. Ask its owner or an administrator to install the missing tools."
+                    failure_reason=needs-owner
+                    exit 1
+                fi
+                brew_command=(/usr/bin/sudo -H -u "$brew_owner" /usr/bin/env)
+                log_dir=$(/usr/bin/sudo -H -u "$brew_owner" /usr/bin/mktemp -d /tmp/miminavigator-homebrew-logs.XXXXXX)
+            else
+                log_dir=$(/usr/bin/mktemp -d /tmp/miminavigator-homebrew-logs.XXXXXX)
+            fi
+            brew_command+=("HOMEBREW_LOGS=$log_dir" "$brew")
             print 'Installing MiMiNavigator command-line tools…'
             \#(formulaCommands)
             print 'MiMiNavigator command-line tools are ready.'

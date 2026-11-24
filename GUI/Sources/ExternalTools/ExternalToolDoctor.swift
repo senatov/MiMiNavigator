@@ -121,7 +121,7 @@ final class ExternalToolDoctor {
             style: .warning
         )
         if choice == (canRepair ? 1 : 0) {
-            copyCommand(tool.installHint)
+            copyCommand(repairCommand(for: tool, report: report))
             return false
         }
         guard canRepair, choice == 0 else { return false }
@@ -196,7 +196,7 @@ final class ExternalToolDoctor {
         isRepairing = true
         let verb = reinstall ? "reinstall" : "install"
         log.info("[ExternalTools] \(verb) \(formula)")
-        let result = await run(brewPath, arguments: [verb, formula])
+        let result = await installInTerminal(brewPath: brewPath, verb: verb, formula: formula)
         isRepairing = false
         showRepairResult(tool: tool, success: result.exitCode == 0, output: result.combinedOutput)
         return result.exitCode == 0
@@ -219,6 +219,11 @@ final class ExternalToolDoctor {
     private func repairCommand(for tool: ExternalTool, report: ExternalToolHealthReport) -> String {
         guard let formula = tool.brewFormula else { return tool.installHint }
         let verb = report.kind == .missing ? "install" : "reinstall"
+        if let brewPath = ExternalToolCatalog.brew.resolvedPath {
+            let prefix = URL(fileURLWithPath: brewPath).deletingLastPathComponent().deletingLastPathComponent()
+            let owner = try? FileManager.default.attributesOfItem(atPath: prefix.path)[.ownerAccountName] as? String
+            if let owner, owner != NSUserName() { return "brew as-brew-user \(verb) \(formula)" }
+        }
         return "brew \(verb) \(formula)"
     }
 
@@ -226,6 +231,100 @@ final class ExternalToolDoctor {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(command, forType: .string)
         log.info("[ExternalTools] copied '\(command)' to clipboard")
+    }
+
+    // MARK: - Install in Terminal
+    private func installInTerminal(brewPath: String, verb: String, formula: String) async -> ToolProcessResult {
+        let directory = URL(fileURLWithPath: "/tmp", isDirectory: true)
+            .appendingPathComponent("miminavigator-tool-install-\(UUID().uuidString)", isDirectory: true)
+        let scriptURL = directory.appendingPathComponent("install.command")
+        let statusURL = directory.appendingPathComponent("status.txt")
+        let protocolURL = directory.appendingPathComponent("install.log")
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+            try installScript(brewPath: brewPath, verb: verb, formula: formula, statusURL: statusURL, protocolURL: protocolURL)
+                .write(to: scriptURL, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptURL.path)
+            guard let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else {
+                return ToolProcessResult(exitCode: -1, combinedOutput: "Terminal could not be found.")
+            }
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
+            let opened: Bool = await withCheckedContinuation { continuation in
+                NSWorkspace.shared.open([scriptURL], withApplicationAt: terminalURL, configuration: configuration) { _, error in
+                    continuation.resume(returning: error == nil)
+                }
+            }
+            guard opened else { return ToolProcessResult(exitCode: -1, combinedOutput: "Terminal could not be opened.") }
+            for _ in 0..<3600 {
+                if Task.isCancelled { return ToolProcessResult(exitCode: -1, combinedOutput: "Installation was cancelled.") }
+                if let status = try? String(contentsOf: statusURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines) {
+                    let protocolText = (try? String(contentsOf: protocolURL, encoding: .utf8)) ?? ""
+                    let message: String
+                    switch status {
+                    case "needs-owner":
+                        message = "Homebrew belongs to another account. Ask its owner or an administrator to install \(formula)."
+                    case "done":
+                        message = protocolText
+                    default:
+                        message = "Installation log: \(protocolURL.path)\n\(protocolText)"
+                    }
+                    return ToolProcessResult(exitCode: status == "done" ? 0 : 1, combinedOutput: message)
+                }
+                try? await Task.sleep(for: .seconds(1))
+            }
+            return ToolProcessResult(exitCode: -1, combinedOutput: "Installation is still running in Terminal. Log: \(protocolURL.path)")
+        } catch {
+            return ToolProcessResult(exitCode: -1, combinedOutput: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Installation Script
+    private func installScript(brewPath: String, verb: String, formula: String, statusURL: URL, protocolURL: URL) -> String {
+        #"""
+        #!/bin/zsh
+        set -e
+        set -o pipefail
+        status_file=\#(Self.shellQuote(statusURL.path))
+        protocol_file=\#(Self.shellQuote(protocolURL.path))
+        failure_reason=failed
+        TRAPEXIT() {
+            local result=$?
+            if (( result == 0 )); then
+                print -r -- done > "$status_file"
+            else
+                print -r -- "$failure_reason" > "$status_file"
+            fi
+        }
+        brew=\#(Self.shellQuote(brewPath))
+        brew_prefix=${brew%/bin/brew}
+        brew_owner=$(/usr/bin/stat -f %Su "$brew_prefix")
+        if [[ "$brew_owner" == root ]]; then
+            print -u2 'The Homebrew prefix is owned by root and needs administrator repair.'
+            failure_reason=needs-owner
+            exit 1
+        fi
+        brew_command=(/usr/bin/env)
+        if [[ "$brew_owner" != "$(/usr/bin/id -un)" ]]; then
+            if [[ " $(/usr/bin/id -Gn) " != *" admin "* ]]; then
+                print -u2 "Homebrew belongs to $brew_owner. Ask its owner or an administrator to install the tool."
+                failure_reason=needs-owner
+                exit 1
+            fi
+            log_dir=$(/usr/bin/sudo -H -u "$brew_owner" /usr/bin/mktemp -d /tmp/miminavigator-homebrew-logs.XXXXXX)
+            brew_command=(/usr/bin/sudo -H -u "$brew_owner" /usr/bin/env)
+        else
+            log_dir=$(/usr/bin/mktemp -d /tmp/miminavigator-homebrew-logs.XXXXXX)
+        fi
+        brew_command+=("HOMEBREW_LOGS=$log_dir" "$brew")
+        "${brew_command[@]}" \#(verb) \#(formula) 2>&1 | /usr/bin/tee "$protocol_file"
+        """#
+    }
+
+    // MARK: - Shell Quoting
+    private static func shellQuote(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
     }
 
     // MARK: - Process
