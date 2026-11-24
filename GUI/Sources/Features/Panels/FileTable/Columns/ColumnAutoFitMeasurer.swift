@@ -12,6 +12,18 @@ import Foundation
 enum ColumnAutoFitMeasurer {
     private static let correctiveClippingThreshold: CGFloat = 0.15
 
+    // MARK: - Rendered Content Signature
+    static func renderedContentSignature(columns: [ColumnID], files: [CustomFile]) -> Int {
+        var hasher = Hasher()
+        hasher.combine(files.count)
+        for column in [ColumnID.name] + columns {
+            hasher.combine(column.rawValue)
+            let (texts, _) = textSamples(column, files: files)
+            for text in texts { hasher.combine(text) }
+        }
+        return hasher.finalize()
+    }
+
     // MARK: - Content Width
     static func contentWidth(for column: ColumnID, files: [CustomFile], nameExtraWidths: [CGFloat] = []) -> CGFloat {
         if column == .name, !nameExtraWidths.isEmpty {

@@ -61,6 +61,7 @@
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PanelHistorySequenceTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
+				Tests/MiMiNavigatorTests/ScannerPublishTests.swift,
 				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
 				Tests/MiMiNavigatorTests/ThumbnailImageLoaderTests.swift,
 				Tests/MiMiNavigatorUITests/MiMiNavigatorUITests.swift,
@@ -78,6 +79,7 @@
 				Tests/MiMiNavigatorTests/MultiRenameTests.swift,
 				Tests/MiMiNavigatorTests/PanelHistorySequenceTests.swift,
 				Tests/MiMiNavigatorTests/PresentationStateTests.swift,
+				Tests/MiMiNavigatorTests/ScannerPublishTests.swift,
 				Tests/MiMiNavigatorTests/Swift64MigrationTests.swift,
 				Tests/MiMiNavigatorTests/ThumbnailImageLoaderTests.swift,
 			);

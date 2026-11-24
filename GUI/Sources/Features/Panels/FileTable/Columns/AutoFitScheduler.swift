@@ -15,7 +15,7 @@ final class AutoFitScheduler {
     // MARK: - Fit Identity
     private struct FitIdentity: Equatable {
         let path: String
-        let filesVersion: Int
+        let contentSignature: Int
         let containerWidth: CGFloat
         let columns: [ColumnID]
         let dateFormat: String
@@ -213,7 +213,10 @@ final class AutoFitScheduler {
         let preferences = UserPreferences.shared.snapshot
         return FitIdentity(
             path: appState.path(for: panel),
-            filesVersion: panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion,
+            contentSignature: ColumnAutoFitMeasurer.renderedContentSignature(
+                columns: layout.fixedColumns.map(\.id),
+                files: appState.displayedFiles(for: panel)
+            ),
             containerWidth: layout.containerWidth,
             columns: layout.fixedColumns.map(\.id),
             dateFormat: preferences.dateFormat,

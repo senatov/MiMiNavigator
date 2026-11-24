@@ -69,12 +69,11 @@ extension DualDirectoryScanner {
     @MainActor
     func publishDisplayedFiles(_ files: [CustomFile], for side: FavPanelSide) {
         let current = displayedFilesBinding(for: side)
+        // Keep deferred row metadata before comparing a fresh scanner object with the displayed one.
+        transferCachedSizes(from: current, to: files)
         if filesAreIdentical(current, files) {
             return
         }
-        // carry over cached sizes from old objects — scanner creates fresh
-        // CustomFile instances that don't have size data computed by FileRow
-        transferCachedSizes(from: current, to: files)
         setDisplayedFiles(files, for: side)
     }
 
@@ -104,9 +103,15 @@ extension DualDirectoryScanner {
     @MainActor
     private func transferDirectorySize(from old: CustomFile, to file: CustomFile) -> Int {
         guard file.cachedDirectorySize == nil,
-              let oldSize = old.cachedDirectorySize,
-              oldSize != DirectorySizeService.unavailableSize
+              let oldSize = old.cachedDirectorySize
         else {
+            return 0
+        }
+        if oldSize == DirectorySizeService.unavailableSize && (
+            old.modifiedDate != file.modifiedDate
+                || old.cachedChildCount != file.cachedChildCount
+                || old.posixPermissions != file.posixPermissions
+        ) {
             return 0
         }
         file.cachedDirectorySize = oldSize
