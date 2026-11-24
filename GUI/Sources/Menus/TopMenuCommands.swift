@@ -38,7 +38,11 @@ import Foundation
                     let url = URL(fileURLWithPath: path)
                     CntMenuCoord.shared.openTerminal(at: url)
                 },
-                shortcut: nil
+                shortcut: nil,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !AppState.isRemotePath(appState.url(for: appState.focusedPanel))
+                }
             ),
             MenuItem(
                 title: "Open in Finder",
@@ -54,7 +58,11 @@ import Foundation
                         NSWorkspace.shared.open(URL(fileURLWithPath: path))
                     }
                 },
-                shortcut: nil
+                shortcut: nil,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !AppState.isRemotePath(appState.url(for: appState.focusedPanel))
+                }
             ),
             MenuItem(
                 title: "Toggle Panel Focus",
@@ -69,13 +77,15 @@ import Foundation
                 title: "CD Tree…",
                 icon: "list.triangle",
                 action: stub("CD Tree…"),
-                shortcut: "⌃D"
+                shortcut: "⌃D",
+                isEnabled: { false }
             ),
             MenuItem(
                 title: "Branch View (With Subdirs)",
                 icon: "arrow.triangle.branch",
                 action: stub("Branch View"),
-                shortcut: "⌃B"
+                shortcut: "⌃B",
+                isEnabled: { false }
             ),
         ])
 

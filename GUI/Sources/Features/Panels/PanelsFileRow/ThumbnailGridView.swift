@@ -212,13 +212,13 @@ private struct ThumbnailCellView: View {
             InlineRenameField(
                 text: Bindable(appState.inlineRename).editedName,
                 originalName: appState.inlineRename.originalName,
-                nameWidth: cellWidth - 4,
+                nameWidth: max(0, cellWidth - 4),
                 preservesExtension: !file.isDirectory,
                 onCommit: { commitInlineRename() },
                 onCancel: { appState.inlineRename.cancel() }
             )
             .font(.system(size: 11))
-            .frame(width: cellWidth - 4)
+            .frame(width: max(0, cellWidth - 4))
         } else {
             Text(isSelected ? file.nameStr : compactName)
                 .font(.system(size: 11))
@@ -226,7 +226,7 @@ private struct ThumbnailCellView: View {
                 .lineLimit(isSelected ? nil : 1)
                 .truncationMode(.middle)
                 .multilineTextAlignment(.center)
-                .frame(width: cellWidth - 4)
+                .frame(width: max(0, cellWidth - 4))
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel(file.nameStr)
         }

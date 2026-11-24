@@ -16,6 +16,7 @@ struct MenuItem: Identifiable, Hashable {
     let icon: String?
     let action: @MainActor @Sendable () -> Void
     let isSelected: (@MainActor @Sendable () -> Bool)?
+    let isEnabled: @MainActor @Sendable () -> Bool
     /// Optional binding to HotKeyAction — when set, shortcut text is read live from HotKeyStore.
     let hotKeyAction: HotKeyAction?
     /// Static shortcut string — used only when hotKeyAction is nil (legacy/non-rebindable items).
@@ -33,21 +34,23 @@ struct MenuItem: Identifiable, Hashable {
     }
 
     /// Primary initializer with HotKeyAction binding (live shortcut)
-    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, hotKey: HotKeyAction, isSelected: (@MainActor @Sendable () -> Bool)? = nil) {
+    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, hotKey: HotKeyAction, isSelected: (@MainActor @Sendable () -> Bool)? = nil, isEnabled: @MainActor @Sendable @escaping () -> Bool = { true }) {
         self.title = title
         self.icon = icon
         self.action = action
         self.isSelected = isSelected
+        self.isEnabled = isEnabled
         self.hotKeyAction = hotKey
         self.staticShortcut = nil
     }
 
     /// Legacy initializer with static shortcut string
-    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, shortcut: String?, isSelected: (@MainActor @Sendable () -> Bool)? = nil) {
+    init(title: String, icon: String? = nil, action: @MainActor @Sendable @escaping () -> Void, shortcut: String?, isSelected: (@MainActor @Sendable () -> Bool)? = nil, isEnabled: @MainActor @Sendable @escaping () -> Bool = { true }) {
         self.title = title
         self.icon = icon
         self.action = action
         self.isSelected = isSelected
+        self.isEnabled = isEnabled
         self.hotKeyAction = nil
         self.staticShortcut = shortcut
     }

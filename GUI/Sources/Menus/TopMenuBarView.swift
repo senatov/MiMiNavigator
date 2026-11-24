@@ -25,14 +25,14 @@ struct TopMenuBarView: View {
             HStack(spacing: 6) {
                 finderSidebarButton
                 ForEach(menuData.dropLast()) { menu in
-                    menuView(for: menu)
+                    TopMenuPopoverButton(menu: menu, tint: menuTint(for: menu))
                 }
                 RemoteConnectionsDropdown(appState: appState)
                     .padding(.leading, 12)
                 VolumesDropdown(appState: appState)
                 Spacer(minLength: 12)
                 if let helpMenu = menuData.last {
-                    menuView(for: helpMenu)
+                    TopMenuPopoverButton(menu: helpMenu, tint: menuTint(for: helpMenu))
                         .padding(.trailing, 1)
                 }
             }
@@ -71,37 +71,6 @@ struct TopMenuBarView: View {
         .keyboardFocusable()
     }
 
-        // MARK: -
-    private func menuView(for menu: MenuCategory) -> some View {
-        return Menu {
-            ForEach(menu.items) { item in
-                if let isSelected = item.isSelected {
-                    Toggle(isOn: Binding(get: isSelected, set: { _ in item.action() })) {
-                        TopSubmenuLabel(title: item.title, shortcut: item.shortcut, systemImage: item.icon, tint: submenuTint(for: item))
-                    }
-                } else {
-                    Button(action: item.action) {
-                        TopSubmenuLabel(title: item.title, shortcut: item.shortcut, systemImage: item.icon, tint: submenuTint(for: item))
-                    }
-                }
-            }
-        } label: {
-            Label {
-                Text(menu.title)
-                    .font(.callout)
-            } icon: {
-                if let icon = menu.icon {
-                    TopMenuIcon(systemImage: icon, tint: menuTint(for: menu))
-                }
-            }
-        }
-        .help("Open menu: \(menu.title)")
-        .menuStyle(.borderlessButton)
-        .controlSize(.small)
-        .buttonStyle(TopMenuButtonStyle())
-        .keyboardFocusable()
-    }
-
     // MARK: - Menu Tint
     private func menuTint(for menu: MenuCategory) -> Color {
         switch menu.title {
@@ -116,17 +85,6 @@ struct TopMenuBarView: View {
         }
     }
 
-    // MARK: - Submenu Tint
-    private func submenuTint(for item: MenuItem) -> Color {
-        let title = item.title.lowercased()
-        if title.contains("quit") || title.contains("delete") || title.contains("remove") { return .red }
-        if title.contains("mark") || title.contains("select") || title.contains("start") { return .green }
-        if title.contains("network") || title.contains("server") || title.contains("connect") { return .teal }
-        if title.contains("help") || title.contains("about") { return .purple }
-        if title.contains("settings") || title.contains("configuration") { return .orange }
-        return .blue
-    }
-    
         // MARK: - All top-level menu categories are defined here:
     private var menuData: [MenuCategory] {
             // Explicit return for clarity
@@ -139,50 +97,5 @@ struct TopMenuBarView: View {
             startMenuCategory,
             helpMenuCategory,
         ]
-    }
-}
-
-// MARK: - Top Submenu Label
-private struct TopSubmenuLabel: View {
-    let title: String
-    let shortcut: String?
-    let systemImage: String?
-    let tint: Color
-
-    // MARK: - Body
-    var body: some View {
-        HStack(spacing: 7) {
-            submenuIcon
-            Rectangle()
-                .fill(Color(nsColor: .separatorColor).opacity(0.72))
-                .frame(width: 1, height: 15)
-            Text(title)
-                .font(.callout)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Spacer(minLength: 18)
-            if let shortcut, !shortcut.isEmpty {
-                Text(shortcut)
-                    .font(.caption)
-                    .foregroundStyle(Color(nsColor: .systemBlue))
-                    .fixedSize()
-            }
-        }
-        .frame(minWidth: 230, alignment: .leading)
-    }
-
-    // MARK: - Icon
-    @ViewBuilder
-    private var submenuIcon: some View {
-        if let systemImage {
-            Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .regular))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(tint)
-                .frame(width: 17, height: 17)
-        } else {
-            Color.clear
-                .frame(width: 17, height: 17)
-        }
     }
 }

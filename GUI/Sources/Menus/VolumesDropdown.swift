@@ -29,17 +29,24 @@ struct VolumesDropdown: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var manager = RemoteConnectionManager.shared
     @State private var locations: [VolumeLocation] = []
+    @State private var isPresented = false
 
     // MARK: - Body
     var body: some View {
-        Menu {
-            menuContent
+        Button {
+            refreshLocations()
+            isPresented.toggle()
         } label: {
             TopDropdownLabel(title: "Volumes", systemImage: "externaldrive", tint: .accentColor)
         }
-        .menuStyle(.borderlessButton)
+        .buttonStyle(.plain)
         .controlSize(.small)
         .help("Mounted volumes and cloud storage")
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            menuContent
+                .padding(8)
+                .frame(minWidth: 270)
+        }
         .onAppear(perform: refreshLocations)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshLocations() }
@@ -59,35 +66,37 @@ struct VolumesDropdown: View {
     }
 
     // MARK: - Menu Content
-    @ViewBuilder
     private var menuContent: some View {
         let mounted = locations.filter { $0.kind == .mounted }
         let cloud = locations.filter { $0.kind == .cloud }
         let remote = locations.filter { $0.kind == .remote }
-        if locations.isEmpty {
-            Text("No volumes available")
-                .foregroundStyle(.secondary)
-        } else {
+        return VStack(alignment: .leading, spacing: 5) {
+            if locations.isEmpty {
+                Text("No volumes available")
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+            }
             if !mounted.isEmpty {
-                Section("Mounted Volumes") {
-                    ForEach(mounted) { location in
-                        locationButton(location, systemImage: "externaldrive.fill")
-                    }
-                }
+                locationSection("Mounted Volumes", locations: mounted, systemImage: "externaldrive.fill")
             }
             if !cloud.isEmpty {
-                Section("Cloud Storage") {
-                    ForEach(cloud) { location in
-                        locationButton(location, systemImage: "cloud.fill")
-                    }
-                }
+                locationSection("Cloud Storage", locations: cloud, systemImage: "cloud.fill")
             }
             if !remote.isEmpty {
-                Section("Remote Sessions") {
-                    ForEach(remote) { location in
-                        locationButton(location, systemImage: "network")
-                    }
-                }
+                locationSection("Remote Sessions", locations: remote, systemImage: "network")
+            }
+        }
+    }
+
+    // MARK: - Location Section
+    private func locationSection(_ title: String, locations: [VolumeLocation], systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+            ForEach(locations) { location in
+                locationButton(location, systemImage: systemImage)
             }
         }
     }
@@ -95,10 +104,24 @@ struct VolumesDropdown: View {
     // MARK: - Location Button
     private func locationButton(_ location: VolumeLocation, systemImage: String) -> some View {
         Button {
+            isPresented = false
             navigate(to: location)
         } label: {
-            Label(location.title, systemImage: systemImage)
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(.tint)
+                    .frame(width: 18)
+                    .accessibilityHidden(true)
+                Text(location.title)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .disabled(location.kind != .remote && !FileManager.default.isReadableFile(atPath: location.url.path))
     }
 
     // MARK: - Refresh Locations

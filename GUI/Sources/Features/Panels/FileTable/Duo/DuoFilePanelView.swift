@@ -398,7 +398,7 @@ extension DuoFilePanelView {
             .transition(.opacity)
             if side == .left {
                 Spacer()
-                    .frame(width: containerWidth - width)
+                    .frame(width: max(0, containerWidth - width))
                     .allowsHitTesting(false)
             }
         }

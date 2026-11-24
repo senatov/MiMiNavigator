@@ -35,7 +35,11 @@ import Foundation
                         )
                     }
                 },
-                hotKey: .packFiles
+                hotKey: .packFiles,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.filesForOperation(on: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Settings…",
@@ -47,25 +51,29 @@ import Foundation
                 title: "Unpack…",
                 icon: "archivebox.fill",
                 action: stub("Unpack…"),
-                hotKey: .unpackFiles
+                hotKey: .unpackFiles,
+                isEnabled: { false }
             ),
             MenuItem(
                 title: "Test Archive(s)",
                 icon: "checkmark.shield",
                 action: stub("Test Archive(s)"),
-                shortcut: nil
+                shortcut: nil,
+                isEnabled: { false }
             ),
             MenuItem(
                 title: "Compare By Content…",
                 icon: "doc.text.magnifyingglass",
                 action: stub("Compare By Content…"),
-                hotKey: .compareContent
+                hotKey: .compareContent,
+                isEnabled: { false }
             ),
             MenuItem(
                 title: "Synchronize Directories…",
                 icon: "arrow.triangle.2.circlepath",
                 action: stub("Synchronize Directories…"),
-                hotKey: .syncDirectories
+                hotKey: .syncDirectories,
+                isEnabled: { false }
             ),
             MenuItem(
                 title: "Quit",
@@ -88,7 +96,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.markByPattern()
                 },
-                hotKey: .markByPattern
+                hotKey: .markByPattern,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.displayedFiles(for: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Unselect Group…",
@@ -97,7 +109,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.unmarkByPattern()
                 },
-                hotKey: .unmarkByPattern
+                hotKey: .unmarkByPattern,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.markedFiles(for: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Select All",
@@ -106,7 +122,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.markAll()
                 },
-                hotKey: .markAll
+                hotKey: .markAll,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.displayedFiles(for: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Unselect All",
@@ -115,7 +135,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.unmarkAll()
                 },
-                hotKey: .unmarkAll
+                hotKey: .unmarkAll,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.markedFiles(for: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Invert Selection",
@@ -124,7 +148,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.invertMarks()
                 },
-                hotKey: .invertMarks
+                hotKey: .invertMarks,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.displayedFiles(for: appState.focusedPanel).isEmpty
+                }
             ),
             MenuItem(
                 title: "Select Same Extension",
@@ -133,6 +161,10 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.markSameExtension()
                 },
-                hotKey: .markSameExtension
+                hotKey: .markSameExtension,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return !appState.filesForOperation(on: appState.focusedPanel).isEmpty
+                }
             ),
         ])

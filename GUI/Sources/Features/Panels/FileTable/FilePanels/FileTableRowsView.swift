@@ -122,7 +122,7 @@ struct FileTableRowsView: View {
                 ForEach(rows[visibleWindow]) { file in
                     sizeAwareRow(index: indexByID[file.id] ?? 0, file: file)
                 }
-                Color.clear.frame(height: CGFloat(rows.count - visibleWindow.upperBound) * FilePanelStyle.rowHeight)
+                Color.clear.frame(height: CGFloat(max(0, rows.count - visibleWindow.upperBound)) * FilePanelStyle.rowHeight)
             }
             .padding(.top, SelectionOverlayMetrics.rowsTopInset)
             .transaction { $0.disablesAnimations = true }

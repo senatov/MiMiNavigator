@@ -42,10 +42,14 @@ import Foundation
                 action: {
                     guard let appState = AppStateProvider.shared else { return }
                     let panel = appState.focusedPanel
-                    let path = appState.path(for: panel)
-                    _ = appState.tabManager(for: panel).addTab(url: URL(fileURLWithPath: path))
+                    _ = appState.tabManager(for: panel).addTab(url: appState.url(for: panel))
                 },
-                hotKey: .newTab
+                hotKey: .newTab,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    let count = appState.tabManager(for: appState.focusedPanel).tabs.count
+                    return count < max(2, Int(UserPreferences.shared.snapshot.tabsMaxTabs))
+                }
             ),
             MenuItem(
                 title: "Duplicate Tab",
@@ -56,7 +60,12 @@ import Foundation
                     let mgr = appState.tabManager(for: panel)
                     _ = mgr.duplicateTab(mgr.activeTab.id)
                 },
-                shortcut: "⌃D"
+                shortcut: "⌃D",
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    let count = appState.tabManager(for: appState.focusedPanel).tabs.count
+                    return count < max(2, Int(UserPreferences.shared.snapshot.tabsMaxTabs))
+                }
             ),
             MenuItem(
                 title: "Close Tab",
@@ -65,7 +74,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.tabManager(for: appState.focusedPanel).closeActiveTab()
                 },
-                hotKey: .closeTab
+                hotKey: .closeTab,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return appState.tabManager(for: appState.focusedPanel).tabs.count > 1
+                }
             ),
             MenuItem(
                 title: "Next Tab",
@@ -74,7 +87,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.tabManager(for: appState.focusedPanel).selectNextTab()
                 },
-                hotKey: .nextTab
+                hotKey: .nextTab,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return appState.tabManager(for: appState.focusedPanel).tabs.count > 1
+                }
             ),
             MenuItem(
                 title: "Previous Tab",
@@ -83,7 +100,11 @@ import Foundation
                     guard let appState = AppStateProvider.shared else { return }
                     appState.tabManager(for: appState.focusedPanel).selectPreviousTab()
                 },
-                hotKey: .prevTab
+                hotKey: .prevTab,
+                isEnabled: {
+                    guard let appState = AppStateProvider.shared else { return false }
+                    return appState.tabManager(for: appState.focusedPanel).tabs.count > 1
+                }
             ),
         ])
 
