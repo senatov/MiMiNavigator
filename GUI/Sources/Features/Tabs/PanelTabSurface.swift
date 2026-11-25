@@ -15,13 +15,19 @@ struct PanelTabSurface: View {
     // MARK: - Body
     var body: some View {
         if compact {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 2,
-                bottomLeadingRadius: CGFloat(bottomRadius),
-                bottomTrailingRadius: CGFloat(bottomRadius),
-                topTrailingRadius: 2
-            )
-            .fill(selectedBackground.opacity(compactOpacity))
+            if isActive {
+                compactShape
+                    .fill(selectedBackground.opacity(isPanelFocused ? 0.45 : inactivePanelOpacity * 0.45))
+                    .glassEffect(.regular.tint(selectedBackground.opacity(isPanelFocused ? 0.7 : inactivePanelOpacity * 0.55)), in: compactShape)
+                    .overlay {
+                        compactShape.strokeBorder(
+                            isPanelFocused ? activeBorder.opacity(0.9) : inactiveBorder.opacity(0.75),
+                            lineWidth: 0.85
+                        )
+                    }
+            } else if isHovered {
+                compactShape.fill(selectedBackground.opacity(0.40))
+            }
         } else {
             surfaceFill
                 .shadow(color: tabShadowColor, radius: isFocusedSelection ? 2.8 : isActive ? 1.8 : 1.1, x: 0.7, y: 1)
@@ -30,11 +36,16 @@ struct PanelTabSurface: View {
         }
     }
 
-    // MARK: - Compact Opacity
-    private var compactOpacity: Double {
-        if isActive { return isPanelFocused ? 1 : inactivePanelOpacity }
-        return isHovered ? 0.40 : 0
+    // MARK: - Compact Shape
+    private var compactShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 2,
+            bottomLeadingRadius: CGFloat(bottomRadius),
+            bottomTrailingRadius: CGFloat(bottomRadius),
+            topTrailingRadius: 2
+        )
     }
+
     // MARK: - Surface Fill
     @ViewBuilder
     private var surfaceFill: some View {

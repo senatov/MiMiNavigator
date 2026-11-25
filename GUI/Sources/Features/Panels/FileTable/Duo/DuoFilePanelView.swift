@@ -13,6 +13,7 @@ struct DuoFilePanelView: View {
     // MARK: - Environment & State
     @Environment(AppState.self) var appState
     @Binding var isFinderSidebarVisible: Bool
+    private var tabFont = TabFontPreference()
     @State private var toolbarStore = ToolbarStore.shared  // tracks menuBarVisible changes
     @State private var previewStore = PreviewPaneStore.shared
     @State private var leftPanelWidth: CGFloat = 0
@@ -76,7 +77,9 @@ struct DuoFilePanelView: View {
     private var geometrySection: some View {
         GeometryReader { geometry in
             let panelWidth = panelsContainerWidth(for: geometry.size.width)
-            let panelsHeight = max(geometry.size.height - DuoPanelTabsSection.height, 0)
+            let font = tabFont.font
+            let tabsHeight = TabAppearance.compactTabHeight(for: font) + 4
+            let panelsHeight = max(geometry.size.height - tabsHeight, 0)
             ZStack(alignment: .leading) {
                 HStack(spacing: 0) {
                     finderSidebar(height: geometry.size.height)
@@ -88,8 +91,10 @@ struct DuoFilePanelView: View {
                                 containerHeight: panelsHeight
                             )
                             DuoPanelTabsSection(
+                                font: font,
                                 leftPanelWidth: leftPanelWidth,
-                                containerWidth: panelWidth
+                                containerWidth: panelWidth,
+                                height: tabsHeight
                             )
                         }
                         .frame(width: panelWidth, height: geometry.size.height)

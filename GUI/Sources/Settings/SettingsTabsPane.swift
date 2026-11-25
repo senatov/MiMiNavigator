@@ -3,16 +3,17 @@
 //
 // Copyright © 2026 Senatov. All rights reserved.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Tabs Settings
 struct SettingsTabsPane: View {
     @State private var prefs = UserPreferences.shared
-    @AppStorage("tabs.appearance.typeface") private var typeface = TabTypeface.system
+    @State private var fontPanel = TabFontPanel()
+    private var tabFont = TabFontPreference()
     @AppStorage("tabs.appearance.separatorColor") private var separatorColor = TabAppearance.separatorColor
     @AppStorage("tabs.appearance.separatorWidth") private var separatorWidth = TabAppearance.separatorWidth
     @AppStorage("tabs.appearance.separatorShadow") private var separatorShadow = TabAppearance.separatorShadow
-    @AppStorage("tabs.appearance.fontSize") private var fontSize = TabAppearance.fontSize
     @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
     @AppStorage("tabs.appearance.inactivePanelOpacity") private var inactivePanelOpacity = TabAppearance.inactivePanelOpacity
     @AppStorage("tabs.appearance.focusedBackground") private var focusedBackground = TabAppearance.focusedBackground
@@ -33,6 +34,7 @@ struct SettingsTabsPane: View {
 
     // MARK: - Body
     var body: some View {
+        let font = tabFont.font
         VStack(alignment: .leading, spacing: 16) {
             SettingsGroupBox {
                 VStack(spacing: 0) {
@@ -54,17 +56,15 @@ struct SettingsTabsPane: View {
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
-                    SettingsRow(label: "Tab typeface:", help: "Choose a system typeface for file panel tabs") {
-                        Picker("Tab typeface", selection: $typeface) {
-                            ForEach(TabTypeface.allCases, id: \.self) { option in
-                                Text(option.rawValue).tag(option)
+                    SettingsRow(label: "Tab font:", help: "Choose a family, typeface, and size in the macOS Fonts panel") {
+                        HStack(spacing: 10) {
+                            Button("Choose Font…") {
+                                fontPanel.show(font: font, onChange: tabFont.store)
                             }
+                            Text("\(font.displayName ?? font.fontName), \(font.pointSize.formatted()) pt")
+                                .foregroundStyle(SettingsVisualStyle.secondaryText)
                         }
-                        .labelsHidden()
-                        .frame(width: 140)
                     }
-                    Divider()
-                    sliderRow("Tab font size:", value: $fontSize, range: 11...18, format: "%.0f pt")
                     Divider()
                     sliderRow("Bottom corner radius:", value: $bottomRadius, range: 4...12, format: "%.0f pt")
                     Divider()
@@ -92,8 +92,8 @@ struct SettingsTabsPane: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Preview").font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     HStack(spacing: 14) {
-                        TabAppearancePreview(title: "Active panel", focused: true)
-                        TabAppearancePreview(title: "Inactive panel", focused: false)
+                        TabAppearancePreview(title: "Active panel", focused: true, font: font)
+                        TabAppearancePreview(title: "Inactive panel", focused: false, font: font)
                     }
                 }
             }
@@ -102,6 +102,7 @@ struct SettingsTabsPane: View {
                 DownToolbarButtonView(title: "Reset tab appearance", systemImage: "arrow.counterclockwise", iconTint: .blue) { resetAppearance() }
             }
         }
+        .onDisappear { fontPanel.close() }
     }
 
     // MARK: - Appearance Controls
@@ -130,11 +131,11 @@ struct SettingsTabsPane: View {
 
     // MARK: - Reset
     private func resetAppearance() {
-        typeface = .system
+        fontPanel.close()
+        tabFont.reset()
         separatorColor = TabAppearance.separatorColor
         separatorWidth = TabAppearance.separatorWidth
         separatorShadow = TabAppearance.separatorShadow
-        fontSize = TabAppearance.fontSize
         bottomRadius = TabAppearance.bottomRadius
         inactivePanelOpacity = TabAppearance.inactivePanelOpacity
         focusedBackground = TabAppearance.focusedBackground
@@ -148,6 +149,7 @@ struct SettingsTabsPane: View {
 private struct TabAppearancePreview: View {
     let title: String
     let focused: Bool
+    let font: NSFont
 
     // MARK: - Body
     var body: some View {
@@ -163,9 +165,9 @@ private struct TabAppearancePreview: View {
 
     // MARK: - Preview Tab
     private func tab(_ title: String, selected: Bool) -> some View {
-        TabAppearanceLabel(title: title, systemIcon: "folder", compact: true, isSelected: selected, isFocused: focused)
+        TabAppearanceLabel(title: title, systemIcon: "folder", compactFont: font, isSelected: selected, isFocused: focused)
             .padding(.horizontal, 7)
-            .frame(height: TabAppearance.compactTabHeight)
+            .frame(height: TabAppearance.compactTabHeight(for: font))
             .background {
                 PanelTabSurface(isActive: selected, isPanelFocused: focused, compact: true)
             }

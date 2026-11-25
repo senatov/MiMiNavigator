@@ -4,6 +4,7 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Horizontal tab strip in the bottom panel status bar.
 
+import AppKit
 import FileModelKit
 import SwiftUI
 
@@ -13,6 +14,7 @@ struct TabBarView: View {
 
     @Environment(AppState.self) var appState
     let panelSide: FavPanelSide
+    let font: NSFont
 
     // MARK: - Computed
 
@@ -47,6 +49,7 @@ struct TabBarView: View {
                                 }
                                 TabItemView(
                                     tab: tab,
+                                    font: font,
                                     panelSide: panelSide,
                                     isActive: tab.id == activeID,
                                     isPanelFocused: isPanelFocused,
@@ -73,10 +76,8 @@ struct TabBarView: View {
                         }
                     }
                 }
-                .frame(height: TabAppearance.stripHeight)
                 addTabButton
             }
-            .frame(height: TabAppearance.stripHeight)
             .onChange(of: activeID) { _, newID in
                 withAnimation(.easeInOut(duration: 0.12)) {
                     proxy.scrollTo(newID, anchor: .center)

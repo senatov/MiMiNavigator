@@ -89,7 +89,7 @@ struct BreadCrumbToolBar: View {
         let canGoBack = appState.navigationHistory(for: panelSide).canGoBack
             && !appState.historyNavigationInProgress.contains(panelSide)
         return ToolBarIconButton(
-            iconName: "chevron.left",
+            iconName: "arrowshape.left",
             iconColor: iconColor,
             surfaceTint: Color.accentColor,
             isEnabled: canGoBack,
@@ -124,7 +124,7 @@ struct BreadCrumbToolBar: View {
         let canGoForward = appState.navigationHistory(for: panelSide).canGoForward
             && !appState.historyNavigationInProgress.contains(panelSide)
         return ToolBarIconButton(
-            iconName: "chevron.right",
+            iconName: "arrowshape.right",
             iconColor: iconColor,
             surfaceTint: Color.accentColor,
             isEnabled: canGoForward,

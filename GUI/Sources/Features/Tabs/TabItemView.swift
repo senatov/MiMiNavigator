@@ -4,12 +4,14 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Single bottom tab with glass-friendly compact styling.
 
+import AppKit
 import SwiftUI
 
 // MARK: - Tab Item View
 struct TabItemView: View {
 
     let tab: TabItem
+    let font: NSFont
     let panelSide: FavPanelSide
     let isActive: Bool
     let isPanelFocused: Bool
@@ -31,14 +33,14 @@ struct TabItemView: View {
             TabAppearanceLabel(
                 title: tab.displayName,
                 systemIcon: tab.isArchive ? "doc.zipper" : "folder",
-                compact: true,
+                compactFont: font,
                 isSelected: isActive,
                 isFocused: isPanelFocused
             )
             .padding(.horizontal, 7)
             .padding(.trailing, reservesCloseButton ? 17 : 0)
-            .frame(minWidth: 56, maxWidth: 172, alignment: .leading)
-            .frame(height: TabAppearance.compactTabHeight)
+            .frame(minWidth: 56, maxWidth: max(172, font.pointSize * 9), alignment: .leading)
+            .frame(height: TabAppearance.compactTabHeight(for: font))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
