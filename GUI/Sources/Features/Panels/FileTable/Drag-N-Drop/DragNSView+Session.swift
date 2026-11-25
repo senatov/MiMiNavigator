@@ -57,7 +57,7 @@ extension DragNSView {
         operation: NSDragOperation
     ) {
         session.animatesToStartingPositionsOnCancelOrFail = false
-        defer { resetDragState() }
+        defer { resetDragState(); remoteDragPromises = [] }
         if handleExternalDragEnd(screenPoint: screenPoint, operation: operation) { return }
         handleInternalDragEnd(screenPoint: screenPoint)
     }

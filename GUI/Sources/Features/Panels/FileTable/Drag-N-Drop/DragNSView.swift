@@ -16,6 +16,7 @@ final class DragNSView: NSView, NSDraggingSource {
     var onMouseDownFile: ((CustomFile, ClickModifiers) -> Void)?
     var dragState = DragState(startPoint: nil, didStart: false, isResize: false)
     var cachedSelection: [CustomFile] = []
+    var remoteDragPromises: [RemoteDragFilePromise] = []
     private var mouseMonitor: Any?
     private var dragMonitor: Any?
     private var mouseUpMonitor: Any?
@@ -148,7 +149,8 @@ final class DragNSView: NSView, NSDraggingSource {
     // MARK: - Begin Drag
     func beginDrag(with files: [CustomFile], urls: [URL], event: NSEvent) {
         let mouseInView = convert(event.locationInWindow, from: nil)
-        let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView)
+        guard let promisedWriters = makeRemoteDragPromises(files: files, urls: urls) else { return }
+        let draggingItems = DragSessionBuilder.makeDraggingItems(from: urls, at: mouseInView, promisedWriters: promisedWriters)
         guard !draggingItems.isEmpty else { return }
         dragState.didStart = true
         registerDragStart(files: files)

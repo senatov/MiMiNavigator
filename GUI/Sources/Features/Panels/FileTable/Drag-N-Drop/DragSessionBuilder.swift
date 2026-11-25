@@ -13,10 +13,10 @@ struct DragSessionBuilder {
 
     /// Create dragging items positioned at the mouse location.
     /// `mouseLocation` is in the source view's coordinate system.
-    static func makeDraggingItems(from urls: [URL], at mouseLocation: NSPoint) -> [NSDraggingItem] {
+    static func makeDraggingItems(from urls: [URL], at mouseLocation: NSPoint, promisedWriters: [Int: NSFilePromiseProvider] = [:]) -> [NSDraggingItem] {
         guard !urls.isEmpty else { return [] }
         return urls.enumerated().map { index, fileURL in
-            let item = NSDraggingItem(pasteboardWriter: fileURL as NSURL)
+            let item = NSDraggingItem(pasteboardWriter: promisedWriters[index] ?? fileURL as NSURL)
             let itemCount = index == 0 ? urls.count : 1
             let preview = makePreviewImage(firstURL: fileURL, itemCount: itemCount, isContact: false)
             item.setDraggingFrame(draggingFrame(for: preview.size, at: mouseLocation), contents: preview)

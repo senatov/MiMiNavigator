@@ -12,7 +12,7 @@ enum PasteboardURLResolver {
     private static let nsURLPasteboardType = NSPasteboard.PasteboardType("NSURLPboardType")
     private static let nsFilenamesPasteboardType = NSPasteboard.PasteboardType("NSFilenamesPboardType")
 
-    static let fileURLPasteboardTypes: [NSPasteboard.PasteboardType] = [
+    static let fileURLPasteboardTypes: [NSPasteboard.PasteboardType] = NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType($0) } + [
         .fileURL,
         .URL,
         NSPasteboard.PasteboardType("public.file-url"),
