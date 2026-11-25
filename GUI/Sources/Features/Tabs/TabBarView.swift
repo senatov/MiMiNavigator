@@ -33,45 +33,50 @@ struct TabBarView: View {
         ScrollViewReader { proxy in
             HStack(spacing: 4) {
                 HStack(spacing: 0) {
-                    tabNavigationButton(systemName: "chevron.left", action: handleSelectPrevious)
+                    tabNavigationButton(systemName: "chevron.left", title: "Previous Tab", action: handleSelectPrevious)
                     controlDivider
-                    tabNavigationButton(systemName: "chevron.right", action: handleSelectNext)
+                    tabNavigationButton(systemName: "chevron.right", title: "Next Tab", action: handleSelectNext)
                 }
                 .background(controlGroupSurface)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .bottom, spacing: -5) {
+                    HStack(spacing: 0) {
                         ForEach(tabs) { tab in
-                            TabItemView(
-                                tab: tab,
-                                panelSide: panelSide,
-                                isActive: tab.id == activeID,
-                                isPanelFocused: isPanelFocused,
-                                isOnlyTab: isOnlyTab,
-                                tabCount: tabs.count,
-                                onSelect: {
-                                    handleTabSelect(tab)
-                                },
-                                onClose: {
-                                    handleTabClose(tab)
-                                },
-                                onCloseOthers: {
-                                    handleCloseOthers(keeping: tab)
-                                },
-                                onCloseToRight: {
-                                    handleCloseToRight(of: tab)
-                                },
-                                onDuplicate: {
-                                    handleDuplicate(tab)
+                            HStack(spacing: 0) {
+                                if tab.id != tabs.first?.id {
+                                    TabSeparator()
                                 }
-                            )
+                                TabItemView(
+                                    tab: tab,
+                                    panelSide: panelSide,
+                                    isActive: tab.id == activeID,
+                                    isPanelFocused: isPanelFocused,
+                                    isOnlyTab: isOnlyTab,
+                                    tabCount: tabs.count,
+                                    onSelect: {
+                                        handleTabSelect(tab)
+                                    },
+                                    onClose: {
+                                        handleTabClose(tab)
+                                    },
+                                    onCloseOthers: {
+                                        handleCloseOthers(keeping: tab)
+                                    },
+                                    onCloseToRight: {
+                                        handleCloseToRight(of: tab)
+                                    },
+                                    onDuplicate: {
+                                        handleDuplicate(tab)
+                                    }
+                                )
+                            }
                             .id(tab.id)
                         }
                     }
                 }
-                .frame(height: 32)
+                .frame(height: TabAppearance.stripHeight)
                 addTabButton
             }
-            .frame(height: 32)
+            .frame(height: TabAppearance.stripHeight)
             .onChange(of: activeID) { _, newID in
                 withAnimation(.easeInOut(duration: 0.12)) {
                     proxy.scrollTo(newID, anchor: .center)
@@ -86,21 +91,23 @@ struct TabBarView: View {
         Button(action: handleAddTab) {
             Image(systemName: "plus")
                 .font(.system(size: 10, weight: .bold))
-                .frame(width: 20, height: 22)
+                .frame(width: 20, height: 18)
         }
         .buttonStyle(TabStripControlButtonStyle(isEmphasized: true))
+        .accessibilityLabel("New Tab")
         .help("New Tab")
     }
 
     // MARK: - Navigation Button
 
-    private func tabNavigationButton(systemName: String, action: @escaping () -> Void) -> some View {
+    private func tabNavigationButton(systemName: String, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 9, weight: .bold))
-                .frame(width: 18, height: 22)
+                .frame(width: 18, height: 18)
         }
         .buttonStyle(TabStripControlButtonStyle(isEmphasized: false))
+        .accessibilityLabel(Text(title))
     }
 
     private var controlDivider: some View {

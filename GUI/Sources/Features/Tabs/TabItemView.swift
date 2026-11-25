@@ -4,7 +4,6 @@
 // Copyright © 2026 Senatov. All rights reserved.
 // Description: Single bottom tab with glass-friendly compact styling.
 
-import AppKit
 import SwiftUI
 
 // MARK: - Tab Item View
@@ -25,60 +24,49 @@ struct TabItemView: View {
     @State private var isHovered = false
     @State private var anchorFrame: CGRect = .zero
     @State private var tooltipTask: Task<Void, Never>?
-    @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
-
-    // MARK: - Layout constants
-    private let minTabWidth: CGFloat = 112
-    private let maxTabWidth: CGFloat = 236
 
     // MARK: - Body
-
     var body: some View {
-        tabContent
-            .frame(height: TabAppearance.height)
-            .background {
-                PanelTabSurface(isActive: isActive, isPanelFocused: isPanelFocused, isHovered: isHovered)
-            }
-            .contentShape(tabShape)
-            .background(frameReader)
-            .onTapGesture { onSelect() }
-            .onHover(perform: handleHover)
-            .contextMenu {
-                TabContextMenu(
-                    tab: tab,
-                    isOnlyTab: isOnlyTab,
-                    tabCount: tabCount,
-                    onClose: onClose,
-                    onCloseOthers: onCloseOthers,
-                    onCloseToRight: onCloseToRight,
-                    onDuplicate: onDuplicate
-                )
-            }
-        .animation(.easeOut(duration: 0.10), value: isActive)
-        .animation(.easeOut(duration: 0.12), value: isHovered)
-        .zIndex(isActive ? 2 : isHovered ? 1 : 0)
-    }
-
-    // MARK: - Tab Content
-
-    private var tabContent: some View {
-        HStack(spacing: 5) {
+        Button(action: onSelect) {
             TabAppearanceLabel(
-                title: tab.truncatedDisplayName(maxLength: 22),
-                systemIcon: tab.isArchive ? "doc.zipper" : "folder.fill",
-                fileIcon: nativeIcon,
+                title: tab.displayName,
+                systemIcon: tab.isArchive ? "doc.zipper" : "folder",
+                compact: true,
                 isSelected: isActive,
                 isFocused: isPanelFocused
             )
-
-            Spacer(minLength: 0)
-
-            // Close button — always reserves space, visible on hover/active
-            closeButton
+            .padding(.horizontal, 7)
+            .padding(.trailing, reservesCloseButton ? 17 : 0)
+            .frame(minWidth: 56, maxWidth: 172, alignment: .leading)
+            .frame(height: TabAppearance.compactTabHeight)
+            .contentShape(Rectangle())
         }
-        .padding(.leading, 11)
-        .padding(.trailing, isActive ? 8 : 6)
-        .frame(minWidth: minTabWidth, maxWidth: maxTabWidth)
+        .buttonStyle(.plain)
+        .accessibilityLabel(tab.displayName)
+        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .background {
+            PanelTabSurface(isActive: isActive, isPanelFocused: isPanelFocused, isHovered: isHovered, compact: true)
+        }
+        .overlay(alignment: .trailing) {
+            if closeButtonVisible {
+                closeButton.padding(.trailing, 3)
+            }
+        }
+        .background(frameReader)
+        .onHover(perform: handleHover)
+        .contextMenu {
+            TabContextMenu(
+                tab: tab,
+                isOnlyTab: isOnlyTab,
+                tabCount: tabCount,
+                onClose: onClose,
+                onCloseOthers: onCloseOthers,
+                onCloseToRight: onCloseToRight,
+                onDuplicate: onDuplicate
+            )
+        }
+        .animation(.easeOut(duration: 0.10), value: isActive)
+        .animation(.easeOut(duration: 0.12), value: isHovered)
     }
 
     // MARK: - Close Button
@@ -104,19 +92,16 @@ struct TabItemView: View {
             .frame(width: 16, height: 16)
         }
         .buttonStyle(.plain)
-        .opacity(closeButtonVisible ? 1.0 : 0.0)
-        .allowsHitTesting(closeButtonVisible)
-        .frame(width: 16)  // always occupies space to avoid layout shift
+        .accessibilityLabel("Close \(tab.displayName)")
     }
 
+    // MARK: - Close Button Visibility
     private var closeButtonVisible: Bool {
-        (isActive || isHovered) && !isOnlyTab && UserPreferences.shared.snapshot.tabsShowCloseButton
+        (isActive || isHovered) && reservesCloseButton
     }
 
-    private var nativeIcon: NSImage? {
-        let iconURL = tab.archiveURL ?? tab.url
-        guard iconURL.isFileURL else { return nil }
-        return NSWorkspace.shared.icon(forFile: iconURL.path)
+    private var reservesCloseButton: Bool {
+        !isOnlyTab && UserPreferences.shared.snapshot.tabsShowCloseButton
     }
 
     private var frameReader: some View {
@@ -131,17 +116,14 @@ struct TabItemView: View {
         }
     }
 
-    private var tabShape: BottomSheetTabShape {
-        BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius))
-    }
-
+    // MARK: - Hover
     private func handleHover(_ hovering: Bool) {
         isHovered = hovering
         tooltipTask?.cancel()
         if hovering {
             tooltipTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(430))
-                guard isHovered else { return }
+                guard !Task.isCancelled, isHovered else { return }
                 TabTooltipPopupController.shared.show(
                     tab: tab,
                     panelSide: panelSide,
@@ -161,6 +143,7 @@ struct BottomSheetTabShape: InsettableShape {
     var bottomRadius: CGFloat = CGFloat(TabAppearance.bottomRadius)
     private var insetAmount: CGFloat = 0
 
+    // MARK: - Path
     func path(in rect: CGRect) -> Path {
         let frame = rect.insetBy(dx: insetAmount, dy: insetAmount)
         let slope: CGFloat = 6
@@ -182,6 +165,7 @@ struct BottomSheetTabShape: InsettableShape {
         return path
     }
 
+    // MARK: - Inset
     func inset(by amount: CGFloat) -> BottomSheetTabShape {
         var shape = self
         shape.insetAmount += amount

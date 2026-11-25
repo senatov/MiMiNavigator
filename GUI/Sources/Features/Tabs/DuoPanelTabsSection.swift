@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Duo Panel Tabs Section
 /// Separate tab strip row below the file panels.
 struct DuoPanelTabsSection: View {
-    static let height: CGFloat = 33
+    static let height = TabAppearance.stripHeight
 
     let leftPanelWidth: CGFloat
     let containerWidth: CGFloat

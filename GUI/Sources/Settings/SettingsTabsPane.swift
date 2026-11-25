@@ -8,6 +8,10 @@ import SwiftUI
 // MARK: - Tabs Settings
 struct SettingsTabsPane: View {
     @State private var prefs = UserPreferences.shared
+    @AppStorage("tabs.appearance.typeface") private var typeface = TabTypeface.system
+    @AppStorage("tabs.appearance.separatorColor") private var separatorColor = TabAppearance.separatorColor
+    @AppStorage("tabs.appearance.separatorWidth") private var separatorWidth = TabAppearance.separatorWidth
+    @AppStorage("tabs.appearance.separatorShadow") private var separatorShadow = TabAppearance.separatorShadow
     @AppStorage("tabs.appearance.fontSize") private var fontSize = TabAppearance.fontSize
     @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
     @AppStorage("tabs.appearance.inactivePanelOpacity") private var inactivePanelOpacity = TabAppearance.inactivePanelOpacity
@@ -50,6 +54,16 @@ struct SettingsTabsPane: View {
             }
             SettingsGroupBox {
                 VStack(spacing: 0) {
+                    SettingsRow(label: "Tab typeface:", help: "Choose a system typeface for file panel tabs") {
+                        Picker("Tab typeface", selection: $typeface) {
+                            ForEach(TabTypeface.allCases, id: \.self) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 140)
+                    }
+                    Divider()
                     sliderRow("Tab font size:", value: $fontSize, range: 11...18, format: "%.0f pt")
                     Divider()
                     sliderRow("Bottom corner radius:", value: $bottomRadius, range: 4...12, format: "%.0f pt")
@@ -66,11 +80,20 @@ struct SettingsTabsPane: View {
                 }
             }
             SettingsGroupBox {
+                VStack(spacing: 0) {
+                    colorRow("Separator color:", hex: $separatorColor, fallback: TabAppearance.separatorColor)
+                    Divider()
+                    sliderRow("Separator thickness:", value: $separatorWidth, range: 0.25...2, format: "%.2f pt", step: 0.25)
+                    Divider()
+                    sliderRow("Separator shadow:", value: $separatorShadow, range: 0...0.5, format: "%.0f%%", multiplier: 100)
+                }
+            }
+            SettingsGroupBox {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Preview").font(.caption.weight(.medium)).foregroundStyle(.secondary)
                     HStack(spacing: 14) {
-                        previewTab(focused: true)
-                        previewTab(focused: false)
+                        TabAppearancePreview(title: "Active panel", focused: true)
+                        TabAppearancePreview(title: "Inactive panel", focused: false)
                     }
                 }
             }
@@ -82,10 +105,10 @@ struct SettingsTabsPane: View {
     }
 
     // MARK: - Appearance Controls
-    private func sliderRow(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, format: String, multiplier: Double = 1) -> some View {
+    private func sliderRow(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, format: String, multiplier: Double = 1, step: Double? = nil) -> some View {
         SettingsRow(label: title, help: title) {
             HStack(spacing: 10) {
-                Slider(value: value, in: range, step: multiplier == 100 ? 0.05 : 1).frame(width: 140)
+                Slider(value: value, in: range, step: step ?? (multiplier == 100 ? 0.05 : 1)).frame(width: 140)
                 Text(String(format: format, value.wrappedValue * multiplier))
                     .monospacedDigit().foregroundStyle(SettingsVisualStyle.secondaryText)
             }
@@ -105,24 +128,12 @@ struct SettingsTabsPane: View {
         }
     }
 
-    // MARK: - Preview
-    private func previewTab(focused: Bool) -> some View {
-        TabAppearanceLabel(
-            title: focused ? "Active panel" : "Inactive panel",
-            systemIcon: "folder.fill",
-            isSelected: true,
-            isFocused: focused
-        )
-        .padding(.horizontal, 12)
-        .frame(height: TabAppearance.height)
-        .background {
-            PanelTabSurface(isActive: true, isPanelFocused: focused)
-        }
-        .clipShape(BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)))
-    }
-
     // MARK: - Reset
     private func resetAppearance() {
+        typeface = .system
+        separatorColor = TabAppearance.separatorColor
+        separatorWidth = TabAppearance.separatorWidth
+        separatorShadow = TabAppearance.separatorShadow
         fontSize = TabAppearance.fontSize
         bottomRadius = TabAppearance.bottomRadius
         inactivePanelOpacity = TabAppearance.inactivePanelOpacity
@@ -130,5 +141,33 @@ struct SettingsTabsPane: View {
         unfocusedBackground = TabAppearance.unfocusedBackground
         focusedText = TabAppearance.focusedText
         unfocusedText = TabAppearance.unfocusedText
+    }
+}
+
+// MARK: - Tab Appearance Preview
+private struct TabAppearancePreview: View {
+    let title: String
+    let focused: Bool
+
+    // MARK: - Body
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 0) {
+                tab("Documents", selected: true)
+                TabSeparator()
+                tab("Downloads", selected: false)
+            }
+        }
+    }
+
+    // MARK: - Preview Tab
+    private func tab(_ title: String, selected: Bool) -> some View {
+        TabAppearanceLabel(title: title, systemIcon: "folder", compact: true, isSelected: selected, isFocused: focused)
+            .padding(.horizontal, 7)
+            .frame(height: TabAppearance.compactTabHeight)
+            .background {
+                PanelTabSurface(isActive: selected, isPanelFocused: focused, compact: true)
+            }
     }
 }

@@ -5,17 +5,35 @@ struct PanelTabSurface: View {
     let isActive: Bool
     var isPanelFocused = true
     var isHovered = false
+    var compact = false
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("tabs.appearance.bottomRadius") private var bottomRadius = TabAppearance.bottomRadius
     @AppStorage("tabs.appearance.inactivePanelOpacity") private var inactivePanelOpacity = TabAppearance.inactivePanelOpacity
     @AppStorage("tabs.appearance.focusedBackground") private var focusedBackgroundHex = TabAppearance.focusedBackground
     @AppStorage("tabs.appearance.unfocusedBackground") private var unfocusedBackgroundHex = TabAppearance.unfocusedBackground
     private var tabShape: BottomSheetTabShape { BottomSheetTabShape(bottomRadius: CGFloat(bottomRadius)) }
+    // MARK: - Body
     var body: some View {
-        surfaceFill
-            .shadow(color: tabShadowColor, radius: isFocusedSelection ? 2.8 : isActive ? 1.8 : 1.1, x: 0.7, y: 1)
-            .overlay(tabInnerHighlight)
-            .overlay(tabBorder)
+        if compact {
+            UnevenRoundedRectangle(
+                topLeadingRadius: 2,
+                bottomLeadingRadius: CGFloat(bottomRadius),
+                bottomTrailingRadius: CGFloat(bottomRadius),
+                topTrailingRadius: 2
+            )
+            .fill(selectedBackground.opacity(compactOpacity))
+        } else {
+            surfaceFill
+                .shadow(color: tabShadowColor, radius: isFocusedSelection ? 2.8 : isActive ? 1.8 : 1.1, x: 0.7, y: 1)
+                .overlay(tabInnerHighlight)
+                .overlay(tabBorder)
+        }
+    }
+
+    // MARK: - Compact Opacity
+    private var compactOpacity: Double {
+        if isActive { return isPanelFocused ? 1 : inactivePanelOpacity }
+        return isHovered ? 0.40 : 0
     }
     // MARK: - Surface Fill
     @ViewBuilder

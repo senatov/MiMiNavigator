@@ -88,7 +88,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .colorsInputFields: return "Dialog placeholders and field-label appearance"
         case .panels: return "Panel layout, columns and file presentation"
         case .preview: return "Embedded preview modes and remembered file-type rules"
-        case .tabs: return "Tab behavior, font, colors and corner shape"
+        case .tabs: return "Tab behavior, typography, colors and separators"
         case .archives: return "Archive formats, extraction and compression"
         case .network: return "Network discovery and remote connection behavior"
         case .cloudLink: return "Cloud providers, sharing and shortened links"
