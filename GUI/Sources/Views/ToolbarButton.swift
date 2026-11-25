@@ -45,8 +45,9 @@ private final class TooltipWindow {
                 .foregroundStyle(Color.blue)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .glassEffect(in: .rect(cornerRadius: 16.0))
-                .buttonStyle(.glass)
+                .background {
+                    Color.clear.glassEffect(in: .rect(cornerRadius: 16))
+                }
         )
 
         let hosting = NSHostingView(rootView: label)

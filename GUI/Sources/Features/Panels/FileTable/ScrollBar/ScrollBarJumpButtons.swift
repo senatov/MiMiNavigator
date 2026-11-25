@@ -75,8 +75,10 @@ struct ScrollBarJumpButtons: View {
         .buttonStyle(.plain)
         .help(help)
         .accessibilityLabel(accessibilityLabel)
-        .glassEffect(.regular)
-        .clipShape(RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous))
+        .background {
+            Color.clear
+                .glassEffect(.regular, in: .rect(cornerRadius: Metrics.cornerRadius))
+        }
         .overlay {
             RoundedRectangle(cornerRadius: Metrics.cornerRadius, style: .continuous)
                 .strokeBorder(.primary.opacity(Metrics.borderOpacity), lineWidth: Metrics.borderWidth)

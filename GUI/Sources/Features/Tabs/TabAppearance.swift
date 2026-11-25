@@ -99,9 +99,10 @@ struct TabAppearanceLabel: View {
 
     // MARK: - Text Color
     private var textColor: Color {
-        let stored = isFocused ? focusedTextHex : unfocusedTextHex
-        let standard = isFocused ? TabAppearance.focusedText : TabAppearance.unfocusedText
-        let dark = isFocused ? TabAppearance.darkFocusedText : TabAppearance.darkUnfocusedText
+        let usesFocusedText = isFocused && (!compact || isSelected)
+        let stored = usesFocusedText ? focusedTextHex : unfocusedTextHex
+        let standard = usesFocusedText ? TabAppearance.focusedText : TabAppearance.unfocusedText
+        let dark = usesFocusedText ? TabAppearance.darkFocusedText : TabAppearance.darkUnfocusedText
         let color = Color(hex: colorScheme == .dark && stored == standard ? dark : stored) ?? .primary
         return compact || isSelected || !isFocused ? color : color.opacity(0.78)
     }

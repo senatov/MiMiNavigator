@@ -248,7 +248,7 @@ struct BreadCrumbToolBar: View {
         var body: some View {
             Button(action: action) {
                 Image(systemName: iconName)
-                    .font(.system(size: Metrics.iconSize, weight: isRaised ? .semibold : .medium))
+                    .font(.system(size: Metrics.iconSize, weight: .regular))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(isHovered ? Palette.hoverTint : iconColor)
                     .frame(
@@ -259,14 +259,15 @@ struct BreadCrumbToolBar: View {
             }
             .buttonStyle(.plain)
             .frame(width: Metrics.buttonSize, height: isRaised ? Metrics.raisedButtonHeight : Metrics.buttonSize)
-            .background { raisedBackground }
-            .overlay { raisedBorder }
-            .shadow(
-                color: isRaised ? Color.black.opacity(isHovered ? 0.24 : 0.17) : .clear,
-                radius: isHovered ? 2.2 : 1.4,
-                x: 0,
-                y: isHovered ? 1.4 : 1
-            )
+            .background {
+                raisedBackground
+                    .overlay { raisedBorder }
+                    .shadow(
+                        color: isRaised ? Color.black.opacity(isHovered ? 0.20 : 0.13) : .clear,
+                        radius: isHovered ? 2 : 1.25,
+                        y: 1
+                    )
+            }
             .disabled(!isEnabled)
             .opacity(isEnabled ? 1.0 : 0.55)
             .onHover { hovering in

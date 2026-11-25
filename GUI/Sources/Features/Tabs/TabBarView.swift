@@ -228,14 +228,14 @@ private struct TabStripControlButtonStyle: ButtonStyle {
                             endPoint: .bottom
                         )
                     )
+                    .overlay {
+                        if isEmphasized {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Color.accentColor.opacity(configuration.isPressed ? 0.44 : 0.28), lineWidth: 0.6)
+                        }
+                    }
+                    .shadow(color: Color.black.opacity(isEmphasized ? 0.10 : 0), radius: 1, y: 1)
             }
-            .overlay {
-                if isEmphasized {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(Color.accentColor.opacity(configuration.isPressed ? 0.44 : 0.28), lineWidth: 0.6)
-                }
-            }
-            .shadow(color: Color.black.opacity(isEmphasized ? 0.10 : 0), radius: 1, y: 1)
             .offset(y: configuration.isPressed ? 0.5 : 0)
     }
 }

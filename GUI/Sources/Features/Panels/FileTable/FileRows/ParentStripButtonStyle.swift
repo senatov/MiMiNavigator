@@ -19,30 +19,31 @@ struct ParentStripButtonStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(buttonBackground)
-            .glassEffect(.regular.tint(glassTint))
-            .overlay(buttonHighlight)
-            .overlay(specularGlint(isPressed: isPressed))
-            .clipShape(buttonShape)
-            .overlay(
+            .background {
                 buttonShape
-                    .stroke(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(edgeOpacity(isPressed: isPressed)),
-                                Color.black.opacity(isPressed ? 0.18 : 0.10)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: isLifted ? 0.9 : 0.75
+                    .fill(buttonBackground)
+                    .glassEffect(.regular.tint(glassTint), in: buttonShape)
+                    .overlay(buttonHighlight.clipShape(buttonShape))
+                    .overlay(specularGlint(isPressed: isPressed))
+                    .overlay(
+                        buttonShape
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(edgeOpacity(isPressed: isPressed)),
+                                        Color.black.opacity(isPressed ? 0.18 : 0.10)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: isLifted ? 0.9 : 0.75
+                            )
                     )
-            )
-            .shadow(color: .black.opacity(shadowOpacity(isPressed: isPressed)), radius: shadowRadius(isPressed: isPressed), x: 0.8, y: shadowY(isPressed: isPressed))
-            .scaleEffect(isPressed ? 0.982 : isDropContact ? 1.018 : keyboardPulse ? 1.016 : isHighlighted ? 1.006 : 1)
-            .offset(y: isPressed ? 0.8 : isLifted ? -0.6 : 0)
-            .saturation(isDropContact ? 1.45 : isLifted ? 1.12 : 1)
-            .brightness(isPressed ? -0.035 : isDropContact ? 0.08 : isLifted ? 0.015 : 0)
+                    .shadow(color: .black.opacity(shadowOpacity(isPressed: isPressed)), radius: shadowRadius(isPressed: isPressed), x: 0.8, y: shadowY(isPressed: isPressed))
+                    .saturation(isDropContact ? 1.45 : isLifted ? 1.12 : 1)
+                    .brightness(isPressed ? -0.035 : isDropContact ? 0.08 : isLifted ? 0.015 : 0)
+            }
+            .contentShape(buttonShape)
             .animation(.smooth(duration: 0.16), value: isHighlighted)
             .animation(.interpolatingSpring(stiffness: 420, damping: 22), value: isDropContact)
             .animation(.interpolatingSpring(stiffness: 620, damping: 23), value: keyboardPulse)

@@ -280,12 +280,14 @@ private struct AutoCompletePopupView: View {
             Divider().opacity(0.55)
             footer
         }
-        .glassEffect(.regular, in: .rect(cornerRadius: Layout.cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
+        .background {
+            Color.clear.glassEffect(.regular, in: .rect(cornerRadius: Layout.cornerRadius))
+        }
         .overlay {
             RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous)
                 .strokeBorder(.quaternary, lineWidth: 0.8)
         }
-        .clipShape(RoundedRectangle(cornerRadius: Layout.cornerRadius, style: .continuous))
         .padding(1)
     }
 

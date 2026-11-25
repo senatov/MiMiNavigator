@@ -15,24 +15,30 @@ struct PanelTabSurface: View {
     // MARK: - Body
     var body: some View {
         if compact {
-            if isActive {
-                compactShape
-                    .fill(selectedBackground.opacity(isPanelFocused ? 0.45 : inactivePanelOpacity * 0.45))
-                    .glassEffect(.regular.tint(selectedBackground.opacity(isPanelFocused ? 0.7 : inactivePanelOpacity * 0.55)), in: compactShape)
-                    .overlay {
-                        compactShape.strokeBorder(
-                            isPanelFocused ? activeBorder.opacity(0.9) : inactiveBorder.opacity(0.75),
-                            lineWidth: 0.85
-                        )
-                    }
-            } else if isHovered {
-                compactShape.fill(selectedBackground.opacity(0.40))
-            }
+            compactSurface
+                .overlay {
+                    compactShape.strokeBorder(
+                        isFocusedSelection ? activeBorder.opacity(0.9) : inactiveBorder.opacity(isActive || isHovered ? 0.75 : 0.58),
+                        lineWidth: isActive ? 0.85 : 0.75
+                    )
+                }
         } else {
             surfaceFill
                 .shadow(color: tabShadowColor, radius: isFocusedSelection ? 2.8 : isActive ? 1.8 : 1.1, x: 0.7, y: 1)
                 .overlay(tabInnerHighlight)
                 .overlay(tabBorder)
+        }
+    }
+
+    // MARK: - Compact Surface
+    @ViewBuilder
+    private var compactSurface: some View {
+        if isActive {
+            compactShape
+                .fill(selectedBackground.opacity(isPanelFocused ? 0.45 : inactivePanelOpacity * 0.45))
+                .glassEffect(.regular.tint(selectedBackground.opacity(isPanelFocused ? 0.7 : inactivePanelOpacity * 0.55)), in: compactShape)
+        } else {
+            compactShape.fill(background(focused: false).opacity(isHovered ? 0.55 : 0.25))
         }
     }
 
@@ -129,9 +135,14 @@ struct PanelTabSurface: View {
     }
 
     private var selectedBackground: Color {
-        let hex = isPanelFocused ? focusedBackgroundHex : unfocusedBackgroundHex
-        let defaultHex = isPanelFocused ? TabAppearance.focusedBackground : TabAppearance.unfocusedBackground
-        let darkHex = isPanelFocused ? TabAppearance.darkFocusedBackground : TabAppearance.darkUnfocusedBackground
+        background(focused: isPanelFocused)
+    }
+
+    // MARK: - Appearance Background
+    private func background(focused: Bool) -> Color {
+        let hex = focused ? focusedBackgroundHex : unfocusedBackgroundHex
+        let defaultHex = focused ? TabAppearance.focusedBackground : TabAppearance.unfocusedBackground
+        let darkHex = focused ? TabAppearance.darkFocusedBackground : TabAppearance.darkUnfocusedBackground
         return Color(hex: colorScheme == .dark && hex == defaultHex ? darkHex : hex)
             ?? Color(nsColor: .controlBackgroundColor)
     }
