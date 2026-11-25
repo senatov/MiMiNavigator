@@ -74,6 +74,8 @@ More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, 
 
 Open SFTP and FTP servers in a panel, discover SMB and AFP shares on the local network, and use cloud drives mounted by macOS or their provider applications. New files and folders can be created directly in writable local, SFTP, FTP, and SMB locations. Google Drive and Dropbox can also publish selected items and create shareable links.
 
+Copy and move files between SFTP directories or connected servers. Dragging an SFTP file or folder from the list into Finder supplies the downloaded content when Finder accepts the drop. The hidden-files toggle hides dotfiles; ordinary named folders remain visible even if Finder marks them hidden.
+
 File icons appear before optional archive-header and file-type inspection runs in the background. ZIP uses the cabinet-style archive artwork, DMG uses a dedicated installable disk-image symbol, and clamp, package, and encrypted families retain their own artwork; encryption overrides the format-specific icon. Icon inspection skips CloudStorage, iCloud Drive, and dataless placeholders to avoid downloading cloud files merely to choose an icon; these items retain their standard icons.
 
 System document and application icons are normalized once into a Retina row-sized bitmap, removing excessive transparent padding before the result enters the bounded in-memory icon cache. This keeps 16-point list icons visually consistent without recurring rendering or database I/O.
@@ -153,9 +155,9 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 ## Install
 
-The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and an administrator password.
+The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and may require an administrator password.
 
-1. [Download MiMiNavigator v0.9.1.6](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.6) for macOS 27 or newer. For macOS 26, use [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
+1. [Download MiMiNavigator v0.9.2.1](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.2.1) for macOS 27 or newer. For macOS 26, use [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
 2. Open the DMG and drag MiMiNavigator to Applications.
 3. Launch it from Applications.
 
@@ -164,6 +166,8 @@ The current DMG is signed and notarized by Apple. No App Store account or subscr
 ## First-launch command-line setup
 
 MiMiNavigator automatically installs missing command-line dependencies on first launch. It downloads the official signed [Homebrew package](https://docs.brew.sh/Installation) for Apple Silicon, checks its macOS installation signature, and installs it in Terminal. macOS may ask permission to control Terminal and request an administrator password. MiMiNavigator waits until installation finishes before continuing to its permission onboarding. If installation stops, check Terminal and use **Retry installation** in MiMiNavigator.
+
+If Homebrew belongs to another account, an administrator can run the tool installation as that owner. A standard account receives instructions to ask an administrator or the Homebrew owner rather than attempting to write into their prefix. Installation transcripts are written under `/tmp`.
 
 The setup installs Git; unar and sevenzip for archives; ffmpeg (including ffprobe) and gifski for media; and sshpass for password-based SSH. WebP stickers additionally require cwebp (`brew install webp`). Telegram TGS and Lottie JSON rendering uses the bundled TelegramMessenger/rlottie helper. Already available tools are kept. The macOS built-in ZIP, TAR, search, SSH, networking, and file tools need no separate installation. Basic browsing can run without these third-party tools, and first-launch setup prepares the standard optional tools.
 

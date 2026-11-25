@@ -1,3 +1,31 @@
+# MiMiNavigator v0.9.2.1
+
+This update improves remote file handling, first-run setup on shared Macs, and navigation in the two panels.
+
+## Improvements since the published v0.9.2.0 build
+
+- Copy and move files within one SFTP server or between connected SFTP servers. Remote uploads are verified before the destination is published.
+- Drag SFTP files and folders from the list to Finder and other file destinations as real downloaded content instead of remote path text.
+- Keep ordinary named folders visible when dotfiles are hidden, even if Finder has set a hidden attribute. Show and hide dotfiles consistently during scans and live updates.
+- Follow panel history in order with Back and Forward, enlarge navigation controls, and simplify connection and other menu actions with clearer icons and disabled states.
+- Avoid redundant directory publications and column measurements when scanned content has not changed.
+- Respect the owner of an existing Homebrew prefix during first-run tool installation, give standard users actionable guidance, and write installation logs under `/tmp`.
+- Store the single-instance lock in each user's own temporary directory so another account's lock does not prevent startup.
+
+## Compatibility and installation
+
+- Requires macOS 27 or newer and Apple silicon. [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2) remains the final macOS 26-compatible release.
+- Open the DMG and drag MiMiNavigator to Applications. First-run command-line setup may require help from an administrator or the Homebrew prefix owner.
+
+## Validation
+
+- ScannerKit tests, the Debug build, and a source-free build against the rebuilt MiMiKits binaries passed. Live SFTP drag-and-drop on the reporting Mac remains to be checked.
+- The release pipeline verifies the signed bundle, notarized DMG, stapled ticket, and Gatekeeper assessment before publishing.
+
+**Full Changelog**: https://github.com/senatov/MiMiNavigator/compare/v0.9.2.0...v0.9.2.1
+
+---
+
 # MiMiNavigator v0.9.2.0
 
 This release adds optional Cloudflare R2 media sharing and reduces unnecessary work when switching tabs or returning to the app.

@@ -71,10 +71,11 @@ The public wrappers live in `BinaryPackages/<module>/Package.swift`. Each has an
 explicit dependency target so SwiftPM links its binary with the required modules
 and open-source products without duplicating their implementation. Most current
 wrappers download checksum-pinned archives hosted as MiMiNavigator release assets.
-`ScannerKit` currently uses a checked-in local XCFramework to include a package
-fix that has not yet been published in the archive set. A clean checkout therefore
-does not need the private source repository, but future releases should publish
-that binary in the same immutable archive set as the other modules.
+The v0.9.2.1 wrappers refer to the immutable `kits-088574402e51daba` archive
+set, including the ScannerKit dotfile-visibility fix. The source-free verification
+build passed against the exact locally built archives before publication. A clean
+checkout resolves the matching checksum-pinned ZIPs without the private source
+repository.
 
 To publish a replacement artifact set:
 

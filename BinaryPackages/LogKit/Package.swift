@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "LogKit", targets: ["LogKitDependencies"])],
     dependencies: [.package(url: "https://github.com/SwiftyBeaver/SwiftyBeaver", exact: "2.1.1")],
     targets: [
-        .binaryTarget(name: "LogKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-71ec12fc231c10ae/LogKit.xcframework.zip", checksum: "37eafb86517fe946a10c8dc0d7c2e86a8ebd1333305d94c03561943ce487435c"),
+        .binaryTarget(name: "LogKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-088574402e51daba/LogKit.xcframework.zip", checksum: "b79d95072d65ddb10bfe0d9f1667740a2ac1bb34119b909541abdf1d43c4d442"),
         .target(name: "LogKitDependencies", dependencies: ["LogKit", .product(name: "SwiftyBeaver", package: "SwiftyBeaver")])
     ]
 )
