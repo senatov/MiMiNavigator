@@ -13,6 +13,7 @@ enum JunkScanAccess: Sendable, Equatable {
 // MARK: - Automatic Cleanup Scope
 enum JunkScanScope {
     private static let maximumSymlinkHops = 8
+    private static let musicLibraryRoot = lexicalPath(FileManager.default.homeDirectoryForCurrentUser.path) + "/Music"
     private static let timeMachineMounts: Set<String> = {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
@@ -77,7 +78,9 @@ enum JunkScanScope {
         return (baseRoots + extraRoots).filter { seen.insert($0.standardizedFileURL.path).inserted }
     }
 
+    // MARK: - Scan Path Access
     static func mayInspect(_ path: String, from scanRoot: URL, access: JunkScanAccess) -> Bool {
+        guard !isMusicLibraryPath(path) else { return false }
         guard access == .limited else { return true }
         let candidate = lexicalPath(path)
         let root = lexicalPath(scanRoot.path)
@@ -86,6 +89,7 @@ enum JunkScanScope {
             isSameOrInside(root, root: $0) && isSameOrInside(candidate, root: root)
         }
         guard let resolved = resolvingLinks(in: path, fileManager: .default, stopAt: { partial in
+            if isSameOrInside(partial, root: musicLibraryRoot) { return true }
             guard protected.contains(where: { isSameOrInside(partial, root: $0) }) else { return false }
             guard selectedProtectedRoot != nil else { return true }
             let leadsToSelectedFolder = isSameOrInside(root, root: partial) || isSameOrInside(partial, root: root)
@@ -93,6 +97,11 @@ enum JunkScanScope {
         }) else { return false }
         if selectedProtectedRoot != nil { return isSameOrInside(lexicalPath(resolved), root: root) }
         return true
+    }
+
+    // MARK: - Music Library Exclusion
+    static func isMusicLibraryPath(_ path: String) -> Bool {
+        isSameOrInside(lexicalPath(path), root: musicLibraryRoot)
     }
 
     // MARK: - User Exclusions

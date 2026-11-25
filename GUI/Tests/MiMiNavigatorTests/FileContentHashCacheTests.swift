@@ -145,6 +145,19 @@ struct JunkScanSafetyTests {
         #expect(JunkScanEngine.shouldExclude(cloud))
     }
 
+    @Test func cleanupSkipsMusicLibraryWithLimitedOrFullAccess() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let music = home.appendingPathComponent("Music")
+        let library = music.appendingPathComponent("Music/Music Library.musiclibrary")
+        let otherMusic = home.appendingPathComponent("Music Projects")
+        for access in [JunkScanAccess.limited, .full] {
+            #expect(!JunkScanScope.mayInspect(music.path, from: home, access: access))
+            #expect(!JunkScanScope.mayInspect(library.path, from: music, access: access))
+            #expect(!JunkScanEngine.isSafeRoot(music.path, access: access, authorizedRoots: [music]))
+        }
+        #expect(!JunkScanScope.isMusicLibraryPath(otherMusic.path))
+    }
+
     @Test func onlySuggestsOldFoldersThatRemainEmpty() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("JunkEmptyFolder-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: folder) }

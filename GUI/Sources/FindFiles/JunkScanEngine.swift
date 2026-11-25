@@ -31,14 +31,14 @@ enum JunkScanEngine {
             diagnostics.inaccessiblePaths += batch.diagnostics.inaccessiblePaths
             diagnostics.unreadablePaths += batch.diagnostics.unreadablePaths
             if !batch.candidates.isEmpty || visited % 256 < batch.visited {
-                let partial = await database.traversalCandidates(root: root)
+                let partial = await database.traversalCandidates(root: root).filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
                 await update(JunkScanProgress(visited: visited, candidates: partial, diagnostics: diagnostics))
             }
         }
         let traversal = await database.traversalData(root: root)
-        let files = traversal.files
-        let directories = traversal.directories
-        var candidates = traversal.candidates
+        let files = traversal.files.filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
+        let directories = traversal.directories.filter { !JunkScanScope.isMusicLibraryPath($0.path) }
+        var candidates = traversal.candidates.filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
         let sameSize = Dictionary(grouping: files.filter { $0.size > 0 }, by: \.size).values.filter { $0.count > 1 }
         var hashes: [String: [JunkFileRecord]] = [:]
         for group in sameSize {
@@ -104,7 +104,10 @@ enum JunkScanEngine {
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey, .isUbiquitousItemKey]
-        guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles]) else {
+        let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL
+        // Check the names of protected home folders before requesting their metadata.
+        let prefetchedKeys = directory.standardizedFileURL.path == home.path ? [] : Array(keys)
+        guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: prefetchedKeys, options: [.skipsHiddenFiles]) else {
             log.warning("[Cleanup] Cannot inspect \(directory.path)")
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0, diagnostics: JunkScanDiagnostics(unreadablePaths: 1))
         }
