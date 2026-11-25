@@ -7,6 +7,18 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.2.1] - 2026-11-25
+
+### Changed
+- Export SFTP list drags as downloaded file promises so external file destinations receive the file or folder contents.
+- Keep ordinary named folders visible when dotfiles are hidden, including entries marked hidden by Finder.
+- Improve panel history controls, menu actions, and redundant scan and column-fit work.
+- Respect an existing Homebrew prefix owner during first-run tool installation and write installation logs under `/tmp`.
+
+### Fixed
+- Restore SFTP copy and move between connected directories while preserving verified destination publishing.
+- Isolate the single-instance lock by user so another account's lock cannot block startup.
+
 ## [0.9.2.0] - 2026-11-20
 
 ### Added
