@@ -69,7 +69,7 @@ extension CntMenuCoord {
             case .console:
                 openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
-                activeDialog = .deleteConfirmation(files: batchFiles)
+                requestDelete(files: batchFiles, sourcePanel: panel, appState: appState)
             case .mirrorPanel:
                 mirrorPathToOtherPanel(panel, appState: appState)
             case .cloudLinkReadOnly:

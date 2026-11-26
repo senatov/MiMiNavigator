@@ -49,6 +49,7 @@ extension FileOpsEngine {
                     continue
                 }
                 try await streamCopy(from: entry.url, to: finalTarget, progress: progress)
+                if operation == .copy { progress.recordCompletedTransfer(from: entry.url, to: finalTarget) }
                 if operation == .move { try fm.removeItem(at: entry.url) }
                 progress.fileCompleted(name: entry.url.lastPathComponent, success: true)
             } catch {

@@ -48,14 +48,18 @@ final class BatchOpsCoord {
         }
 
         log.info("[BatchOperationCoordinator] initiateCopy: \(files.count) files to \(destination.path)")
+        guard FileOperationConfirmation.isRequired(for: files.count) else {
+            executeCopy(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, historyOnly: true)
+            return
+        }
         CntMenuCoord.shared.activeDialog = .batchCopyConfirmation(
             files: files, destination: destination, sourcePanel: sourcePanel
         )
     }
 
     // MARK: - Execute Copy
-    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
-        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: false, inBackground: inBackground)
+    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false, historyOnly: Bool = false) {
+        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: false, inBackground: inBackground, historyOnly: historyOnly)
     }
 
     // MARK: - Move Operation (F6)
@@ -75,26 +79,30 @@ final class BatchOpsCoord {
             return
         }
         log.info("[BatchOperationCoordinator] initiateMove: \(files.count) files to \(destination.path)")
+        guard FileOperationConfirmation.isRequired(for: files.count) else {
+            executeMove(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, historyOnly: true)
+            return
+        }
         CntMenuCoord.shared.activeDialog = .batchMoveConfirmation(
             files: files, destination: destination, sourcePanel: sourcePanel
         )
     }
 
     // MARK: - Execute Move
-    func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
-        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: true, inBackground: inBackground)
+    func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false, historyOnly: Bool = false) {
+        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: true, inBackground: inBackground, historyOnly: historyOnly)
     }
 
     // MARK: - Execute Transfer
     private func executeTransfer(
         files: [CustomFile], destination: URL, sourcePanel: FavPanelSide,
-        appState: AppState, moveSource: Bool, inBackground: Bool
+        appState: AppState, moveSource: Bool, inBackground: Bool, historyOnly: Bool
     ) {
         hideTransientPopups(moveSource ? "move-execute" : "copy-execute")
         let sourceIsRemote = files.contains { AppState.isRemotePath($0.urlValue) }
         let destinationIsRemote = AppState.isRemotePath(destination)
         Task {
-            await ProgressPanel.runFileOperation(inBackground: inBackground, operation: moveSource ? .move : .copy) {
+            await ProgressPanel.runFileOperation(inBackground: inBackground, historyOnly: historyOnly, operation: moveSource ? .move : .copy) {
                 if sourceIsRemote && destinationIsRemote {
                     await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: moveSource)
                 } else if sourceIsRemote {
@@ -126,6 +134,10 @@ final class BatchOpsCoord {
 
         log.info("[BatchOperationCoordinator] initiateDelete: \(files.count) files")
 
+        guard FileOperationConfirmation.isRequired(for: files.count) else {
+            executeDelete(files: files, sourcePanel: sourcePanel, appState: appState, historyOnly: true)
+            return
+        }
         CntMenuCoord.shared.activeDialog = .batchDeleteConfirmation(
             files: files,
             sourcePanel: sourcePanel
@@ -133,11 +145,11 @@ final class BatchOpsCoord {
     }
 
     // MARK: - Execute Delete
-    func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
+    func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false, historyOnly: Bool = false) {
         hideTransientPopups("delete-execute")
         let source = appState.url(for: sourcePanel)
         Task {
-            await ProgressPanel.runFileOperation(inBackground: inBackground, operation: .delete) {
+            await ProgressPanel.runFileOperation(inBackground: inBackground, historyOnly: historyOnly, operation: .delete) {
                 if AppState.isRemotePath(source) {
                     await performRemoteDelete(files: files, source: source, sourcePanel: sourcePanel, appState: appState)
                 } else {

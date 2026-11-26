@@ -20,9 +20,7 @@ struct BackupConfirmationDialog: View {
                 subtitle: "The archive \"\(archiveName)\" will contain \(files.count) selected item(s)."
             )
             HStack(spacing: 10) {
-                Image(systemName: "zipper.page")
-                    .font(.system(size: 30))
-                    .symbolRenderingMode(.multicolor)
+                DialogGlassIcon(systemName: "zipper.page", tint: .accentColor, diameter: 48)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(assessment.summary)
                         .font(.system(size: 13, weight: .semibold))

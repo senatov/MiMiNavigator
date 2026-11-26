@@ -40,7 +40,7 @@ extension CntMenuCoord {
             case .console:
                 openTerminal(at: getDestinationPath(for: panel, appState: appState))
             case .delete:
-                activeDialog = .deleteConfirmation(files: files)
+                requestDelete(files: files, sourcePanel: panel, appState: appState)
         }
     }
 

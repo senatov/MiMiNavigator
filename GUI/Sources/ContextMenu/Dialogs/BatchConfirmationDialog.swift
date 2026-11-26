@@ -80,10 +80,7 @@ struct BatchConfirmationDialog: View {
         let maximumSize = DialogWindowMetrics.maximumSize
         let dialogWidth = min(520, maximumSize.width)
         VStack(spacing: 16) {
-            // Icon
-            operationIcon
-                .font(.system(size: 48))
-                .foregroundStyle(iconColor)
+            DialogGlassIcon(systemName: operationIconName, tint: iconColor)
             
             // Title
             Text(titleText)
@@ -236,13 +233,13 @@ struct BatchConfirmationDialog: View {
             .optionalKeyboardShortcut(shortcut)
     }
     
-    private var operationIcon: Image {
-        if transferOperation != nil { return Image(systemName: "folder.fill") }
+    private var operationIconName: String {
+        if transferOperation != nil { return "folder.fill" }
         switch operationType {
-        case .copy: return Image(systemName: "doc.on.doc.fill")
-        case .move: return Image(systemName: "arrow.right.doc.on.clipboard")
-        case .delete: return Image(systemName: "trash.fill")
-        case .pack: return Image(systemName: "archivebox.fill")
+        case .copy: return "doc.on.doc.fill"
+        case .move: return "arrow.right.doc.on.clipboard"
+        case .delete: return "trash.fill"
+        case .pack: return "archivebox.fill"
         }
     }
 
@@ -279,7 +276,7 @@ struct BatchConfirmationDialog: View {
         switch operationType {
         case .copy: return .blue
         case .move: return .orange
-        case .delete: return .red
+        case .delete: return DialogGlassIcon.destructiveTint
         case .pack: return .purple
         }
     }

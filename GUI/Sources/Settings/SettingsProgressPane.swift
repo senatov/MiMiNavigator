@@ -11,10 +11,23 @@ import SwiftUI
 
 struct SettingsProgressPane: View {
 
+    @AppStorage(FileOperationConfirmation.key) private var confirmationThreshold = FileOperationConfirmation.defaultThreshold
     @State private var appearance = ProgressPanelAppearance.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+
+            GroupBox("File Operation Confirmation") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Stepper(value: $confirmationThreshold, in: FileOperationConfirmation.thresholdRange) {
+                        Text("Confirm above \(confirmationThreshold) selected items")
+                    }
+                    Text("Set to 0 to disable confirmation for copy, move, and delete. Results appear in Recent Messages.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(SettingsVisualStyle.secondaryText)
+                }
+                .padding(.vertical, 4)
+            }
 
             // MARK: - Background & Border
             GroupBox("Background") {
@@ -151,6 +164,7 @@ struct SettingsProgressPane: View {
             // MARK: - Actions
             HStack {
                 DownToolbarButtonView(title: "Reset to Defaults", systemImage: "arrow.counterclockwise") {
+                    confirmationThreshold = FileOperationConfirmation.defaultThreshold
                     appearance.resetToDefaults()
                 }
                 Spacer()

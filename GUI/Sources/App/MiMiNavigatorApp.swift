@@ -251,13 +251,14 @@ struct MiMiNavigatorApp: App {
         }
     }
 
-    private func executePendingTransfer(_ action: FileTransferAction, inBackground: Bool = false) {
+    func executePendingTransfer(_ action: FileTransferAction, inBackground: Bool = false, historyOnly: Bool = false) {
         let manager = dragDropManager
+        guard let operation = manager.takePendingOperation(), action != .abort else { return }
         let state = appState
 
         Task { @MainActor in
-            await ProgressPanel.runFileOperation(inBackground: inBackground && action != .abort, operation: action == .move ? .move : .copy) {
-                await manager.executeTransfer(action: action, appState: state)
+            await ProgressPanel.runFileOperation(inBackground: inBackground, historyOnly: historyOnly, operation: action == .move ? .move : .copy) {
+                await manager.executeTransfer(action: action, operation: operation, appState: state)
             }
         }
     }

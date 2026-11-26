@@ -75,6 +75,7 @@ extension FileOpsEngine {
                     let result = Self.performIO(from: entry.source, to: entry.target, operation: operation)
                     await MainActor.run {
                         if result.succeeded {
+                            if operation == .copy { progress.recordCompletedTransfer(from: entry.source, to: entry.target) }
                             progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
                             progress.add(bytes: result.bytes)
                         } else if let diagnostic = result.diagnostic {
@@ -115,6 +116,7 @@ extension FileOpsEngine {
                     continue
                 }
                 try await streamCopy(from: entry.source, to: entry.target, progress: progress)
+                if operation == .copy { progress.recordCompletedTransfer(from: entry.source, to: entry.target) }
                 if operation == .move { try fm.removeItem(at: entry.source) }
                 progress.fileCompleted(name: entry.source.lastPathComponent, success: true)
             } catch {

@@ -66,6 +66,7 @@ extension FileOpsEngine {
             }
             if fm.fileExists(atPath: target.path) {
                 try await removeExistingTarget(target)
+                if operation == .copy { progress.replacedCopyDestination = true }
             }
             return (target, false, false)
         }

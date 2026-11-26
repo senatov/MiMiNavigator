@@ -12,17 +12,23 @@ import SwiftUI
 struct HIGDialogHeader: View {
     let title: String
     let subtitle: String?
-    init(_ title: String, subtitle: String? = nil) {
+    let operationIcon: String?
+    init(_ title: String, subtitle: String? = nil, operationIcon: String? = nil) {
         self.title = title
         self.subtitle = subtitle
+        self.operationIcon = operationIcon
     }
     var body: some View {
         HStack(spacing: DesignTokens.Dialog.headerSpacing) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: DesignTokens.Dialog.iconSize, height: DesignTokens.Dialog.iconSize)
-                .accessibilityHidden(true)
+            if let operationIcon {
+                DialogGlassIcon(systemName: operationIcon, tint: DialogGlassIcon.destructiveTint, diameter: 48)
+            } else {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: DesignTokens.Dialog.iconSize, height: DesignTokens.Dialog.iconSize)
+                    .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))

@@ -137,7 +137,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .gitClients:
             return "git client terminal fork github desktop sourcetree tower sublime merge default install repository"
         case .progress:
-            return "background border text title status log font size panel width height auto-close operation saved frames positions reset defaults"
+            return "background border text title status log font size panel width height auto-close operation confirmation threshold copy move delete saved frames positions reset defaults"
         case .externalTools:
             return "command line dependencies diagnostics install path status ffmpeg seven zip 7z tools"
         case .permissions:

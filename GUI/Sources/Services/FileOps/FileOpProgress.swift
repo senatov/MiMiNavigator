@@ -30,6 +30,7 @@ final class FileOpProgress {
     var usesProgressPanel: Bool = false
     private let progressPanel = ProgressPanel.shared
     var errors: [FileOpErrorInfo] = []
+    var replacedCopyDestination = false
     private(set) var completedTransfers: [FileOpTransfer] = []
 
     // MARK: - Timing

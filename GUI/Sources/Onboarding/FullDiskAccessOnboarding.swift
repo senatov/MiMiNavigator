@@ -38,9 +38,7 @@ struct FullDiskAccessOnboarding: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: "externaldrive.badge.checkmark")
-                .font(.system(size: 48, weight: .light))
-                .foregroundStyle(Color.accentColor)
+            DialogGlassIcon(systemName: "externaldrive.badge.checkmark", tint: .accentColor)
             Text("Full Disk Access")
                 .font(.system(size: 18, weight: .semibold))
             Text("For full file manager functionality, enable Full Disk Access in macOS Settings. You can also authorize selected folders or continue with the locations already available to the app.")

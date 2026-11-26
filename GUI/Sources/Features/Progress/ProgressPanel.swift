@@ -77,8 +77,10 @@ final class ProgressPanel: NSObject {
     var smoothedProgressRate: Double?
     weak var presentationHostWindow: NSWindow?
     let isBackground: Bool
-    init(isBackground: Bool = false) {
+    let historyOnly: Bool
+    init(isBackground: Bool = false, historyOnly: Bool = false) {
         self.isBackground = isBackground
+        self.historyOnly = historyOnly
         super.init()
     }
     var appearance: ProgressPanelAppearance { .shared }
@@ -86,6 +88,7 @@ final class ProgressPanel: NSObject {
 
     // MARK: - Compatibility Helpers
     func reset(title: String, message: String, icon: String = "archivebox.fill") {
+        guard !historyOnly else { return }
         if panel == nil { createPanel() }
         isCancelled = false
         isFinished = false
@@ -115,6 +118,7 @@ final class ProgressPanel: NSObject {
         operationKey: String? = nil,
         cancelHandler: (() -> Void)? = nil
     ) {
+        guard !historyOnly else { return }
         let alreadyPresented = isBackground && (panel?.isVisible == true || panel?.isMiniaturized == true)
         presentationHostWindow = currentPresentationHostWindow()
         InfoPopupController.hideAll(reason: "progress-show:\(title)", immediate: true)

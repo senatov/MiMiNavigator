@@ -28,6 +28,21 @@ extension CntMenuCoord {
 
     // MARK: - Delete
 
+    // MARK: - Request Delete
+    func requestDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState) {
+        let items = files.filter { !ParentDirectoryEntry.isParentEntry($0) }
+        guard !items.isEmpty else { return }
+        guard FileOperationConfirmation.isRequired(for: items.count) else {
+            Task {
+                await ProgressPanel.runFileOperation(inBackground: false, historyOnly: true, operation: .delete) {
+                    await performDelete(files: items, sourcePanel: sourcePanel, appState: appState)
+                }
+            }
+            return
+        }
+        activeDialog = .deleteConfirmation(files: items, sourcePanel: sourcePanel)
+    }
+
     /// Delete files to trash.
     func performDelete(
         files: [CustomFile],

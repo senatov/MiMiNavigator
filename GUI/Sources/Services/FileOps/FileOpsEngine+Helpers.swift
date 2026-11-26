@@ -76,6 +76,7 @@ extension FileOpsEngine {
             Self.performIO(from: source, to: target, operation: operation)
         }.value
         if result.succeeded {
+            if operation == .copy { progress.recordCompletedTransfer(from: source, to: target) }
             progress.fileCompleted(name: source.lastPathComponent, success: true)
             progress.add(bytes: max(size, result.bytes))
             return true

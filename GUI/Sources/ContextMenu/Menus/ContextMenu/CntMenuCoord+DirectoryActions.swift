@@ -64,7 +64,7 @@ extension CntMenuCoord {
             case .share:
                 share(batchFiles)
             case .delete:
-                activeDialog = .deleteConfirmation(files: batchFiles)
+                requestDelete(files: batchFiles, sourcePanel: panel, appState: appState)
             case .openOnOtherPanel:
                 openDirectoryOnOtherPanel(file, panel: panel, appState: appState)
             case .mirrorPanel:

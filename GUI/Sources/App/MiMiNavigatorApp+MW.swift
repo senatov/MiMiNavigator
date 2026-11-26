@@ -49,6 +49,11 @@ extension MiMiNavigatorApp {
             .onAppear { handleOnAppear() }
             .onChange(of: scenePhase) { handleScenePhaseChange() }
 
+            .onChange(of: dragDropManager.pendingOperation?.id) {
+                guard dragDropManager.pendingOperation != nil, !dragDropManager.showConfirmationDialog else { return }
+                executePendingTransfer(.copy, historyOnly: true)
+            }
+
             // MARK: - Sheets
             .sheet(isPresented: confirmationDialogBinding) {
                 if let operation = dragDropManager.pendingOperation {

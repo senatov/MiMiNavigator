@@ -39,7 +39,10 @@ final class BatchOperationManager {
             let progress = try await engine.copy(items: urls, to: destination)
             if progress.errors.isEmpty && !progress.isCancelled {
                 appState.clearMarksAfterOperation(on: sourcePanel)
-                FileOperationOutcomePresenter.success(.copy, itemCount: files.count, resultURL: destination, sourceURLs: urls)
+                let undo = FileOperationOutcomePresenter.copyUndo(progress: progress, sources: urls) {
+                    Task { @MainActor in await self.refreshPanels(appState: appState) }
+                }
+                FileOperationOutcomePresenter.success(.copy, itemCount: files.count, resultURL: destination, sourceURLs: urls, undo: undo)
             } else if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(.copy)
             } else {

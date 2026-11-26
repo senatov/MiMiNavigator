@@ -157,7 +157,7 @@ final class DragDropManager {
             destination: resolvedDestination,
             sourcePanelSide: sourcePanelSide
         )
-        showConfirmationDialog = true
+        showConfirmationDialog = FileOperationConfirmation.isRequired(for: files.count)
     }
 
     // MARK: - Archive Root Destination
@@ -188,14 +188,16 @@ final class DragDropManager {
     }
 
     // MARK: - Execute Transfer
-    func executeTransfer(action: FileTransferAction, appState: AppState) async {
-        guard let operation = pendingOperation else {
-            log.error("[DnD] executeTransfer called with no pending op")
-            return
-        }
+    func takePendingOperation() -> FileTransferOperation? {
+        guard let operation = pendingOperation else { return nil }
         pendingOperation = nil
         showConfirmationDialog = false
         endDrag()
+        return operation
+    }
+
+    // MARK: - Execute Transfer
+    func executeTransfer(action: FileTransferAction, operation: FileTransferOperation, appState: AppState) async {
         await Task.yield()
         switch action {
             case .abort:
@@ -282,14 +284,12 @@ final class DragDropManager {
             }
             let outcome: FileOperationOutcomePresenter.Operation = kind == .move ? .move : .copy
             let transfers = progress.completedTransfers
-            let undo = kind == .move ? FileOperationOutcomePresenter.moveUndo(
-                from: transfers.map(\.destination),
-                to: transfers.map(\.source)
-            ) {
-                Task { @MainActor in
-                    await self.refreshAffectedPanels(appState: appState, operation: operation)
-                }
-            } : nil
+            let refresh = { @MainActor () -> Void in
+                Task { @MainActor in await self.refreshAffectedPanels(appState: appState, operation: operation) }
+            }
+            let undo = kind == .move
+                ? FileOperationOutcomePresenter.moveUndo(from: transfers.map(\.destination), to: transfers.map(\.source), refresh: refresh)
+                : FileOperationOutcomePresenter.copyUndo(progress: progress, sources: urls, refresh: refresh)
             if progress.isCancelled {
                 FileOperationOutcomePresenter.cancelled(outcome)
             } else if progress.errors.isEmpty {

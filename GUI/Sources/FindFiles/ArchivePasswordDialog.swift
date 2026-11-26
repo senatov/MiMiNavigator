@@ -20,9 +20,7 @@ struct ArchivePasswordDialog: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             VStack(spacing: 10) {
-                Image(systemName: "lock.doc")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.orange)
+                DialogGlassIcon(systemName: "lock.doc", tint: .orange, diameter: 52)
 
                 Text("Password Required")
                     .font(.headline)

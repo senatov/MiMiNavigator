@@ -24,9 +24,7 @@ struct AutomationPermissionOnboarding: View {
         VStack(spacing: 20) {
             // Icon + Title
             VStack(spacing: 10) {
-                Image(systemName: "hand.raised.circle.fill")
-                    .font(.system(size: 48, weight: .light))
-                    .foregroundStyle(.orange)
+                DialogGlassIcon(systemName: "hand.raised.circle.fill", tint: .orange)
                 Text("Automation Permission")
                     .font(.system(size: 18, weight: .semibold))
                 Text("MiMiNavigator needs permission to communicate with Finder and System Events for features like Reveal in Finder and directory comparison tools.")

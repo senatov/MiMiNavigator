@@ -12,7 +12,7 @@ import Foundation
 /// Represents different dialog types that can be shown by the coordinator
 enum ActiveDialog: Identifiable {
     // MARK: - Single-item dialogs
-    case deleteConfirmation(files: [CustomFile])
+    case deleteConfirmation(files: [CustomFile], sourcePanel: FavPanelSide)
     case pack(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case compress(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide)
     case createLink(file: CustomFile, destination: URL)

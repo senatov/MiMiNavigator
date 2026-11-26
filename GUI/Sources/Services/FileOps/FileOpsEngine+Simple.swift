@@ -30,6 +30,7 @@ extension FileOpsEngine {
                 Self.performIO(from: item, to: target, operation: operation)
             }.value
             if result.succeeded {
+                if operation == .copy { progress.recordCompletedTransfer(from: item, to: target) }
                 progress.fileCompleted(name: item.lastPathComponent, success: true)
                 progress.add(bytes: result.bytes)
             } else if let diagnostic = result.diagnostic {

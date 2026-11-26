@@ -121,6 +121,13 @@ enum FileOperationOutcomePresenter {
         )
     }
 
+    static func copyUndo(progress: FileOpProgress, sources: [URL], refresh: @escaping () -> Void) -> UndoOperation? {
+        guard !progress.replacedCopyDestination,
+              sources.allSatisfy({ (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }) else { return nil }
+        return copyUndo(copiedURLs: progress.completedTransfers.map(\.destination), refresh: refresh)
+    }
+
+    // MARK: - Undo Copied URLs
     static func copyUndo(copiedURLs: [URL], refresh: @escaping () -> Void) -> UndoOperation? {
         guard !copiedURLs.isEmpty else { return nil }
         return UndoOperation(

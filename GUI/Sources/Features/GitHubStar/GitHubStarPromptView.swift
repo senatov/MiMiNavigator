@@ -31,9 +31,7 @@ struct GitHubStarPromptView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: "star.circle.fill")
-                .font(.system(size: 48, weight: .light))
-                .foregroundStyle(.yellow)
+            DialogGlassIcon(systemName: "star.circle.fill", tint: .yellow)
             Text("Enjoying MiMiNavigator?")
                 .font(.system(size: 18, weight: .semibold))
             Text("A GitHub star helps more macOS users discover the project and supports its path toward the official Homebrew catalog.")

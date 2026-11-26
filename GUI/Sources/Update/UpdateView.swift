@@ -36,9 +36,7 @@ struct UpdateView: View {
     // MARK: - Header
     private var headerSection: some View {
         HStack(spacing: 12) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 36))
-                .foregroundStyle(.accent)
+            DialogGlassIcon(systemName: "arrow.down.circle.fill", tint: .accentColor, diameter: 52)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Software Update")
@@ -66,9 +64,7 @@ struct UpdateView: View {
     // MARK: - Error
     private func errorSection(_ error: String) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.orange)
+            DialogGlassIcon(systemName: "exclamationmark.triangle.fill", tint: .orange, diameter: 56)
             Text(checker.updateAvailable ? "Update installation cancelled" : "Could not check for updates")
                 .font(.headline)
             Text(error)
@@ -83,9 +79,7 @@ struct UpdateView: View {
     // MARK: - Up to Date
     private var upToDateSection: some View {
         VStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.green)
+            DialogGlassIcon(systemName: "checkmark.circle.fill", tint: .green)
             Text("MiMiNavigator is up to date")
                 .font(.headline)
             Text("Version \(checker.currentVersion) is the latest version.")

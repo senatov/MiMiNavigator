@@ -28,7 +28,8 @@ struct DeleteConfirmationDialog: View {
             HIGDialogHeader(
                 isRemote
                     ? "Do you want to permanently delete \(itemsDescription)?"
-                    : "Do you want to move \(itemsDescription) to Trash?"
+                    : "Do you want to move \(itemsDescription) to Trash?",
+                operationIcon: "trash.fill"
             )
             FileOperationPreviewCard(rows: previewRows)
             if hasDirectories {

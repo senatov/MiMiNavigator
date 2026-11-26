@@ -14,14 +14,14 @@ extension ContextMenuDialogModifier {
     @ViewBuilder
     func primaryDialogContent(for dialog: ActiveDialog) -> some View {
         switch dialog {
-            case .deleteConfirmation(let files):
+            case .deleteConfirmation(let files, let sourcePanel):
                 DeleteConfirmationDialog(
                     files: files,
                     onConfirm: { inBackground in
                         if inBackground { coordinator.dismissDialog() }
                         Task {
                             await ProgressPanel.runFileOperation(inBackground: inBackground, operation: .delete) {
-                                await coordinator.performDelete(files: files, appState: appState)
+                                await coordinator.performDelete(files: files, sourcePanel: sourcePanel, appState: appState)
                             }
                         }
                     },
