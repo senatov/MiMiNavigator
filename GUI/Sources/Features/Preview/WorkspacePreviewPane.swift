@@ -74,9 +74,12 @@ struct WorkspacePreviewPane: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Preview pane")
         .contextMenu {
-            Button(previewSide == .left ? "Move Preview to Right" : "Move Preview to Left", action: swapSide)
+            Button(action: swapSide) {
+                ContextMenuLabel(previewSide == .left ? "Move Preview to Right" : "Move Preview to Left",
+                                 systemImage: previewSide == .left ? "arrow.right" : "arrow.left")
+            }
             if let url = previewURL {
-                Picker("Display as", selection: Binding<PreviewDisplayMode?>(
+                Picker(selection: Binding<PreviewDisplayMode?>(
                     get: { modeStore.rules[modeStore.extensionKey(for: url)] },
                     set: { selected in
                         if let selected {
@@ -86,14 +89,16 @@ struct WorkspacePreviewPane: View {
                         }
                     }
                 )) {
-                    Text("Automatic").tag(Optional<PreviewDisplayMode>.none)
+                    ContextMenuLabel("Automatic", systemImage: "wand.and.stars").tag(Optional<PreviewDisplayMode>.none)
                     ForEach(PreviewDisplayMode.allCases) { mode in
-                        Label(mode.title, systemImage: mode.symbol).tag(Optional(mode))
+                        ContextMenuLabel(mode.title, systemImage: mode.symbol).tag(Optional(mode))
                     }
+                } label: {
+                    ContextMenuLabel("Display as", systemImage: "eye")
                 }
             }
             Divider()
-            Button("Hide Preview", action: close)
+            Button(action: close) { ContextMenuLabel("Hide Preview", systemImage: "eye.slash") }
         }
     }
 

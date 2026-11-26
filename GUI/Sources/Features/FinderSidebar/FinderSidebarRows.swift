@@ -72,31 +72,31 @@ extension FinderSidebarView {
             log.info("[FinderSidebar] context open title='\(item.title)' target='\(item.identityKey)'")
             handle(item)
         } label: {
-            Label("Open", systemImage: "folder")
+            ContextMenuLabel("Open", systemImage: "folder")
         }
         Button {
             openConsole(for: item)
         } label: {
-            Label("Console", systemImage: "terminal")
+            ContextMenuLabel("Console", systemImage: "terminal")
         }
         if let url = item.fileURL {
             Button {
                 log.info("[FinderSidebar] reveal in Finder path='\(url.path)'")
                 RevealInFinderService.shared.revealInFinder(url)
             } label: {
-                Label("Open in Finder", systemImage: "folder")
+                ContextMenuLabel("Open in Finder", systemImage: "folder")
             }
             Button {
                 copyPath(url)
             } label: {
-                Label("Copy as Pathname", systemImage: "link.circle.fill")
+                ContextMenuLabel("Copy as Pathname", systemImage: "link")
             }
             if item.canUnmount {
                 Divider()
                 Button {
                     unmount(item)
                 } label: {
-                    Label("Unmount", systemImage: "eject")
+                    ContextMenuLabel("Unmount", systemImage: "eject")
                 }
             }
         }

@@ -65,13 +65,13 @@ struct ExpandableSegmentButton: View {
             setHover(hovering)
         }
         .contextMenu {
-            Button("Copy path", action: copyAction)
+            Button(action: copyAction) { ContextMenuLabel("Copy path", systemImage: "doc.on.doc") }
             if directoryURL != nil {
                 Divider()
-                Button("Open in other panel", action: openOtherPanel)
-                Button("Open in new tab", action: openNewTab)
+                Button(action: openOtherPanel) { ContextMenuLabel("Open in other panel", systemImage: "rectangle.split.2x1") }
+                Button(action: openNewTab) { ContextMenuLabel("Open in new tab", systemImage: "plus.square") }
                 Divider()
-                Button("Show subfolders…") { showsSubfolders = true }
+                Button { showsSubfolders = true } label: { ContextMenuLabel("Show subfolders…", systemImage: "folder") }
             }
         }
         .popover(isPresented: $showsSubfolders) {

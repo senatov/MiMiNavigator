@@ -210,13 +210,13 @@ struct JunkFinderView: View {
         }
         .contextMenu(forSelectionType: JunkCandidate.ID.self) { selection in
             if let id = selection.first, let candidate = model.candidates.first(where: { $0.id == id }) {
-                Button("Open Directory in Active Panel") { navigate(to: candidate.url.deletingLastPathComponent()) }
+                Button { navigate(to: candidate.url.deletingLastPathComponent()) } label: { ContextMenuLabel("Open Directory in Active Panel", systemImage: "folder") }
                     .disabled(appState == nil)
-                Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([candidate.url]) }
+                Button { NSWorkspace.shared.activateFileViewerSelecting([candidate.url]) } label: { ContextMenuLabel("Reveal in Finder", systemImage: "arrow.up.right.square") }
                 if let group = candidate.group {
-                    Button("Select Copies Except One") { model.selectGroup(group) }
+                    Button { model.selectGroup(group) } label: { ContextMenuLabel("Select Copies Except One", systemImage: "checkmark.square") }
                 }
-                Button("Exclude This Item from Scans") { model.exclude(candidate) }
+                Button { model.exclude(candidate) } label: { ContextMenuLabel("Exclude This Item from Scans", systemImage: "minus.circle") }
             }
         }
         .tableStyle(.inset(alternatesRowBackgrounds: true))

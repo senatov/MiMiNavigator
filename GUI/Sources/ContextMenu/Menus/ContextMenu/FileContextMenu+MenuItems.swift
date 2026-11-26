@@ -23,11 +23,7 @@ extension FileContextMenu {
             menuButton(.createLink)
             menuButton(.delete)
         } label: {
-            Label {
-                Text("File Operations")
-            } icon: {
-                Image(systemName: "ellipsis.circle")
-            }
+            ContextMenuLabel("File Operations", systemImage: "square.stack")
         }
     }
 
@@ -48,14 +44,10 @@ extension FileContextMenu {
             Button {
                 SettingsCoordinator.shared.openOnSection(.cloudLink)
             } label: {
-                Label("Cloud settings…", systemImage: "gearshape")
+                ContextMenuLabel("Cloud settings…", systemImage: "gearshape")
             }
         } label: {
-            Label {
-                Text("Share+Link")
-            } icon: {
-                Image(systemName: "link.badge.plus")
-            }
+            ContextMenuLabel("Share+Link", systemImage: "link.badge.plus")
         }
     }
 
@@ -67,11 +59,11 @@ extension FileContextMenu {
             Menu {
                 cloudProviderActions(provider)
             } label: {
-                Label(provider.rawValue, systemImage: provider.systemImage)
+                ContextMenuLabel(provider.rawValue, systemImage: provider.systemImage)
             }
         } else {
             Button {} label: {
-                Label(provider.rawValue, systemImage: provider.systemImage)
+                ContextMenuLabel(provider.rawValue, systemImage: provider.systemImage)
             }
             .disabled(true)
         }
@@ -84,7 +76,7 @@ extension FileContextMenu {
         Button {
             CloudLinkService.generateLink(for: file.urlValue, provider: provider)
         } label: {
-            Label("Copy Link (view only)", systemImage: "eye")
+            ContextMenuLabel("Copy Link (view only)", systemImage: "eye")
         }
     }
 
@@ -96,9 +88,9 @@ extension FileContextMenu {
                 Text("In: \((archivePath as NSString).lastPathComponent)")
                     .foregroundStyle(.secondary)
             } icon: {
-                Image(systemName: "archivebox")
-                    .foregroundStyle(.orange)
+                ContextMenuSymbol(name: "archivebox")
             }
+            .labelStyle(.titleAndIcon)
             .font(.caption)
         }
     }

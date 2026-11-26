@@ -89,7 +89,7 @@ enum FileAction: String, CaseIterable, Identifiable {
         case .viewLister: return "eye"
         case .cut: return "scissors"
         case .copy: return "doc.on.doc"
-        case .copyAsPathname: return "link.circle.fill"
+        case .copyAsPathname: return "link"
         case .paste: return "doc.on.clipboard"
         case .duplicate: return "plus.square.on.square"
         case .rename: return "pencil"

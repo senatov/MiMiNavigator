@@ -52,7 +52,7 @@ struct OpenWithSubmenu: View {
     }
 
     private var menuLabel: some View {
-        Label("Open With", systemImage: "arrow.up.right.square")
+        ContextMenuLabel("Open With", systemImage: "arrow.up.right.square")
     }
 
     private var appButtonsSection: some View {
@@ -96,11 +96,11 @@ struct OpenWithSubmenu: View {
     }
 
     private var otherButton: some View {
-        Button("Other...", action: openWithOther)
+        Button(action: openWithOther) { ContextMenuLabel("Other...", systemImage: "ellipsis") }
     }
 
     private var appStoreButton: some View {
-        Button("App Store...", action: openInAppStore)
+        Button(action: openInAppStore) { ContextMenuLabel("App Store...", systemImage: "bag") }
     }
 
     @ViewBuilder
@@ -110,6 +110,7 @@ struct OpenWithSubmenu: View {
         } icon: {
             Image(nsImage: app.icon)
         }
+        .labelStyle(.titleAndIcon)
         .id(rowID(for: app))
         .onAppear {
             logAppRow(app)

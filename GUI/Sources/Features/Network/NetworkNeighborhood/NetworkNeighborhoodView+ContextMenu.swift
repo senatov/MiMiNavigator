@@ -13,37 +13,37 @@ extension NetworkNeighborhoodView {
     @ViewBuilder
     func hostContextMenu(_ host: NetworkHost) -> some View {
         Button { copyHostText(host.hostDisplayName) } label: {
-            Label("Copy Name: \"\(host.hostDisplayName)\"", systemImage: "doc.on.doc")
+            ContextMenuLabel("Copy Name: \"\(host.hostDisplayName)\"", systemImage: "doc.on.doc")
         }
         let ip = resolvedIP(host)
         if !ip.isEmpty {
             Button { copyHostText(ip) } label: {
-                Label("Copy IP: \(ip)", systemImage: "number")
+                ContextMenuLabel("Copy IP: \(ip)", systemImage: "number")
             }
         }
         if let url = host.webUIURL {
             Button { copyHostText(url.absoluteString) } label: {
-                Label("Copy Web URL: \(url.absoluteString)", systemImage: "link")
+                ContextMenuLabel("Copy Web URL: \(url.absoluteString)", systemImage: "link")
             }
             Divider()
             Button { NSWorkspace.shared.open(url) } label: {
-                Label("Open Web UI", systemImage: "safari")
+                ContextMenuLabel("Open Web UI", systemImage: "safari")
             }
         }
         if let mountURL = host.mountURL {
             Button { copyHostText(mountURL.absoluteString) } label: {
-                Label("Copy Mount URL", systemImage: "externaldrive")
+                ContextMenuLabel("Copy Mount URL", systemImage: "externaldrive")
             }
         }
         if let mac = host.macAddress {
             Divider()
             Button { copyHostText(mac) } label: {
-                Label("Copy MAC: \(mac)", systemImage: "antenna.radiowaves.left.and.right")
+                ContextMenuLabel("Copy MAC: \(mac)", systemImage: "antenna.radiowaves.left.and.right")
             }
         }
         Divider()
         Button { copyHostText(buildCopyText(host)) } label: {
-            Label("Copy All Info", systemImage: "doc.on.clipboard")
+            ContextMenuLabel("Copy All Info", systemImage: "doc.on.clipboard")
         }
     }
 

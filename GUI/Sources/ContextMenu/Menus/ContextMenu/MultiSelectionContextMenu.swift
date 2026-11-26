@@ -24,11 +24,7 @@ struct MultiSelectionContextMenu: View {
             Divider()
             menuButton(.delete)
         } label: {
-            Label {
-                Text("􀉒 File Operations")
-            } icon: {
-                Image(systemName: "ellipsis.circle")
-            }
+            ContextMenuLabel("File Operations", systemImage: "square.stack")
         }
     }
 
@@ -69,44 +65,11 @@ struct MultiSelectionContextMenu: View {
                     }
                 }
             } icon: {
-                Image(systemName: action.systemImage)
-                    .symbolRenderingMode(iconRenderingMode(for: action))
-                    .foregroundStyle(iconColor(for: action))
-                    .font(iconFont(for: action))
+                ContextMenuSymbol(name: action.systemImage)
             }
+            .labelStyle(.titleAndIcon)
         }
         .disabled(isActionDisabled(action))
-    }
-
-    private func iconRenderingMode(for action: MultiSelectionAction) -> SymbolRenderingMode {
-        switch action {
-        case .console:
-            .palette
-        case .copyAsPathname:
-            .hierarchical
-        default:
-            .monochrome
-        }
-    }
-
-    private func iconColor(for action: MultiSelectionAction) -> Color {
-        switch action {
-        case .console:
-            .green
-        case .copyAsPathname:
-            .blue
-        default:
-            .primary
-        }
-    }
-
-    private func iconFont(for action: MultiSelectionAction) -> Font {
-        switch action {
-        case .console:
-            .system(size: 17, weight: .semibold)
-        default:
-            .body
-        }
     }
 
     // MARK: - Action State

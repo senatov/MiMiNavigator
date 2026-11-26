@@ -10,18 +10,20 @@ import SwiftUI
 extension TableHeaderView {
     @ViewBuilder
     var columnToggleMenu: some View {
-        Picker("Column Preset", selection: Binding<ColumnLayoutPreset?>(
+        Picker(selection: Binding<ColumnLayoutPreset?>(
             get: { ColumnLayoutPreset.allCases.first { layout.configuredVisibleColumns.map(\.id) == $0.columns } },
             set: { if let preset = $0 { applyColumnPreset(preset) } }
         )) {
             ForEach(ColumnLayoutPreset.allCases) { preset in
-                Label(preset.rawValue, systemImage: preset.systemImage).tag(Optional(preset))
+                ContextMenuLabel(preset.rawValue, systemImage: preset.systemImage).tag(Optional(preset))
             }
+        } label: {
+            ContextMenuLabel("Column Preset", systemImage: "tablecells")
         }
         Divider()
         ForEach(layout.columns) { spec in
             if !spec.id.isRequired {
-                Toggle(spec.id.title, isOn: Binding(
+                Toggle(isOn: Binding(
                     get: { layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false },
                     set: { newValue in
                         let current = layout.columns.first(where: { $0.id == spec.id })?.isVisible ?? false
@@ -33,16 +35,18 @@ extension TableHeaderView {
                             }
                         }
                     }
-                ))
+                )) {
+                    ContextMenuLabel(spec.id.title, systemImage: "rectangle.split.3x1")
+                }
             }
         }
         Divider()
         Button {
             autoFitAllColumns()
         } label: {
-            Label("Auto Fit All Columns", systemImage: "arrow.left.and.right.text.vertical")
+            ContextMenuLabel("Auto Fit All Columns", systemImage: "arrow.left.and.right.text.vertical")
         }
-        Toggle("Auto Fit After Navigation", isOn: Binding(
+        Toggle(isOn: Binding(
             get: { UserPreferences.shared.snapshot.autoFitColumnsOnNavigate },
             set: { newValue in
                 UserPreferences.shared.snapshot.autoFitColumnsOnNavigate = newValue
@@ -52,9 +56,11 @@ extension TableHeaderView {
                 let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
                 ColumnAutoFitter.autoFitAll(layout: layout, files: files)
             }
-        ))
+        )) {
+            ContextMenuLabel("Auto Fit After Navigation", systemImage: "arrow.left.and.right.text.vertical")
+        }
         Divider()
-        Button("Reset Column Layout") { layout.restoreDefaults() }
+        Button { layout.restoreDefaults() } label: { ContextMenuLabel("Reset Column Layout", systemImage: "arrow.counterclockwise") }
     }
 
     // MARK: - Preset

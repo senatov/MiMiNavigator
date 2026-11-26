@@ -44,7 +44,7 @@ struct DirectoryContextMenu: View {
                 userFavorites.remove(url: file.urlValue)
                 log.info("[Favorites] directory removed via context menu: \(file.urlValue.path)")
             } label: {
-                Label("Remove from Favorites", systemImage: "star.slash.fill")
+                ContextMenuLabel("Remove from Favorites", systemImage: "star.slash.fill")
             }
         } else {
             menuButton(.addToFavorites)
@@ -70,44 +70,11 @@ struct DirectoryContextMenu: View {
                     }
                 }
             } icon: {
-                Image(systemName: action.systemImage)
-                    .symbolRenderingMode(iconRenderingMode(for: action))
-                    .foregroundStyle(iconColor(for: action))
-                    .font(iconFont(for: action))
+                ContextMenuSymbol(name: action.systemImage)
             }
+            .labelStyle(.titleAndIcon)
         }
         .disabled(isActionDisabled(action))
-    }
-
-    private func iconRenderingMode(for action: DirectoryAction) -> SymbolRenderingMode {
-        switch action {
-        case .console:
-            .palette
-        case .copyAsPathname:
-            .hierarchical
-        default:
-            .monochrome
-        }
-    }
-
-    private func iconColor(for action: DirectoryAction) -> Color {
-        switch action {
-        case .console:
-            .green
-        case .copyAsPathname:
-            .blue
-        default:
-            .primary
-        }
-    }
-
-    private func iconFont(for action: DirectoryAction) -> Font {
-        switch action {
-        case .console:
-            .system(size: 17, weight: .semibold)
-        default:
-            .body
-        }
     }
 
     private func shortcutHint(for action: DirectoryAction) -> String? {
@@ -167,23 +134,17 @@ struct DirectoryContextMenu: View {
             menuButton(.createLink)
             Divider()
             Menu {
-                Button("Make Finder Alias") {
-                }
+                Button { } label: { ContextMenuLabel("Make Finder Alias", systemImage: "arrow.turn.up.right") }
                 .disabled(true)
-                Button("Make Symbolic Link") {
-                }
+                Button { } label: { ContextMenuLabel("Make Symbolic Link", systemImage: "link") }
                 .disabled(true)
             } label: {
-                Label("Make Alias", systemImage: "link")
+                ContextMenuLabel("Make Alias", systemImage: "link")
             }
             Divider()
             menuButton(.delete)
         } label: {
-            Label {
-                Text("􀉒 Folder Operations")
-            } icon: {
-                Image(systemName: "ellipsis.circle")
-            }
+            ContextMenuLabel("Folder Operations", systemImage: "square.stack")
         }
     }
 
@@ -221,14 +182,10 @@ struct DirectoryContextMenu: View {
             Button {
                 SettingsCoordinator.shared.openOnSection(.cloudLink)
             } label: {
-                Label("Cloud settings…", systemImage: "gearshape")
+                ContextMenuLabel("Cloud settings…", systemImage: "gearshape")
             }
         } label: {
-            Label {
-                Text("Share+Link")
-            } icon: {
-                Image(systemName: "link.badge.plus")
-            }
+            ContextMenuLabel("Share+Link", systemImage: "link.badge.plus")
         }
     }
 
@@ -240,11 +197,11 @@ struct DirectoryContextMenu: View {
             Menu {
                 cloudProviderActions(provider)
             } label: {
-                Label(provider.rawValue, systemImage: provider.systemImage)
+                ContextMenuLabel(provider.rawValue, systemImage: provider.systemImage)
             }
         } else {
             Button {} label: {
-                Label(provider.rawValue, systemImage: provider.systemImage)
+                ContextMenuLabel(provider.rawValue, systemImage: provider.systemImage)
             }
             .disabled(true)
         }
@@ -257,7 +214,7 @@ struct DirectoryContextMenu: View {
         Button {
             CloudLinkService.generateLink(for: file.urlValue, provider: provider)
         } label: {
-            Label("Copy Link (view only)", systemImage: "eye")
+            ContextMenuLabel("Copy Link (view only)", systemImage: "eye")
         }
     }
 }

@@ -16,14 +16,16 @@ func gitClientMenu(repository: URL) -> some View {
             registry.open(client, repository: repository)
         } label: {
             if client == registry.preferredClient {
-                Label("Open in \(client.name)", systemImage: "checkmark")
+                ContextMenuLabel("Open in \(client.name)", systemImage: "checkmark")
             } else {
-                Text("Open in \(client.name)")
+                ContextMenuLabel("Open in \(client.name)", systemImage: "arrow.up.right.square")
             }
         }
     }
     Divider()
-    Button("Git Client Settings…") {
+    Button {
         SettingsCoordinator.shared.openOnSection(.gitClients)
+    } label: {
+        ContextMenuLabel("Git Client Settings…", systemImage: "gearshape")
     }
 }

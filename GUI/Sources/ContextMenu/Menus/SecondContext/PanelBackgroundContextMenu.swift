@@ -60,7 +60,7 @@ struct PanelBackgroundContextMenu: View {
             // ═══════════════════════════════════════════
             // SECTION 3: Sort submenu
             // ═══════════════════════════════════════════
-            Picker("Sort By", selection: Binding(
+            Picker(selection: Binding(
                 get: { sortKey },
                 set: { key in
                     switch key {
@@ -72,10 +72,12 @@ struct PanelBackgroundContextMenu: View {
                     }
                 }
             )) {
-                Text("Name").tag(SortKeysEnum.name)
-                Text("Date").tag(SortKeysEnum.date)
-                Text("Size").tag(SortKeysEnum.size)
-                Text("Type").tag(SortKeysEnum.type)
+                ContextMenuLabel("Name", systemImage: "textformat").tag(SortKeysEnum.name)
+                ContextMenuLabel("Date", systemImage: "calendar").tag(SortKeysEnum.date)
+                ContextMenuLabel("Size", systemImage: "externaldrive").tag(SortKeysEnum.size)
+                ContextMenuLabel("Type", systemImage: "doc.on.doc").tag(SortKeysEnum.type)
+            } label: {
+                ContextMenuLabel("Sort By", systemImage: "arrow.up.arrow.down")
             }
             
             Divider()
@@ -106,11 +108,7 @@ struct PanelBackgroundContextMenu: View {
             menuButton(.newFolder)
             menuButton(.newFile)
         } label: {
-            Label {
-                Text("Create New")
-            } icon: {
-                Image(systemName: "plus.square.on.square")
-            }
+            ContextMenuLabel("Create New", systemImage: "plus.square.on.square")
         }
     }
     
@@ -133,11 +131,9 @@ struct PanelBackgroundContextMenu: View {
                     }
                 }
             } icon: {
-                Image(systemName: action.systemImage)
-                    .symbolRenderingMode(action == .console ? .palette : .monochrome)
-                    .foregroundStyle(action == .console ? .green : .primary)
-                    .font(action == .console ? .system(size: 17, weight: .semibold) : .body)
+                ContextMenuSymbol(name: action.systemImage)
             }
+            .labelStyle(.titleAndIcon)
         }
         .disabled(isActionDisabled(action))
     }

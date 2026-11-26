@@ -94,7 +94,7 @@ struct HistoryRow: View {
         .help(path)
         .contextMenu {
             Button(action: copyPath) {
-                Label("Copy Path", systemImage: "doc.on.doc")
+                ContextMenuLabel("Copy Path", systemImage: "doc.on.doc")
             }
         }
     }

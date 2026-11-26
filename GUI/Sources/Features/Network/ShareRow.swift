@@ -120,12 +120,12 @@ struct ShareRow: View {
             Button {
                 copyToPasteboard(share.name)
             } label: {
-                Label("Copy Share Name", systemImage: "doc.on.doc")
+                ContextMenuLabel("Copy Share Name", systemImage: "doc.on.doc")
             }
             Button {
                 copyToPasteboard(share.url.absoluteString)
             } label: {
-                Label("Copy Mount URL", systemImage: "link")
+                ContextMenuLabel("Copy Mount URL", systemImage: "link")
             }
         }
     }

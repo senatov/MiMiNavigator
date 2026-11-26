@@ -20,8 +20,9 @@ extension FileContextMenu {
                 shortcutView(for: action)
             }
         } icon: {
-            menuIcon(for: action)
+            ContextMenuSymbol(name: action.systemImage)
         }
+        .labelStyle(.titleAndIcon)
     }
 
     // MARK: - Shortcut View
@@ -40,48 +41,5 @@ extension FileContextMenu {
             return HotKeyStore.shared.shortcutString(for: .renameFile)
         }
         return action.shortcutHint
-    }
-
-    // MARK: - Menu Icon
-    @ViewBuilder
-    func menuIcon(for action: FileAction) -> some View {
-        Image(systemName: action.systemImage)
-            .symbolRenderingMode(iconRenderingMode(for: action))
-            .foregroundStyle(iconColor(for: action))
-            .font(iconFont(for: action))
-    }
-
-    // MARK: - Icon Rendering Mode
-    func iconRenderingMode(for action: FileAction) -> SymbolRenderingMode {
-        switch action {
-        case .console:
-            .palette
-        case .copyAsPathname:
-            .hierarchical
-        default:
-            .monochrome
-        }
-    }
-
-    // MARK: - Icon Color
-    func iconColor(for action: FileAction) -> Color {
-        switch action {
-        case .console:
-            .green
-        case .copyAsPathname:
-            .blue
-        default:
-            .primary
-        }
-    }
-
-    // MARK: - Icon Font
-    func iconFont(for action: FileAction) -> Font {
-        switch action {
-        case .console:
-            .system(size: 17, weight: .semibold)
-        default:
-            .body
-        }
     }
 }

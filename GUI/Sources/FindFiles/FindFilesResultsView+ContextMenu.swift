@@ -10,39 +10,51 @@ extension FindFilesResultsView {
         let selected = viewModel.results.filter { selection.contains($0.id) }
         let actionable = selected.filter { $0.fileURL.isFileURL && !$0.isInsideArchive && !$0.isPasswordProtected }
         if selected.count == 1, let result = selected.first {
-            Button("Go to File") {
+            Button {
                 if let state = appState { viewModel.goToFile(result: result, appState: state) }
+            } label: {
+                ContextMenuLabel("Go to File", systemImage: "scope")
             }
             .disabled(appState == nil)
-            Button("Reveal in Finder") { viewModel.revealInFinder(result: result) }
+            Button { viewModel.revealInFinder(result: result) } label: { ContextMenuLabel("Reveal in Finder", systemImage: "folder") }
                 .disabled(!result.fileURL.isFileURL)
         }
-        Button(selected.count == 1 ? "Open" : "Open \(selected.count) Items") {
+        Button {
             viewModel.openResults(actionable)
+        } label: {
+            ContextMenuLabel(selected.count == 1 ? "Open" : "Open \(selected.count) Items", systemImage: "arrow.up.right.square")
         }
         .disabled(actionable.isEmpty)
         Divider()
-        Button(selected.count == 1 ? "Copy to Folder…" : "Copy \(selected.count) Items to Folder…") {
+        Button {
             viewModel.copyResults(actionable)
+        } label: {
+            ContextMenuLabel(selected.count == 1 ? "Copy to Folder…" : "Copy \(selected.count) Items to Folder…", systemImage: "doc.on.doc")
         }
         .disabled(actionable.isEmpty)
-        Button(selected.count == 1 ? "Move to Folder…" : "Move \(selected.count) Items to Folder…") {
+        Button {
             viewModel.moveResults(actionable)
+        } label: {
+            ContextMenuLabel(selected.count == 1 ? "Move to Folder…" : "Move \(selected.count) Items to Folder…", systemImage: "arrow.right.doc.on.clipboard")
         }
         .disabled(actionable.isEmpty)
-        Button(selected.count == 1 ? "Move to Trash" : "Move \(selected.count) Items to Trash", role: .destructive) {
+        Button(role: .destructive) {
             viewModel.trashResults(actionable)
+        } label: {
+            ContextMenuLabel(selected.count == 1 ? "Move to Trash" : "Move \(selected.count) Items to Trash", systemImage: "trash")
         }
         .disabled(actionable.isEmpty)
         Divider()
-        Button(selected.count == 1 ? "Copy Path" : "Copy \(selected.count) Paths") {
+        Button {
             viewModel.copyPaths(for: selected)
+        } label: {
+            ContextMenuLabel(selected.count == 1 ? "Copy Path" : "Copy \(selected.count) Paths", systemImage: "link")
         }
         Divider()
-        Button("Select All") { viewModel.selectAllResults() }
-        Button("Copy All Paths") { viewModel.copyResultPaths() }
+        Button { viewModel.selectAllResults() } label: { ContextMenuLabel("Select All", systemImage: "checkmark.square") }
+        Button { viewModel.copyResultPaths() } label: { ContextMenuLabel("Copy All Paths", systemImage: "doc.on.clipboard") }
             .disabled(viewModel.results.isEmpty)
-        Button("Export Results…") { viewModel.exportResults() }
+        Button { viewModel.exportResults() } label: { ContextMenuLabel("Export Results…", systemImage: "square.and.arrow.up") }
             .disabled(viewModel.results.isEmpty)
     }
 

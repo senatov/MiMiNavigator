@@ -56,19 +56,25 @@ extension ConnToSrvrView {
             handleSelectionChange(server.id)
         }
         .contextMenu {
-            Button("Connect") {
+            Button {
                 connectServerAction(server: server)
+            } label: {
+                ContextMenuLabel("Connect", systemImage: "network")
             }
 
-            Button("Disconnect") {
+            Button {
                 disconnectServerAction(server: server)
+            } label: {
+                ContextMenuLabel("Disconnect", systemImage: "bolt.slash")
             }
             .disabled(!connectionManager.isConnected(to: server) || isConnecting)
 
             Divider()
 
-            Button("Delete", role: .destructive) {
+            Button(role: .destructive) {
                 deleteServerAction(server: server)
+            } label: {
+                ContextMenuLabel("Delete", systemImage: "trash")
             }
         }
         .padding(.horizontal, 6)

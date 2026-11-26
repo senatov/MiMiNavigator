@@ -41,12 +41,7 @@ extension FileContextMenu {
                 FileContextMenuLog.logMediaInfo(fileName: file.nameStr, path: filePath)
                 MediaInfoGetter().getMediaInfoToFile(url: file.urlValue)
             } label: {
-                HStack(spacing: 5) {
-                    Text("Media􀅴 & Convert")
-                    Image(systemName: "info.circle")
-                    Text("+")
-                    Text("Convert")
-                }
+                ContextMenuLabel("Media Info & Convert", systemImage: "film")
             }
             sectionDivider(after: .media)
         }

@@ -27,7 +27,7 @@
                     log.debug("[TabContextMenu] close tab '\(tab.displayName)'")
                     onClose()
                 } label: {
-                    Label("Close Tab", systemImage: "xmark")
+                    ContextMenuLabel("Close Tab", systemImage: "xmark")
                 }
                 .disabled(isOnlyTab)
 
@@ -36,7 +36,7 @@
                     log.debug("[TabContextMenu] close others, keeping '\(tab.displayName)'")
                     onCloseOthers()
                 } label: {
-                    Label("Close Other Tabs", systemImage: "xmark.square")
+                    ContextMenuLabel("Close Other Tabs", systemImage: "xmark.square")
                 }
                 .disabled(tabCount <= 1)
 
@@ -45,7 +45,7 @@
                     log.debug("[TabContextMenu] close tabs to right of '\(tab.displayName)'")
                     onCloseToRight()
                 } label: {
-                    Label("Close Tabs to the Right", systemImage: "arrow.right.to.line")
+                    ContextMenuLabel("Close Tabs to the Right", systemImage: "arrow.right.to.line")
                 }
                 .disabled(tabCount <= 1)
 
@@ -56,14 +56,7 @@
                     log.debug("[TabContextMenu] duplicate tab '\(tab.displayName)'")
                     onDuplicate()
                 } label: {
-                    Label {
-                        HStack {
-                            Text("Duplicate Tab")
-                            Spacer()
-                        }
-                    } icon: {
-                        Image(systemName: "plus.square.on.square")
-                    }
+                    ContextMenuLabel("Duplicate Tab", systemImage: "plus.square.on.square")
                 }
 
                 Divider()
@@ -74,7 +67,7 @@
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(tab.url.path, forType: .string)
                 } label: {
-                    Label("Copy Path", systemImage: "doc.on.doc")
+                    ContextMenuLabel("Copy Path", systemImage: "doc.on.doc")
                 }
 
                 // Reveal in Finder
@@ -82,7 +75,7 @@
                     log.debug("[TabContextMenu] reveal in Finder '\(tab.url.path)'")
                     NSWorkspace.shared.activateFileViewerSelecting([tab.url])
                 } label: {
-                    Label("Show in Finder", systemImage: "folder.badge.gearshape")
+                    ContextMenuLabel("Show in Finder", systemImage: "folder.badge.gearshape")
                 }
             }
         }

@@ -71,7 +71,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .newFolder: return "folder.badge.plus"
         case .newFile: return "doc.badge.plus"
         case .paste: return "doc.on.clipboard"
-        case .copyAsPathname: return "link.circle.fill"
+        case .copyAsPathname: return "link"
         case .sortByName: return "textformat.abc"
         case .sortByDate: return "calendar"
         case .sortBySize: return "internaldrive"
@@ -80,7 +80,7 @@ enum PanelBackgroundAction: String, CaseIterable, Identifiable {
         case .openInTerminal: return "terminal"
         case .console: return "apple.terminal.fill"
         case .mirrorPath: return "arrow.left.arrow.right.square"
-        case .openMarkedOnOtherPanel: return "folder.badge.arrow.right"
+        case .openMarkedOnOtherPanel: return "rectangle.split.2x1"
         }
     }
 
