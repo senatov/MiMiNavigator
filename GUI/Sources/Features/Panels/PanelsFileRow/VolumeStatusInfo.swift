@@ -14,6 +14,7 @@ enum VolumeStatusInfo {
     struct Capacity: Equatable, Sendable {
         let label: String
         let systemImage: String
+        var usedFraction: Double? = nil
     }
 
     // MARK: - Panel Status
@@ -28,13 +29,21 @@ enum VolumeStatusInfo {
     static func capacity(for url: URL) -> Capacity? {
         guard !AppState.isAppManagedNetworkMountPath(url) else { return nil }
         guard let volumeURL = mountedVolumeRoot(for: url) else { return nil }
-        guard let free = availableCapacity(for: volumeURL) else { return nil }
-        let freeText = formatBytes(free)
-        let totalText = totalCapacity(for: volumeURL).map(formatBytes)
+        return details(forMountedVolume: volumeURL)
+    }
+
+    // MARK: - Mounted Volume Details
+    static func details(forMountedVolume volumeURL: URL, usePhysicalFreeSpace: Bool = false) -> Capacity? {
+        let free = usePhysicalFreeSpace ? physicalFreeSpace(for: volumeURL) : availableCapacity(for: volumeURL)
+        guard let free else { return nil }
+        let freeText = "\(formatBytes(free)) free"
+        let total = totalCapacity(for: volumeURL)
+        let totalText = total.map(formatBytes)
         let formatText = filesystemFormat(for: volumeURL)
         let label = [freeText, totalText].compactMap { $0 }.joined(separator: " / ")
             + formatText.map { ", \($0)" }.orEmpty
-        return Capacity(label: label, systemImage: deviceSymbol(for: volumeURL))
+        let usedFraction = total.map { 1 - min(1, Double(free) / Double($0)) }
+        return Capacity(label: label, systemImage: deviceSymbol(for: volumeURL), usedFraction: usedFraction)
     }
 
     // MARK: - Mounted Volume Root
@@ -61,9 +70,14 @@ enum VolumeStatusInfo {
         {
             return capacity
         }
+        return physicalFreeSpace(for: url)
+    }
+
+    // MARK: - Physical Free Space
+    private static func physicalFreeSpace(for url: URL) -> Int64? {
         if let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
            let capacity = values.volumeAvailableCapacity,
-           capacity > 0
+           capacity >= 0
         {
             return Int64(capacity)
         }
@@ -126,7 +140,7 @@ enum VolumeStatusInfo {
         guard
             let attrs = try? FileManager.default.attributesOfFileSystem(forPath: url.path),
             let number = attrs[key] as? NSNumber,
-            number.int64Value > 0
+            number.int64Value > 0 || (key == .systemFreeSize && number.int64Value == 0)
         else {
             return nil
         }

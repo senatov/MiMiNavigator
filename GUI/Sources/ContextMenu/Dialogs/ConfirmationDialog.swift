@@ -27,9 +27,9 @@ struct DeleteConfirmationDialog: View {
             HIGDialogHeader(
                 isRemote
                     ? "Do you want to permanently delete \(itemsDescription)?"
-                    : "Do you want to move \(itemsDescription) to Trash?",
-                subtitle: files.count == 1 ? files[0].urlValue.deletingLastPathComponent().path : nil
+                    : "Do you want to move \(itemsDescription) to Trash?"
             )
+            FileOperationPreviewCard(rows: previewRows)
             if hasDirectories {
                 directoryWarning
             }
@@ -51,6 +51,25 @@ struct DeleteConfirmationDialog: View {
             guard hasDirectories, !isRemote else { return }
             estimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
         }
+    }
+
+    // MARK: - Preview Rows
+    private var previewRows: [FileOperationPreviewRow] {
+        guard let first = files.first else { return [] }
+        let parent = first.urlValue.deletingLastPathComponent()
+        let singleLocation = files.dropFirst().allSatisfy { $0.urlValue.deletingLastPathComponent() == parent }
+        let source = parent.isFileURL ? parent.path : parent.absoluteString
+        let folders = files.filter(\.isDirectory).count
+        let itemSummary = "\(files.count - folders) file(s), \(folders) folder(s)"
+        var rows = [
+            FileOperationPreviewRow(label: "From", value: singleLocation ? source : "Multiple locations", systemImage: "folder"),
+            FileOperationPreviewRow(label: "Items", value: itemSummary, systemImage: "doc.on.doc"),
+        ]
+        if folders == 0 {
+            let bytes = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
+            rows.append(FileOperationPreviewRow(label: "Total size", value: ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file), systemImage: "externaldrive"))
+        }
+        return rows
     }
     private var directoryWarning: some View {
         VStack(alignment: .leading, spacing: 6) {

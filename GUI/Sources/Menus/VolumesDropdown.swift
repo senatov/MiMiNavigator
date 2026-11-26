@@ -21,6 +21,8 @@ private struct VolumeLocation: Identifiable {
     let url: URL
     let kind: Kind
     let connectionID: UUID?
+    var capacity: VolumeStatusInfo.Capacity? = nil
+    var canEject = false
 }
 
 // MARK: - Volumes Dropdown
@@ -30,10 +32,12 @@ struct VolumesDropdown: View {
     @State private var manager = RemoteConnectionManager.shared
     @State private var locations: [VolumeLocation] = []
     @State private var isPresented = false
+    @State private var ejectError: String?
 
     // MARK: - Body
     var body: some View {
         Button {
+            ejectError = nil
             refreshLocations()
             isPresented.toggle()
         } label: {
@@ -85,6 +89,12 @@ struct VolumesDropdown: View {
             if !remote.isEmpty {
                 locationSection("Remote Sessions", locations: remote, systemImage: "network")
             }
+            if let ejectError {
+                Text(ejectError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 8)
+            }
         }
     }
 
@@ -96,7 +106,18 @@ struct VolumesDropdown: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
             ForEach(locations) { location in
-                locationButton(location, systemImage: systemImage)
+                HStack(spacing: 4) {
+                    locationButton(location, systemImage: systemImage)
+                    if location.canEject {
+                        Button {
+                            eject(location)
+                        } label: {
+                            Image(systemName: "eject")
+                        }
+                        .accessibilityLabel("Eject \(location.title)")
+                        .help("Eject \(location.title)")
+                    }
+                }
             }
         }
     }
@@ -108,13 +129,26 @@ struct VolumesDropdown: View {
             navigate(to: location)
         } label: {
             HStack(spacing: 7) {
-                Image(systemName: systemImage)
+                Image(systemName: location.capacity?.systemImage ?? systemImage)
                     .foregroundStyle(.tint)
                     .frame(width: 18)
                     .accessibilityHidden(true)
-                Text(location.title)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(location.title)
+                        .lineLimit(1)
+                    if let capacity = location.capacity {
+                        Text(capacity.label)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if let used = capacity.usedFraction {
+                            ProgressView(value: used)
+                                .controlSize(.small)
+                                .accessibilityLabel("Disk space used")
+                                .accessibilityValue(used.formatted(.percent.precision(.fractionLength(0))))
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -122,6 +156,17 @@ struct VolumesDropdown: View {
         }
         .buttonStyle(.plain)
         .disabled(location.kind != .remote && !FileManager.default.isReadableFile(atPath: location.url.path))
+    }
+
+    // MARK: - Eject Volume
+    private func eject(_ location: VolumeLocation) {
+        ejectError = nil
+        do {
+            try NSWorkspace.shared.unmountAndEjectDevice(at: location.url)
+            refreshLocations()
+        } catch {
+            ejectError = "Could not eject \(location.title). \(error.localizedDescription)"
+        }
     }
 
     // MARK: - Refresh Locations
@@ -144,14 +189,17 @@ struct VolumesDropdown: View {
 
     // MARK: - Mounted Volumes
     private static func mountedVolumes() -> [VolumeLocation] {
-        let keys: [URLResourceKey] = [.volumeLocalizedNameKey, .volumeNameKey]
+        let keys: [URLResourceKey] = [.volumeLocalizedNameKey, .volumeNameKey, .volumeIsEjectableKey, .volumeIsInternalKey]
         let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
         return urls.compactMap { url in
-            guard url.standardizedFileURL.path != "/", !AppState.isAppManagedNetworkMountPath(url) else { return nil }
+            guard !AppState.isAppManagedNetworkMountPath(url) else { return nil }
             let values = try? url.resourceValues(forKeys: Set(keys))
             let title = values?.volumeLocalizedName ?? values?.volumeName ?? url.lastPathComponent
             guard !title.isEmpty else { return nil }
-            return location(url: url, title: title, kind: .mounted)
+            var mounted = location(url: url, title: title, kind: .mounted)
+            mounted.capacity = VolumeStatusInfo.details(forMountedVolume: url, usePhysicalFreeSpace: true)
+            mounted.canEject = url.path.hasPrefix("/Volumes/") && values?.volumeIsEjectable == true && values?.volumeIsInternal != true
+            return mounted
         }
         .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
@@ -191,8 +239,8 @@ struct VolumesDropdown: View {
         }
         return grouped.values.compactMap { candidates in
             guard let selected = candidates.max(by: { preferredLocation($1, over: $0) }) else { return nil }
-            let title = normalizeCloudTags ? normalizedCloudTag(selected.title) : selected.title
-            return location(url: selected.url, title: title, kind: selected.kind)
+            guard normalizeCloudTags else { return selected }
+            return location(url: selected.url, title: normalizedCloudTag(selected.title), kind: selected.kind)
         }
         .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }

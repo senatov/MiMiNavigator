@@ -52,8 +52,12 @@ struct BatchConfirmationDialog: View {
     }
     
     private var totalSize: String {
-        if operationType == .delete, let deleteEstimate {
-            return deleteEstimate.sizeText
+        if operationType == .delete, directoriesCount > 0 {
+            if isRemoteDelete { return "Unavailable for remote folders" }
+            guard let deleteEstimate else { return "Calculating…" }
+            return deleteEstimate.isApproximate || deleteEstimate.skippedCount > 0
+                ? "Approximately \(deleteEstimate.sizeText)"
+                : deleteEstimate.sizeText
         }
         let bytes = files.reduce(0) { $0 + $1.sizeInBytes }
         return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
