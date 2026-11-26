@@ -145,6 +145,14 @@ extension ConnToSrvrView {
 
     var connectionFormContent: some View {
         VStack(alignment: .leading, spacing: 20) {
+            AndroidSFTPPreset(isActive: draft.isAndroidProfile == true && draft.remoteProtocol == .sftp) {
+                addNewServer()
+                draft.name = "Android"
+                draft.isAndroidProfile = true
+                nameWasManuallyEdited = true
+                focusedField = .host
+            }
+            .disabled(isConnecting)
             identityGroup
             authenticationGroup
             actionButtonsRow

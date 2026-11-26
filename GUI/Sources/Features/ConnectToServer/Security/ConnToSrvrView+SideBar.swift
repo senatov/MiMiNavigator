@@ -33,6 +33,11 @@ extension ConnToSrvrView {
                     .font(.system(size: 11))
                     .foregroundStyle(isSelected ? .white.opacity(0.85) : .secondary)
                     .lineLimit(1)
+                if server.isAndroidProfile == true && server.remoteProtocol == .sftp {
+                    Text("Alpha / Experimental")
+                        .font(.caption2)
+                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                }
             }
 
             Spacer()

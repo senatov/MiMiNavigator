@@ -81,6 +81,7 @@ struct RemoteServer: Identifiable, Codable, Hashable {
     var lastResult: ConnectionResult
     /// full error string from last failed connect — shown in diagnostics popup
     var lastErrorDetail: String?
+    var isAndroidProfile: Bool?
 
     // Password is NOT stored here — it lives in Keychain
     // Use RemoteServerKeychain.loadPassword(for:) / savePassword(_:for:)

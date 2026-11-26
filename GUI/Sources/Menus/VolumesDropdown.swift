@@ -10,23 +10,6 @@ import Combine
 import Darwin
 import SwiftUI
 
-// MARK: - Volume Location
-private struct VolumeLocation: Identifiable {
-    enum Kind: Equatable {
-        case mounted
-        case cloud
-        case remote
-    }
-    let id: String
-    let title: String
-    let url: URL
-    let kind: Kind
-    let connectionID: UUID?
-    var capacity: VolumeStatusInfo.Capacity? = nil
-    var canEject = false
-    var canOpen = true
-}
-
 // MARK: - Volumes Dropdown
 struct VolumesDropdown: View {
     let appState: AppState
@@ -92,6 +75,7 @@ struct VolumesDropdown: View {
     // MARK: - Menu Content
     private func menuContent(for locations: [VolumeLocation]) -> some View {
         let mounted = locations.filter { $0.kind == .mounted }
+        let kindle = locations.filter { $0.kind == .kindle }
         let cloud = locations.filter { $0.kind == .cloud }
         let remote = locations.filter { $0.kind == .remote }
         return VStack(alignment: .leading, spacing: 5) {
@@ -102,6 +86,9 @@ struct VolumesDropdown: View {
             }
             if !mounted.isEmpty {
                 locationSection("Mounted Volumes", locations: mounted, systemImage: "externaldrive.fill")
+            }
+            if !kindle.isEmpty {
+                locationSection("Kindle · Alpha / Experimental", locations: kindle, systemImage: "book.closed")
             }
             if !cloud.isEmpty {
                 locationSection("Cloud Storage", locations: cloud, systemImage: "cloud.fill")
@@ -253,12 +240,12 @@ struct VolumesDropdown: View {
         let fileManager = FileManager.default
         let cloudRoot = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage", isDirectory: true)
         let iCloudURL = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
-        let mounted = mountedVolumes()
+        let mounted = deduplicated(mountedVolumes(), normalizeCloudTags: false)
         var cloud = directoryChildren(of: cloudRoot, kind: .cloud)
         if isDirectory(iCloudURL) {
             cloud.insert(location(url: iCloudURL, title: "iCloud Drive", kind: .cloud), at: 0)
         }
-        return deduplicated(mounted, normalizeCloudTags: false) + deduplicated(cloud, normalizeCloudTags: true)
+        return mounted + mounted.compactMap(\.kindleDocuments) + deduplicated(cloud, normalizeCloudTags: true)
     }
 
     // MARK: - Mounted Volumes
