@@ -16,6 +16,7 @@ struct TableHeaderView: View {
 
     @State private var dragOverTargetID: ColumnID? = nil
     @State private var draggedColumnID: ColumnID? = nil
+    @State var manualAutoFit: (before: ColumnLayoutModel.Snapshot, fitted: ColumnLayoutModel.Snapshot)?
     @State private var columnFrames: [ColumnID: CGRect] = [:]
 
     // MARK: - Computed Properties

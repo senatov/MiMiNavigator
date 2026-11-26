@@ -41,11 +41,13 @@ extension TableHeaderView {
             }
         }
         Divider()
-        Button {
-            autoFitAllColumns()
-        } label: {
+        Toggle(isOn: Binding(
+            get: { manualAutoFit?.fitted == layout.makeSnapshot() },
+            set: setManualAutoFit
+        )) {
             ContextMenuLabel("Auto Fit All Columns", systemImage: "arrow.left.and.right.text.vertical")
         }
+        .disabled(layout.isColumnReorderActive || layout.containerWidth <= 0 || appState.displayedFiles(for: panelSide).isEmpty)
         Toggle(isOn: Binding(
             get: { UserPreferences.shared.snapshot.autoFitColumnsOnNavigate },
             set: { newValue in
@@ -73,6 +75,23 @@ extension TableHeaderView {
     }
 
     // MARK: - Auto Fit
+    private func setManualAutoFit(_ enabled: Bool) {
+        guard !layout.isColumnReorderActive else { return }
+        let current = layout.makeSnapshot()
+        if enabled {
+            guard layout.containerWidth > 0, !appState.displayedFiles(for: panelSide).isEmpty else { return }
+            autoFitAllColumns()
+            manualAutoFit = (before: current, fitted: layout.makeSnapshot())
+        } else {
+            if let manualAutoFit, manualAutoFit.fitted == current {
+                layout.applySnapshot(manualAutoFit.before)
+                layout.saveWidths()
+            }
+            manualAutoFit = nil
+        }
+    }
+
+    // MARK: - Fit and Save
     private func autoFitAllColumns() {
         guard !layout.isColumnReorderActive else { return }
         let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
