@@ -31,14 +31,14 @@ enum JunkScanEngine {
             diagnostics.inaccessiblePaths += batch.diagnostics.inaccessiblePaths
             diagnostics.unreadablePaths += batch.diagnostics.unreadablePaths
             if !batch.candidates.isEmpty || visited % 256 < batch.visited {
-                let partial = await database.traversalCandidates(root: root).filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
+                let partial = await database.traversalCandidates(root: root).filter { !JunkScanScope.isProtectedMediaLibraryPath($0.url.path) }
                 await update(JunkScanProgress(visited: visited, candidates: partial, diagnostics: diagnostics))
             }
         }
         let traversal = await database.traversalData(root: root)
-        let files = traversal.files.filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
-        let directories = traversal.directories.filter { !JunkScanScope.isMusicLibraryPath($0.path) }
-        var candidates = traversal.candidates.filter { !JunkScanScope.isMusicLibraryPath($0.url.path) }
+        let files = traversal.files.filter { !JunkScanScope.isProtectedMediaLibraryPath($0.url.path) }
+        let directories = traversal.directories.filter { !JunkScanScope.isProtectedMediaLibraryPath($0.path) }
+        var candidates = traversal.candidates.filter { !JunkScanScope.isProtectedMediaLibraryPath($0.url.path) }
         let sameSize = Dictionary(grouping: files.filter { $0.size > 0 }, by: \.size).values.filter { $0.count > 1 }
         var hashes: [String: [JunkFileRecord]] = [:]
         for group in sameSize {
@@ -226,7 +226,7 @@ enum JunkScanEngine {
     }
 
     static func shouldExclude(_ path: String) -> Bool {
-        if JunkScanScope.isMusicLibraryPath(path) { return true }
+        if JunkScanScope.isProtectedMediaLibraryPath(path) { return true }
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         let excluded = ["/Library", "/.Trash", "/.git", "/.build", "/node_modules", "/.swiftpm", "/Applications", "/System", "/Develop", "/venvs", "/My Drive", "/Google Drive", "/Dropbox", "/OneDrive"]
         if path.contains("/Library/CloudStorage/") || path.hasSuffix("/Library/CloudStorage") { return true }

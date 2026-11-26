@@ -13,7 +13,10 @@ enum JunkScanAccess: Sendable, Equatable {
 // MARK: - Automatic Cleanup Scope
 enum JunkScanScope {
     private static let maximumSymlinkHops = 8
-    private static let musicLibraryRoot = lexicalPath(FileManager.default.homeDirectoryForCurrentUser.path) + "/Music"
+    private static let mediaLibraryRoots = {
+        let home = lexicalPath(FileManager.default.homeDirectoryForCurrentUser.path)
+        return [home + "/Music", home + "/Movies/TV"]
+    }()
     private static let timeMachineMounts: Set<String> = {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/tmutil")
@@ -80,7 +83,7 @@ enum JunkScanScope {
 
     // MARK: - Scan Path Access
     static func mayInspect(_ path: String, from scanRoot: URL, access: JunkScanAccess) -> Bool {
-        guard !isMusicLibraryPath(path) else { return false }
+        guard !isProtectedMediaLibraryPath(path) else { return false }
         guard access == .limited else { return true }
         let candidate = lexicalPath(path)
         let root = lexicalPath(scanRoot.path)
@@ -89,7 +92,7 @@ enum JunkScanScope {
             isSameOrInside(root, root: $0) && isSameOrInside(candidate, root: root)
         }
         guard let resolved = resolvingLinks(in: path, fileManager: .default, stopAt: { partial in
-            if isMusicLibraryPath(partial) { return true }
+            if isProtectedMediaLibraryPath(partial) { return true }
             guard protected.contains(where: { isSameOrInside(partial, root: $0) }) else { return false }
             guard selectedProtectedRoot != nil else { return true }
             let leadsToSelectedFolder = isSameOrInside(root, root: partial) || isSameOrInside(partial, root: root)
@@ -99,11 +102,14 @@ enum JunkScanScope {
         return true
     }
 
-    // MARK: - Music Library Exclusion
-    static func isMusicLibraryPath(_ path: String) -> Bool {
+    // MARK: - Protected Media Libraries
+    static func isProtectedMediaLibraryPath(_ path: String) -> Bool {
         let normalized = lexicalPath(path)
-        return isSameOrInside(normalized, root: musicLibraryRoot)
-            || normalized.split(separator: "/").contains { $0.lowercased().hasSuffix(".musiclibrary") }
+        if mediaLibraryRoots.contains(where: { isSameOrInside(normalized, root: $0) }) { return true }
+        return normalized.split(separator: "/").contains { component in
+            let name = component.lowercased()
+            return name.hasSuffix(".musiclibrary") || name.hasSuffix(".tvlibrary")
+        }
     }
 
     // MARK: - User Exclusions

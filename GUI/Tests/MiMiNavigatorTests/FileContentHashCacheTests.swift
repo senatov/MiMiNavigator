@@ -145,21 +145,30 @@ struct JunkScanSafetyTests {
         #expect(JunkScanEngine.shouldExclude(cloud))
     }
 
-    @Test func cleanupSkipsMusicLibraryWithLimitedOrFullAccess() {
+    @Test func cleanupSkipsProtectedMediaLibrariesWithLimitedOrFullAccess() {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let music = home.appendingPathComponent("Music")
         let library = music.appendingPathComponent("Music/Music Library.musiclibrary")
         let otherMusic = home.appendingPathComponent("Music Projects")
         let relocatedLibrary = otherMusic.appendingPathComponent("Custom.musiclibrary/Database")
+        let movies = home.appendingPathComponent("Movies")
+        let tv = movies.appendingPathComponent("TV")
+        let relocatedTVLibrary = movies.appendingPathComponent("Custom.tvlibrary/Database")
         for access in [JunkScanAccess.limited, .full] {
             #expect(!JunkScanScope.mayInspect(music.path, from: home, access: access))
             #expect(!JunkScanScope.mayInspect(library.path, from: music, access: access))
             #expect(!JunkScanScope.mayInspect(relocatedLibrary.path, from: home, access: access))
+            #expect(!JunkScanScope.mayInspect(tv.path, from: home, access: access))
+            #expect(!JunkScanScope.mayInspect(relocatedTVLibrary.path, from: home, access: access))
             #expect(!JunkScanEngine.isSafeRoot(music.path, access: access, authorizedRoots: [music]))
+            #expect(!JunkScanEngine.isSafeRoot(tv.path, access: access, authorizedRoots: [tv]))
         }
-        #expect(!JunkScanScope.isMusicLibraryPath(otherMusic.path))
+        #expect(!JunkScanScope.isProtectedMediaLibraryPath(otherMusic.path))
         #expect(JunkScanEngine.shouldExclude(music.path))
         #expect(JunkScanEngine.shouldExclude(relocatedLibrary.path))
+        #expect(JunkScanEngine.shouldExclude(tv.path))
+        #expect(JunkScanEngine.shouldExclude(relocatedTVLibrary.path))
+        #expect(!JunkScanScope.isProtectedMediaLibraryPath(movies.appendingPathComponent("TV Projects").path))
     }
 
     @Test func onlySuggestsOldFoldersThatRemainEmpty() throws {

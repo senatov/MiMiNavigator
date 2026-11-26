@@ -105,8 +105,8 @@ extension FinderSidebarView {
 
     // MARK: - Sidebar Item
     func sidebarItem(from item: FavoriteItem) -> FinderSidebarItem? {
-        if item.url.isFileURL, JunkScanScope.isMusicLibraryPath(item.url.path) {
-            return FinderSidebarItem(title: item.name, systemImage: "music.note", action: .navigate(item.url))
+        if item.url.isFileURL, JunkScanScope.isProtectedMediaLibraryPath(item.url.path) {
+            return FinderSidebarItem(title: item.name, systemImage: "folder", action: .navigate(item.url))
         }
         if item.url.isFileURL, !FileManager.default.fileExists(atPath: item.url.path) {
             return nil
