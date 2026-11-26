@@ -47,56 +47,15 @@ final class BatchOpsCoord {
             return
         }
 
-        let sourceIsRemote = AppState.isRemotePath(appState.url(for: sourcePanel))
-        let destinationIsRemote = AppState.isRemotePath(destination)
-        if sourceIsRemote && destinationIsRemote {
-            Task { @MainActor in
-                await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState)
-            }
-            return
-        }
-        // Remote source → download
-        if sourceIsRemote {
-            log.info("[BatchOps] remote copy: \(files.count) file(s) → \(destination.lastPathComponent)")
-            Task { @MainActor in
-                await performRemoteDownload(
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    destination: destination,
-                    appState: appState
-                )
-            }
-            return
-        }
-
-        // Local source → remote destination: upload
-        if AppState.isRemotePath(appState.url(for: destPanel)) {
-            log.info("[BatchOps] local→remote copy: \(files.count) file(s) → remote panel \(destPanel)")
-            Task { @MainActor in
-                await performRemoteUpload(
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    destinationPanel: destPanel,
-                    appState: appState
-                )
-            }
-            return
-        }
-        // Local → local: confirm then copy
         log.info("[BatchOperationCoordinator] initiateCopy: \(files.count) files to \(destination.path)")
         CntMenuCoord.shared.activeDialog = .batchCopyConfirmation(
             files: files, destination: destination, sourcePanel: sourcePanel
         )
     }
 
-    /// Execute confirmed copy operation
-    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
-        hideTransientPopups("copy-execute")
-        log.info("[BatchOperationCoordinator] executeCopy: \(files.count) files")
-
-        Task { @MainActor in
-            await batchManager.copyFiles(files, to: destination, from: sourcePanel, appState: appState)
-        }
+    // MARK: - Execute Copy
+    func executeCopy(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
+        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: false, inBackground: inBackground)
     }
 
     // MARK: - Move Operation (F6)
@@ -121,28 +80,34 @@ final class BatchOpsCoord {
         )
     }
 
-    /// Execute confirmed move operation
-    func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState) {
-        hideTransientPopups("move-execute")
-        log.info("[BatchOperationCoordinator] executeMove: \(files.count) files")
+    // MARK: - Execute Move
+    func executeMove(files: [CustomFile], destination: URL, sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
+        executeTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: true, inBackground: inBackground)
+    }
 
-        Task { @MainActor in
-            let destinationPanel: FavPanelSide = sourcePanel == .left ? .right : .left
-            let sourceIsRemote = AppState.isRemotePath(appState.url(for: sourcePanel))
-            let destinationIsRemote = AppState.isRemotePath(destination)
-            if sourceIsRemote && destinationIsRemote {
-                await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: true)
-                return
+    // MARK: - Execute Transfer
+    private func executeTransfer(
+        files: [CustomFile], destination: URL, sourcePanel: FavPanelSide,
+        appState: AppState, moveSource: Bool, inBackground: Bool
+    ) {
+        hideTransientPopups(moveSource ? "move-execute" : "copy-execute")
+        let sourceIsRemote = files.contains { AppState.isRemotePath($0.urlValue) }
+        let destinationIsRemote = AppState.isRemotePath(destination)
+        Task {
+            await ProgressPanel.runFileOperation(inBackground: inBackground, operation: moveSource ? .move : .copy) {
+                if sourceIsRemote && destinationIsRemote {
+                    await performRemoteToRemoteTransfer(files: files, destination: destination, sourcePanel: sourcePanel, appState: appState, moveSource: moveSource)
+                } else if sourceIsRemote {
+                    await performRemoteDownload(files: files, sourcePanel: sourcePanel, destination: destination, appState: appState, moveSource: moveSource)
+                } else if destinationIsRemote {
+                    let destinationPanel: FavPanelSide = sourcePanel == .left ? .right : .left
+                    await performRemoteUpload(files: files, sourcePanel: sourcePanel, destinationPanel: destinationPanel, destinationURL: destination, appState: appState, moveSource: moveSource)
+                } else if moveSource {
+                    await batchManager.moveFiles(files, to: destination, from: sourcePanel, appState: appState)
+                } else {
+                    await batchManager.copyFiles(files, to: destination, from: sourcePanel, appState: appState)
+                }
             }
-            if sourceIsRemote && !destinationIsRemote {
-                await performRemoteDownload(files: files, sourcePanel: sourcePanel, destination: destination, appState: appState, moveSource: true)
-                return
-            }
-            if destinationIsRemote && !sourceIsRemote {
-                await performRemoteUpload(files: files, sourcePanel: sourcePanel, destinationPanel: destinationPanel, appState: appState, moveSource: true)
-                return
-            }
-            await batchManager.moveFiles(files, to: destination, from: sourcePanel, appState: appState)
         }
     }
 
@@ -152,7 +117,7 @@ final class BatchOpsCoord {
     func initiateDelete(appState: AppState) {
         hideTransientPopups("delete")
         let sourcePanel = appState.focusedPanel
-        let files = appState.filesForOperation(on: sourcePanel)
+        let files = appState.filesForOperation(on: sourcePanel).filter { !ParentDirectoryEntry.isParentEntry($0) }
 
         guard !files.isEmpty else {
             log.warning("[BatchOperationCoordinator] delete: no files selected")
@@ -167,21 +132,18 @@ final class BatchOpsCoord {
         )
     }
 
-    /// Execute confirmed delete operation
-    func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState) {
+    // MARK: - Execute Delete
+    func executeDelete(files: [CustomFile], sourcePanel: FavPanelSide, appState: AppState, inBackground: Bool = false) {
         hideTransientPopups("delete-execute")
-        log.info("[BatchOperationCoordinator] executeDelete: \(files.count) files")
-
-        Task { @MainActor in
-            if appState.isRemotePanel(sourcePanel) {
-                await CntMenuCoord.shared.performDelete(
-                    files: files,
-                    sourcePanel: sourcePanel,
-                    appState: appState
-                )
-                return
+        let source = appState.url(for: sourcePanel)
+        Task {
+            await ProgressPanel.runFileOperation(inBackground: inBackground, operation: .delete) {
+                if AppState.isRemotePath(source) {
+                    await performRemoteDelete(files: files, source: source, sourcePanel: sourcePanel, appState: appState)
+                } else {
+                    await batchManager.deleteFiles(files, from: sourcePanel, appState: appState)
+                }
             }
-            await batchManager.deleteFiles(files, from: sourcePanel, appState: appState)
         }
     }
 

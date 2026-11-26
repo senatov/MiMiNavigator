@@ -5,6 +5,7 @@
 // Description: Top-menu dropdown for mounted volumes and cloud-storage directories.
 
 import AppKit
+import Carbon.HIToolbox
 import Combine
 import Darwin
 import SwiftUI
@@ -23,54 +24,73 @@ private struct VolumeLocation: Identifiable {
     let connectionID: UUID?
     var capacity: VolumeStatusInfo.Capacity? = nil
     var canEject = false
+    var canOpen = true
 }
 
 // MARK: - Volumes Dropdown
 struct VolumesDropdown: View {
     let appState: AppState
-    @Environment(\.scenePhase) private var scenePhase
     @State private var manager = RemoteConnectionManager.shared
     @State private var locations: [VolumeLocation] = []
-    @State private var isPresented = false
     @State private var ejectError: String?
+    @State private var hoveredLocationID: String?
+    @State private var selectedLocationID: String?
+    @State private var monitors = PopupEventMonitors()
+    @FocusState private var focusedLocationID: String?
 
     // MARK: - Body
     var body: some View {
+        let currentLocations = locations
         Button {
             ejectError = nil
             refreshLocations()
-            isPresented.toggle()
+            appState.isVolumesMenuOpen.toggle()
         } label: {
             TopDropdownLabel(title: "Volumes", systemImage: "externaldrive", tint: .accentColor)
         }
         .buttonStyle(.plain)
         .controlSize(.small)
+        .keyboardFocusable()
         .help("Mounted volumes and cloud storage")
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            menuContent
+        .onDisappear { appState.isVolumesMenuOpen = false }
+        .anchorPreference(key: VolumesMenuPreference.self, value: .bounds) { anchor in
+            guard appState.isVolumesMenuOpen else { return nil }
+            let content = menuContent(for: currentLocations)
                 .padding(8)
                 .frame(minWidth: 270)
-        }
-        .onAppear(perform: refreshLocations)
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { refreshLocations() }
+                .fixedSize(horizontal: true, vertical: true)
+                .background {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(.regularMaterial)
+                        .shadow(color: .black.opacity(0.22), radius: 9, y: 4)
+                }
+                .onAppear {
+                    hoveredLocationID = nil
+                    selectedLocationID = locations.first(where: \.canOpen)?.id
+                    focusedLocationID = selectedLocationID
+                    monitors.installKeyHandler(handleMenuKey)
+                }
+                .onDisappear { monitors.remove() }
+            return VolumesMenuPreference.Menu(anchor: anchor, content: AnyView(content)) {
+                appState.isVolumesMenuOpen = false
+            }
         }
         .onChange(of: manager.connections.map(\.id)) { _, _ in
-            refreshLocations()
+            if appState.isVolumesMenuOpen { refreshLocations() }
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
-            refreshLocations()
+            if appState.isVolumesMenuOpen { refreshLocations() }
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
-            refreshLocations()
+            if appState.isVolumesMenuOpen { refreshLocations() }
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didRenameVolumeNotification)) { _ in
-            refreshLocations()
+            if appState.isVolumesMenuOpen { refreshLocations() }
         }
     }
 
     // MARK: - Menu Content
-    private var menuContent: some View {
+    private func menuContent(for locations: [VolumeLocation]) -> some View {
         let mounted = locations.filter { $0.kind == .mounted }
         let cloud = locations.filter { $0.kind == .cloud }
         let remote = locations.filter { $0.kind == .remote }
@@ -114,8 +134,16 @@ struct VolumesDropdown: View {
                         } label: {
                             Image(systemName: "eject")
                         }
+                        .focused($focusedLocationID, equals: "eject:\(location.id)")
                         .accessibilityLabel("Eject \(location.title)")
                         .help("Eject \(location.title)")
+                    }
+                }
+                .background {
+                    if (hoveredLocationID ?? selectedLocationID) == location.id {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.accentColor.opacity(0.16))
+                            .allowsHitTesting(false)
                     }
                 }
             }
@@ -125,8 +153,7 @@ struct VolumesDropdown: View {
     // MARK: - Location Button
     private func locationButton(_ location: VolumeLocation, systemImage: String) -> some View {
         Button {
-            isPresented = false
-            navigate(to: location)
+            open(location)
         } label: {
             HStack(spacing: 7) {
                 Image(systemName: location.capacity?.systemImage ?? systemImage)
@@ -141,10 +168,7 @@ struct VolumesDropdown: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         if let used = capacity.usedFraction {
-                            ProgressView(value: used)
-                                .controlSize(.small)
-                                .accessibilityLabel("Disk space used")
-                                .accessibilityValue(used.formatted(.percent.precision(.fractionLength(0))))
+                            VolumeUsageIndicator(used: used)
                         }
                     }
                 }
@@ -155,7 +179,57 @@ struct VolumesDropdown: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(location.kind != .remote && !FileManager.default.isReadableFile(atPath: location.url.path))
+        .focusable(location.canOpen)
+        .focused($focusedLocationID, equals: location.id)
+        .focusEffectDisabled()
+        .disabled(!location.canOpen)
+        .onHover { inside in
+            if inside && location.canOpen {
+                hoveredLocationID = location.id
+            } else if hoveredLocationID == location.id {
+                hoveredLocationID = nil
+            }
+        }
+    }
+
+    // MARK: - Handle Menu Key
+    private func handleMenuKey(_ event: NSEvent) -> Bool {
+        guard appState.isVolumesMenuOpen, event.modifierFlags.intersection([.command, .control, .option]).isEmpty else { return false }
+        switch Int(event.keyCode) {
+        case kVK_UpArrow:
+            return stepLocation(by: -1)
+        case kVK_DownArrow:
+            return stepLocation(by: 1)
+        case kVK_Return, kVK_ANSI_KeypadEnter:
+            if focusedLocationID?.hasPrefix("eject:") == true { return false }
+            let id = hoveredLocationID ?? focusedLocationID ?? selectedLocationID
+            guard let location = locations.first(where: { $0.id == id && $0.canOpen }) else { return false }
+            open(location)
+            return true
+        case kVK_Escape:
+            appState.isVolumesMenuOpen = false
+            return true
+        default:
+            return false
+        }
+    }
+
+    // MARK: - Step Location
+    private func stepLocation(by offset: Int) -> Bool {
+        let available = locations.filter(\.canOpen)
+        guard !available.isEmpty else { return false }
+        let current = hoveredLocationID ?? focusedLocationID ?? selectedLocationID
+        let index = available.firstIndex { $0.id == current } ?? (offset > 0 ? -1 : available.count)
+        hoveredLocationID = nil
+        selectedLocationID = available[min(max(index + offset, 0), available.count - 1)].id
+        focusedLocationID = selectedLocationID
+        return true
+    }
+
+    // MARK: - Open Location
+    private func open(_ location: VolumeLocation) {
+        appState.isVolumesMenuOpen = false
+        navigate(to: location)
     }
 
     // MARK: - Eject Volume
@@ -228,7 +302,8 @@ struct VolumesDropdown: View {
 
     // MARK: - Location
     private static func location(url: URL, title: String, kind: VolumeLocation.Kind) -> VolumeLocation {
-        VolumeLocation(id: url.absoluteString, title: title, url: url, kind: kind, connectionID: nil)
+        VolumeLocation(id: url.absoluteString, title: title, url: url, kind: kind, connectionID: nil,
+                       canOpen: FileManager.default.isReadableFile(atPath: url.path))
     }
 
     // MARK: - Deduplicate Locations

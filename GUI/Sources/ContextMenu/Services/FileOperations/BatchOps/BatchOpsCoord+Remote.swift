@@ -9,25 +9,7 @@
 import FileModelKit
 import Foundation
 
-@MainActor
-private enum BatchOpsCoordRemoteState {
-    static var cancelledDownload = false
-    static var cancelledUpload = false
-}
-
 extension BatchOpsCoord {
-
-    // MARK: - Remote transfer state
-
-    var cancelledDownload: Bool {
-        get { BatchOpsCoordRemoteState.cancelledDownload }
-        set { BatchOpsCoordRemoteState.cancelledDownload = newValue }
-    }
-
-    var cancelledUpload: Bool {
-        get { BatchOpsCoordRemoteState.cancelledUpload }
-        set { BatchOpsCoordRemoteState.cancelledUpload = newValue }
-    }
 
     // MARK: - Human-readable remote errors
 
@@ -93,7 +75,7 @@ extension BatchOpsCoord {
         let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
         let sizeText = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
 
-        cancelledDownload = false
+        var cancelledDownload = false
 
         let panel = ProgressPanel.shared
         panel.showFileOp(
@@ -101,7 +83,7 @@ extension BatchOpsCoord {
             title: "⬇ \(moveSource ? "Moving" : "Downloading") \(totalItems) item(s) — \(sizeText)",
             itemCount: totalItems,
             destination: destination.lastPathComponent,
-            cancelHandler: { [weak self] in self?.cancelledDownload = true }
+            cancelHandler: { cancelledDownload = true }
         )
         panel.updateProgress(nil)
 
@@ -185,11 +167,12 @@ extension BatchOpsCoord {
         files: [CustomFile],
         sourcePanel: FavPanelSide,
         destinationPanel: FavPanelSide,
+        destinationURL: URL,
         appState: AppState,
         moveSource: Bool = false
     ) async {
         let manager = RemoteConnectionManager.shared
-        guard let conn = manager.connection(for: appState.url(for: destinationPanel)) else {
+        guard let conn = manager.connection(for: destinationURL) else {
             log.error("[BatchOps] remote upload — no active connection")
             ErrorAlertService.show(
                 title: "Not Connected",
@@ -199,13 +182,12 @@ extension BatchOpsCoord {
             return
         }
 
-        let destinationURL = appState.url(for: destinationPanel)
         let destinationPath = destinationURL.path.isEmpty ? "/" : destinationURL.path
         let totalItems = files.count
         let totalSize = files.reduce(Int64(0)) { $0 + $1.sizeInBytes }
         let sizeText = ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
 
-        cancelledUpload = false
+        var cancelledUpload = false
 
         let panel = ProgressPanel.shared
         panel.showFileOp(
@@ -213,7 +195,7 @@ extension BatchOpsCoord {
             title: "⬆ \(moveSource ? "Moving" : "Uploading") \(totalItems) item(s) — \(sizeText)",
             itemCount: totalItems,
             destination: destinationPath,
-            cancelHandler: { [weak self] in self?.cancelledUpload = true }
+            cancelHandler: { cancelledUpload = true }
         )
         panel.updateProgress(nil)
 

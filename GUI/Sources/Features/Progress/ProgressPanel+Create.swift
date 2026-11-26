@@ -42,7 +42,8 @@ extension ProgressPanel {
     // MARK: - Configure Panel
     func configurePanel(_ panel: NSPanel) {
         panel.becomesKeyOnlyIfNeeded = false
-        WindowPresentationPolicy.apply(.progress, to: panel)
+        WindowPresentationPolicy.apply(isBackground ? .backgroundProgress : .progress, to: panel)
+        if isBackground { panel.isExcludedFromWindowsMenu = false }
         panel.hasShadow = true
         panel.isOpaque = false
         panel.isMovableByWindowBackground = false

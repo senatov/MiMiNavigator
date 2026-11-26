@@ -36,10 +36,13 @@ extension CntMenuCoord {
     ) async {
         log.debug("\(#function) files.count=\(files.count)")
 
-        isProcessing = true
+        let isForeground = ProgressPanel.background == nil
+        if isForeground { isProcessing = true }
         defer {
-            isProcessing = false
-            activeDialog = nil
+            if isForeground {
+                isProcessing = false
+                activeDialog = nil
+            }
         }
         let panel = explicitPanel ?? panelContaining(files: files, appState: appState)
         do {
@@ -59,12 +62,11 @@ extension CntMenuCoord {
                 log.info("\(#function) marked archive dirty after deleting: \(file.nameStr)")
             }
 
-            guard let firstFile = files.first else {
+            guard !files.isEmpty else {
                 log.warning("\(#function) nothing to refresh after delete: files list is empty")
                 return
             }
 
-            let panel = panelContaining(files: [firstFile], appState: appState)
             await appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
             refreshOppositePanel(of: panel, appState: appState)
             let undo = FileOperationOutcomePresenter.moveUndo(from: trashedURLs, to: urls) {

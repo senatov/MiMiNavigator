@@ -48,6 +48,7 @@ struct FinderSidebarItem: Identifiable {
     // MARK: - Visibility
     var shouldShow: Bool {
         guard let fileURL else { return true }
+        if JunkScanScope.isMusicLibraryPath(fileURL.path) { return true }
         return FileManager.default.fileExists(atPath: fileURL.path)
     }
 
@@ -62,6 +63,7 @@ struct FinderSidebarItem: Identifiable {
 
     // MARK: - Canonical Identity
     private static func canonicalIdentity(for url: URL) -> String {
+        if JunkScanScope.isMusicLibraryPath(url.path) { return url.standardizedFileURL.path }
         let path = url.standardizedFileURL.resolvingSymlinksInPath().path
         if path.contains("/Library/Mobile Documents/com~apple~CloudDocs") {
             return "icloud-drive"

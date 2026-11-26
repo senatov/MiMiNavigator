@@ -10,9 +10,10 @@ import SwiftUI
 // MARK: - DeleteConfirmationDialog
 struct DeleteConfirmationDialog: View {
     let files: [CustomFile]
-    let onConfirm: () -> Void
+    let onConfirm: (Bool) -> Void
     let onCancel: () -> Void
     @State private var estimate: DeletePreviewEstimate?
+    @State private var runInBackground = false
     private var itemsDescription: String {
         files.count == 1 ? "\"\(files[0].nameStr)\"" : "\(files.count) items"
     }
@@ -38,12 +39,14 @@ struct DeleteConfirmationDialog: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+            Toggle("Run in Background", isOn: $runInBackground)
+                .frame(maxWidth: .infinity, alignment: .leading)
             HIGDialogButtons(
                 confirmTitle: isRemote ? "Delete" : "Move to Trash",
                 isDestructive: true,
                 isConfirmDisabled: hasDirectories && !isRemote && estimate == nil,
                 onCancel: onCancel,
-                onConfirm: onConfirm
+                onConfirm: { onConfirm(runInBackground) }
             )
         }
         .higDialogStyle()
@@ -148,7 +151,7 @@ struct GenericConfirmationDialog: View {
 #Preview("Delete Single File") {
     DeleteConfirmationDialog(
         files: [CustomFile(path: "/Users/test/document.txt")],
-        onConfirm: {},
+        onConfirm: { _ in },
         onCancel: {}
     )
     .padding(40)
@@ -161,7 +164,7 @@ struct GenericConfirmationDialog: View {
             CustomFile(path: "/Users/test/file1.txt"),
             CustomFile(path: "/Users/test/file2.txt"),
         ],
-        onConfirm: {},
+        onConfirm: { _ in },
         onCancel: {}
     )
     .padding(40)

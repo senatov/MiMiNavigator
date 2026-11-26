@@ -136,7 +136,7 @@ import LogKit
                 return nil
             }
             guard let self, let appState = self.appState else { return event }
-            if CntMenuCoord.shared.activeDialog != nil { return event }
+            if CntMenuCoord.shared.activeDialog != nil || appState.isVolumesMenuOpen { return event }
             guard let eventWindow = event.window ?? NSApp.keyWindow,
                   self.isMainApplicationWindow(eventWindow)
             else { return event }

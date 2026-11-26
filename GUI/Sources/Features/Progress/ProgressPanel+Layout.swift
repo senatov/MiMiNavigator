@@ -94,6 +94,7 @@ extension ProgressPanel {
 
     // MARK: - Panel Presentation
     func attachPanelToMainWindow(_ panel: NSPanel) {
+        guard !isBackground else { return }
         if let window = presentationHostWindow ?? WindowContextResolver.presentationHost(excluding: panel),
            window !== panel {
             window.addChildWindow(panel, ordered: .above)
@@ -104,7 +105,11 @@ extension ProgressPanel {
         log.debug(#function)
         installEventMonitorIfNeeded()
         panel.alphaValue = 0
-        panel.makeKeyAndOrderFront(nil)
+        if isBackground {
+            panel.orderFront(nil)
+        } else {
+            panel.makeKeyAndOrderFront(nil)
+        }
         NSAnimationContext.runAnimationGroup { ctx in
             ctx.duration = 0.18
             ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)

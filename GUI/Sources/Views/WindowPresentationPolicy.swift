@@ -6,6 +6,7 @@ enum WindowPresentationRole {
     case transientPopup
     case modalDecision
     case progress
+    case backgroundProgress
 }
 
 // MARK: - Window Presentation Policy
@@ -39,6 +40,11 @@ enum WindowPresentationPolicy {
             panel.isFloatingPanel = true
             panel.hidesOnDeactivate = true
             panel.level = .modalPanel
+        case .backgroundProgress:
+            panel.identifier = progressIdentifier
+            panel.isFloatingPanel = false
+            panel.hidesOnDeactivate = false
+            panel.level = .normal
         }
         panel.tabbingMode = .disallowed
     }

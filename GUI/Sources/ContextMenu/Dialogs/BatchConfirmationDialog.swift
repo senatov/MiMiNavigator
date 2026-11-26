@@ -14,14 +14,15 @@ struct BatchConfirmationDialog: View {
     let operationType: BatchOperationType
     let files: [CustomFile]
     let destination: URL?
-    let onConfirm: () -> Void
+    let onConfirm: (Bool) -> Void
     let onCancel: () -> Void
     private let transferOperation: FileTransferOperation?
-    private let onTransferAction: ((FileTransferAction) -> Void)?
+    private let onTransferAction: ((FileTransferAction, Bool) -> Void)?
     
     @State private var showFileList = false
     @State private var deleteEstimate: DeletePreviewEstimate?
     @State private var conflictCount = 0
+    @State private var runInBackground = false
 
     // MARK: - Initializers
 
@@ -29,7 +30,7 @@ struct BatchConfirmationDialog: View {
         operationType: BatchOperationType,
         files: [CustomFile],
         destination: URL?,
-        onConfirm: @escaping () -> Void,
+        onConfirm: @escaping (Bool) -> Void,
         onCancel: @escaping () -> Void
     ) {
         self.operationType = operationType
@@ -41,12 +42,12 @@ struct BatchConfirmationDialog: View {
         self.onTransferAction = nil
     }
 
-    init(operation: FileTransferOperation, onAction: @escaping (FileTransferAction) -> Void) {
+    init(operation: FileTransferOperation, onAction: @escaping (FileTransferAction, Bool) -> Void) {
         self.operationType = .copy
         self.files = operation.sourceFiles
         self.destination = operation.destinationPath
-        self.onConfirm = { onAction(.copy) }
-        self.onCancel = { onAction(.abort) }
+        self.onConfirm = { onAction(.copy, $0) }
+        self.onCancel = { onAction(.abort, false) }
         self.transferOperation = operation
         self.onTransferAction = onAction
     }
@@ -167,6 +168,10 @@ struct BatchConfirmationDialog: View {
             .padding(.horizontal, 8)
             
             Divider()
+            if operationType != .pack {
+                Toggle("Run in Background", isOn: $runInBackground)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             
             // Buttons
             dialogButtons
@@ -186,7 +191,8 @@ struct BatchConfirmationDialog: View {
             if operationType == .delete && directoriesCount > 0 && !isRemoteDelete {
                 deleteEstimate = await DeletePreviewEstimator.estimate(files: files.map(\.urlValue))
             }
-            guard operationType != .delete, let destination else { return }
+            guard operationType != .delete, let destination, destination.isFileURL,
+                  !files.contains(where: { AppState.isRemotePath($0.urlValue) }) else { return }
             conflictCount = files.reduce(into: 0) { count, file in
                 let target = destination.appendingPathComponent(file.urlValue.lastPathComponent)
                 if FileManager.default.fileExists(atPath: target.path) { count += 1 }
@@ -200,10 +206,10 @@ struct BatchConfirmationDialog: View {
     private var dialogButtons: some View {
         if let onTransferAction {
             HStack(spacing: 10) {
-                dialogButton(L10n.Button.cancel, systemImage: "xmark", iconTint: .red, shortcut: .cancelAction) { onTransferAction(.abort) }
+                dialogButton(L10n.Button.cancel, systemImage: "xmark", iconTint: .red, shortcut: .cancelAction, action: onCancel)
                 Spacer()
-                dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", iconTint: .blue, shortcut: .defaultAction) { onTransferAction(.copy) }
-                dialogButton(L10n.Button.move, systemImage: "arrow.right", iconTint: Color(nsColor: #colorLiteral(red: 0.09309739884, green: 0.6279325638, blue: 1, alpha: 1))) { onTransferAction(.move) }
+                dialogButton(L10n.Button.copy, systemImage: "doc.on.doc", iconTint: .blue, shortcut: .defaultAction) { onTransferAction(.copy, runInBackground) }
+                dialogButton(L10n.Button.move, systemImage: "arrow.right", iconTint: Color(nsColor: #colorLiteral(red: 0.09309739884, green: 0.6279325638, blue: 1, alpha: 1))) { onTransferAction(.move, runInBackground) }
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 6)
@@ -214,7 +220,7 @@ struct BatchConfirmationDialog: View {
                 isDestructive: operationType == .delete,
                 isConfirmDisabled: operationType == .delete && directoriesCount > 0 && !isRemoteDelete && deleteEstimate == nil,
                 onCancel: onCancel,
-                onConfirm: onConfirm
+                onConfirm: { onConfirm(runInBackground) }
             )
         }
     }
@@ -347,7 +353,7 @@ private extension View {
             CustomFile(path: "/Users/test/folder")
         ],
         destination: URL(fileURLWithPath: "/Users/test/Backup"),
-        onConfirm: {},
+        onConfirm: { _ in },
         onCancel: {}
     )
     .padding(40)
@@ -362,7 +368,7 @@ private extension View {
             CustomFile(path: "/Users/test/temp")
         ],
         destination: nil,
-        onConfirm: {},
+        onConfirm: { _ in },
         onCancel: {}
     )
     .padding(40)

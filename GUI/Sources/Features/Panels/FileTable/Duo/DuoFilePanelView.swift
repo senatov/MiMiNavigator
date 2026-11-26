@@ -53,6 +53,9 @@ struct DuoFilePanelView: View {
                 onExit: { actions.performExit() }
             )
         }
+        .overlayPreferenceValue(VolumesMenuPreference.self) { menu in
+            if let menu { VolumesMenuOverlay(menu: menu) }
+        }
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .onChange(of: leftPanelWidth) { _, newValue in

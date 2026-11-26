@@ -13,7 +13,10 @@ import AppKit
 @MainActor
 final class ProgressPanel: NSObject {
     // MARK: - Singleton
-    static let shared = ProgressPanel()
+    private static let foreground = ProgressPanel()
+    @TaskLocal static var background: ProgressPanel?
+    static var shared: ProgressPanel { background ?? foreground }
+    static var backgroundWindows: [ObjectIdentifier: ProgressPanel] = [:]
 
     // MARK: - Layout
     enum Layout {
@@ -73,7 +76,11 @@ final class ProgressPanel: NSObject {
     var lastProgressFraction: Double = 0
     var smoothedProgressRate: Double?
     weak var presentationHostWindow: NSWindow?
-    private override init() { super.init() }
+    let isBackground: Bool
+    init(isBackground: Bool = false) {
+        self.isBackground = isBackground
+        super.init()
+    }
     var appearance: ProgressPanelAppearance { .shared }
     var isVisible: Bool { panel?.isVisible == true }
 
@@ -108,6 +115,7 @@ final class ProgressPanel: NSObject {
         operationKey: String? = nil,
         cancelHandler: (() -> Void)? = nil
     ) {
+        let alreadyPresented = isBackground && (panel?.isVisible == true || panel?.isMiniaturized == true)
         presentationHostWindow = currentPresentationHostWindow()
         InfoPopupController.hideAll(reason: "progress-show:\(title)", immediate: true)
         isCancelled = false
@@ -121,7 +129,9 @@ final class ProgressPanel: NSObject {
         self.operationKey = normalizedOperationKey(operationKey ?? title)
         if panel == nil { createPanel() }
         guard let panel else { return }
+        if isBackground { panel.title = title }
         resetContent(icon: icon, title: title, status: status)
+        guard !alreadyPresented else { return }
         restoreFrameForCurrentOperation()
         centerInMainWindow()
         attachPanelToMainWindow(panel)
@@ -132,7 +142,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Bring to Front
     func bringToFront() {
         guard let panel, panel.isVisible else { return }
-        WindowPresentationPolicy.apply(.progress, to: panel)
+        WindowPresentationPolicy.apply(isBackground ? .backgroundProgress : .progress, to: panel)
         panel.orderFront(nil)
     }
     // MARK: - Convenience: extraction
@@ -319,6 +329,7 @@ final class ProgressPanel: NSObject {
             panel.parent?.removeChildWindow(panel)
             panel.orderOut(nil)
             removeEventMonitor()
+            Self.backgroundWindows.removeValue(forKey: ObjectIdentifier(self))
             return
         }
         let parent = panel.parent
@@ -333,6 +344,7 @@ final class ProgressPanel: NSObject {
                     parent?.removeChildWindow(panel)
                     panel.orderOut(nil)
                     self.removeEventMonitor()
+                    Self.backgroundWindows.removeValue(forKey: ObjectIdentifier(self))
                 }
             })
     }

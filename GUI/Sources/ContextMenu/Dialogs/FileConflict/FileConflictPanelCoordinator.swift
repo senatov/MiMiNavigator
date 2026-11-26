@@ -15,15 +15,30 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
     static let shared = FileConflictPanelCoordinator()
     private var panel: NSPanel?
     private var continuation: CheckedContinuation<BatchConflictDecision, Never>?
+    private var pending: [Request] = []
+
+    // MARK: - Pending Decision
+    private struct Request {
+        let conflict: FileConflictInfo
+        let remainingCount: Int
+        let continuation: CheckedContinuation<BatchConflictDecision, Never>
+    }
 
     // MARK: - Present
 
     func present(conflict: FileConflictInfo, remainingCount: Int) async -> BatchConflictDecision {
-        cancelPendingPresentation()
         return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            openPanel(conflict: conflict, remainingCount: remainingCount)
+            pending.append(Request(conflict: conflict, remainingCount: remainingCount, continuation: continuation))
+            presentNext()
         }
+    }
+
+    // MARK: - Present Next
+    private func presentNext() {
+        guard continuation == nil, !pending.isEmpty else { return }
+        let next = pending.removeFirst()
+        continuation = next.continuation
+        openPanel(conflict: next.conflict, remainingCount: next.remainingCount)
     }
 
     // MARK: - Open Panel
@@ -70,13 +85,7 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         panel?.delegate = nil
         panel?.close()
         continuation.resume(returning: decision)
-    }
-
-    // MARK: - Cancel Pending Presentation
-
-    private func cancelPendingPresentation() {
-        guard continuation != nil else { return }
-        complete(with: BatchConflictDecision(resolution: .stop, applyToAll: false))
+        presentNext()
     }
 
     // MARK: - NSWindowDelegate
@@ -86,5 +95,6 @@ final class FileConflictPanelCoordinator: NSObject, NSWindowDelegate {
         self.continuation = nil
         panel = nil
         continuation.resume(returning: BatchConflictDecision(resolution: .stop, applyToAll: false))
+        presentNext()
     }
 }

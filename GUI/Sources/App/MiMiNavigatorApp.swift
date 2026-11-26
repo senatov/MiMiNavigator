@@ -246,17 +246,19 @@ struct MiMiNavigatorApp: App {
     // MARK: - Transfer Confirmation Helpers
     @ViewBuilder
     func transferConfirmationDialog(for operation: FileTransferOperation) -> some View {
-        BatchConfirmationDialog(operation: operation) { action in
-            executePendingTransfer(action)
+        BatchConfirmationDialog(operation: operation) { action, inBackground in
+            executePendingTransfer(action, inBackground: inBackground)
         }
     }
 
-    private func executePendingTransfer(_ action: FileTransferAction) {
+    private func executePendingTransfer(_ action: FileTransferAction, inBackground: Bool = false) {
         let manager = dragDropManager
         let state = appState
 
         Task { @MainActor in
-            await manager.executeTransfer(action: action, appState: state)
+            await ProgressPanel.runFileOperation(inBackground: inBackground && action != .abort, operation: action == .move ? .move : .copy) {
+                await manager.executeTransfer(action: action, appState: state)
+            }
         }
     }
 

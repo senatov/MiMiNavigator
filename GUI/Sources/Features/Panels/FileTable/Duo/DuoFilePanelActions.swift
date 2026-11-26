@@ -153,94 +153,9 @@
                         await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
                     }
                 }
-            } else if appState.isRemotePanel(panel) {
-                performRemoteDelete(files: files, panel: panel)
             } else {
-                if files.contains(where: { $0.isDirectory }) || urls.count >= FileOpsEngine.bulkDeleteThreshold {
-                    CntMenuCoord.shared.activeDialog = .batchDeleteConfirmation(
-                        files: files.filter { !ParentDirectoryEntry.isParentEntry($0) },
-                        sourcePanel: panel
-                    )
-                    return
-                }
-                // Normal filesystem: route through FileOpsEngine so diagnostics, logging and progress stay unified.
-                log.info("[DELETE] ⏱ calling FileOpsEngine.delete for \(urls.count) item(s)")
-                Task { @MainActor in
-                    let startTime = CFAbsoluteTimeGetCurrent()
-                    do {
-                        let progress = try await FileOpsEngine.shared.delete(items: urls)
-                        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-                        log.info("[DELETE] ✅ FileOpsEngine.delete finished in \(String(format: "%.3f", elapsed))s with \(progress.errors.count) error(s)")
-                        let transfers = progress.completedTransfers
-                        let undo = FileOperationOutcomePresenter.moveUndo(
-                            from: transfers.map(\.destination),
-                            to: transfers.map(\.source)
-                        ) {
-                            Task { @MainActor in
-                                await self.appState.refreshFiles(for: .left, force: true)
-                                await self.appState.refreshFiles(for: .right, force: true)
-                            }
-                        }
-                        guard progress.errors.isEmpty else {
-                            await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                            log.warning("[DELETE] refreshed after partial delete with \(progress.errors.count) error(s)")
-                            FileOperationOutcomePresenter.failure(.delete, message: progress.failureSummary, undo: undo)
-                            return
-                        }
-                        await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                        FileOperationOutcomePresenter.success(.delete, itemCount: files.count, sourceURLs: urls, undo: undo)
-                        log.debug("[DELETE] ⏱ END performDelete")
-                    } catch {
-                        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-                        log.error("[DELETE] ❌ FileOpsEngine.delete FAILED after \(String(format: "%.3f", elapsed))s — \(error.localizedDescription)")
-                        FileOperationOutcomePresenter.failure(.delete, error: error)
-                    }
-                }
+                BatchOpsCoord.shared.initiateDelete(appState: appState)
             }
-        }
-
-        // MARK: - Remote Delete
-        private func performRemoteDelete(files: [CustomFile], panel: FavPanelSide) {
-            let deletableFiles = files.filter { !ParentDirectoryEntry.isParentEntry($0) }
-            let progressPanel = ProgressPanel.shared
-            progressPanel.show(
-                icon: "trash",
-                title: "Deleting remote item(s)",
-                status: "\(deletableFiles.count) item(s) from remote server"
-            )
-            Task { @MainActor in
-                var deletedCount = 0
-                for file in deletableFiles {
-                    guard !progressPanel.isCancelled else { break }
-                    do {
-                        try await RemoteConnectionManager.shared.deleteItem(remotePath: file.pathStr, recursive: file.isDirectory)
-                        deletedCount += 1
-                        progressPanel.appendLog("Deleted: \(file.nameStr)")
-                    } catch {
-                        progressPanel.appendLog("Failed: \(file.nameStr) - \(error.localizedDescription)")
-                        log.error("[DELETE] remote delete failed path='\(file.pathStr)' error='\(error.localizedDescription)'")
-                    }
-                }
-                let success = deletedCount == deletableFiles.count
-                progressPanel.finish(success: success, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
-                if progressPanel.isCancelled {
-                    FileOperationOutcomePresenter.cancelled(.delete)
-                } else if success {
-                    FileOperationOutcomePresenter.success(.delete, itemCount: deletedCount, sourceURLs: deletableFiles.map(\.urlValue))
-                } else {
-                    FileOperationOutcomePresenter.failure(.delete, message: remoteDeleteStatus(deleted: deletedCount, total: deletableFiles.count))
-                }
-                await self.appState.refreshAndSelectAfterRemoval(removedFiles: files, on: panel)
-                log.info("[DELETE] remote delete finished deleted=\(deletedCount)/\(deletableFiles.count)")
-            }
-        }
-
-        // MARK: - Remote Delete Status
-        private func remoteDeleteStatus(deleted: Int, total: Int) -> String {
-            if deleted == total {
-                return "Deleted \(deleted) remote item(s)"
-            }
-            return "Deleted \(deleted) of \(total) remote item(s)"
         }
 
         // MARK: - F9 Settings

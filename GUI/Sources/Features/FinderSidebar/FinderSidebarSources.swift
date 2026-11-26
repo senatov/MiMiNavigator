@@ -63,7 +63,7 @@ extension FinderSidebarView {
             FinderSidebarItem(title: "Desktop", systemImage: "rectangle", action: .navigate(fm.desktopDirectory)),
             FinderSidebarItem(title: "Pictures", systemImage: "photo", action: .navigate(fm.picturesDirectory)),
             FinderSidebarItem(title: "Movies", systemImage: "film", action: .navigate(fm.moviesDirectory)),
-            FinderSidebarItem(title: "Music", systemImage: "music.note", action: .navigate(fm.musicDirectory)),
+            FinderSidebarItem(title: "Music", systemImage: "music.note", action: .navigate(home.appendingPathComponent("Music", isDirectory: true))),
             FinderSidebarItem(title: home.lastPathComponent, systemImage: "house", action: .navigate(home))
         ].filter(\.shouldShow)
     }
@@ -105,6 +105,9 @@ extension FinderSidebarView {
 
     // MARK: - Sidebar Item
     func sidebarItem(from item: FavoriteItem) -> FinderSidebarItem? {
+        if item.url.isFileURL, JunkScanScope.isMusicLibraryPath(item.url.path) {
+            return FinderSidebarItem(title: item.name, systemImage: "music.note", action: .navigate(item.url))
+        }
         if item.url.isFileURL, !FileManager.default.fileExists(atPath: item.url.path) {
             return nil
         }

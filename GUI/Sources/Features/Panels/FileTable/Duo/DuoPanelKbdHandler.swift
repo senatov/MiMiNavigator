@@ -62,7 +62,7 @@ final class DuoFilePanelKeyboardHandler {
         // When a modal dialog is active, pass ALL events to SwiftUI
         // so that TextField, buttons (.keyboardShortcut(.defaultAction)),
         // and Esc (.cancelAction) work correctly.
-        if CntMenuCoord.shared.activeDialog != nil {
+        if CntMenuCoord.shared.activeDialog != nil || appState.isVolumesMenuOpen {
             return event
         }
 

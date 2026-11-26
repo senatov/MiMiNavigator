@@ -73,13 +73,15 @@ enum FileOperationOutcomePresenter {
         undo: UndoOperation? = nil
     ) {
         let object = displayName ?? countDescription(itemCount)
+        let details = detailMessage ?? operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL)
+        ProgressPanel.recordBackgroundResult(success: true, title: "\(operation.completedVerb) \(object)", details: details)
         InAppNoticeCenter.shared.showToast(
             "\(operation.completedVerb) \(object)",
-            message: detailMessage ?? operationDetails(operation: operation, sourceURLs: sourceURLs, resultURL: resultURL),
+            message: details,
             systemImage: operation.icon,
             tint: .green,
             displayDuration: toastDisplayDuration,
-            suppressTransientPresentation: ProgressPanel.shared.isVisible,
+            suppressTransientPresentation: ProgressPanel.background != nil || ProgressPanel.shared.isVisible,
             actionTitle: undo == nil ? (resultURL == nil ? nil : "Open Result") : "Undo",
             isActionAvailable: undo?.isAvailable,
             action: undo?.action ?? openAction(for: resultURL)
@@ -152,6 +154,7 @@ enum FileOperationOutcomePresenter {
     }
 
     static func failure(_ operation: Operation, message: String, retry: (() -> Void)? = nil, undo: UndoOperation? = nil) {
+        ProgressPanel.recordBackgroundResult(success: false, title: operation.failureTitle, details: message)
         let fallbackReport = {
             FeedbackReporter.reviewError(title: operation.failureTitle, message: message)
         }
@@ -161,7 +164,7 @@ enum FileOperationOutcomePresenter {
             systemImage: "xmark.octagon.fill",
             tint: .red,
             displayDuration: bannerDisplayDuration,
-            suppressTransientPresentation: ProgressPanel.shared.isVisible,
+            suppressTransientPresentation: ProgressPanel.background != nil || ProgressPanel.shared.isVisible,
             actionTitle: retry == nil ? (undo == nil ? "Report" : "Undo") : "Retry",
             isActionAvailable: retry == nil ? undo?.isAvailable : nil,
             action: retry ?? undo?.action ?? fallbackReport
@@ -170,13 +173,14 @@ enum FileOperationOutcomePresenter {
 
     // MARK: - Cancelled
     static func cancelled(_ operation: Operation, message: String? = nil) {
+        ProgressPanel.recordBackgroundResult(success: false, title: "\(operation.actionTitle) cancelled", details: message)
         InAppNoticeCenter.shared.showToast(
             "\(operation.actionTitle) cancelled",
             message: message,
             systemImage: "stop.circle.fill",
             tint: .secondary,
             displayDuration: toastDisplayDuration,
-            suppressTransientPresentation: ProgressPanel.shared.isVisible
+            suppressTransientPresentation: ProgressPanel.background != nil || ProgressPanel.shared.isVisible
         )
     }
 

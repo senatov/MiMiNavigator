@@ -104,10 +104,8 @@ enum JunkScanEngine {
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0)
         }
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey, .isPackageKey, .fileSizeKey, .contentModificationDateKey, .isUbiquitousItemKey]
-        let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL
-        // Check the names of protected home folders before requesting their metadata.
-        let prefetchedKeys = directory.standardizedFileURL.path == home.path ? [] : Array(keys)
-        guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: prefetchedKeys, options: [.skipsHiddenFiles]) else {
+        // Check protected paths before requesting metadata, including libraries moved outside the home folder.
+        guard let children = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [], options: [.skipsHiddenFiles]) else {
             log.warning("[Cleanup] Cannot inspect \(directory.path)")
             return JunkDirectoryBatch(directory: directory, childDirectories: [], files: [], candidates: [], visited: 0, diagnostics: JunkScanDiagnostics(unreadablePaths: 1))
         }
@@ -120,7 +118,7 @@ enum JunkScanEngine {
             try Task.checkCancellation()
             if visited.isMultiple(of: 64) { try await waitForIdle() }
             let path = url.path
-            if JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths) || shouldExclude(path) { continue }
+            if JunkScanScope.isUserExcluded(path, excludedPaths: excludedPaths) { continue }
             guard JunkScanScope.mayInspect(path, from: scanRoot, access: access) else {
                 diagnostics.inaccessiblePaths += 1
                 continue
@@ -130,6 +128,7 @@ enum JunkScanEngine {
                 continue
             }
             guard values.isSymbolicLink != true, values.isUbiquitousItem != true else { continue }
+            if shouldExclude(path) { continue }
             visited += 1
             if values.isDirectory == true {
                 guard values.isPackage != true else { continue }
@@ -227,6 +226,7 @@ enum JunkScanEngine {
     }
 
     static func shouldExclude(_ path: String) -> Bool {
+        if JunkScanScope.isMusicLibraryPath(path) { return true }
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         let excluded = ["/Library", "/.Trash", "/.git", "/.build", "/node_modules", "/.swiftpm", "/Applications", "/System", "/Develop", "/venvs", "/My Drive", "/Google Drive", "/Dropbox", "/OneDrive"]
         if path.contains("/Library/CloudStorage/") || path.hasSuffix("/Library/CloudStorage") { return true }

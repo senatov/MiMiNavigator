@@ -12,7 +12,11 @@ import AppKit
 extension ProgressPanel: NSWindowDelegate {
     nonisolated func windowShouldClose(_ sender: NSWindow) -> Bool {
         MainActor.assumeIsolated {
-            hide()
+            if isBackground && !isFinished {
+                sender.miniaturize(nil)
+            } else {
+                hide()
+            }
         }
         return false
     }

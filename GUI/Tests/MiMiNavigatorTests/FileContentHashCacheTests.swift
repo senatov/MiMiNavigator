@@ -150,12 +150,16 @@ struct JunkScanSafetyTests {
         let music = home.appendingPathComponent("Music")
         let library = music.appendingPathComponent("Music/Music Library.musiclibrary")
         let otherMusic = home.appendingPathComponent("Music Projects")
+        let relocatedLibrary = otherMusic.appendingPathComponent("Custom.musiclibrary/Database")
         for access in [JunkScanAccess.limited, .full] {
             #expect(!JunkScanScope.mayInspect(music.path, from: home, access: access))
             #expect(!JunkScanScope.mayInspect(library.path, from: music, access: access))
+            #expect(!JunkScanScope.mayInspect(relocatedLibrary.path, from: home, access: access))
             #expect(!JunkScanEngine.isSafeRoot(music.path, access: access, authorizedRoots: [music]))
         }
         #expect(!JunkScanScope.isMusicLibraryPath(otherMusic.path))
+        #expect(JunkScanEngine.shouldExclude(music.path))
+        #expect(JunkScanEngine.shouldExclude(relocatedLibrary.path))
     }
 
     @Test func onlySuggestsOldFoldersThatRemainEmpty() throws {

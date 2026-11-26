@@ -112,6 +112,14 @@ final class PopupEventMonitors {
         focusObserver = observer
     }
 
+    // MARK: - Key Monitoring
+    func installKeyHandler(_ handle: @escaping @MainActor (NSEvent) -> Bool) {
+        remove()
+        escMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            handle(event) ? nil : event
+        }
+    }
+
     // MARK: - Remove (MainActor)
 
     func remove() {

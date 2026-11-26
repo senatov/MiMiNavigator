@@ -89,7 +89,7 @@ enum JunkScanScope {
             isSameOrInside(root, root: $0) && isSameOrInside(candidate, root: root)
         }
         guard let resolved = resolvingLinks(in: path, fileManager: .default, stopAt: { partial in
-            if isSameOrInside(partial, root: musicLibraryRoot) { return true }
+            if isMusicLibraryPath(partial) { return true }
             guard protected.contains(where: { isSameOrInside(partial, root: $0) }) else { return false }
             guard selectedProtectedRoot != nil else { return true }
             let leadsToSelectedFolder = isSameOrInside(root, root: partial) || isSameOrInside(partial, root: root)
@@ -101,7 +101,9 @@ enum JunkScanScope {
 
     // MARK: - Music Library Exclusion
     static func isMusicLibraryPath(_ path: String) -> Bool {
-        isSameOrInside(lexicalPath(path), root: musicLibraryRoot)
+        let normalized = lexicalPath(path)
+        return isSameOrInside(normalized, root: musicLibraryRoot)
+            || normalized.split(separator: "/").contains { $0.lowercased().hasSuffix(".musiclibrary") }
     }
 
     // MARK: - User Exclusions

@@ -28,6 +28,7 @@ final class FileOpProgress {
     var isCancelled: Bool = false
     var isCompleted: Bool = false
     var usesProgressPanel: Bool = false
+    private let progressPanel = ProgressPanel.shared
     var errors: [FileOpErrorInfo] = []
     private(set) var completedTransfers: [FileOpTransfer] = []
 
@@ -111,7 +112,7 @@ final class FileOpProgress {
     func setCurrentFile(_ name: String) {
         currentFileName = name
         guard usesProgressPanel, !isCancelled else { return }
-        ProgressPanel.shared.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
+        progressPanel.updateStatus("\(operationType.title) \(processedFiles + 1) / \(totalFiles): \(name)")
         updateProgressDisplay()
     }
 
@@ -126,12 +127,12 @@ final class FileOpProgress {
         if !success, let err = error {
             errors.append(FileOpErrorInfo(fileName: name, error: err))
             guard usesProgressPanel, !isCancelled else { return }
-            ProgressPanel.shared.appendLog("Failed: \(name) - \(err)")
+            progressPanel.appendLog("Failed: \(name) - \(err)")
         } else {
             guard usesProgressPanel, !isCancelled else { return }
-            ProgressPanel.shared.appendLog("\(operationType.pastTense.capitalized): \(name)")
+            progressPanel.appendLog("\(operationType.pastTense.capitalized): \(name)")
         }
-        ProgressPanel.shared.updateStatus(statusText)
+        progressPanel.updateStatus(statusText)
         updateProgressDisplay()
     }
 
@@ -139,8 +140,8 @@ final class FileOpProgress {
     func batchCompleted(count: Int) {
         processedFiles += count
         guard usesProgressPanel, !isCancelled else { return }
-        ProgressPanel.shared.appendLog("Moved \(count) items to Trash")
-        ProgressPanel.shared.updateStatus(statusText)
+        progressPanel.appendLog("Moved \(count) items to Trash")
+        progressPanel.updateStatus(statusText)
         updateProgressDisplay()
     }
 
@@ -152,8 +153,8 @@ final class FileOpProgress {
     func fileSkipped(name: String) {
         skippedFiles += 1
         guard usesProgressPanel else { return }
-        ProgressPanel.shared.appendLog("Skipped: \(name)")
-        ProgressPanel.shared.updateStatus(statusText)
+        progressPanel.appendLog("Skipped: \(name)")
+        progressPanel.updateStatus(statusText)
         updateProgressDisplay()
     }
 
@@ -161,8 +162,8 @@ final class FileOpProgress {
         isCancelled = true
         endTime = Date()
         guard usesProgressPanel else { return }
-        ProgressPanel.shared.appendLog("Cancelled by user")
-        ProgressPanel.shared.finish(success: false, message: "Cancelled")
+        progressPanel.appendLog("Cancelled by user")
+        if !progressPanel.isBackground { progressPanel.finish(success: false, message: "Cancelled") }
         log.info("[FileOpProgress] cancelled at \(processedFiles)/\(totalFiles)")
     }
 
@@ -171,8 +172,8 @@ final class FileOpProgress {
     func cancelSilently() {
         isCancelled = true
         endTime = Date()
-        if usesProgressPanel {
-            ProgressPanel.shared.hide()
+        if usesProgressPanel && !progressPanel.isBackground {
+            progressPanel.hide()
         }
         log.info("[FileOpProgress] silently cancelled at \(processedFiles)/\(totalFiles)")
     }
@@ -183,7 +184,7 @@ final class FileOpProgress {
         endTime = Date()
         let succeededFiles = processedFiles - errors.count
         if usesProgressPanel {
-            ProgressPanel.shared.finish(
+            progressPanel.finish(
                 success: errors.isEmpty,
                 message: completionSummary,
                 autoClose: errors.isEmpty
@@ -194,15 +195,15 @@ final class FileOpProgress {
 
     func updateStatusOnly(_ text: String) {
         guard usesProgressPanel else { return }
-        ProgressPanel.shared.updateStatus(text)
+        progressPanel.updateStatus(text)
     }
 
     private func updateProgressDisplay() {
         guard usesProgressPanel else { return }
         if showsProgressBar {
-            ProgressPanel.shared.updateProgress(fraction)
+            progressPanel.updateProgress(fraction)
         } else {
-            ProgressPanel.shared.hideProgress()
+            progressPanel.hideProgress()
         }
     }
 }

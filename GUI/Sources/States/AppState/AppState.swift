@@ -70,6 +70,7 @@ final class AppState {
     // MARK: - UI State
     var selectedDir: DirectorySelection = .init()
     var showFavTreePopup: Bool = false
+    var isVolumesMenuOpen = false
     var showNetworkNeighborhood: Bool = false
     var isTerminating: Bool = false
 

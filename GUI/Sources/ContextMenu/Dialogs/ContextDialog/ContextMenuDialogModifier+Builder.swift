@@ -17,9 +17,12 @@ extension ContextMenuDialogModifier {
             case .deleteConfirmation(let files):
                 DeleteConfirmationDialog(
                     files: files,
-                    onConfirm: {
+                    onConfirm: { inBackground in
+                        if inBackground { coordinator.dismissDialog() }
                         Task {
-                            await coordinator.performDelete(files: files, appState: appState)
+                            await ProgressPanel.runFileOperation(inBackground: inBackground, operation: .delete) {
+                                await coordinator.performDelete(files: files, appState: appState)
+                            }
                         }
                     },
                     onCancel: {
@@ -111,13 +114,14 @@ extension ContextMenuDialogModifier {
                     operationType: .copy,
                     files: files,
                     destination: destination,
-                    onConfirm: {
+                    onConfirm: { inBackground in
                         coordinator.dismissDialog()
                         BatchOpsCoord.shared.executeCopy(
                             files: files,
                             destination: destination,
                             sourcePanel: sourcePanel,
-                            appState: appState
+                            appState: appState,
+                            inBackground: inBackground
                         )
                     },
                     onCancel: {
@@ -129,13 +133,14 @@ extension ContextMenuDialogModifier {
                     operationType: .move,
                     files: files,
                     destination: destination,
-                    onConfirm: {
+                    onConfirm: { inBackground in
                         coordinator.dismissDialog()
                         BatchOpsCoord.shared.executeMove(
                             files: files,
                             destination: destination,
                             sourcePanel: sourcePanel,
-                            appState: appState
+                            appState: appState,
+                            inBackground: inBackground
                         )
                     },
                     onCancel: {
@@ -147,12 +152,13 @@ extension ContextMenuDialogModifier {
                     operationType: .delete,
                     files: files,
                     destination: nil,
-                    onConfirm: {
+                    onConfirm: { inBackground in
                         coordinator.dismissDialog()
                         BatchOpsCoord.shared.executeDelete(
                             files: files,
                             sourcePanel: sourcePanel,
-                            appState: appState
+                            appState: appState,
+                            inBackground: inBackground
                         )
                     },
                     onCancel: {

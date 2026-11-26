@@ -60,6 +60,11 @@ extension ProgressPanel {
         cancelAutoCloseTimer()
         isCancelled = true
         statusLabel?.stringValue = "Cancelling... operation will stop at the next safe point"
+        if isBackground {
+            actionButton?.isEnabled = false
+            onCancel?()
+            return
+        }
         actionButton?.title = "OK"
         actionButton?.setAccessibilityLabel("Close operation window")
         actionButton?.keyEquivalent = "\r"
@@ -114,6 +119,7 @@ extension ProgressPanel {
     // MARK: - Handle Interaction
     func handleInteraction(type: NSEvent.EventType, keyCode: UInt16?, windowNumber: Int) -> Bool {
         guard panel?.isVisible == true else { return true }
+        if isBackground && !isPanelInteraction(windowNumber: windowNumber) { return true }
         if type == .keyDown, isFinished, let keyCode {
             return handleKeyEvent(keyCode: keyCode)
         }
