@@ -11,10 +11,10 @@ import ExternalToolsKit
 @MainActor
 enum ArchiveToolInstallAlert {
 
-    // MARK: - Prompt 7-Zip Install
-    static func promptSevenZipInstall(reason: String) {
+    // MARK: - Prompt Archive Tool Install
+    static func promptInstall(useUnar: Bool = false, reason: String) {
         Task {
-            let tool = ExternalToolCatalog.sevenZip
+            let tool = useUnar ? ExternalToolCatalog.unar : ExternalToolCatalog.sevenZip
             let report = await ExternalToolDoctor.shared.diagnose(tool)
             _ = await ExternalToolDoctor.shared.promptRepair(
                 tool: tool,

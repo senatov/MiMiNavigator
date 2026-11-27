@@ -56,7 +56,8 @@ extension AppState {
                     progressPanel.finish(success: false, message: "❌ \(error.localizedDescription)")
                 }
                 if case ArchiveManagerError.toolNotFound(let message) = error {
-                    ArchiveToolInstallAlert.promptSevenZipInstall(reason: message)
+                    let useUnar = ["arc", "zoo"].contains(archiveURL.pathExtension.lowercased())
+                    ArchiveToolInstallAlert.promptInstall(useUnar: useUnar, reason: message)
                 }
             }
             log.error("[AppState] Failed to enter archive: \(error.localizedDescription)")

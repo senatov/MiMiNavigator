@@ -37,7 +37,7 @@ enum EncryptedArchiveCheck {
     private static func detect(url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()
         switch ext {
-            case "zip":
+            case "zip", "cbz":
                 return checkZipHeader(url: url)
             case "7z":
                 return check7zHeader(url: url)

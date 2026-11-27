@@ -52,13 +52,9 @@ actor ArchiveManager {
         )
     }
 
+    // MARK: - Password Support
     private func isPasswordProtectedFormat(_ format: ArchiveFormat) -> Bool {
-        switch format {
-        case .zip, .sevenZip, .sevenZipGeneric:
-            return true
-        default:
-            return false
-        }
+        format.supportsPasswordProtection || format == .sevenZipGeneric
     }
 
     private func extractArchive(
