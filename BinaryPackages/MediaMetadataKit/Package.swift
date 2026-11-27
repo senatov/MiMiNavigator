@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "MediaMetadataKit", targets: ["MediaMetadataKitDependencies"])],
     dependencies: [.package(path: "../LogKit")],
     targets: [
-        .binaryTarget(name: "MediaMetadataKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-088574402e51daba/MediaMetadataKit.xcframework.zip", checksum: "3d9d583676eee7a614e350d0875254562aa3fba650afa0f9593e17aaa6296332"),
+        .binaryTarget(name: "MediaMetadataKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-620c6f4696b40b67/MediaMetadataKit.xcframework.zip", checksum: "db420eac25551b65a8450e5386e9f747e7923713b45d38cb6fd178544352a138"),
         .target(name: "MediaMetadataKitDependencies", dependencies: ["MediaMetadataKit", .product(name: "LogKit", package: "LogKit")])
     ]
 )

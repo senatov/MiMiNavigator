@@ -7,7 +7,7 @@ let package = Package(
     products: [.library(name: "ExternalToolsKit", targets: ["ExternalToolsKitDependencies"])],
     dependencies: [.package(path: "../LogKit")],
     targets: [
-        .binaryTarget(name: "ExternalToolsKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-088574402e51daba/ExternalToolsKit.xcframework.zip", checksum: "d3d720456000e105a208d5353514c903deba449dc80fc939140e3483793bc1c8"),
+        .binaryTarget(name: "ExternalToolsKit", url: "https://github.com/senatov/MiMiNavigator/releases/download/kits-620c6f4696b40b67/ExternalToolsKit.xcframework.zip", checksum: "ae8a11216abf864229e9887b03f09f0e10bf1a372eca874f3a9fddf0f76d1a8f"),
         .target(name: "ExternalToolsKitDependencies", dependencies: ["ExternalToolsKit", .product(name: "LogKit", package: "LogKit")])
     ]
 )

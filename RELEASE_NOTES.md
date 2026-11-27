@@ -1,3 +1,19 @@
+# MiMiNavigator v0.9.2.2
+
+This update expands archive support and improves tabs, volume navigation, and file-operation feedback.
+
+- Browse, extract, and create CBZ comic archives. Open ARC and ZOO archives with Homebrew's `unar`. RAR extraction supports `unrar`, `unar`, and 7-Zip. RAR creation uses the separately installed RARLAB command-line tool.
+- Use a more compact bottom tab strip, choose tab fonts and appearance, and restore the previous column widths after a manual Auto Fit.
+- See volume capacity and filesystem details, eject eligible volumes, and try the experimental Kindle Documents and Android SFTP shortcuts.
+- Set when routine file operations ask for confirmation. Deletion previews show where items are, how many are selected, and whether their size is still being measured.
+- Automatic Cleanup skips the home Music library and Apple TV libraries.
+
+Requires macOS 27 or later and Apple silicon. Open the DMG and drag MiMiNavigator to Applications.
+
+[Supported archive formats](https://github.com/senatov/MiMiNavigator/blob/v0.9.2.2/GUI/Docs/Supported_Archive_Formats.md) · [Changes since the original v0.9.2.1 build](https://github.com/senatov/MiMiNavigator/compare/090a5f36...v0.9.2.2)
+
+---
+
 # MiMiNavigator v0.9.2.1
 
 This update improves remote file handling, first-run setup on shared Macs, and navigation in the two panels.

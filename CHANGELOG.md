@@ -7,6 +7,22 @@ and releases now use four numeric components; each component after the major ver
 
 ## [Unreleased]
 
+## [0.9.2.2] - 2026-11-27
+
+### Added
+- Browse, extract, and create CBZ archives with the macOS ZIP tools. Browse and extract ARC and ZOO using Homebrew's `unar`.
+- Use RARLAB's `unrar` for RAR extraction when installed, with `unar` and 7-Zip as alternatives. Create RAR archives when RARLAB's `rar` is installed.
+- Show capacity, free space, filesystem details, and eligible eject actions in Volumes. Add experimental shortcuts for mounted Kindle Documents and Android SFTP setup.
+
+### Changed
+- Compact the bottom tab strip and add font and appearance controls. Refine Liquid Glass outlines and sharpen navigation, menu, and dialog icons.
+- Keep file-operation progress independent from volume navigation. Use a configurable confirmation threshold for routine file operations and show clearer deletion previews.
+- Allow manually fitted file-list columns to return to their previous widths from the column menu.
+
+### Fixed
+- Exclude the home Music library and Apple TV libraries from automatic Cleanup scans.
+- Keep archive passwords out of archive command logs.
+
 ## [0.9.2.1] - 2026-11-25
 
 ### Changed
@@ -1480,7 +1496,8 @@ Each release should include:
 
 ---
 
-[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.6...HEAD
+[Unreleased]: https://github.com/senatov/MiMiNavigator/compare/v0.9.2.2...HEAD
+[0.9.2.2]: https://github.com/senatov/MiMiNavigator/compare/090a5f36...v0.9.2.2
 [0.9.1.6]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.5...v0.9.1.6
 [0.9.1.5]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.4...v0.9.1.5
 [0.9.1.4]: https://github.com/senatov/MiMiNavigator/compare/v0.9.1.3...v0.9.1.4

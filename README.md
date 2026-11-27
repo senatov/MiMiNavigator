@@ -66,9 +66,9 @@ Search by name, content, size, or date, including inside archives. Focused prese
 
 ### Batch rename and archives
 
-Rename groups of files with masks, counters, replacements, case conversion, and a live conflict preview. Archives behave like virtual folders: browse them, search them, copy files in or out, and let MiMiNavigator repack modified archives when the session ends.
+Rename groups of files with masks, counters, replacements, case conversion, and a live conflict preview. Archives behave like virtual folders: browse them, search them, copy files in or out, and save changes on exit for formats that support repacking.
 
-More than 50 formats are supported, including ZIP, RAR, 7Z, TAR, DMG, PKG, ISO, Java/Android packages, disk images, and legacy formats. ZIP and TAR-family archives use macOS tools; extended format support is available through `unar` and `sevenzip`.
+More than 50 formats are supported, including ZIP, CBZ, RAR, 7Z, TAR, DMG, PKG, ISO, Java/Android packages, disk images, and legacy formats. ZIP, CBZ, and the TAR family use macOS tools. Homebrew’s `unar` opens ARC and ZOO, and `sevenzip` handles many other formats. RAR creation requires [RARLAB’s `rar`](https://www.rarlab.com/download.htm).
 
 ### Remote, cloud, and media
 
@@ -157,7 +157,7 @@ The External Tool Doctor detects supported tools and explains what is missing. S
 
 The current DMG is signed and notarized by Apple. No App Store account or subscription is required. On a fresh Mac, the first launch installs Homebrew and MiMiNavigator's command-line tools; this needs an internet connection and may require an administrator password.
 
-1. [Download MiMiNavigator v0.9.2.1](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.2.1) for macOS 27 or newer. For macOS 26, use [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
+1. [Download MiMiNavigator v0.9.2.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.2.2) for macOS 27 or newer. For macOS 26, use [v0.9.1.2](https://github.com/senatov/MiMiNavigator/releases/tag/v0.9.1.2).
 2. Open the DMG and drag MiMiNavigator to Applications.
 3. Launch it from Applications.
 
