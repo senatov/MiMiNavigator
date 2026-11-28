@@ -14,6 +14,7 @@ struct ResizableDivider: View {
     let onEnd: () -> Void
     var color: Color = ColorThemeStore.shared.activeTheme.columnDividerColor
     var onAutoFit: (() -> CGFloat)? = nil
+    var gripWidth = ColumnAutoFitMetrics.dividerWidth
 
     var body: some View {
         Representable(
@@ -24,7 +25,7 @@ struct ResizableDivider: View {
             onEnd: onEnd,
             onAutoFit: onAutoFit
         )
-        .frame(width: 14)
+        .frame(width: gripWidth)
         .overlay {
             Rectangle()
                 .fill(color)
@@ -37,6 +38,11 @@ struct ResizableDivider: View {
 // MARK: - NSViewRepresentable
 
 private struct Representable: NSViewRepresentable {
+    // MARK: - Drag State
+    final class Coordinator {
+        var initialWidth: CGFloat = 0
+    }
+
     @Binding var width: CGFloat
     let min: CGFloat
     let max: CGFloat
@@ -44,20 +50,23 @@ private struct Representable: NSViewRepresentable {
     let onEnd: () -> Void
     var onAutoFit: (() -> CGFloat)?
 
-    func makeNSView(context _: Context) -> NSResizableDividerView {
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeNSView(context: Context) -> NSResizableDividerView {
         let view = NSResizableDividerView()
-        configure(view)
+        configure(view, drag: context.coordinator)
         return view
     }
 
-    func updateNSView(_ view: NSResizableDividerView, context _: Context) {
-        configure(view)
+    func updateNSView(_ view: NSResizableDividerView, context: Context) {
+        configure(view, drag: context.coordinator)
     }
 
-    private func configure(_ view: NSResizableDividerView) {
+    private func configure(_ view: NSResizableDividerView, drag: Coordinator) {
         view.dividerColor = NSColor(color)
+        view.onDragStart = { drag.initialWidth = width }
         view.onDrag = { delta in
-            let newWidth = (width + delta).clamped(to: min ... max)
+            let newWidth = (drag.initialWidth + delta).clamped(to: min ... max)
             width = newWidth
         }
         view.onDragEnd = onEnd

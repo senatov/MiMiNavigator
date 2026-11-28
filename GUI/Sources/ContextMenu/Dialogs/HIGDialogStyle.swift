@@ -11,17 +11,16 @@ import SwiftUI
 // MARK: - Dialog Window Metrics
 @MainActor
 enum DialogWindowMetrics {
-    private static let fallbackSize = NSSize(width: 1_200, height: 700)
+    private static let fallbackSize = NSSize(width: 1_248, height: 768)
 
+    // MARK: - Maximum Size
     static var maximumSize: NSSize {
-        let size = hostWindow?.contentLayoutRect.size ?? fallbackSize
-        return NSSize(width: size.width * 0.75, height: size.height * 0.75)
-    }
-
-    private static var hostWindow: NSWindow? {
-        NSApp.windows.first {
-            !($0 is NSPanel) && $0.isVisible && $0.styleMask.contains(.titled)
-        }
+        let host = NSApp.mainWindow?.sheetParent ?? NSApp.mainWindow
+        let screen = host?.screen ?? NSScreen.main
+        let visible = screen?.visibleFrame.size ?? fallbackSize
+        let available = host?.contentLayoutRect.size ?? visible
+        return NSSize(width: min(visible.width, available.width) - 24,
+                      height: min(visible.height, available.height) - 24)
     }
 }
 

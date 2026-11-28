@@ -1,6 +1,6 @@
 // NSResizableDividerView.swift
 // MiMiNavigator — AppKit view for column resize drag.
-// Uses NSEvent.deltaX directly, immune to SwiftUI layout cycles.
+// Uses window coordinates so moving the divider does not change the drag origin.
 
 import AppKit
 
@@ -9,6 +9,7 @@ import AppKit
 final class NSResizableDividerView: NSView {
     // MARK: - Callbacks
 
+    var onDragStart: (() -> Void)?
     var onDrag: ((CGFloat) -> Void)?
     var onDragEnd: (() -> Void)?
     var onDoubleClick: (() -> Void)?
@@ -18,7 +19,7 @@ final class NSResizableDividerView: NSView {
 
     // MARK: - State
 
-    private var isDragging = false
+    private var dragOriginX: CGFloat?
     private var cursorPushed = false
 
     // MARK: - NSView
@@ -49,7 +50,7 @@ final class NSResizableDividerView: NSView {
     }
 
     private func drawDividerLine() {
-        guard isDragging else { return }
+        guard dragOriginX != nil else { return }
         let x = (bounds.width / 2).rounded() - 0.5
         let path = NSBezierPath()
         path.move(to: NSPoint(x: x, y: bounds.minY))
@@ -61,24 +62,27 @@ final class NSResizableDividerView: NSView {
 
     // MARK: - Mouse Events
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
     override func mouseDown(with event: NSEvent) {
         if event.clickCount == 2 {
             onDoubleClick?()
             return
         }
-        isDragging = true
+        dragOriginX = event.locationInWindow.x
+        onDragStart?()
         needsDisplay = true
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard isDragging else { return }
-        onDrag?(event.deltaX)
+        guard let dragOriginX else { return }
+        onDrag?(event.locationInWindow.x - dragOriginX)
         needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
-        guard isDragging else { return }
-        isDragging = false
+        guard dragOriginX != nil else { return }
+        dragOriginX = nil
         needsDisplay = true
         onDragEnd?()
         // Reset cursor if mouse ended outside our bounds

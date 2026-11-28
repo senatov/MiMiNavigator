@@ -95,7 +95,7 @@ struct SettingsProgressPane: View {
                             .frame(width: 60)
                     }
                     HStack {
-                        Text("Height:")
+                        Text("Maximum automatic height:")
                         TextField("", value: Binding(
                             get: { Double(appearance.panelHeight) },
                             set: { appearance.panelHeight = CGFloat($0) }
@@ -103,7 +103,7 @@ struct SettingsProgressPane: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 60)
                     }
-                    Text("px")
+                    Text("pt")
                         .foregroundStyle(SettingsVisualStyle.secondaryText)
                 }
                 .font(.system(size: 12))

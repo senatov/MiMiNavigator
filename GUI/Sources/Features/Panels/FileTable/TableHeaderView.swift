@@ -16,7 +16,6 @@ struct TableHeaderView: View {
 
     @State private var dragOverTargetID: ColumnID? = nil
     @State private var draggedColumnID: ColumnID? = nil
-    @State var manualAutoFit: (before: ColumnLayoutModel.Snapshot, fitted: ColumnLayoutModel.Snapshot)?
     @State private var columnFrames: [ColumnID: CGRect] = [:]
 
     // MARK: - Computed Properties
@@ -31,10 +30,6 @@ struct TableHeaderView: View {
 
     private var fixedCols: [ColumnSpec] {
         layout.fixedColumns
-    }
-
-    private var maxRight: CGFloat {
-        layout.containerWidth > 5 ? layout.containerWidth - 5 : 9999
     }
 
     private var headerBg: Color {
@@ -57,33 +52,22 @@ struct TableHeaderView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            containerWidthProbe
-            columnHeaders
-        }
-        .frame(height: TableHeaderStyle.height)
+        Color.clear
+            .frame(height: TableHeaderStyle.height)
+            .overlay(alignment: .leading) { columnHeaders }
+            .clipped()
         .background(headerBg)
         .overlay { headerBorder }
         .overlay(alignment: .bottom) {
             Color(nsColor: .separatorColor).opacity(0.55)
                 .frame(height: 0.5)
+                .allowsHitTesting(false)
         }
         .contextMenu { columnToggleMenu }
-    }
-
-    // MARK: - Container Width Probe
-
-    private var containerWidthProbe: some View {
-        GeometryReader { geo in
-            Color.clear
-                .onAppear { updateContainerWidth(geo.size.width) }
-                .onChange(of: geo.size.width) { _, w in updateContainerWidth(w) }
+        .onChange(of: UserPreferences.shared.snapshot.autoFitColumnsOnNavigate) { _, enabled in
+            if enabled { scheduleColumnFit() }
         }
-    }
-
-    private func updateContainerWidth(_ width: CGFloat) {
-        layout.containerWidth = width
-        layout.updateNameWidthForContainer()
+        .onChange(of: fixedCols.map(\.id)) { _, _ in scheduleColumnFit() }
     }
 
     // MARK: - Column Headers
@@ -95,13 +79,10 @@ struct TableHeaderView: View {
 
             ForEach(fixedCols) { spec in
                 fixedColumnHeader(for: spec)
-                if spec.id != fixedCols.last?.id {
-                    columnDivider(for: spec)
-                }
+                columnDivider(for: spec, isTrailing: spec.id == fixedCols.last?.id)
             }
         }
         .coordinateSpace(name: HeaderDragMetrics.coordinateSpaceName)
-        .onPreferenceChange(ColumnWidthPreferenceKey.self) { syncColumnWidths(from: $0) }
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
     }
@@ -153,7 +134,6 @@ struct TableHeaderView: View {
         .background(dragTargetBackground(for: spec.id))
         .overlay { draggingColumnBorder(for: spec.id) }
         .overlay(alignment: .leading) { dragTargetIndicator(for: spec.id) }
-        .background(geoMeasurement(for: spec))
         .background(columnFrameMeasurement(for: spec.id))
         .opacity(draggedColumnID == spec.id ? 0.72 : 1)
         .scaleEffect(draggedColumnID == spec.id ? 1.03 : 1, anchor: .center)
@@ -181,30 +161,22 @@ struct TableHeaderView: View {
         )
     }
 
-    private func columnDivider(for spec: ColumnSpec) -> some View {
+    private func columnDivider(for spec: ColumnSpec, isTrailing: Bool) -> some View {
         ResizableDivider(
             width: Binding(
-                get: { spec.width },
+                get: { layout.columns.first { $0.id == spec.id }?.width ?? spec.width },
                 set: { layout.setWidth($0, for: spec.id) }
             ),
             min: spec.id.minDragWidth,
-            max: Swift.min(spec.id.maxWidth, maxRight),
+            max: spec.id.maxWidth,
             onEnd: { layout.saveWidths() },
             color: columnDividerColor,
-            onAutoFit: { layout.isColumnReorderActive ? spec.width : autoFitWidth(for: spec.id) }
+            onAutoFit: { layout.isColumnReorderActive ? spec.width : autoFitWidth(for: spec.id) },
+            gripWidth: isTrailing ? 8 : ColumnAutoFitMetrics.dividerWidth
         )
     }
 
-    // MARK: - Geo Sync
-
-    private func geoMeasurement(for spec: ColumnSpec) -> some View {
-        GeometryReader { geo in
-            Color.clear.preference(
-                key: ColumnWidthPreferenceKey.self,
-                value: [ColumnWidthEntry(id: spec.id, width: geo.size.width)]
-            )
-        }
-    }
+    // MARK: - Column Frame Measurement
 
     private func columnFrameMeasurement(for columnID: ColumnID) -> some View {
         GeometryReader { geo in
@@ -213,23 +185,6 @@ struct TableHeaderView: View {
                 .onChange(of: geo.frame(in: .named(HeaderDragMetrics.coordinateSpaceName))) { _, frame in
                     columnFrames[columnID] = frame
                 }
-        }
-    }
-
-    private func syncColumnWidths(from entries: [ColumnWidthEntry]) {
-        guard !layout.isColumnReorderActive else { return }
-        // skip geo-sync if autofit just applied — stale geo values would overwrite fresh widths
-        if layout.autoFitGeneration != layout.lastSyncedGeneration {
-            layout.lastSyncedGeneration = layout.autoFitGeneration
-            log.debug("[AutoFit] syncColumnWidths skipped — autofit gen \(layout.autoFitGeneration) just applied")
-            return
-        }
-        for entry in entries {
-            guard let idx = layout.columns.firstIndex(where: { $0.id == entry.id }) else { continue }
-            let rounded = entry.width.rounded()
-            if abs(layout.columns[idx].width - rounded) > 0.5 {
-                layout.columns[idx].width = rounded
-            }
         }
     }
 
@@ -308,6 +263,13 @@ struct TableHeaderView: View {
         draggedColumnID = nil
         dragOverTargetID = nil
         layout.endColumnReorder()
+        scheduleColumnFit()
+    }
+
+    // MARK: - Schedule Column Fit
+    private func scheduleColumnFit() {
+        guard !layout.isColumnReorderActive else { return }
+        AutoFitScheduler.shared.schedulePresentationFit(panel: panelSide, appState: appState)
     }
 
     // MARK: - Sort
@@ -340,6 +302,7 @@ struct TableHeaderView: View {
     func autoFitWidth(for col: ColumnID) -> CGFloat {
         let files = panelSide == .left ? appState.displayedLeftFiles : appState.displayedRightFiles
         guard !files.isEmpty else { return col.defaultWidth }
+        if col == .name { return ColumnAutoFitMeasurer.contentWidth(for: col, files: files) }
         let (texts, font) = textsAndFont(for: col, files: files)
         let attrs: [NSAttributedString.Key: Any] = [.font: font]
         let maxTextW = texts.reduce(CGFloat(0)) {

@@ -81,7 +81,7 @@ enum ColumnID: String, CaseIterable, Codable, Identifiable, Transferable {
 
     var defaultVisible: Bool {
         switch self {
-        case .dateCreated, .dateLastOpened, .dateAdded, .group,
+        case .kind, .permissions, .dateCreated, .dateLastOpened, .dateAdded, .group,
              .finderVersion, .finderComment, .finderTags: false
         default: true
         }

@@ -66,4 +66,29 @@ final class ScannerPublishTests: XCTestCase {
         XCTAssertEqual(first, second)
         XCTAssertNotEqual(second, third)
     }
+
+    // MARK: - Column Layout Defaults
+    func testFreshLayoutMatchesSavedColumnSelection() throws {
+        let bundle = try XCTUnwrap(Bundle.main.url(forResource: "DefaultMimiHome", withExtension: "bundle"))
+        let data = try Data(contentsOf: bundle.appendingPathComponent(".mimi/column_layout.json"))
+        let bundledLayouts = try JSONDecoder().decode([String: ColumnLayoutModel].self, from: data)
+        for side in [FavPanelSide.left, .right] {
+            let layout = ColumnLayoutModel(panelSide: side)
+            let bundled = try XCTUnwrap(bundledLayouts[side.rawValue.lowercased()])
+            XCTAssertEqual(layout.configuredVisibleColumns.map(\.id), [.name, .dateModified, .size, .owner, .childCount])
+            XCTAssertEqual(bundled.configuredVisibleColumns.map(\.id), layout.configuredVisibleColumns.map(\.id))
+        }
+    }
+
+    // MARK: - Manual Name Width
+    func testManualNameWidthReturnsWhenPanelHasSpaceAgain() {
+        let layout = ColumnLayoutModel(panelSide: .left)
+        layout.containerWidth = 900
+        layout.nameWidth = 450
+        layout.containerWidth = 530
+        XCTAssertLessThan(layout.nameWidth, 450)
+        XCTAssertEqual(layout.makeSnapshot().nameWidth, 450)
+        layout.containerWidth = 900
+        XCTAssertEqual(layout.nameWidth, 450)
+    }
 }

@@ -183,10 +183,6 @@ final class ProgressPanelAppearance {
 
     func updateFrame(_ frame: ProgressPanelFrame, for operationKey: String) {
         framesByOperation[operationKey] = frame
-        if frame.height >= Double(Self.defaultHeight * 0.85) {
-            panelWidth = frame.width
-            panelHeight = frame.height
-        }
         save()
     }
 
@@ -204,4 +200,5 @@ struct ProgressPanelFrame: Codable, Equatable {
     var height: Double
     var lineCount: Int?
     var screenConfiguration: String?
+    var manualHeight: Bool? = nil
 }

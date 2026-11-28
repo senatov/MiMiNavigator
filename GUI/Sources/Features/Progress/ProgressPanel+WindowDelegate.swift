@@ -23,7 +23,8 @@ extension ProgressPanel: NSWindowDelegate {
 
     nonisolated func windowDidResize(_ notification: Notification) {
         MainActor.assumeIsolated {
-            guard panel != nil, !isApplyingProgrammaticFrame else { return }
+            guard panel?.isVisible == true, !isApplyingProgrammaticFrame else { return }
+            hasManualHeight = true
             registerUserInteraction(source: "resize")
             scheduleFramePersistence()
         }
@@ -31,7 +32,7 @@ extension ProgressPanel: NSWindowDelegate {
 
     nonisolated func windowDidMove(_ notification: Notification) {
         MainActor.assumeIsolated {
-            guard !isApplyingProgrammaticFrame else { return }
+            guard panel?.isVisible == true, !isApplyingProgrammaticFrame else { return }
             registerUserInteraction(source: "move")
             scheduleFramePersistence()
         }

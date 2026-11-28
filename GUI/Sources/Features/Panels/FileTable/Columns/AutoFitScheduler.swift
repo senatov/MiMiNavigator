@@ -79,7 +79,7 @@ final class AutoFitScheduler {
         }
         navigationFitTasks[panel]?.cancel()
         navigationFitTasks[panel] = nil
-        let delay = isNavigationFit ? eventCoalescingDelay : contentSettleDelay
+        let delay = (isNavigationFit || isPresentationFit) ? eventCoalescingDelay : contentSettleDelay
         log.debug("[AutoFit] content event panel=\(panel) path=\(path) samePath=\(isSamePath)")
         scheduledFit[panel] = identity
         navigationFitTasks[panel] = Task { @MainActor in
@@ -211,11 +211,16 @@ final class AutoFitScheduler {
     private func fitIdentity(panel: FavPanelSide, appState: AppState) -> FitIdentity {
         let layout = ColumnLayoutStore.shared.layout(for: panel)
         let preferences = UserPreferences.shared.snapshot
+        let files = appState.displayedFiles(for: panel)
+        let position = visibleRows[panel] ?? (first: 0, count: 30)
+        let samples = files.count >= LargeDirectoryPolicy.largeEntryCount
+            ? Array(files[LargeDirectoryPolicy.visibleWindow(count: files.count, firstVisible: position.first, visibleCount: position.count)])
+            : files
         return FitIdentity(
             path: appState.path(for: panel),
             contentSignature: ColumnAutoFitMeasurer.renderedContentSignature(
                 columns: layout.fixedColumns.map(\.id),
-                files: appState.displayedFiles(for: panel)
+                files: samples
             ),
             containerWidth: layout.containerWidth,
             columns: layout.fixedColumns.map(\.id),
@@ -263,6 +268,7 @@ final class AutoFitScheduler {
         ColumnAutoFitter.autoFitAll(layout: layout, files: nearby)
         backgroundFitTasks[panel]?.cancel()
         let path = appState.path(for: panel)
+        let columns = layout.fixedColumns.map(\.id)
         let version = panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion
         backgroundFitTasks[panel] = Task { @MainActor in
             let worker = Task.detached(priority: .utility) {
@@ -275,7 +281,11 @@ final class AutoFitScheduler {
                 try? await Task.sleep(for: .milliseconds(500))
                 if Task.isCancelled { return }
             }
-            guard !loadingPanels.contains(panel), !appState.isLoading(panel) else { return }
+            guard UserPreferences.shared.snapshot.autoFitColumnsOnNavigate,
+                !layout.isColumnReorderActive, layout.fixedColumns.map(\.id) == columns,
+                !loadingPanels.contains(panel), !appState.isLoading(panel),
+                (panel == .left ? appState.leftFilesVersion : appState.rightFilesVersion) == version
+            else { return }
             ColumnAutoFitter.autoFitAll(layout: layout, files: nearby + remaining)
             log.debug("[AutoFit] background sample panel=\(panel) total=\(files.count) measured=\(nearby.count + remaining.count)")
         }

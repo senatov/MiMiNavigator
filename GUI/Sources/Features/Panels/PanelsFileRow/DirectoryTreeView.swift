@@ -80,6 +80,13 @@ struct DirectoryTreeView: View {
         .clipped()
         .contextMenu { panelBackgroundMenu }
         .onAppear(perform: prepareTreeForCurrentPath)
+        .onChange(of: UserPreferences.shared.snapshot.autoFitColumnsOnNavigate) { _, enabled in
+            if enabled { scheduleTreeAutoFit(reason: "enabled") }
+        }
+        .onChange(of: layout.fixedColumns.map(\.id)) { _, _ in scheduleTreeAutoFit(reason: "columns") }
+        .onChange(of: layout.isColumnReorderActive) { _, active in
+            if !active { scheduleTreeAutoFit(reason: "reorder") }
+        }
         .onChange(of: filesSignature) { _, _ in prepareTreeForCurrentPath() }
         .onChange(of: appState.sortKey) { _, _ in resortLoadedChildrenAndFit() }
         .onChange(of: appState.bSortAscending) { _, _ in resortLoadedChildrenAndFit() }
@@ -344,7 +351,7 @@ struct DirectoryTreeView: View {
         autoFitTask?.cancel()
         autoFitTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(140))
-            if Task.isCancelled { return }
+            guard !Task.isCancelled, UserPreferences.shared.snapshot.autoFitColumnsOnNavigate else { return }
             let rows = visibleRows
             guard !rows.isEmpty else { return }
             guard !layout.isColumnReorderActive else { return }

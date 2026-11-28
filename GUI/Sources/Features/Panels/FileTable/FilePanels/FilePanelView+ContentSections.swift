@@ -27,6 +27,9 @@ extension FilePanelView {
             layout: columnLayout,
             isFocused: appState.focusedPanel == viewModel.panelSide
         )
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width in
+            columnLayout.containerWidth = width
+        }
     }
 
     var thumbnailSection: some View {

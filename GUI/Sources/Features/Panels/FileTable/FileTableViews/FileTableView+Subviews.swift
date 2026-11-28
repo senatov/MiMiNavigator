@@ -51,6 +51,9 @@ extension FileTableView {
                 Color.clear
                     .frame(height: onePixel)
             }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width in
+                layout.containerWidth = width
+            }
             .background(scrollBackgroundLayer)
             .scrollDisabled(!hasScrollableRows)
             .scrollClipDisabled()

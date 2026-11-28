@@ -22,13 +22,17 @@ enum AuxiliaryWindowFramePolicy {
         let savedScreens = defaults.string(forKey: screenKey)
         let restored = savedScreens == currentScreens && window.setFrameUsingName(autosaveName)
         if !restored {
-            let visible = preferredScreen(for: hostWindow)?.visibleFrame
+            let visible = preferredScreen(for: hostWindow)?.visibleFrame.insetBy(dx: 12, dy: 12)
             let hostFrame = hostWindow?.frame ?? visible
             let size = NSSize(
-                width: min(designedSize.width, visible?.width ?? designedSize.width),
-                height: min(designedSize.height, visible?.height ?? designedSize.height)
+                width: min(max(designedSize.width, window.minSize.width), visible?.width ?? designedSize.width),
+                height: min(max(designedSize.height, window.minSize.height), visible?.height ?? designedSize.height)
             )
-            let origin = hostFrame.map { NSPoint(x: $0.midX - size.width / 2, y: $0.midY - size.height / 2) } ?? .zero
+            let centered = hostFrame.map { NSPoint(x: $0.midX - size.width / 2, y: $0.midY - size.height / 2) } ?? .zero
+            let origin = visible.map {
+                NSPoint(x: min(max(centered.x, $0.minX), $0.maxX - size.width),
+                        y: min(max(centered.y, $0.minY), $0.maxY - size.height))
+            } ?? centered
             window.setFrame(NSRect(origin: origin, size: size), display: true)
         }
         ensureVisible(window, preferredScreen: preferredScreen(for: hostWindow))

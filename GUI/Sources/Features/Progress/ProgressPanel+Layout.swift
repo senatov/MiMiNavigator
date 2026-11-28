@@ -84,6 +84,7 @@ extension ProgressPanel {
         smoothedProgressRate = nil
         setProgressVisible(false)
         logTextView?.string = ""
+        scrollView?.isHidden = true
         autoCloseCheckbox?.state = appearance.autoCloseEnabled ? .on : .off
         actionButton?.title = "Cancel"
         actionButton?.setAccessibilityLabel("Cancel operation")

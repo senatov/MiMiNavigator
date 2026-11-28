@@ -105,6 +105,5 @@ enum ColumnAutoFitter {
     private static func apply(result: ColumnAutoFitResult, to layout: ColumnLayoutModel) {
         let widths = Dictionary(uniqueKeysWithValues: result.fixedColumns.map { ($0.id, $0.width) })
         layout.applyAutoFitWidths(widths, nameWidth: result.nameWidth)
-        layout.autoFitGeneration += 1
     }
 }

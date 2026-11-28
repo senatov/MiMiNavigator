@@ -11,10 +11,11 @@ import SwiftUI
 extension MiMiNavigatorApp {
     // MARK: -
     var body: some Scene {
-        WindowGroup(id: "main") {
+        let defaultSize = WindowFrameRestorer.defaultFrame().size
+        return WindowGroup(id: "main") {
             mainWindowContent
         }
-        .defaultSize(width: 1200, height: 700)
+        .defaultSize(width: defaultSize.width, height: defaultSize.height)
         .defaultPosition(.center)
         .windowToolbarStyle(.unified)
         .windowToolbarLabelStyle(fixed: .iconOnly)

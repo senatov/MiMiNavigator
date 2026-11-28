@@ -14,7 +14,7 @@ final class ColumnLayoutModel: Codable {
     }
 
     static let defaultOrder: [ColumnID] = [
-        .name, .dateModified, .size, .kind, .permissions, .owner, .childCount,
+        .name, .dateModified, .size, .owner, .childCount, .kind, .permissions,
         .dateCreated, .dateLastOpened, .dateAdded, .group,
         .finderVersion, .finderComment, .finderTags,
     ]
@@ -25,21 +25,20 @@ final class ColumnLayoutModel: Codable {
         static let trailingContentInset: CGFloat = 17
         static let widthChangeEpsilon: CGFloat = 0.5
         static let unconstrainedWidthFallback: CGFloat = 9_999
-        static let maxNameWidthRatio: CGFloat = 0.55
     }
 
     var columns: [ColumnSpec]
     private(set) var layoutVersion: Int = 0
-    var containerWidth: CGFloat = 0
+    var containerWidth: CGFloat = 0 {
+        didSet {
+            if containerWidth != oldValue { incrementLayoutVersion() }
+        }
+    }
     private(set) var storedNameWidth: CGFloat = 200
     private let storageKey: String
     private(set) var isColumnReorderActive = false
     private(set) var containsDirectories = true
     private(set) var containsUsablePermissions = true
-
-    /// tick bumped on every autofit apply — syncColumnWidths skips 1 render cycle after
-    var autoFitGeneration: Int = 0
-    var lastSyncedGeneration: Int = 0
 
     var configuredVisibleColumns: [ColumnSpec] { columns.filter { $0.isVisible } }
     var visibleColumns: [ColumnSpec] {
@@ -57,7 +56,6 @@ final class ColumnLayoutModel: Codable {
     func setContainsDirectories(_ value: Bool) {
         guard containsDirectories != value else { return }
         containsDirectories = value
-        updateNameWidthForContainer()
         incrementLayoutVersion()
     }
 
@@ -65,12 +63,11 @@ final class ColumnLayoutModel: Codable {
     func setContainsUsablePermissions(_ value: Bool) {
         guard containsUsablePermissions != value else { return }
         containsUsablePermissions = value
-        updateNameWidthForContainer()
         incrementLayoutVersion()
     }
 
     var nameWidth: CGFloat {
-        get { storedNameWidth }
+        get { clampNameWidth(storedNameWidth) }
         set { applyNameWidth(newValue) }
     }
 
@@ -104,11 +101,6 @@ final class ColumnLayoutModel: Codable {
         applyStoredNameWidthIfNeeded(clampedWidth)
     }
 
-    func updateNameWidthForContainer() {
-        let clampedWidth = clampNameWidth(storedNameWidth)
-        applyStoredNameWidthIfNeeded(clampedWidth)
-    }
-
     /// Max Name width accounting for all visible fixed columns. Used by divider drag constraint.
     var effectiveMaxNameWidth: CGFloat { maximumNameWidth }
     private var maximumNameWidth: CGFloat {
@@ -117,9 +109,7 @@ final class ColumnLayoutModel: Codable {
         let dividerTotal = totalDividerWidth(for: fixedColumns.count)
         let currentFixedWidth = totalFixedWidth(for: fixedColumns)
         let availableWidth = containerWidth - currentFixedWidth - dividerTotal - LayoutMetrics.trailingContentInset
-        let ratioBound = containerWidth * LayoutMetrics.maxNameWidthRatio
-
-        return max(LayoutMetrics.minNameWidth, min(availableWidth, ratioBound))
+        return max(LayoutMetrics.minNameWidth, availableWidth)
     }
 
     private func totalFixedWidth(for columns: [ColumnSpec]) -> CGFloat {
@@ -137,7 +127,6 @@ final class ColumnLayoutModel: Codable {
         let clampedWidth = clampWidth(width, for: id)
         guard shouldApplyWidthChange(current: columns[index].width, new: clampedWidth) else { return }
         columns[index].width = clampedWidth
-        updateNameWidthForContainer()
         incrementLayoutVersion()
     }
 
@@ -156,7 +145,6 @@ final class ColumnLayoutModel: Codable {
             storedNameWidth = 200
             changed = true
         }
-        updateNameWidthForContainer()
         if changed {
             incrementLayoutVersion()
         }
@@ -191,12 +179,12 @@ final class ColumnLayoutModel: Codable {
         let remainingFixedWidth = totalFixedWidth(for: remainingFixedColumns)
 
         let maximumWidth = containerWidth
-            - storedNameWidth
+            - LayoutMetrics.minNameWidth
             - remainingFixedWidth
             - dividerTotal
             - LayoutMetrics.trailingContentInset
 
-        return max(id.minDragWidth, maximumWidth)
+        return max(id.minDragWidth, min(id.maxWidth, maximumWidth))
     }
 
     private func totalDividerWidth(for fixedColumnCount: Int) -> CGFloat {
@@ -233,7 +221,6 @@ final class ColumnLayoutModel: Codable {
     func applySnapshot(_ snapshot: Snapshot) {
         columns = Self.withMissingColumns(snapshot.columns)
         storedNameWidth = snapshot.nameWidth
-        autoFitGeneration += 1
         incrementLayoutVersion()
     }
 
@@ -286,11 +273,8 @@ final class ColumnLayoutModel: Codable {
 
     @MainActor
     func restoreDefaults() {
-        for col in ColumnID.allCases {
-            guard let idx = columns.firstIndex(where: { $0.id == col }) else { continue }
-            columns[idx].isVisible = col.defaultVisible
-            columns[idx].width = col.defaultWidth
-        }
+        columns = Self.defaultOrder.map { ColumnSpec(id: $0) }
+        storedNameWidth = 200
         incrementLayoutVersion()
         save()
     }
@@ -304,7 +288,6 @@ final class ColumnLayoutModel: Codable {
             let existing = columns.first(where: { $0.id == id })
             return ColumnSpec(id: id, width: existing?.width, isVisible: visibleIDs.contains(id))
         }
-        updateNameWidthForContainer()
         incrementLayoutVersion()
         save()
         log.info("[Columns] applied preset=\(preset.rawValue)")

@@ -28,14 +28,17 @@ extension ProgressPanel {
         screenConfigurationAtPresentation = AuxiliaryWindowFramePolicy.screenConfiguration()
         isApplyingProgrammaticFrame = true
         defer { isApplyingProgrammaticFrame = false }
-        applySavedSizeIfNeeded(to: panel)
-        if let saved = appearance.frame(for: operationKey), shouldRestoreFrame(saved), let mainFrame = hostWindowFrame() {
+        let saved = appearance.frame(for: operationKey).flatMap { shouldRestoreFrame($0) ? $0 : nil }
+        hasManualHeight = saved?.manualHeight == true
+        let width = max(panel.minSize.width, saved.map { CGFloat($0.width) } ?? appearance.panelWidth)
+        let height = saved.flatMap { $0.manualHeight == true ? CGFloat($0.height) : nil } ?? Layout.minimumPanelHeight
+        panel.setFrame(NSRect(origin: panel.frame.origin, size: NSSize(width: width, height: height)), display: false)
+        if let saved, let mainFrame = hostWindowFrame() {
             panel.setFrameOrigin(NSPoint(x: mainFrame.minX + CGFloat(saved.relativeX), y: mainFrame.minY + CGFloat(saved.relativeY)))
         } else {
             centerInMainWindow()
         }
-        clampPanelToMainWindow()
-        AuxiliaryWindowFramePolicy.ensureVisible(panel, preferredScreen: presentationHostWindow?.screen)
+        clampPanelToScreen()
     }
 
     // MARK: - Persist Frame
@@ -48,7 +51,8 @@ extension ProgressPanel {
             width: Double(frame.width),
             height: Double(frame.height),
             lineCount: lineCount,
-            screenConfiguration: screenConfigurationAtPresentation
+            screenConfiguration: screenConfigurationAtPresentation,
+            manualHeight: hasManualHeight
         )
         appearance.updateFrame(stored, for: operationKey)
     }
@@ -64,20 +68,42 @@ extension ProgressPanel {
         }
     }
 
-    // MARK: - Compact
-    func compactForShortOutputIfNeeded() {
-        guard let panel, lineCount > 0, lineCount <= Layout.compactLineLimit else { return }
-        guard appearance.frame(for: operationKey) == nil else { return }
-        let compactHeight = compactHeight(for: lineCount)
-        guard panel.frame.height > compactHeight + Layout.compactHeightPadding else { return }
+    // MARK: - Schedule Output Resize
+    func scheduleOutputResize() {
+        guard !hasManualHeight, outputResizeTask == nil, let panel, panel.isVisible,
+              panel.frame.height < maximumAutomaticHeight else { return }
+        outputResizeTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard !Task.isCancelled else { return }
+            outputResizeTask = nil
+            resizeToFitOutput()
+        }
+    }
+
+    // MARK: - Resize to Fit Output
+    func resizeToFitOutput() {
+        guard !hasManualHeight, let panel, panel.isVisible else { return }
         let oldFrame = panel.frame
-        let newFrame = NSRect(x: oldFrame.midX - oldFrame.width / 2, y: oldFrame.midY - compactHeight / 2, width: oldFrame.width, height: compactHeight)
+        var height = Layout.minimumPanelHeight
+        if lineCount > 0, let scrollView, let text = logTextView,
+           let manager = text.layoutManager, let container = text.textContainer {
+            panel.contentView?.layoutSubtreeIfNeeded()
+            manager.ensureLayout(for: container)
+            let logHeight = manager.usedRect(for: container).height + Layout.logInset.height * 2
+            let chromeHeight = oldFrame.height - scrollView.frame.height
+            height = min(maximumAutomaticHeight, max(height, ceil(chromeHeight + logHeight)))
+        }
+        guard abs(oldFrame.height - height) >= 2 else { return }
         isApplyingProgrammaticFrame = true
-        panel.setFrame(newFrame, display: true)
-        clampPanelToMainWindow()
-        isApplyingProgrammaticFrame = false
-        persistFrameForCurrentOperation()
-        log.debug("[ProgressPanel] compacted short output lines=\(lineCount) height=\(Int(compactHeight))")
+        defer { isApplyingProgrammaticFrame = false }
+        panel.setFrame(NSRect(x: oldFrame.minX, y: oldFrame.maxY - height, width: oldFrame.width, height: height), display: true)
+        clampPanelToScreen()
+        logTextView?.scrollToEndOfDocument(nil)
+    }
+
+    private var maximumAutomaticHeight: CGFloat {
+        let visibleHeight = presentationHostWindow?.screen?.visibleFrame.height ?? NSScreen.main?.visibleFrame.height ?? 720
+        return max(Layout.minimumPanelHeight, min(appearance.panelHeight, visibleHeight - 24))
     }
 
     // MARK: - Auto Close
@@ -146,23 +172,9 @@ extension ProgressPanel {
     }
 
     // MARK: - Clamp Panel
-    func clampPanelToMainWindow() {
+    func clampPanelToScreen() {
         guard let panel else { return }
-        let mainFrame = hostWindowFrame() ?? NSScreen.main?.visibleFrame
-        let availableWidth = max(ProgressPanelAppearance.defaultMinWidth, (mainFrame?.width ?? 760) - 48)
-        let availableHeight = max(ProgressPanelAppearance.defaultMinHeight, (mainFrame?.height ?? 520) - 80)
-        let targetWidth = min(panel.frame.width, min(availableWidth, 600))
-        let targetHeight = min(panel.frame.height, min(availableHeight, 520))
-        let current = panel.frame
-        let minX = mainFrame?.minX ?? current.minX
-        let minY = mainFrame?.minY ?? current.minY
-        let maxX = (mainFrame?.maxX ?? current.maxX) - targetWidth
-        let maxY = (mainFrame?.maxY ?? current.maxY) - targetHeight
-        let targetX = min(max(current.minX, minX), maxX)
-        let targetY = min(max(current.minY, minY), maxY)
-        let targetFrame = NSRect(x: targetX, y: targetY, width: targetWidth, height: targetHeight)
-        guard targetFrame != current else { return }
-        panel.setFrame(targetFrame, display: false)
+        AuxiliaryWindowFramePolicy.ensureVisible(panel, preferredScreen: presentationHostWindow?.screen)
     }
 
     // MARK: - Abbreviate Path
@@ -175,13 +187,6 @@ extension ProgressPanel {
     }
 
     // MARK: - Helpers
-    func applySavedSizeIfNeeded(to panel: NSPanel) {
-        let saved = appearance.frame(for: operationKey)
-        let width = saved.map { shouldRestoreFrame($0) ? CGFloat($0.width) : ProgressPanelAppearance.defaultWidth } ?? ProgressPanelAppearance.defaultWidth
-        let height = saved.map { shouldRestoreFrame($0) ? restoredHeight(for: $0) : ProgressPanelAppearance.defaultHeight } ?? ProgressPanelAppearance.defaultHeight
-        panel.setFrame(NSRect(x: panel.frame.minX, y: panel.frame.minY, width: width, height: height), display: false)
-    }
-
     func shouldRestoreFrame(_ saved: ProgressPanelFrame) -> Bool {
         let values = [saved.relativeX, saved.relativeY, saved.width, saved.height]
         guard values.allSatisfy(\.isFinite) else { return false }
@@ -205,20 +210,6 @@ extension ProgressPanel {
         return NSApp.windows.first { $0 !== panel && $0.isVisible }
     }
 
-    func restoredHeight(for saved: ProgressPanelFrame) -> CGFloat {
-        if saved.lineCount == nil, saved.height > Double(ProgressPanelAppearance.defaultHeight + 80) {
-            return ProgressPanelAppearance.defaultHeight
-        }
-        return CGFloat(saved.height)
-    }
-
-    func compactHeight(for lines: Int) -> CGFloat {
-        let fontHeight = ceil(appearance.logFont.ascender - appearance.logFont.descender + appearance.logFont.leading)
-        let visibleLines = max(3, min(lines, Layout.compactLineLimit))
-        let logHeight = CGFloat(visibleLines) * fontHeight + Layout.logInset.height * 2
-        return max(Layout.minimumPanelHeight, Layout.compactExtraHeight + logHeight)
-    }
-
     func normalizedOperationKey(_ rawValue: String) -> String {
         let lowered = rawValue.lowercased()
         if lowered.contains("copy") { return "copy" }
@@ -235,11 +226,4 @@ extension ProgressPanel {
         return String(allowed).split(separator: "-").joined(separator: "-")
     }
 
-    func clampedWidth(_ width: CGFloat, mainFrame: NSRect) -> CGFloat {
-        min(max(width, ProgressPanelAppearance.defaultMinWidth), max(ProgressPanelAppearance.defaultMinWidth, mainFrame.width - 48))
-    }
-
-    func clampedHeight(_ height: CGFloat, mainFrame: NSRect) -> CGFloat {
-        min(max(height, Layout.minimumPanelHeight), max(Layout.minimumPanelHeight, mainFrame.height - 80))
-    }
 }

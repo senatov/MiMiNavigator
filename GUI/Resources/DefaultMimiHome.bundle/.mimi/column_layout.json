@@ -2,33 +2,39 @@
   "left": {
     "columns": [
       { "id": "name", "isVisible": true, "width": 126 },
-      { "id": "dateModified", "isVisible": true, "width": 123 },
-      { "id": "size", "isVisible": true, "width": 64 },
-      { "id": "kind", "isVisible": true, "width": 64 },
-      { "id": "owner", "isVisible": true, "width": 54 },
+      { "id": "dateModified", "isVisible": true, "width": 127 },
+      { "id": "size", "isVisible": true, "width": 82 },
+      { "id": "owner", "isVisible": true, "width": 67 },
       { "id": "childCount", "isVisible": true, "width": 54 },
+      { "id": "kind", "isVisible": false, "width": 64 },
       { "id": "permissions", "isVisible": false, "width": 83 },
       { "id": "dateCreated", "isVisible": false, "width": 130 },
       { "id": "dateLastOpened", "isVisible": false, "width": 130 },
       { "id": "dateAdded", "isVisible": false, "width": 130 },
-      { "id": "group", "isVisible": false, "width": 54 }
+      { "id": "group", "isVisible": false, "width": 70 },
+      { "id": "finderVersion", "isVisible": false, "width": 90 },
+      { "id": "finderComment", "isVisible": false, "width": 150 },
+      { "id": "finderTags", "isVisible": false, "width": 150 }
     ],
-    "storedNameWidth": 352
+    "storedNameWidth": 362
   },
   "right": {
     "columns": [
       { "id": "name", "isVisible": true, "width": 126 },
-      { "id": "dateModified", "isVisible": true, "width": 123 },
-      { "id": "size", "isVisible": true, "width": 63 },
-      { "id": "kind", "isVisible": true, "width": 64 },
+      { "id": "dateModified", "isVisible": true, "width": 127 },
+      { "id": "size", "isVisible": true, "width": 64 },
       { "id": "owner", "isVisible": true, "width": 54 },
       { "id": "childCount", "isVisible": true, "width": 54 },
+      { "id": "kind", "isVisible": false, "width": 64 },
       { "id": "permissions", "isVisible": false, "width": 83 },
       { "id": "dateCreated", "isVisible": false, "width": 130 },
       { "id": "dateLastOpened", "isVisible": false, "width": 130 },
       { "id": "dateAdded", "isVisible": false, "width": 130 },
-      { "id": "group", "isVisible": false, "width": 54 }
+      { "id": "group", "isVisible": false, "width": 70 },
+      { "id": "finderVersion", "isVisible": false, "width": 90 },
+      { "id": "finderComment", "isVisible": false, "width": 150 },
+      { "id": "finderTags", "isVisible": false, "width": 150 }
     ],
-    "storedNameWidth": 349
+    "storedNameWidth": 454
   }
 }

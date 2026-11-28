@@ -27,12 +27,10 @@ final class WindowFrameRestorer {
 
     private var didRestore = false
 
-    private static let defaultWidth:  CGFloat = 1200
-    private static let defaultHeight: CGFloat = 700
+    private static let defaultWidth:  CGFloat = 1440
+    private static let defaultHeight: CGFloat = 900
     private static let minWidth:      CGFloat = 600
     private static let minHeight:     CGFloat = 400
-    private static let emergencyWidth: CGFloat = 1000
-    private static let emergencyHeight: CGFloat = 1000
     private static let maxPollTicks   = 20      // 20 × 100ms = 2s
     private static let pollInterval   = 0.1     // seconds
 
@@ -110,7 +108,7 @@ final class WindowFrameRestorer {
             log.info("[WindowFrameRestorer] no saved frame found — using default frame")
         }
 
-        let fallback = centeredDefault()
+        let fallback = Self.defaultFrame(on: win.screen)
         win.setFrame(fallback, display: true, animate: false)
         StatePersistence.lastKnownWindowFrame = fallback
         log.info("[WindowFrameRestorer] applied default frame \(fmtRect(fallback))")
@@ -124,8 +122,8 @@ final class WindowFrameRestorer {
         guard let targetScreen = preferredScreen(for: rect) else { return nil }
 
         let visibleFrame = targetScreen.visibleFrame
-        let width = min(max(rect.width, Self.emergencyWidth), visibleFrame.width)
-        let height = min(max(rect.height, Self.emergencyHeight), visibleFrame.height)
+        let width = min(rect.width >= Self.minWidth ? rect.width : Self.defaultWidth, visibleFrame.width)
+        let height = min(rect.height >= Self.minHeight ? rect.height : Self.defaultHeight, visibleFrame.height)
         let maxX = visibleFrame.maxX - width
         let maxY = visibleFrame.maxY - height
         let originX = min(max(rect.origin.x, visibleFrame.minX), maxX)
@@ -152,24 +150,20 @@ final class WindowFrameRestorer {
     }
 
 
-    /// Frame must be large enough and overlap at least one screen.
+    // MARK: - Validate Saved Frame
     private func isUsable(_ rect: NSRect) -> Bool {
         guard rect.width >= Self.minWidth, rect.height >= Self.minHeight else { return false }
-        return NSScreen.screens.contains { $0.visibleFrame.intersects(rect) }
+        return NSScreen.screens.contains { $0.visibleFrame.contains(rect) }
     }
 
 
-    /// Centered on the main screen with default dimensions.
-    private func centeredDefault() -> NSRect {
-        let screen = NSScreen.main?.visibleFrame
-            ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        let w = min(Self.defaultWidth, screen.width - 40)
-        let h = min(Self.defaultHeight, screen.height - 40)
-        let x = screen.midX - w / 2
-        let y = screen.midY - h / 2
-        return NSRect(x: x, y: y, width: w, height: h)
+    // MARK: - Default Frame
+    static func defaultFrame(on display: NSScreen? = NSScreen.main) -> NSRect {
+        let screen = display?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1280, height: 800)
+        let width = min(defaultWidth, screen.width - 32)
+        let height = min(defaultHeight, screen.height - 32)
+        return NSRect(x: screen.midX - width / 2, y: screen.midY - height / 2, width: width, height: height)
     }
-
 
     private func fmtRect(_ r: NSRect) -> String {
         "\(Int(r.width))×\(Int(r.height)) at (\(Int(r.origin.x)),\(Int(r.origin.y)))"

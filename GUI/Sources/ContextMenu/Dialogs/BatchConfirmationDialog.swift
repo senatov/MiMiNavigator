@@ -79,6 +79,7 @@ struct BatchConfirmationDialog: View {
     var body: some View {
         let maximumSize = DialogWindowMetrics.maximumSize
         let dialogWidth = min(520, maximumSize.width)
+        let previewHeight = max(48, maximumSize.height - (operationType == .delete ? 510 : 438))
         VStack(spacing: 16) {
             DialogGlassIcon(systemName: operationIconName, tint: iconColor)
             
@@ -150,7 +151,7 @@ struct BatchConfirmationDialog: View {
                         }
                         .padding(8)
                     }
-                    .frame(maxHeight: 150)
+                    .frame(maxHeight: previewHeight)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .fill(DialogColors.light)

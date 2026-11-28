@@ -37,10 +37,7 @@ final class ProgressPanel: NSObject {
         static let buttonMinWidth: CGFloat = 92
         static let buttonHeight: CGFloat = 30
         static let autoCloseCheckboxSpacing: CGFloat = 12
-        static let compactLineLimit = 6
-        static let compactExtraHeight: CGFloat = 168
-        static let compactHeightPadding: CGFloat = 18
-        static let minimumPanelHeight: CGFloat = 248
+        static let minimumPanelHeight: CGFloat = 168
     }
 
     // MARK: - UI
@@ -68,6 +65,8 @@ final class ProgressPanel: NSObject {
     var eventMonitor: Any?
     var operationKey = "default"
     var autoCloseTask: Task<Void, Never>?
+    var outputResizeTask: Task<Void, Never>?
+    var hasManualHeight = false
     var framePersistenceTask: Task<Void, Never>?
     var isApplyingProgrammaticFrame = false
     var screenConfigurationAtPresentation = ""
@@ -126,6 +125,8 @@ final class ProgressPanel: NSObject {
         isFinished = false
         autoCloseSuppressedByUser = false
         lineCount = 0
+        outputResizeTask?.cancel()
+        outputResizeTask = nil
         onCancel = cancelHandler
         cancelAutoCloseTimer()
         framePersistenceTask?.cancel()
@@ -137,7 +138,6 @@ final class ProgressPanel: NSObject {
         resetContent(icon: icon, title: title, status: status)
         guard !alreadyPresented else { return }
         restoreFrameForCurrentOperation()
-        centerInMainWindow()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
         log.debug("[ProgressPanel] \(#function) title='\(title)'")
@@ -181,6 +181,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Append Log Line
     func appendLog(_ line: String) {
         guard let tv = logTextView else { return }
+        scrollView?.isHidden = false
         lineCount += 1
         let entry = "\(lineCount). \(line)\n"
         let paragraphStyle = NSMutableParagraphStyle()
@@ -192,11 +193,13 @@ final class ProgressPanel: NSObject {
         ]
         tv.textStorage?.append(NSAttributedString(string: entry, attributes: attrs))
         tv.scrollToEndOfDocument(nil)
+        scheduleOutputResize()
     }
 
     // MARK: - Append Attributed Log
     func appendAttributedLog(_ content: NSAttributedString) {
         guard let tv = logTextView else { return }
+        scrollView?.isHidden = false
         lineCount += 1
         let prefix = NSAttributedString(
             string: "\(lineCount). ",
@@ -209,6 +212,7 @@ final class ProgressPanel: NSObject {
         entry.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(location: 0, length: entry.length))
         tv.textStorage?.append(entry)
         tv.scrollToEndOfDocument(nil)
+        scheduleOutputResize()
     }
 
     // MARK: - Update Status
@@ -293,7 +297,7 @@ final class ProgressPanel: NSObject {
             hideProgress()
         }
         onCancel = nil
-        compactForShortOutputIfNeeded()
+        resizeToFitOutput()
         if autoClose {
             startAutoCloseTimerIfNeeded()
         }
@@ -316,7 +320,7 @@ final class ProgressPanel: NSObject {
     // MARK: - Resume after User Decision
     func resumeAfterUserDecision() {
         guard let panel, panel.isVisible == false else { return }
-        clampPanelToMainWindow()
+        clampPanelToScreen()
         attachPanelToMainWindow(panel)
         animatePanelIn(panel)
     }
@@ -326,9 +330,11 @@ final class ProgressPanel: NSObject {
         guard let panel else { return }
         autoCloseGeneration += 1
         cancelAutoCloseTimer()
+        outputResizeTask?.cancel()
+        outputResizeTask = nil
+        if framePersistenceTask != nil { persistFrameForCurrentOperation() }
         framePersistenceTask?.cancel()
         framePersistenceTask = nil
-        persistFrameForCurrentOperation()
         guard panel.isVisible else {
             panel.parent?.removeChildWindow(panel)
             panel.orderOut(nil)
